@@ -59,6 +59,7 @@ DIM SHARED __UI_KeyHit AS LONG
 DIM SHARED __UI_Focus AS LONG
 DIM SHARED __UI_HoveringID AS LONG
 DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
+DIM SHARED __UI_IsSelectingText AS _BYTE, __UI_IsSelectingTextOnID AS LONG
 DIM SHARED __UI_HasInput AS _BYTE
 DIM SHARED __UI_UnloadSignal AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
@@ -424,6 +425,9 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_Focus THEN
         __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
+        IF LEN(__UI_SelectedText) THEN
+            __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
+        END IF
     END IF
 
     IF __UI_HoveringID THEN
@@ -431,7 +435,16 @@ SUB __UI_BeforeUpdateDisplay
     END IF
 
     IF __UI_IsDragging = __UI_False THEN
-        __UI_SetCaption "Label2", "Screen repainted" + STR$(Iterations) + " times."
+        IF __UI_Controls(__UI_Focus).Type = __UI_Type_TextBox THEN
+            IF __UI_IsSelectingText THEN
+                __UI_SetCaption "Label2", "Sel.Start=" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).SelectionStart) + " Cursor=" + STR$(__UI_Controls(__UI_Focus).Cursor)
+                __UI_SetCaption "HoverLabel", "Selected?" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).Selected)
+            ELSE
+                __UI_SetCaption "Label2", "Editing text on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
+            END IF
+        ELSE
+            __UI_SetCaption "Label2", "Screen repainted" + STR$(Iterations) + " times."
+        END IF
     ELSE
         __UI_SetCaption "Label2", "Dragging..." + STR$(__UI_PreviewLeft) + "," + STR$(__UI_PreviewTop)
     END IF
@@ -585,12 +598,7 @@ SUB __UI_UpdateDisplay
 
     FOR i = 1 TO UBOUND(__UI_Controls)
         IF __UI_Controls(i).ID THEN
-            IF __UI_Controls(i).Font THEN
-                _FONT __UI_Fonts(__UI_Controls(i).Font)
-            ELSE
-                'First font in __UI_Fonts is used as default
-                _FONT __UI_Fonts(1)
-            END IF
+            _FONT __UI_Fonts(__UI_Controls(i).Font)
 
             TempCaption$ = __UI_Captions(i)
             DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(i).Width
@@ -984,23 +992,39 @@ SUB __UI_EventDispatcher
                     __UI_DragY = __UI_MouseY
                     __UI_DragX = __UI_MouseX
                 END IF
-            ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_TextBox THEN
+            END IF
+            IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_TextBox THEN
                 _FONT __UI_Fonts(__UI_Controls(__UI_HoveringID).Font)
-                IF NOT __UI_Controls(__UI_HoveringID).Selected THEN
-                    __UI_Controls(__UI_HoveringID).Selected = __UI_True
+                IF __UI_IsSelectingText = __UI_False THEN
+                    __UI_Controls(__UI_HoveringID).Selected = __UI_False
+                    __UI_SelectedText = ""
                     __UI_Controls(__UI_HoveringID).SelectionStart = ((__UI_MouseX - __UI_Controls(__UI_HoveringID).Left) / _FONTWIDTH) + (__UI_Controls(__UI_HoveringID).InputViewStart - 1)
                     __UI_Controls(__UI_HoveringID).Cursor = __UI_Controls(__UI_HoveringID).SelectionStart
-                ELSE
-                    __UI_Controls(__UI_HoveringID).Cursor = ((__UI_MouseX - __UI_Controls(__UI_HoveringID).Left) / _FONTWIDTH) + (__UI_Controls(__UI_HoveringID).InputViewStart - 1)
-                    IF __UI_Controls(__UI_HoveringID).Cursor = __UI_Controls(__UI_HoveringID).SelectionStart THEN
-                    __UI_Controls(__UI_HoveringID).Selected = __UI_False
-                    END IF
+                    IF __UI_Controls(__UI_HoveringID).SelectionStart > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).SelectionStart = LEN(__UI_Texts(__UI_HoveringID))
+                    IF __UI_Controls(__UI_HoveringID).Cursor > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).Cursor = LEN(__UI_Texts(__UI_HoveringID))
+                    __UI_IsSelectingText = __UI_True
+                    __UI_IsSelectingTextOnID = __UI_HoveringID
                 END IF
             END IF
             __UI_MouseDown __UI_HoveringID
         ELSE
             IF __UI_MouseDownOnID <> __UI_HoveringID AND __UI_MouseDownOnID > 0 THEN
                 __UI_MouseDownOnID = 0
+            ELSE
+                IF __UI_IsSelectingText THEN
+                    _FONT __UI_Fonts(__UI_Controls(__UI_IsSelectingTextOnID).Font)
+                    IF __UI_MouseX <= __UI_Controls(__UI_IsSelectingTextOnID).Left AND __UI_Controls(__UI_IsSelectingTextOnID).InputViewStart > 1 THEN
+                        __UI_Controls(__UI_IsSelectingTextOnID).InputViewStart = __UI_Controls(__UI_IsSelectingTextOnID).InputViewStart - 1
+                        __UI_Controls(__UI_IsSelectingTextOnID).Cursor = __UI_Controls(__UI_IsSelectingTextOnID).InputViewStart
+                    ELSE
+                        __UI_Controls(__UI_IsSelectingTextOnID).Cursor = ((__UI_MouseX - __UI_Controls(__UI_IsSelectingTextOnID).Left) / _FONTWIDTH) + (__UI_Controls(__UI_IsSelectingTextOnID).InputViewStart - 1)
+                        IF __UI_Controls(__UI_IsSelectingTextOnID).Cursor < 0 THEN __UI_Controls(__UI_IsSelectingTextOnID).Cursor = 0
+                        IF __UI_Controls(__UI_IsSelectingTextOnID).Cursor > LEN(__UI_Texts(__UI_IsSelectingTextOnID)) THEN __UI_Controls(__UI_IsSelectingTextOnID).Cursor = LEN(__UI_Texts(__UI_IsSelectingTextOnID))
+                        IF __UI_Controls(__UI_IsSelectingTextOnID).Cursor <> __UI_Controls(__UI_IsSelectingTextOnID).SelectionStart THEN
+                            __UI_Controls(__UI_IsSelectingTextOnID).Selected = __UI_True
+                        END IF
+                    END IF
+                END IF
             END IF
         END IF
     ELSE
@@ -1027,9 +1051,8 @@ SUB __UI_EventDispatcher
                                 _FONT __UI_Fonts(__UI_Controls(__UI_HoveringID).Font)
                                 __UI_Controls(__UI_HoveringID).Cursor = ((__UI_MouseX - __UI_Controls(__UI_HoveringID).Left) / _FONTWIDTH) + (__UI_Controls(__UI_HoveringID).InputViewStart - 1)
                                 IF __UI_Controls(__UI_HoveringID).Cursor > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).Cursor = LEN(__UI_Texts(__UI_HoveringID))
-                                IF __UI_Controls(__UI_HoveringID).SelectionStart = __UI_Controls(__UI_HoveringID).Cursor THEN
-                                    __UI_Controls(__UI_HoveringID).Selected = __UI_False
-                                END IF
+                                __UI_IsSelectingText = __UI_False
+                                __UI_IsSelectingTextOnID = 0
                         END SELECT
                         __UI_Click __UI_HoveringID
                         __UI_LastMouseClick = TIMER
@@ -1037,7 +1060,8 @@ SUB __UI_EventDispatcher
                     END IF
                 END IF
             END IF
-
+            __UI_IsSelectingText = __UI_False
+            __UI_IsSelectingTextOnID = 0
             __UI_MouseIsDown = __UI_False
             __UI_MouseUp __UI_HoveringID
         END IF
@@ -1152,6 +1176,7 @@ SUB __UI_EventDispatcher
                                             __UI_Texts(__UI_Focus) = LEFT$(__UI_Texts(__UI_Focus), s1) + Clip$ + MID$(__UI_Texts(__UI_Focus), s2 + 1)
                                             __UI_Controls(__UI_Focus).Cursor = s1 + LEN(Clip$)
                                             __UI_Controls(__UI_Focus).Selected = __UI_False
+                                            __UI_SelectedText = ""
                                         END IF
                                     END IF
                                     __UI_KeyHit = 0
@@ -1186,6 +1211,13 @@ SUB __UI_EventDispatcher
                                         __UI_Controls(__UI_Focus).Cursor = __UI_Controls(__UI_Focus).Cursor + 1
                                     END IF
                                 ELSE
+                                    s1 = __UI_Controls(__UI_Focus).SelectionStart
+                                    s2 = __UI_Controls(__UI_Focus).Cursor
+                                    IF s1 > s2 THEN SWAP s1, s2
+                                    __UI_Texts(__UI_Focus) = LEFT$(__UI_Texts(__UI_Focus), s1) + CHR$(__UI_KeyHit) + MID$(__UI_Texts(__UI_Focus), s2 + 1)
+                                    __UI_Controls(__UI_Focus).Selected = __UI_False
+                                    __UI_SelectedText = ""
+                                    __UI_Controls(__UI_Focus).Cursor = s1 + 1
                                 END IF
                             END IF
                         CASE 8 'Backspace
@@ -1256,6 +1288,7 @@ SUB __UI_CheckSelection (id)
         END IF
     ELSE
         __UI_Controls(id).Selected = __UI_False
+        __UI_SelectedText = ""
     END IF
 END SUB
 
@@ -1487,6 +1520,7 @@ SUB __UI_DeleteSelection
     IF s1 > s2 THEN SWAP s1, s2
     __UI_Texts(__UI_Focus) = LEFT$(__UI_Texts(__UI_Focus), s1) + MID$(__UI_Texts(__UI_Focus), s2 + 1)
     __UI_Controls(__UI_Focus).Selected = __UI_False
+    __UI_SelectedText = ""
     __UI_Controls(__UI_Focus).Cursor = s1
 END SUB
 
