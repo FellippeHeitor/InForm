@@ -726,10 +726,7 @@ SUB __UI_UpdateDisplay
     ContainerOffsetLeft = 0
     FOR i = 1 TO UBOUND(__UI_Controls)
         IF __UI_Controls(i).ID THEN
-            TempCaption$ = __UI_Captions(i)
-            DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(i).Width
-                TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
-            LOOP
+            TempCaption$ = __UI_ClipText(__UI_Captions(i), __UI_Controls(i).Width)
 
             IF __UI_Controls(i).ParentID THEN
                 _DEST __UI_Controls(__UI_Controls(i).ParentID).Canvas
@@ -996,9 +993,7 @@ SUB __UI_UpdateDisplay
                                     LastVisibleItem = LastVisibleItem + 1
 
                                     IF ThisItem% = __UI_Controls(i).Value AND __UI_Focus = i THEN __UI_SelectedText = TempCaption$
-                                    DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(i).Width - CaptionIndent * 2
-                                        TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
-                                    LOOP
+                                    TempCaption$ = __UI_ClipText(TempCaption$, __UI_Controls(i).Width - CaptionIndent * 2)
 
                                     IF __UI_Controls(i).Enabled THEN
                                         COLOR __UI_Controls(i).ForeColor, __UI_Controls(i).BackColor
@@ -1045,10 +1040,7 @@ SUB __UI_UpdateDisplay
 
                 IF NoMoreChildren THEN
                     _DEST 0
-                    TempCaption$ = __UI_Captions(ThisParent)
-                    DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(ThisParent).Width
-                        TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
-                    LOOP
+                    TempCaption$ = __UI_ClipText(__UI_Captions(ThisParent), __UI_Controls(ThisParent).Width)
 
                     _FONT __UI_Fonts(__UI_Controls(ThisParent).Font)
 
@@ -1910,9 +1902,7 @@ SUB __UI_DrawProgressBar (ProgressBar AS ObjectTYPE)
             IF ReplaceCode% THEN
                 TempCaption$ = LEFT$(TempCaption$, ReplaceCode% - 1) + ProgressString$ + MID$(TempCaption$, ReplaceCode% + 2)
             END IF
-            DO WHILE _PRINTWIDTH(TempCaption$) > ProgressBar.Width
-                TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
-            LOOP
+            TempCaption$ = __UI_ClipText(TempCaption$, ProgressBar.Width)
         ELSE
             TempCaption$ = ProgressString$
         END IF
@@ -1942,3 +1932,20 @@ SUB __UI_AddListBoxItem (WhichListBox$, Item$)
     __UI_Texts(ThisID) = __UI_Texts(ThisID) + Item$ + CHR$(13)
     __UI_Controls(ThisID).Max = __UI_Controls(ThisID).Max + 1
 END SUB
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_ClipText$ (Text AS STRING, Width AS INTEGER)
+    DIM ClipTextLen
+    IF _PRINTWIDTH(Text) > Width THEN
+        DO
+            ClipTextLen = ClipTextLen + 1
+            IF _PRINTWIDTH(LEFT$(Text, ClipTextLen)) > Width THEN
+                __UI_ClipText$ = LEFT$(Text, ClipTextLen - 1)
+                EXIT FUNCTION
+            END IF
+        LOOP
+    ELSE
+        __UI_ClipText$ = Text
+    END IF
+END FUNCTION
+
