@@ -1,7 +1,6 @@
 OPTION _EXPLICIT
 
 $RESIZE:ON
-_RESIZE OFF
 
 TYPE ObjectTYPE
     ID AS LONG
@@ -33,7 +32,7 @@ DIM SHARED __UI_MouseButton1 AS _BYTE, __UI_MouseButton2 AS _BYTE
 DIM SHARED __UI_KeyHit AS LONG
 DIM SHARED __UI_Focus AS LONG
 DIM SHARED __UI_HoveringID AS LONG
-DIM SHARED __UI_LastHoveringID AS LONG
+DIM SHARED __UI_HasResized AS _BYTE
 
 'Object types:
 CONST __UI_Type_Form = 1
@@ -91,10 +90,10 @@ NewID = __UI_NewObject(__UI_Type_Label, 0)
 __UI_Objects(NewID).Name = "Label1"
 __UI_Objects(NewID).Top = 30
 __UI_Objects(NewID).Left = 10
-__UI_Objects(NewID).Width = 200
+__UI_Objects(NewID).Width = 400
 __UI_Objects(NewID).Height = 20
-__UI_Objects(NewID).ForeColor = _RGB32(0, 0, 0)
-__UI_Objects(NewID).BackColor = _RGB32(161, 161, 161)
+__UI_Objects(NewID).ForeColor = _RGB32(238, 238, 200)
+__UI_Objects(NewID).BackColor = _RGB32(33, 100, 78)
 __UI_Objects(NewID).Enabled = __UI_True
 __UI_SetCaption "Label1", "Waiting for you to click"
 
@@ -110,6 +109,8 @@ __UI_Objects(NewID).Enabled = __UI_True
 __UI_SetCaption "Label2", "Resizable: OFF"
 
 SCREEN _NEWIMAGE(__UI_Objects(__UI_GetID("Form1")).Width, __UI_Objects(__UI_GetID("Form1")).Height, 32)
+IF __UI_Objects(__UI_GetID("Form1")).Resizable THEN _RESIZE ON
+_FONT _LOADFONT("cyberbit.ttf", 14, "BOLD")
 
 'Main loop
 DO
@@ -125,17 +126,23 @@ SUB __UI_Click (id AS LONG)
         CASE "FORM1"
 
         CASE "BUTTON1"
-            STATIC State AS _BYTE
+            STATIC State AS _BYTE, TotalStops AS _BYTE
             State = State + 1: IF State > 3 THEN State = 1
             SELECT CASE State
                 CASE 1
                     __UI_Objects(__UI_GetID("Label1")).Enabled = __UI_True
                     __UI_Captions(__UI_GetID("Label1")) = "You clicked the button!"
                 CASE 2
-                    __UI_Captions(__UI_GetID("Label1")) = "Aren't you the clicker?"
+                    __UI_Captions(__UI_GetID("Label1")) = "Aren't you the clicker? You'd better stop it"
                 CASE 3
                     __UI_Objects(__UI_GetID("Label1")).Enabled = __UI_False
                     __UI_Captions(__UI_GetID("Label1")) = "Stop it."
+                    IF TotalStops < 3 THEN
+                        TotalStops = TotalStops + 1
+                    ELSE
+                        __UI_Objects(__UI_GetID("Button1")).Enabled = __UI_False
+                        __UI_Captions(__UI_GetID("Label1")) = "I told you to stop it."
+                    END IF
             END SELECT
         CASE "BUTTON2"
             __UI_Objects(__UI_GetID("Form1")).Resizable = NOT __UI_Objects(__UI_GetID("Form1")).Resizable
@@ -156,8 +163,10 @@ SUB __UI_MouseEnter (id AS LONG)
         CASE "BUTTON1"
 
         CASE "LABEL1"
-            __UI_Objects(__UI_GetID("Label1")).ForeColor = _RGB32(255, 255, 255)
-            __UI_Objects(__UI_GetID("Label1")).BackColor = _RGB32(127, 172, 127)
+            IF __UI_Objects(__UI_GetID("Label1")).Enabled THEN
+                __UI_Objects(__UI_GetID("Label1")).ForeColor = _RGB32(255, 255, 255)
+                __UI_Objects(__UI_GetID("Label1")).BackColor = _RGB32(127, 172, 127)
+            END IF
     END SELECT
 END SUB
 
@@ -168,8 +177,10 @@ SUB __UI_MouseLeave (id AS LONG)
         CASE "BUTTON1"
 
         CASE "LABEL1"
-            __UI_Objects(__UI_GetID("Label1")).ForeColor = _RGB32(0, 0, 0)
-            __UI_Objects(__UI_GetID("Label1")).BackColor = _RGB32(161, 161, 161)
+            IF __UI_Objects(__UI_GetID("Label1")).Enabled THEN
+                __UI_Objects(__UI_GetID("Label1")).ForeColor = _RGB32(0, 0, 0)
+                __UI_Objects(__UI_GetID("Label1")).BackColor = _RGB32(33, 100, 78)
+            END IF
     END SELECT
 END SUB
 
@@ -221,7 +232,7 @@ END SUB
 'Internal procedures: ------------------------------------------------------------
 '---------------------------------------------------------------------------------
 SUB __UI_ProcessInput
-    DIM OldScreen&
+    DIM OldScreen&, OldFont&
 
     'Mouse input:
     WHILE _MOUSEINPUT
@@ -240,8 +251,11 @@ SUB __UI_ProcessInput
         __UI_Objects(__UI_GetID("Form1")).Width = _RESIZEWIDTH
         __UI_Objects(__UI_GetID("Form1")).Height = _RESIZEHEIGHT
         OldScreen& = _DEST
+        OldFont& = _FONT
         SCREEN _NEWIMAGE(__UI_Objects(__UI_GetID("Form1")).Width, __UI_Objects(__UI_GetID("Form1")).Height, 32)
+        _FONT OldFont&
         _FREEIMAGE OldScreen&
+        __UI_HasResized = __UI_True
     END IF
 END SUB
 
@@ -249,19 +263,26 @@ END SUB
 SUB __UI_UpdateDisplay
     DIM i AS LONG, TempCaption$, TempColor~&
     STATIC __UI_CurrentTitle AS STRING
+    STATIC __UI_CurrentResizeStatus AS _BYTE
 
     __UI_ProcessInput
 
-    'Update main window properties if needed
-    IF __UI_CurrentTitle <> __UI_Captions(__UI_GetID("Form1")) THEN
-        __UI_CurrentTitle = __UI_Captions(__UI_GetID("Form1"))
-        _TITLE __UI_CurrentTitle
+    IF __UI_Objects(__UI_GetID("Form1")).Resizable <> __UI_CurrentResizeStatus THEN
+        __UI_CurrentResizeStatus = __UI_Objects(__UI_GetID("Form1")).Resizable
+        IF __UI_CurrentResizeStatus THEN
+            _RESIZE ON
+            __UI_HasResized = -1
+        ELSE
+            _RESIZE OFF
+            __UI_HasResized = -1
+        END IF
     END IF
 
-    IF __UI_Objects(__UI_GetID("Form1")).Resizable THEN
-        _RESIZE ON
-    ELSE
-        _RESIZE OFF
+    'Update main window properties if needed
+    IF __UI_CurrentTitle <> __UI_Captions(__UI_GetID("Form1")) OR __UI_HasResized THEN
+        __UI_CurrentTitle = __UI_Captions(__UI_GetID("Form1"))
+        _TITLE __UI_CurrentTitle
+        __UI_HasResized = __UI_False
     END IF
 
     'Main window:
@@ -287,7 +308,7 @@ SUB __UI_UpdateDisplay
                 TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
             LOOP
 
-            IF i = __UI_HoveringID THEN
+            IF i = __UI_HoveringID AND __UI_Objects(i).Enabled THEN
                 TempColor~& = __UI_Darken(__UI_Objects(__UI_GetID("Form1")).BackColor, 80)
             ELSE
                 TempColor~& = __UI_Objects(__UI_GetID("Form1")).BackColor
@@ -299,7 +320,12 @@ SUB __UI_UpdateDisplay
 
                     LINE (__UI_Objects(i).Left, __UI_Objects(i).Top)-STEP(__UI_Objects(i).Width - 1, __UI_Objects(i).Height - 1), __UI_Objects(i).ForeColor, B
 
-                    COLOR __UI_Objects(i).ForeColor, TempColor~&
+                    IF __UI_Objects(i).Enabled THEN
+                        COLOR __UI_Objects(i).ForeColor, TempColor~&
+                    ELSE
+                        COLOR __UI_Darken(__UI_Objects(__UI_GetID("Form1")).BackColor, 80), TempColor~&
+                    END IF
+
                     _PRINTMODE _FILLBACKGROUND
                     _PRINTSTRING (__UI_Objects(i).Left + (__UI_Objects(i).Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), __UI_Objects(i).Top + ((__UI_Objects(i).Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
                 CASE __UI_Type_Label
@@ -314,7 +340,12 @@ SUB __UI_UpdateDisplay
                         LINE (__UI_Objects(i).Left, __UI_Objects(i).Top)-STEP(__UI_Objects(i).Width - 1, __UI_Objects(i).Height - 1), __UI_Objects(i).BorderColor, B
                     END IF
 
-                    COLOR __UI_Objects(i).ForeColor
+                    IF __UI_Objects(i).Enabled THEN
+                        COLOR __UI_Objects(i).ForeColor
+                    ELSE
+                        COLOR __UI_Darken(__UI_Objects(__UI_GetID("Form1")).BackColor, 80)
+                    END IF
+
                     _PRINTSTRING (__UI_Objects(i).Left + (__UI_Objects(i).Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), __UI_Objects(i).Top + ((__UI_Objects(i).Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
             END SELECT
         END IF
@@ -330,6 +361,7 @@ SUB __UI_EventDispatcher
     STATIC __UI_MouseIsUp AS _BYTE, __UI_MouseUpOnID AS LONG
     STATIC __UI_LastMouseUp AS DOUBLE, __UI_LastMouseDown AS DOUBLE
     STATIC __UI_LastMouseClick AS DOUBLE
+    STATIC __UI_LastHoveringID AS LONG
 
     IF __UI_HoveringID = 0 THEN EXIT SUB
 
@@ -369,10 +401,12 @@ SUB __UI_EventDispatcher
 
     IF __UI_MouseIsUp AND TIMER - __UI_LastMouseClick > .2 THEN
         IF __UI_MouseDownOnID = __UI_MouseUpOnID AND __UI_MouseUpOnID > 0 THEN
-            __UI_Click __UI_MouseUpOnID
-            __UI_LastMouseClick = TIMER
-            __UI_MouseDownOnID = 0
-            __UI_MouseUpOnID = 0
+            IF __UI_Objects(__UI_MouseUpOnID).Enabled THEN
+                __UI_Click __UI_MouseUpOnID
+                __UI_LastMouseClick = TIMER
+                __UI_MouseDownOnID = 0
+                __UI_MouseUpOnID = 0
+            END IF
         END IF
     END IF
 
