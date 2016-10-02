@@ -1525,13 +1525,11 @@ SUB __UI_EventDispatcher
             __UI_Controls(__UI_DraggingThumbOnID).ThumbTop = __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_MouseDownOnID).Height - __UI_Controls(__UI_DraggingThumbOnID).VScrollbarButtonHeight - __UI_Controls(__UI_DraggingThumbOnID).ThumbHeight
         END IF
 
-        STATIC LastThumbDragRefresh AS DOUBLE
-        IF TIMER - LastThumbDragRefresh > .2 THEN
-            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_InputViewStartAtGrab + ((__UI_MouseTop - __UI_ThumbDragY) / __UI_Controls(__UI_DraggingThumbOnID).VScrollbarRatio)
+        __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).InputViewStart + ((__UI_MouseTop - __UI_ThumbDragY) / __UI_Controls(__UI_DraggingThumbOnID).VScrollbarRatio)
         IF __UI_Controls(__UI_DraggingThumbOnID).InputViewStart + __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem > __UI_Controls(__UI_DraggingThumbOnID).Max THEN _
             __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).Max - __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem
-            LastThumbDragRefresh = TIMER
-        END IF
+
+        __UI_ThumbDragY = __UI_MouseTop
     END IF
 
     'Keyboard handler
