@@ -15,6 +15,8 @@ TYPE ObjectTYPE
     Font AS INTEGER
     BackColor AS _UNSIGNED LONG
     ForeColor AS _UNSIGNED LONG
+    SelectedForeColor AS _UNSIGNED LONG
+    SelectedBackColor AS _UNSIGNED LONG
     BackStyle AS _BYTE
     HasBorder AS _BYTE
     Align AS _BYTE
@@ -24,6 +26,7 @@ TYPE ObjectTYPE
     Max AS _FLOAT
     ShowPercentage AS _BYTE
     InputViewStart AS LONG
+    LastVisibleItem AS INTEGER
     Cursor AS LONG
     PrevCursor AS LONG
     FieldArea AS LONG
@@ -160,8 +163,11 @@ __UI_Controls(NewID).Top = 160
 __UI_Controls(NewID).Left = 350
 __UI_Controls(NewID).Width = 200
 __UI_Controls(NewID).Height = 200
+'__UI_Controls(NewID).Font = 2
 __UI_Controls(NewID).ForeColor = _RGB32(0, 0, 0)
 __UI_Controls(NewID).BackColor = _RGB32(255, 255, 255)
+__UI_Controls(NewID).SelectedForeColor = _RGB32(255, 255, 255)
+__UI_Controls(NewID).SelectedBackColor = _RGB32(50, 116, 255)
 __UI_Controls(NewID).HasBorder = __UI_True
 __UI_Controls(NewID).BorderColor = _RGB32(0, 0, 0)
 __UI_Controls(NewID).CanHaveFocus = __UI_True
@@ -169,6 +175,19 @@ __UI_Controls(NewID).Enabled = __UI_True
 __UI_AddListBoxItem "ListBox1", "Australia"
 __UI_AddListBoxItem "ListBox1", "Brazil"
 __UI_AddListBoxItem "ListBox1", "USA"
+__UI_AddListBoxItem "ListBox1", "A really long item that must be clipped before it flows off the control"
+__UI_AddListBoxItem "ListBox1", "Hurry"
+__UI_AddListBoxItem "ListBox1", "Up"
+__UI_AddListBoxItem "ListBox1", "I"
+__UI_AddListBoxItem "ListBox1", "Just"
+__UI_AddListBoxItem "ListBox1", "Can't"
+__UI_AddListBoxItem "ListBox1", "Stay"
+__UI_AddListBoxItem "ListBox1", "I get"
+__UI_AddListBoxItem "ListBox1", "Up"
+__UI_AddListBoxItem "ListBox1", "Again"
+__UI_AddListBoxItem "ListBox1", "Over"
+__UI_AddListBoxItem "ListBox1", "And"
+__UI_AddListBoxItem "ListBox1", "END"
 __UI_Controls(NewID).Value = 1
 
 NewID = __UI_NewObject(__UI_Type_Label, "Label1", 0)
@@ -460,17 +479,18 @@ SUB __UI_BeforeUpdateDisplay
     STATIC Iterations AS LONG
     Iterations = Iterations + 1
 
-    __UI_Controls(__UI_GetID("ProgressBar1")).Value = Iterations
+    __UI_Controls(__UI_GetID("ProgressBar1")).Value = __UI_Controls(__UI_GetID("ProgressBar1")).Value + 1
     IF __UI_Controls(__UI_GetID("ProgressBar1")).Value > __UI_Controls(__UI_GetID("ProgressBar1")).Max THEN
-        __UI_Controls(__UI_GetID("ProgressBar1")).Value = __UI_Controls(__UI_GetID("ProgressBar1")).Max
+        __UI_Controls(__UI_GetID("ProgressBar1")).Value = 0
     END IF
 
     IF __UI_Focus THEN
         __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
         IF LEN(__UI_SelectedText) THEN
             __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
-        ELSEIF __UI_Focus = __UI_GetID("ListBox1") THEN
-            __UI_SetCaption "FocusLabel", "Selected item: " + STR$(__UI_Controls(__UI_Focus).Value)
+        END IF
+        IF __UI_Focus = __UI_GetID("ListBox1") THEN
+            __UI_SetCaption "FocusLabel", "Selected item: " + STR$(__UI_Controls(__UI_Focus).Value) + " InpStart: " + STR$(__UI_Controls(__UI_Focus).InputViewStart) + "Selected text: " + __UI_SelectedText
         END IF
     END IF
 
@@ -896,30 +916,21 @@ SUB __UI_UpdateDisplay
                 CASE __UI_Type_ListBox
                     IF __UI_Controls(i).InputViewStart = 0 THEN __UI_Controls(i).InputViewStart = 1
 
-                    IF __UI_Controls(i).BackStyle = __UI_Opaque THEN
-                        _PRINTMODE _FILLBACKGROUND
-                    ELSE
-                        _PRINTMODE _KEEPBACKGROUND
-                    END IF
+                    _PRINTMODE _KEEPBACKGROUND
 
-                    CaptionIndent = 0
                     IF __UI_Controls(i).BackStyle = __UI_Opaque THEN
                         __UI_DrawRectangle ContainerOffsetLeft + __UI_Controls(i).Left, ContainerOffsetTop + __UI_Controls(i).Top, __UI_Controls(i).Width, __UI_Controls(i).Height, __UI_Controls(i).BackColor, __UI_Controls(i).BackColor, __UI_True
                     END IF
 
+                    CaptionIndent = 0
                     IF __UI_Controls(i).HasBorder = __UI_True THEN
                         CaptionIndent = 5
                         __UI_DrawRectangle ContainerOffsetLeft + __UI_Controls(i).Left, ContainerOffsetTop + __UI_Controls(i).Top, __UI_Controls(i).Width, __UI_Controls(i).Height, __UI_Controls(i).BorderColor, TempColor~&, __UI_False
                     END IF
 
-                    IF __UI_Controls(i).Enabled THEN
-                        COLOR __UI_Controls(i).ForeColor, __UI_Controls(i).BackColor
-                    ELSE
-                        COLOR __UI_Darken(__UI_Controls(__UI_GetID("Form1")).BackColor, 80), __UI_Controls(i).BackColor
-                    END IF
-
                     IF LEN(__UI_Texts(i)) THEN
                         DIM TempText$, FindLF&, ThisItem%, ThisItemTop%
+                        DIM LastVisibleItem AS INTEGER
 
                         TempText$ = __UI_Texts(i)
                         ThisItem% = 0
@@ -934,26 +945,41 @@ SUB __UI_UpdateDisplay
                                 TempText$ = ""
                             END IF
                             IF ThisItem% >= __UI_Controls(i).InputViewStart THEN
-                                ThisItemTop% = __UI_Controls(i).Top + (ThisItem% - __UI_Controls(i).InputViewStart) * _FONTHEIGHT - _FONTHEIGHT + CaptionIndent
+                                ThisItemTop% = __UI_Controls(i).Top + ((ThisItem% - __UI_Controls(i).InputViewStart + 1) * _FONTHEIGHT - _FONTHEIGHT) + CaptionIndent
                                 IF ThisItemTop% + _FONTHEIGHT > __UI_Controls(i).Top + __UI_Controls(i).Height THEN EXIT DO
-                                DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(i).Width
+                                LastVisibleItem = LastVisibleItem + 1
+
+                                DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(i).Width - CaptionIndent * 2
                                     TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
                                 LOOP
 
+                                IF __UI_Controls(i).Enabled THEN
+                                    COLOR __UI_Controls(i).ForeColor, __UI_Controls(i).BackColor
+                                ELSE
+                                    COLOR __UI_Darken(__UI_Controls(__UI_GetID("Form1")).BackColor, 80), __UI_Controls(i).BackColor
+                                END IF
+
+                                IF ThisItem% = __UI_Controls(i).Value THEN
+                                    IF __UI_Focus = i THEN
+                                        COLOR __UI_Controls(i).SelectedForeColor
+                                        __UI_SelectedText = TempCaption$
+                                        LINE (ContainerOffsetLeft + __UI_Controls(i).Left + CaptionIndent, ContainerOffsetTop + ThisItemTop%)-STEP(__UI_Controls(i).Width - CaptionIndent * 2, _FONTHEIGHT - 1), __UI_Controls(i).SelectedBackColor, BF
+                                    ELSE
+                                        LINE (ContainerOffsetLeft + __UI_Controls(i).Left + CaptionIndent, ContainerOffsetTop + ThisItemTop%)-STEP(__UI_Controls(i).Width - CaptionIndent * 2, _FONTHEIGHT - 1), _RGBA32(0, 0, 0, 50), BF
+                                    END IF
+                                END IF
+
                                 SELECT CASE __UI_Controls(i).Align
                                     CASE __UI_Left
-                                        _PRINTSTRING (ContainerOffsetLeft + __UI_Controls(i).Left + CaptionIndent, ContainerOffsetTop + ThisItemTop%), TempCaption$
+                                        _PRINTSTRING (ContainerOffsetLeft + __UI_Controls(i).Left + CaptionIndent * 2, ContainerOffsetTop + ThisItemTop%), TempCaption$
                                     CASE __UI_Center
                                         _PRINTSTRING (ContainerOffsetLeft + __UI_Controls(i).Left + (__UI_Controls(i).Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), ContainerOffsetTop + ThisItemTop%), TempCaption$
                                     CASE __UI_Right
                                         _PRINTSTRING (ContainerOffsetLeft + __UI_Controls(i).Left + (__UI_Controls(i).Width - _PRINTWIDTH(TempCaption$)) - CaptionIndent, ContainerOffsetTop + ThisItemTop%), TempCaption$
                                 END SELECT
-
-                                IF ThisItem% = __UI_Controls(i).Value THEN
-                                    LINE (ContainerOffsetLeft + __UI_Controls(i).Left + CaptionIndent, ContainerOffsetTop + ThisItemTop% + _FONTHEIGHT)-STEP(__UI_Controls(i).Width - CaptionIndent * 2, _FONTHEIGHT), _RGBA32(0, 0, 0, 50), BF
-                                END IF
                             END IF
                         LOOP
+                        IF __UI_Controls(i).LastVisibleItem = 0 THEN __UI_Controls(i).LastVisibleItem = LastVisibleItem
                     END IF
             END SELECT
         END IF
@@ -1147,29 +1173,25 @@ SUB __UI_EventDispatcher
             END IF
 
             'Click
-            IF TIMER - __UI_LastMouseClick > .2 THEN
-                IF __UI_MouseDownOnID = __UI_HoveringID AND __UI_HoveringID > 0 THEN
-                    IF __UI_Controls(__UI_HoveringID).Enabled THEN
-                        SELECT CASE __UI_Controls(__UI_HoveringID).Type
-                            CASE __UI_Type_RadioButton
-                                __UI_SetRadioButtonValue __UI_HoveringID
-                            CASE __UI_Type_CheckBox
-                                __UI_Controls(__UI_HoveringID).Value = NOT __UI_Controls(__UI_HoveringID).Value
-                            CASE __UI_Type_TextBox
-                                _FONT __UI_Fonts(__UI_Controls(__UI_HoveringID).Font)
-                                __UI_Controls(__UI_HoveringID).Cursor = ((__UI_MouseX - __UI_Controls(__UI_HoveringID).Left) / _FONTWIDTH) + (__UI_Controls(__UI_HoveringID).InputViewStart - 1)
-                                IF __UI_Controls(__UI_HoveringID).Cursor > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).Cursor = LEN(__UI_Texts(__UI_HoveringID))
-                                __UI_IsSelectingText = __UI_False
-                                __UI_IsSelectingTextOnID = 0
-                        END SELECT
-                        __UI_Click __UI_HoveringID
-                        __UI_LastMouseClick = TIMER
-                        __UI_MouseDownOnID = 0
-                    END IF
+            IF __UI_MouseDownOnID = __UI_HoveringID AND __UI_HoveringID > 0 THEN
+                IF __UI_Controls(__UI_HoveringID).Enabled THEN
+                    SELECT CASE __UI_Controls(__UI_HoveringID).Type
+                        CASE __UI_Type_RadioButton
+                            __UI_SetRadioButtonValue __UI_HoveringID
+                        CASE __UI_Type_CheckBox
+                            __UI_Controls(__UI_HoveringID).Value = NOT __UI_Controls(__UI_HoveringID).Value
+                        CASE __UI_Type_TextBox
+                            _FONT __UI_Fonts(__UI_Controls(__UI_HoveringID).Font)
+                            __UI_Controls(__UI_HoveringID).Cursor = ((__UI_MouseX - __UI_Controls(__UI_HoveringID).Left) / _FONTWIDTH) + (__UI_Controls(__UI_HoveringID).InputViewStart - 1)
+                            IF __UI_Controls(__UI_HoveringID).Cursor > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).Cursor = LEN(__UI_Texts(__UI_HoveringID))
+                            __UI_IsSelectingText = __UI_False
+                            __UI_IsSelectingTextOnID = 0
+                    END SELECT
+                    __UI_Click __UI_HoveringID
+                    __UI_LastMouseClick = TIMER
+                    __UI_MouseDownOnID = 0
                 END IF
             END IF
-            __UI_IsSelectingText = __UI_False
-            __UI_IsSelectingTextOnID = 0
             __UI_MouseIsDown = __UI_False
             __UI_MouseUp __UI_HoveringID
         END IF
@@ -1234,38 +1256,85 @@ SUB __UI_EventDispatcher
         ELSE
             SELECT CASE __UI_Controls(__UI_Focus).Type
                 CASE __UI_Type_Button, __UI_Type_RadioButton, __UI_Type_CheckBox
-                    'Emulate mouse down/click
-                    IF __UI_IsDragging = __UI_False AND _
-                        __UI_KeyHit = 32 AND _
-                        __UI_Controls(__UI_Focus).Enabled THEN
-                        'Space bar down on a button
-                        IF __UI_KeyIsDown = __UI_False AND __UI_KeyDownOnID = 0 THEN
-                            __UI_KeyDownOnID = __UI_Focus
-                            __UI_KeyIsDown = __UI_True
-                        END IF
-                    ELSEIF __UI_IsDragging = __UI_False AND _
-                        __UI_KeyHit = -32 AND _
-                        __UI_Controls(__UI_Focus).Enabled THEN
-                        'Space bar released and a button has focus
-                        IF __UI_KeyIsDown AND __UI_Focus = __UI_KeyDownOnID THEN
-                            IF __UI_Controls(__UI_KeyDownOnID).Type = __UI_Type_RadioButton THEN
-                                __UI_SetRadioButtonValue __UI_KeyDownOnID
-                            ELSEIF __UI_Controls(__UI_KeyDownOnID).Type = __UI_Type_CheckBox THEN
-                                __UI_Controls(__UI_KeyDownOnID).Value = NOT __UI_Controls(__UI_KeyDownOnID).Value
-                            END IF
-                            __UI_Click __UI_Focus
-                        END IF
-                        __UI_KeyDownOnID = 0
-                        __UI_KeyIsDown = __UI_False
-                    END IF
-                CASE __UI_Type_ListBox
                     SELECT CASE __UI_KeyHit
+                        CASE 32, -32
+                            'Emulate mouse down/click
+                            IF __UI_IsDragging = __UI_False AND _
+                                __UI_KeyHit = 32 AND _
+                                __UI_Controls(__UI_Focus).Enabled THEN
+                                'Space bar down on a button
+                                IF __UI_KeyIsDown = __UI_False AND __UI_KeyDownOnID = 0 THEN
+                                    __UI_KeyDownOnID = __UI_Focus
+                                    __UI_KeyIsDown = __UI_True
+                                END IF
+                            ELSEIF __UI_IsDragging = __UI_False AND _
+                                __UI_KeyHit = -32 AND _
+                                __UI_Controls(__UI_Focus).Enabled THEN
+                                'Space bar released and a button has focus
+                                IF __UI_KeyIsDown AND __UI_Focus = __UI_KeyDownOnID THEN
+                                    IF __UI_Controls(__UI_KeyDownOnID).Type = __UI_Type_RadioButton THEN
+                                        __UI_SetRadioButtonValue __UI_KeyDownOnID
+                                    ELSEIF __UI_Controls(__UI_KeyDownOnID).Type = __UI_Type_CheckBox THEN
+                                        __UI_Controls(__UI_KeyDownOnID).Value = NOT __UI_Controls(__UI_KeyDownOnID).Value
+                                    END IF
+                                    __UI_Click __UI_Focus
+                                END IF
+                                __UI_KeyDownOnID = 0
+                                __UI_KeyIsDown = __UI_False
+                            END IF
+                        CASE 18432, 20480 'Up, down
+                            IF __UI_Controls(__UI_Focus).Type = __UI_Type_RadioButton OR _
+                               __UI_Controls(__UI_Focus).Type = __UI_Type_CheckBox THEN
+                                __UI_FocusSearch = __UI_Focus
+                                DO
+                                    IF _KEYDOWN(100304) OR _KEYDOWN(100303) THEN
+                                        __UI_FocusSearch = (__UI_FocusSearch + UBOUND(__UI_Controls) - 2) MOD UBOUND(__UI_Controls) + 1
+                                    ELSE
+                                        __UI_FocusSearch = __UI_FocusSearch MOD UBOUND(__UI_Controls) + 1
+                                    END IF
+
+                                    IF __UI_FocusSearch = __UI_Focus THEN
+                                        'Full circle. No similar objects can have focus
+                                        EXIT DO
+                                    END IF
+
+                                    IF __UI_Controls(__UI_FocusSearch).CanHaveFocus AND _
+                                       __UI_Controls(__UI_FocusSearch).Enabled AND _
+                                       __UI_Controls(__UI_Focus).Type = __UI_Controls(__UI_FocusSearch).Type THEN
+                                        __UI_FocusOut __UI_Focus
+                                        __UI_Focus = __UI_FocusSearch
+                                        __UI_FocusIn __UI_Focus
+                                        IF __UI_Controls(__UI_FocusSearch).Type = __UI_Type_RadioButton THEN _
+                                            __UI_SetRadioButtonValue __UI_Focus
+                                        EXIT DO
+                                    END IF
+                                LOOP
+                            END IF
+                    END SELECT
+                CASE __UI_Type_ListBox
+                    DIM ThisItemTop%, CaptionIndent AS INTEGER
+                    _FONT __UI_Fonts(__UI_Controls(__UI_Focus).Font)
+                    SELECT EVERYCASE __UI_KeyHit
                         CASE 18432 'Up
-                            IF __UI_Controls(__UI_Focus).Value > 1 THEN _
-                                __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value - 1
+                            IF __UI_CtrlIsDown THEN
+                                __UI_Controls(__UI_Focus).InputViewStart = __UI_Controls(__UI_Focus).InputViewStart - 1
+                            ELSE
+                                IF __UI_Controls(__UI_Focus).Value > 1 THEN _
+                                    __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value - 1
+                            END IF
                         CASE 20480 'Down
-                            IF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).Max THEN _
-                                __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value + 1
+                            IF __UI_CtrlIsDown THEN
+                                __UI_Controls(__UI_Focus).InputViewStart = __UI_Controls(__UI_Focus).InputViewStart + 1
+                            ELSE
+                                IF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).Max THEN _
+                                    __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value + 1
+                            END IF
+                        CASE 18432, 20480 'Either up or down, let's adjust the view:
+                            IF __UI_Controls(__UI_Focus).Value - __UI_Controls(__UI_Focus).InputViewStart + 1 > __UI_Controls(__UI_Focus).LastVisibleItem THEN
+                                __UI_Controls(__UI_Focus).InputViewStart = __UI_Controls(__UI_Focus).InputViewStart + 1
+                            ELSEIF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).InputViewStart THEN
+                                __UI_Controls(__UI_Focus).InputViewStart = __UI_Controls(__UI_Focus).InputViewStart - 1
+                            END IF
                     END SELECT
                 CASE __UI_Type_TextBox
                     DIM Clip$, FindLF&
@@ -1710,6 +1779,6 @@ SUB __UI_AddListBoxItem (WhichListBox$, Item$)
     ThisID = __UI_GetID(WhichListBox$)
     IF __UI_Controls(ThisID).Type <> __UI_Type_ListBox THEN ERROR 5: EXIT SUB
 
-    __UI_Texts(ThisID) = __UI_Texts(ThisID) + CHR$(13) + Item$
+    __UI_Texts(ThisID) = __UI_Texts(ThisID) + Item$ + CHR$(13)
     __UI_Controls(ThisID).Max = __UI_Controls(ThisID).Max + 1
 END SUB
