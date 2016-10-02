@@ -911,6 +911,7 @@ SUB __UI_UpdateDisplay
                         IF __UI_Controls(i).Selected THEN
                             DIM s1 AS LONG, s2 AS LONG
                             DIM ss1 AS LONG, ss2 AS LONG
+
                             s1 = __UI_Controls(i).SelectionStart
                             s2 = __UI_Controls(i).Cursor
                             IF s1 > s2 THEN
@@ -928,7 +929,16 @@ SUB __UI_UpdateDisplay
                                 IF ss1 < __UI_Controls(i).InputViewStart THEN ss1 = 0: ss2 = s2 - __UI_Controls(i).InputViewStart + 1
                                 IF ss1 > __UI_Controls(i).InputViewStart THEN ss1 = ss1 - __UI_Controls(i).InputViewStart + 1: ss2 = s2 - s1
                             END IF
-                            __UI_SelectedText = MID$(__UI_Texts(i), s1 + 1, s2 - s1)
+
+                            DECLARE CUSTOMTYPE LIBRARY
+                                SUB __UI_MemCopy ALIAS memcpy (BYVAL dest AS _OFFSET, BYVAL source AS _OFFSET, BYVAL bytes AS LONG)
+                            END DECLARE
+
+                            '__UI_SelectedText = MID$(__UI_Texts(i), s1 + 1, s2 - s1)
+                            DIM SelectedLength AS LONG
+                            SelectedLength = s2 - s1
+                            __UI_SelectedText = SPACE$(SelectedLength)
+                            __UI_MemCopy _OFFSET(__UI_SelectedText), _OFFSET(__UI_Texts(i)) + s1, SelectedLength
 
                             LINE (ContainerOffsetLeft + __UI_Controls(i).Left + CaptionIndent + ss1 * _FONTWIDTH, ContainerOffsetTop + __UI_Controls(i).Top + ((__UI_Controls(i).Height \ 2) - _FONTHEIGHT \ 2))-STEP(ss2 * _FONTWIDTH, _FONTHEIGHT), _RGBA32(0, 0, 0, 50), BF
                         END IF
@@ -985,7 +995,7 @@ SUB __UI_UpdateDisplay
                                     IF ThisItemTop% + _FONTHEIGHT > __UI_Controls(i).Top + __UI_Controls(i).Height THEN EXIT DO
                                     LastVisibleItem = LastVisibleItem + 1
 
-                                    IF ThisItem% = __UI_Controls(i).Value THEN __UI_SelectedText = TempCaption$
+                                    IF ThisItem% = __UI_Controls(i).Value AND __UI_Focus = i THEN __UI_SelectedText = TempCaption$
                                     DO WHILE _PRINTWIDTH(TempCaption$) > __UI_Controls(i).Width - CaptionIndent * 2
                                         TempCaption$ = MID$(TempCaption$, 1, LEN(TempCaption$) - 1)
                                     LOOP
@@ -1190,7 +1200,13 @@ SUB __UI_EventDispatcher
         __UI_MouseEnter __UI_HoveringID
     END IF
 
-    IF __UI_Controls(__UI_HoveringID).CanDrag THEN _MOUSESHOW "link" ELSE _MOUSESHOW "default"
+    IF __UI_Controls(__UI_HoveringID).CanDrag THEN
+        _MOUSESHOW "link"
+    ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_TextBox THEN
+        _MOUSESHOW "text"
+    ELSE
+        _MOUSESHOW "default"
+    END IF
 
     'FocusIn, FocusOut
     IF __UI_KeyHit = 9 AND __UI_IsDragging = __UI_False THEN 'TAB
