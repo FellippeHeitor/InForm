@@ -29,6 +29,13 @@ TYPE __UI_ControlTYPE
     InputViewStart AS LONG
     LastVisibleItem AS INTEGER
     HasVScrollbar AS _BYTE
+    VScrollbarButton2Top AS INTEGER
+    VScrollbarButtonHeight AS INTEGER
+    VScrollbarWidth AS INTEGER
+    HoveringVScrollbarButton AS _BYTE
+    ThumbHeight AS INTEGER
+    ThumbTop AS INTEGER
+    VScrollbarRatio AS SINGLE
     Cursor AS LONG
     PrevCursor AS LONG
     FieldArea AS LONG
@@ -60,7 +67,7 @@ DIM SHARED __UI_MouseIsDown AS _BYTE, __UI_MouseDownOnID AS LONG
 DIM SHARED __UI_KeyIsDown AS _BYTE, __UI_KeyDownOnID AS LONG
 DIM SHARED __UI_ShiftIsDown AS _BYTE, __UI_CtrlIsDown AS _BYTE
 DIM SHARED __UI_AltIsDown AS _BYTE
-DIM SHARED __UI_LastMouseClick AS DOUBLE
+DIM SHARED __UI_LastMouseClick AS DOUBLE, __UI_MouseDownOnListBox AS DOUBLE
 DIM SHARED __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
 DIM SHARED __UI_DefaultButtonID AS LONG
 DIM SHARED __UI_KeyHit AS LONG
@@ -69,6 +76,8 @@ DIM SHARED __UI_HoveringID AS LONG
 DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
 DIM SHARED __UI_IsSelectingText AS _BYTE, __UI_IsSelectingTextOnID AS LONG
 DIM SHARED __UI_SelectedText AS STRING
+DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_InputViewStartAtGrab AS LONG
+DIM SHARED __UI_DraggingThumbOnID AS LONG
 DIM SHARED __UI_HasInput AS _BYTE
 DIM SHARED __UI_UnloadSignal AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
@@ -287,7 +296,7 @@ __UI_Controls(NewID).Enabled = __UI_True
 __UI_AddListBoxItem "ListBox1", "Type in the textbox"
 __UI_AddListBoxItem "ListBox1", "to add items here"
 DIM i AS INTEGER
-FOR i = 3 TO 9
+FOR i = 3 TO 120
     __UI_AddListBoxItem "ListBox1", "Item" + STR$(i)
 NEXT i
 __UI_Controls(NewID).Value = 1
@@ -365,12 +374,6 @@ SUB __UI_Load
     DO UNTIL _SCREENEXISTS: _LIMIT 10: LOOP
 
     FOR i = 1 TO UBOUND(__UI_Controls)
-        'IF __UI_Controls(i).ParentID THEN
-        '    IF __UI_Controls(i).Width + __UI_Controls(i).Left > __UI_Controls(__UI_Controls(i).ParentID).Width THEN
-        '        __UI_Controls(i).Width = __UI_Controls(__UI_Controls(i).ParentID).Width - __UI_Controls(i).Left
-        '    END IF
-        'END IF
-
         IF __UI_Controls(i).Type = __UI_Type_TextBox THEN
             IF _FONTWIDTH(__UI_Fonts(__UI_Controls(i).Font)) = 0 THEN __UI_Controls(i).Font = 0
             __UI_Controls(i).FieldArea = __UI_Controls(i).Width \ _FONTWIDTH(__UI_Fonts(__UI_Controls(i).Font))
@@ -437,8 +440,10 @@ SUB __UI_Click (id AS LONG)
             __UI_Controls(__UI_GetID("ProgressBar1")).Enabled = NOT __UI_Controls(__UI_GetID("ProgressBar1")).Enabled
             IF __UI_Controls(__UI_GetID("ProgressBar1")).Enabled THEN
                 __UI_SetCaption "StopBar", "Stop task"
+                __UI_SetCaption "Form1", "Doing my thing."
             ELSE
                 __UI_SetCaption "StopBar", "Continue task"
+                __UI_SetCaption "Form1", "Not doing my thing."
             END IF
         CASE "DRAGBUTTON"
             __UI_Controls(__UI_GetID("listbox1")).CanDrag = NOT __UI_Controls(__UI_GetID("listbox1")).CanDrag
@@ -615,7 +620,8 @@ END SUB
 'Internal procedures: ------------------------------------------------------------
 '---------------------------------------------------------------------------------
 SUB __UI_ProcessInput
-    DIM OldScreen&, OldFont&
+    DIM OldScreen&, OldFont&, i AS LONG
+    DIM ContainerOffsetTop AS INTEGER, ContainerOffsetLeft AS INTEGER
     STATIC __UI_CurrentTitle AS STRING
     STATIC __UI_CurrentResizeStatus AS _BYTE
 
@@ -641,10 +647,89 @@ SUB __UI_ProcessInput
         __UI_HasInput = __UI_True: __UI_PrevMouseX = __UI_MouseLeft
     IF __UI_PrevMouseY <> __UI_MouseTop THEN _
         __UI_HasInput = __UI_True: __UI_PrevMouseY = __UI_MouseTop
-    IF __UI_PrevMouseButton1 <> __UI_MouseButton1 THEN _
+    IF __UI_PrevMouseButton1 <> __UI_MouseButton1 THEN
         __UI_HasInput = __UI_True: __UI_PrevMouseButton1 = __UI_MouseButton1
+    ELSE
+        IF __UI_MouseIsDown THEN __UI_HasInput = __UI_True
+    END IF
     IF __UI_PrevMouseButton2 <> __UI_MouseButton2 THEN _
         __UI_HasInput = __UI_True: __UI_PrevMouseButton2 = __UI_MouseButton2
+
+    'Hover detection
+    FOR i = 1 TO UBOUND(__UI_Controls)
+        IF __UI_Controls(i).ID THEN
+            __UI_Controls(i).HoveringVScrollbarButton = 0
+            IF __UI_Controls(i).ParentID THEN
+                ContainerOffsetTop = __UI_Controls(__UI_Controls(i).ParentID).Top
+                ContainerOffsetLeft = __UI_Controls(__UI_Controls(i).ParentID).Left
+                'First make sure the mouse is inside the container:
+                IF __UI_MouseLeft >= ContainerOffsetLeft AND _
+                   __UI_MouseLeft <= ContainerOffsetLeft + __UI_Controls(__UI_Controls(i).ParentID).Width - 1 AND _
+                   __UI_MouseTop >= ContainerOffsetTop AND _
+                   __UI_MouseTop <= ContainerOffsetTop + __UI_Controls(__UI_Controls(i).ParentID).Height - 1 THEN
+                    'We're in. Now check for individual control:
+                    IF __UI_MouseLeft >= ContainerOffsetLeft + __UI_Controls(i).Left AND _
+                       __UI_MouseLeft <= ContainerOffsetLeft + __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND _
+                       __UI_MouseTop >= ContainerOffsetTop + __UI_Controls(i).Top AND _
+                       __UI_MouseTop <= ContainerOffsetTop + __UI_Controls(i).Top +  __UI_Controls(i).Height - 1 THEN
+                        __UI_HoveringID = i
+
+                        IF __UI_Controls(i).HasVScrollbar AND __UI_IsDragging = __UI_False THEN
+                            IF __UI_MouseLeft >= ContainerOffsetLeft + __UI_Controls(i).Left + __UI_Controls(i).Width - __UI_Controls(i).VScrollbarWidth THEN
+                                IF __UI_MouseTop <= __UI_Controls(i).Top + ContainerOffsetTop + __UI_Controls(i).VScrollbarButtonHeight AND _
+                                   __UI_DraggingThumb = __UI_False THEN
+                                    'Hovering "up" button
+                                    __UI_Controls(i).HoveringVScrollbarButton = 1
+                                ELSEIF __UI_MouseTop >= __UI_Controls(i).Top + ContainerOffsetTop + __UI_Controls(i).Height - __UI_Controls(i).VScrollbarButtonHeight AND _
+                                       __UI_DraggingThumb = __UI_False THEN
+                                    'Hovering "down" button
+                                    __UI_Controls(i).HoveringVScrollbarButton = 2
+                                ELSEIF __UI_MouseTop >= ContainerOffsetTop + __UI_Controls(i).ThumbTop AND _
+                                       __UI_MouseTop <= ContainerOffsetTop + __UI_Controls(i).ThumbTop + __UI_Controls(i).ThumbHeight THEN
+                                    'Hovering the thumb
+                                    __UI_Controls(i).HoveringVScrollbarButton = 3
+                                ELSE
+                                    'Hovering the track
+                                    __UI_Controls(i).HoveringVScrollbarButton = 4
+                                END IF
+                            END IF
+                        END IF
+                    END IF
+                END IF
+            ELSE
+                ContainerOffsetTop = 0
+                ContainerOffsetLeft = 0
+
+                IF __UI_MouseLeft >= __UI_Controls(i).Left AND _
+                   __UI_MouseLeft <= __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND _
+                   __UI_MouseTop >= __UI_Controls(i).Top AND _
+                   __UI_MouseTop <= __UI_Controls(i).Top +  __UI_Controls(i).Height - 1 THEN
+                    __UI_HoveringID = i
+
+                    IF __UI_Controls(i).HasVScrollbar AND __UI_IsDragging = __UI_False THEN
+                        IF __UI_MouseLeft >= ContainerOffsetLeft + __UI_Controls(i).Left + __UI_Controls(i).Width - __UI_Controls(i).VScrollbarWidth THEN
+                                IF __UI_MouseTop <= __UI_Controls(i).Top + ContainerOffsetTop + __UI_Controls(i).VScrollbarButtonHeight AND _
+                                   __UI_DraggingThumb = __UI_False THEN
+                                'Hovering "up" button
+                                __UI_Controls(i).HoveringVScrollbarButton = 1
+                                ELSEIF __UI_MouseTop >= __UI_Controls(i).Top + ContainerOffsetTop + __UI_Controls(i).Height - __UI_Controls(i).VScrollbarButtonHeight AND _
+                                       __UI_DraggingThumb = __UI_False THEN
+                                'Hovering "down" button
+                                __UI_Controls(i).HoveringVScrollbarButton = 2
+                                ELSEIF __UI_MouseTop >= ContainerOffsetTop + __UI_Controls(i).ThumbTop AND _
+                                       __UI_MouseTop <= ContainerOffsetTop + __UI_Controls(i).ThumbTop + __UI_Controls(i).ThumbHeight THEN
+                                'Hovering the thumb
+                                __UI_Controls(i).HoveringVScrollbarButton = 3
+                            ELSE
+                                'Hovering the track
+                                __UI_Controls(i).HoveringVScrollbarButton = 4
+                            END IF
+                        END IF
+                    END IF
+                END IF
+            END IF
+        END IF
+    NEXT
 
     'Keyboard input:
     __UI_KeyHit = _KEYHIT
@@ -727,36 +812,6 @@ SUB __UI_UpdateDisplay
         _DEST 0
         LINE (__UI_PreviewLeft, __UI_PreviewTop)-STEP(__UI_Controls(__UI_DraggingID).Width - 1, __UI_Controls(__UI_DraggingID).Height - 1), __UI_Darken(__UI_Controls(__UI_GetID("Form1")).BackColor, 80), B
     END IF
-
-    'Hover detection
-    FOR i = 1 TO UBOUND(__UI_Controls)
-        IF __UI_Controls(i).ID THEN
-            IF __UI_Controls(i).ParentID THEN
-                ContainerOffsetTop = __UI_Controls(__UI_Controls(i).ParentID).Top
-                ContainerOffsetLeft = __UI_Controls(__UI_Controls(i).ParentID).Left
-                'First make sure the mouse is inside the container:
-                IF __UI_MouseLeft >= ContainerOffsetLeft AND _
-                   __UI_MouseLeft <= ContainerOffsetLeft + __UI_Controls(__UI_Controls(i).ParentID).Width - 1 AND _
-                   __UI_MouseTop >= ContainerOffsetTop AND _
-                   __UI_MouseTop <= ContainerOffsetTop + __UI_Controls(__UI_Controls(i).ParentID).Height - 1 THEN
-                    'We're in. Now check for individual control:
-                    IF __UI_MouseLeft >= ContainerOffsetLeft + __UI_Controls(i).Left AND _
-                       __UI_MouseLeft <= ContainerOffsetLeft + __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND _
-                       __UI_MouseTop >= ContainerOffsetTop + __UI_Controls(i).Top AND _
-                       __UI_MouseTop <= ContainerOffsetTop + __UI_Controls(i).Top +  __UI_Controls(i).Height - 1 THEN
-                        __UI_HoveringID = i
-                    END IF
-                END IF
-            ELSE
-                IF __UI_MouseLeft >= __UI_Controls(i).Left AND _
-                   __UI_MouseLeft <= __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND _
-                   __UI_MouseTop >= __UI_Controls(i).Top AND _
-                   __UI_MouseTop <= __UI_Controls(i).Top +  __UI_Controls(i).Height - 1 THEN
-                    __UI_HoveringID = i
-                END IF
-            END IF
-        END IF
-    NEXT
 
     'Control drawing
     ContainerOffsetTop = 0
@@ -1196,6 +1251,7 @@ END SUB
 
 SUB __UI_EventDispatcher
     STATIC __UI_LastHoveringID AS LONG
+    STATIC __UI_ThumbDragY AS INTEGER
     DIM i AS LONG
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
 
@@ -1270,19 +1326,24 @@ SUB __UI_EventDispatcher
     END IF
 
     'MouseDown, MouseUp, BeginDrag
-    IF __UI_MouseButton2 THEN
-        IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_ListBox THEN
-            DIM ItemToRemove AS INTEGER
-            ItemToRemove = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
-            IF ItemToRemove <= __UI_Controls(__UI_HoveringID).Max THEN
-                __UI_RemoveListBoxItem __UI_Controls(__UI_HoveringID).Name, ItemToRemove
-            END IF
-        END IF
-    END IF
+    'IF __UI_MouseButton2 THEN
+    '    IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_ListBox THEN
+    '        DIM ItemToRemove AS INTEGER
+    '        ItemToRemove = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
+    '        IF ItemToRemove <= __UI_Controls(__UI_HoveringID).Max THEN
+    '            IF __UI_Controls(__UI_HoveringID).InputViewStart + __UI_Controls(__UI_HoveringID).LastVisibleItem > __UI_Controls(__UI_HoveringID).Max THEN __UI_Controls(__UI_HoveringID).InputViewStart = __UI_Controls(__UI_HoveringID).InputViewStart - 1
+    '            __UI_RemoveListBoxItem __UI_Controls(__UI_HoveringID).Name, ItemToRemove
+    '        END IF
+    '    END IF
+    'END IF
 
     IF __UI_MouseButton1 THEN
         IF __UI_MouseIsDown = __UI_False THEN
-            IF __UI_Controls(__UI_HoveringID).CanHaveFocus AND __UI_Controls(__UI_HoveringID).Enabled THEN __UI_Focus = __UI_HoveringID
+            IF __UI_Controls(__UI_HoveringID).CanHaveFocus AND __UI_Controls(__UI_HoveringID).Enabled THEN
+                IF __UI_Focus THEN __UI_FocusOut __UI_Focus
+                __UI_Focus = __UI_HoveringID
+                __UI_FocusIn __UI_Focus
+            END IF
             __UI_MouseIsDown = __UI_True
             __UI_MouseDownOnID = __UI_HoveringID
             IF __UI_Controls(__UI_HoveringID).CanDrag THEN
@@ -1306,6 +1367,17 @@ SUB __UI_EventDispatcher
                     __UI_IsSelectingText = __UI_True
                     __UI_IsSelectingTextOnID = __UI_HoveringID
                 END IF
+            ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_ListBox AND __UI_Controls(__UI_HoveringID).Enabled THEN
+                IF __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 1 OR __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 2 THEN
+                    __UI_MouseDownOnListBox = TIMER
+                ELSEIF __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 3 THEN
+                    IF NOT __UI_DraggingThumb THEN
+                        __UI_DraggingThumb = __UI_True
+                        __UI_ThumbDragY = __UI_MouseTop
+                        __UI_InputViewStartAtGrab = __UI_Controls(__UI_HoveringID).InputViewStart
+                        __UI_DraggingThumbOnID = __UI_HoveringID
+                    END IF
+                END IF
             END IF
             __UI_MouseDown __UI_HoveringID
         ELSE
@@ -1326,6 +1398,16 @@ SUB __UI_EventDispatcher
                         END IF
                     END IF
                 END IF
+
+                IF __UI_Controls(__UI_MouseDownOnID).HoveringVScrollbarButton = 1 AND TIMER - __UI_MouseDownOnListBox > .3 THEN
+                    'Mousedown on "up" button
+                    __UI_Controls(__UI_MouseDownOnID).InputViewStart = __UI_Controls(__UI_MouseDownOnID).InputViewStart - 1
+                ELSEIF __UI_Controls(__UI_MouseDownOnID).HoveringVScrollbarButton = 2 AND TIMER - __UI_MouseDownOnListBox > .3 THEN
+                    'Mousedown on "down" button
+                    IF __UI_Controls(__UI_MouseDownOnID).InputViewStart + __UI_Controls(__UI_MouseDownOnID).LastVisibleItem <= __UI_Controls(__UI_MouseDownOnID).Max THEN
+                        __UI_Controls(__UI_MouseDownOnID).InputViewStart = __UI_Controls(__UI_MouseDownOnID).InputViewStart + 1
+                    END IF
+                END IF
             END IF
         END IF
     ELSE
@@ -1342,6 +1424,10 @@ SUB __UI_EventDispatcher
                 __UI_Controls(__UI_DraggingID).Left = __UI_PreviewLeft
                 __UI_DraggingID = 0
             END IF
+            IF __UI_DraggingThumb THEN
+                __UI_DraggingThumb = __UI_False
+                __UI_DraggingThumbOnID = 0
+            END IF
 
             'Click
             IF __UI_MouseDownOnID = __UI_HoveringID AND __UI_HoveringID > 0 THEN
@@ -1357,16 +1443,17 @@ SUB __UI_EventDispatcher
                             IF __UI_Controls(__UI_HoveringID).Cursor > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).Cursor = LEN(__UI_Texts(__UI_HoveringID))
                         CASE __UI_Type_ListBox
                             IF __UI_Controls(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= __UI_Controls(__UI_HoveringID).Left + __UI_Controls(__UI_HoveringID).Width - 25 + ContainerOffsetLeft THEN
-                                _AUTODISPLAY
-                                _DEST 0
-                                CLS
-                                PRINT
-                                PRINT "has vscroll"
-                                PRINT "mouseleft"; __UI_MouseLeft
-                                PRINT "control left"; __UI_Controls(__UI_HoveringID).Left
-                                TIMER(__UI_RefreshTimer) OFF
-                                _DELAY 1
-                                TIMER(__UI_RefreshTimer) ON
+                                'Textbox has a vertical scrollbar and it's been clicked
+                                IF __UI_MouseTop >= __UI_Controls(__UI_HoveringID).Top + ContainerOffsetTop AND _
+                                   __UI_MouseTop <= __UI_Controls(__UI_HoveringID).Top + ContainerOffsetTop + __UI_Controls(__UI_HoveringID).VScrollbarButtonHeight THEN
+                                    'Click on "up" button
+                                    __UI_Controls(__UI_HoveringID).InputViewStart = __UI_Controls(__UI_HoveringID).InputViewStart - 1
+                                ELSEIF __UI_MouseTop >= __UI_Controls(__UI_HoveringID).VScrollbarButton2Top + ContainerOffsetTop THEN
+                                    'Click on "down" button
+                                    IF __UI_Controls(__UI_HoveringID).InputViewStart + __UI_Controls(__UI_HoveringID).LastVisibleItem <= __UI_Controls(__UI_HoveringID).Max THEN
+                                        __UI_Controls(__UI_HoveringID).InputViewStart = __UI_Controls(__UI_HoveringID).InputViewStart + 1
+                                    END IF
+                                END IF
                             ELSE
                                 DIM ThisItem%
                                 ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
@@ -1428,6 +1515,22 @@ SUB __UI_EventDispatcher
         IF __UI_Controls(__UI_DraggingID).ParentID THEN
             __UI_PreviewTop = __UI_PreviewTop + __UI_Controls(__UI_Controls(__UI_DraggingID).ParentID).Top
             __UI_PreviewLeft = __UI_PreviewLeft + __UI_Controls(__UI_Controls(__UI_DraggingID).ParentID).Left
+        END IF
+    END IF
+    IF __UI_DraggingThumb = __UI_True THEN
+        __UI_Controls(__UI_DraggingThumbOnID).ThumbTop = __UI_Controls(__UI_DraggingThumbOnID).ThumbTop + (__UI_MouseTop - __UI_ThumbDragY)
+        IF __UI_Controls(__UI_DraggingThumbOnID).ThumbTop < __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_DraggingThumbOnID).VScrollbarButtonHeight THEN
+            __UI_Controls(__UI_DraggingThumbOnID).ThumbTop = __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_DraggingThumbOnID).VScrollbarButtonHeight
+        ELSEIF __UI_Controls(__UI_DraggingThumbOnID).ThumbTop + __UI_Controls(__UI_DraggingThumbOnID).ThumbHeight > __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_DraggingThumbOnID).Height - __UI_Controls(__UI_DraggingThumbOnID).VScrollbarButtonHeight THEN
+            __UI_Controls(__UI_DraggingThumbOnID).ThumbTop = __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_MouseDownOnID).Height - __UI_Controls(__UI_DraggingThumbOnID).VScrollbarButtonHeight - __UI_Controls(__UI_DraggingThumbOnID).ThumbHeight
+        END IF
+
+        STATIC LastThumbDragRefresh AS DOUBLE
+        IF TIMER - LastThumbDragRefresh > .2 THEN
+            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_InputViewStartAtGrab + ((__UI_MouseTop - __UI_ThumbDragY) / __UI_Controls(__UI_DraggingThumbOnID).VScrollbarRatio)
+        IF __UI_Controls(__UI_DraggingThumbOnID).InputViewStart + __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem > __UI_Controls(__UI_DraggingThumbOnID).Max THEN _
+            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).Max - __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem
+            LastThumbDragRefresh = TIMER
         END IF
     END IF
 
@@ -2096,13 +2199,25 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE)
     END IF
 
     'Draw buttons
+    IF This.HoveringVScrollbarButton = 1 THEN
+        LINE (This.Left, _
+              This.Top)-_
+              STEP(This.Width - 1, _
+              _FONTHEIGHT + CaptionIndent * 2), __UI_Darken(This.BackColor, 80), BF
+    END IF
     LINE (This.Left, _
           This.Top)-_
           STEP(This.Width - 1, _
           _FONTHEIGHT + CaptionIndent * 2), This.BorderColor, B
 
+    IF This.HoveringVScrollbarButton = 2 THEN
+        LINE (This.Left, _
+              This.Top + This.Height - _FONTHEIGHT - CaptionIndent * 2 - 1)-_
+              STEP(This.Width - 1, _
+              _FONTHEIGHT + CaptionIndent * 2), __UI_Darken(This.BackColor, 80), BF
+    END IF
     LINE (This.Left, _
-          This.Top + This.Height - _FONTHEIGHT - CaptionIndent * 2)-_
+          This.Top + This.Height - _FONTHEIGHT - CaptionIndent * 2 - 1)-_
           STEP(This.Width - 1, _
           _FONTHEIGHT + CaptionIndent * 2), This.BorderColor, B
 
@@ -2113,15 +2228,35 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE)
     _PRINTSTRING (This.Left + This.Width \ 2 - _PRINTWIDTH(CHR$(24)) \ 2, This.Top + This.Height - _FONTHEIGHT - CaptionIndent), CHR$(25)
 
     'Draw thumb
-    TrackHeight = This.Height - ButtonsHeight - CaptionIndent
+    TrackHeight = This.Height - ButtonsHeight - CaptionIndent - 1
     Ratio = (This.Max) / TrackHeight
     ThumbHeight = TrackHeight - This.Height * Ratio
     IF ThumbHeight < 20 THEN ThumbHeight = 20
     IF ThumbHeight > TrackHeight THEN ThumbHeight = TrackHeight
-    ThumbTop = This.Top + (TrackHeight - ThumbHeight) * (This.Value / This.Max)
-    LINE (This.Left + CaptionIndent / 2, _
-          ThumbTop + ButtonsHeight / 2 + CaptionIndent / 2)-_
-          STEP(This.Width - CaptionIndent - 1, _
-          ThumbHeight), This.ForeColor, BF
+    IF __UI_DraggingThumb THEN
+        ThumbTop = TempThis.ThumbTop - (ButtonsHeight / 2 + CaptionIndent / 2)
+    ELSE
+        ThumbTop = This.Top + (TrackHeight - ThumbHeight) * (This.Value / This.Max)
+        TempThis.ThumbTop = ThumbTop + ButtonsHeight / 2 + CaptionIndent / 2
+    END IF
+
+    IF This.HoveringVScrollbarButton = 3 THEN
+        LINE (This.Left + CaptionIndent / 2, _
+              ThumbTop + ButtonsHeight / 2 + CaptionIndent / 2)-_
+              STEP(This.Width - CaptionIndent - 1, _
+              ThumbHeight), __UI_Darken(This.ForeColor, 80), BF
+    ELSE
+        LINE (This.Left + CaptionIndent / 2, _
+              ThumbTop + ButtonsHeight / 2 + CaptionIndent / 2)-_
+              STEP(This.Width - CaptionIndent - 1, _
+              ThumbHeight), This.ForeColor, BF
+    END IF
+
+    'Pass scrollbar parameters back to caller ID
+    TempThis.VScrollbarButton2Top = This.Top + This.Height - _FONTHEIGHT - CaptionIndent * 2 - 1
+    TempThis.VScrollbarButtonHeight = _FONTHEIGHT + CaptionIndent * 2
+    TempThis.VScrollbarWidth = 25
+    TempThis.ThumbHeight = ThumbHeight
+    TempThis.VScrollbarRatio = Ratio
 END SUB
 
