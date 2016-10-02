@@ -1,5 +1,9 @@
 OPTION _EXPLICIT
 
+DECLARE LIBRARY
+    SUB glutSetCursor (BYVAL style&)
+END DECLARE
+
 $RESIZE:ON
 
 TYPE ObjectTYPE
@@ -20,6 +24,7 @@ TYPE ObjectTYPE
     Min AS _FLOAT
     Max AS _FLOAT
     Resizable AS _BYTE
+    CanDrag AS _BYTE
     Enabled AS _BYTE
 END TYPE
 
@@ -28,7 +33,9 @@ REDIM SHARED __UI_Texts(1 TO 100) AS STRING
 REDIM SHARED __UI_Objects(1 TO 100) AS ObjectTYPE
 
 DIM SHARED __UI_MouseX AS INTEGER, __UI_MouseY AS INTEGER
+DIM SHARED __UI_PrevMouseX AS INTEGER, __UI_PrevMouseY AS INTEGER
 DIM SHARED __UI_MouseButton1 AS _BYTE, __UI_MouseButton2 AS _BYTE
+DIM SHARED __UI_PrevMouseButton1 AS _BYTE, __UI_MouseButton2 AS _BYTE
 DIM SHARED __UI_KeyHit AS LONG
 DIM SHARED __UI_Focus AS LONG
 DIM SHARED __UI_HoveringID AS LONG
@@ -105,6 +112,7 @@ __UI_Objects(NewID).Width = 200
 __UI_Objects(NewID).Height = 20
 __UI_Objects(NewID).ForeColor = _RGB32(0, 0, 0)
 __UI_Objects(NewID).BackColor = _RGB32(161, 161, 161)
+__UI_Objects(NewID).CanDrag = __UI_True
 __UI_Objects(NewID).Enabled = __UI_True
 __UI_SetCaption "Label2", "Resizable: OFF"
 
@@ -164,7 +172,6 @@ SUB __UI_MouseEnter (id AS LONG)
 
         CASE "LABEL1"
             IF __UI_Objects(__UI_GetID("Label1")).Enabled THEN
-                __UI_Objects(__UI_GetID("Label1")).ForeColor = _RGB32(255, 255, 255)
                 __UI_Objects(__UI_GetID("Label1")).BackColor = _RGB32(127, 172, 127)
             END IF
     END SELECT
@@ -178,7 +185,6 @@ SUB __UI_MouseLeave (id AS LONG)
 
         CASE "LABEL1"
             IF __UI_Objects(__UI_GetID("Label1")).Enabled THEN
-                __UI_Objects(__UI_GetID("Label1")).ForeColor = _RGB32(0, 0, 0)
                 __UI_Objects(__UI_GetID("Label1")).BackColor = _RGB32(33, 100, 78)
             END IF
     END SELECT
@@ -233,30 +239,36 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_ProcessInput
     DIM OldScreen&, OldFont&
+    DIM __UI_HasInput AS _BYTE
 
-    'Mouse input:
-    WHILE _MOUSEINPUT
-    WEND
+    DO
+        'Mouse input:
+        WHILE _MOUSEINPUT
+        WEND
 
-    __UI_MouseX = _MOUSEX
-    __UI_MouseY = _MOUSEY
-    __UI_MouseButton1 = _MOUSEBUTTON(1)
-    __UI_MouseButton2 = _MOUSEBUTTON(2)
+        __UI_MouseX = _MOUSEX
+        __UI_MouseY = _MOUSEY
+        __UI_MouseButton1 = _MOUSEBUTTON(1)
+        __UI_MouseButton2 = _MOUSEBUTTON(2)
 
-    'Keyboard input:
-    __UI_KeyHit = _KEYHIT
+if __UI_mousex<>__UI_
 
-    'Resize event:
-    IF _RESIZE AND __UI_Objects(__UI_GetID("Form1")).Resizable THEN
-        __UI_Objects(__UI_GetID("Form1")).Width = _RESIZEWIDTH
-        __UI_Objects(__UI_GetID("Form1")).Height = _RESIZEHEIGHT
-        OldScreen& = _DEST
-        OldFont& = _FONT
-        SCREEN _NEWIMAGE(__UI_Objects(__UI_GetID("Form1")).Width, __UI_Objects(__UI_GetID("Form1")).Height, 32)
-        _FONT OldFont&
-        _FREEIMAGE OldScreen&
-        __UI_HasResized = __UI_True
-    END IF
+        'Keyboard input:
+        __UI_KeyHit = _KEYHIT
+
+        'Resize event:
+        IF _RESIZE AND __UI_Objects(__UI_GetID("Form1")).Resizable THEN
+            __UI_Objects(__UI_GetID("Form1")).Width = _RESIZEWIDTH
+            __UI_Objects(__UI_GetID("Form1")).Height = _RESIZEHEIGHT
+            OldScreen& = _DEST
+            OldFont& = _FONT
+            SCREEN _NEWIMAGE(__UI_Objects(__UI_GetID("Form1")).Width, __UI_Objects(__UI_GetID("Form1")).Height, 32)
+            _FONT OldFont&
+            _FREEIMAGE OldScreen&
+            __UI_HasResized = __UI_True
+        END IF
+        _LIMIT 30
+    LOOP UNTIL __UI_HasInput
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -300,6 +312,15 @@ SUB __UI_UpdateDisplay
             END IF
         END IF
     NEXT
+
+    'Mouse cursor
+    IF __UI_HoveringID THEN
+        IF __UI_Objects(__UI_HoveringID).CanDrag THEN
+            glutSetCursor 5
+        ELSE
+            glutSetCursor 0
+        END IF
+    END IF
 
     FOR i = 1 TO UBOUND(__UI_Objects)
         IF __UI_Objects(i).ID THEN
@@ -358,10 +379,10 @@ END SUB
 
 SUB __UI_EventDispatcher
     STATIC __UI_MouseIsDown AS _BYTE, __UI_MouseDownOnID AS LONG
-    STATIC __UI_MouseIsUp AS _BYTE, __UI_MouseUpOnID AS LONG
-    STATIC __UI_LastMouseUp AS DOUBLE, __UI_LastMouseDown AS DOUBLE
     STATIC __UI_LastMouseClick AS DOUBLE
     STATIC __UI_LastHoveringID AS LONG
+    STATIC __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
+    STATIC __UI_IsDragging AS _BYTE
 
     IF __UI_HoveringID = 0 THEN EXIT SUB
 
@@ -371,15 +392,19 @@ SUB __UI_EventDispatcher
     END IF
 
     IF __UI_MouseButton1 THEN
-        IF __UI_MouseIsUp THEN
-            __UI_MouseIsUp = __UI_False
+        IF __UI_MouseIsDown = __UI_False THEN
             __UI_MouseIsDown = __UI_True
             __UI_MouseDownOnID = __UI_HoveringID
+            IF __UI_Objects(__UI_HoveringID).CanDrag THEN
+                IF __UI_IsDragging = __UI_False THEN
+                    __UI_IsDragging = -1
+                    __UI_DragY = __UI_MouseY
+                    __UI_DragX = __UI_MouseX
+                END IF
+            END IF
             __UI_MouseDown __UI_HoveringID
-            __UI_LastMouseDown = TIMER
         ELSE
             __UI_MouseIsDown = __UI_True
-            __UI_MouseIsUp = __UI_False
             IF __UI_MouseDownOnID <> __UI_HoveringID AND __UI_MouseDownOnID > 0 THEN
                 __UI_MouseUp __UI_MouseDownOnID
             ELSEIF __UI_MouseDownOnID = __UI_HoveringID THEN
@@ -388,26 +413,25 @@ SUB __UI_EventDispatcher
         END IF
     ELSE
         IF __UI_MouseIsDown THEN
+            __UI_IsDragging = 0
             __UI_MouseIsDown = __UI_False
-            __UI_MouseIsUp = __UI_True
-            __UI_MouseUpOnID = __UI_HoveringID
             __UI_MouseUp __UI_HoveringID
-            __UI_LastMouseUp = TIMER
-        ELSE
-            __UI_MouseIsUp = __UI_True
-            __UI_MouseIsDown = __UI_False
         END IF
     END IF
 
-    IF __UI_MouseIsUp AND TIMER - __UI_LastMouseClick > .2 THEN
-        IF __UI_MouseDownOnID = __UI_MouseUpOnID AND __UI_MouseUpOnID > 0 THEN
-            IF __UI_Objects(__UI_MouseUpOnID).Enabled THEN
-                __UI_Click __UI_MouseUpOnID
+    IF __UI_MouseIsDown = __UI_False AND TIMER - __UI_LastMouseClick > .2 THEN
+        IF __UI_MouseDownOnID = __UI_HoveringID AND __UI_HoveringID > 0 THEN
+            IF __UI_Objects(__UI_HoveringID).Enabled THEN
+                __UI_Click __UI_HoveringID
                 __UI_LastMouseClick = TIMER
                 __UI_MouseDownOnID = 0
-                __UI_MouseUpOnID = 0
             END IF
         END IF
+    END IF
+
+    IF __UI_IsDragging THEN
+        __UI_Objects(__UI_MouseDownOnID).Top = __UI_Objects(__UI_MouseDownOnID).Top + (__UI_MouseY - __UI_DragY)
+        __UI_Objects(__UI_MouseDownOnID).Left = __UI_Objects(__UI_MouseDownOnID).Left + (__UI_MouseX - __UI_DragX)
     END IF
 
     __UI_LastHoveringID = __UI_HoveringID
@@ -556,6 +580,11 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 FUNCTION __UI_Enabled%% (Object$)
     __UI_Enabled%% = __UI_Objects(__UI_GetID(Object$)).Enabled
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_CanDrag%% (Object$)
+    __UI_CanDrag%% = __UI_Objects(__UI_GetID(Object$)).CanDrag
 END FUNCTION
 
 '---------------------------------------------------------------------------------
