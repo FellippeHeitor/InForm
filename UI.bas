@@ -3,7 +3,7 @@ OPTION _EXPLICIT
 $RESIZE:ON
 _RESIZE OFF
 
-TYPE ObjectTYPE
+TYPE __UI_ControlTYPE
     ID AS LONG
     ParentID AS LONG
     Type AS INTEGER
@@ -43,7 +43,7 @@ END TYPE
 
 REDIM SHARED __UI_Captions(1 TO 100) AS STRING
 REDIM SHARED __UI_Texts(1 TO 100) AS STRING
-REDIM SHARED __UI_Controls(0 TO 100) AS ObjectTYPE
+REDIM SHARED __UI_Controls(0 TO 100) AS __UI_ControlTYPE
 
 DIM SHARED __UI_Fonts(2) AS LONG
 __UI_Fonts(0) = 16
@@ -287,7 +287,7 @@ __UI_Controls(NewID).Enabled = __UI_True
 __UI_AddListBoxItem "ListBox1", "Type in the textbox"
 __UI_AddListBoxItem "ListBox1", "to add items here"
 DIM i AS INTEGER
-FOR i = 3 TO 7
+FOR i = 3 TO 9
     __UI_AddListBoxItem "ListBox1", "Item" + STR$(i)
 NEXT i
 __UI_Controls(NewID).Value = 1
@@ -424,13 +424,13 @@ SUB __UI_Click (id AS LONG)
         CASE "BUTTON2"
             IF __UI_Controls(__UI_GetID("listbox1")).ParentID THEN
                 __UI_Controls(__UI_GetID("listbox1")).ParentID = 0
+                __UI_Controls(__UI_GetID("listbox1")).Left = __UI_Controls(__UI_GetID("listbox1")).Left + __UI_Controls(__UI_GetID("Frame1")).Left
+                __UI_Controls(__UI_GetID("listbox1")).Top = __UI_Controls(__UI_GetID("listbox1")).Top + __UI_Controls(__UI_GetID("Frame1")).Top
                 __UI_Captions(__UI_GetID("Button2")) = "Move ListBox into frame"
             ELSE
                 __UI_Controls(__UI_GetID("listbox1")).ParentID = __UI_GetID("Frame1")
-                IF __UI_Controls(__UI_GetID("listbox1")).Left > __UI_Controls(__UI_GetID("Frame1")).Width THEN _
-                    __UI_Controls(__UI_GetID("listbox1")).Left = 0
-                IF __UI_Controls(__UI_GetID("listbox1")).Top > __UI_Controls(__UI_GetID("Frame1")).Height THEN _
-                    __UI_Controls(__UI_GetID("listbox1")).Top = 0
+                __UI_Controls(__UI_GetID("listbox1")).Left = __UI_Controls(__UI_GetID("listbox1")).Left - __UI_Controls(__UI_GetID("Frame1")).Left
+                __UI_Controls(__UI_GetID("listbox1")).Top = __UI_Controls(__UI_GetID("listbox1")).Top - __UI_Controls(__UI_GetID("Frame1")).Top
                 __UI_Captions(__UI_GetID("Button2")) = "Move ListBox out of frame"
             END IF
         CASE "STOPBAR"
@@ -1075,7 +1075,7 @@ SUB __UI_UpdateDisplay
 
                 IF NoMoreChildren THEN
                     _DEST 0
-                    TempCaption$ = __UI_ClipText(__UI_Captions(ThisParent), __UI_Controls(ThisParent).Width)
+                    TempCaption$ = __UI_ClipText(" " + __UI_Captions(ThisParent) + " ", __UI_Controls(ThisParent).Width)
 
                     _FONT __UI_Fonts(__UI_Controls(ThisParent).Font)
 
@@ -1270,6 +1270,16 @@ SUB __UI_EventDispatcher
     END IF
 
     'MouseDown, MouseUp, BeginDrag
+    IF __UI_MouseButton2 THEN
+        IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_ListBox THEN
+            DIM ItemToRemove AS INTEGER
+            ItemToRemove = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
+            IF ItemToRemove <= __UI_Controls(__UI_HoveringID).Max THEN
+                __UI_RemoveListBoxItem __UI_Controls(__UI_HoveringID).Name, ItemToRemove
+            END IF
+        END IF
+    END IF
+
     IF __UI_MouseButton1 THEN
         IF __UI_MouseIsDown = __UI_False THEN
             IF __UI_Controls(__UI_HoveringID).CanHaveFocus AND __UI_Controls(__UI_HoveringID).Enabled THEN __UI_Focus = __UI_HoveringID
@@ -1358,7 +1368,13 @@ SUB __UI_EventDispatcher
                                 _DELAY 1
                                 TIMER(__UI_RefreshTimer) ON
                             ELSE
-                                __UI_Controls(__UI_HoveringID).Value = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
+                                DIM ThisItem%
+                                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
+                                IF ThisItem% >= __UI_Controls(__UI_HoveringID).Min AND ThisItem% <= __UI_Controls(__UI_HoveringID).Max THEN
+                                    __UI_Controls(__UI_HoveringID).Value = ThisItem%
+                                ELSE
+                                    __UI_Controls(__UI_HoveringID).Value = 0
+                                END IF
                             END IF
                     END SELECT
                     __UI_Click __UI_HoveringID
@@ -1654,7 +1670,7 @@ FUNCTION __UI_GetID (ObjectName$)
     DIM i AS LONG
 
     FOR i = 1 TO UBOUND(__UI_Controls)
-        IF __UI_Controls(i).ID > 0 AND UCASE$(RTRIM$(__UI_Controls(i).Name)) = UCASE$(ObjectName$) THEN
+        IF __UI_Controls(i).ID > 0 AND UCASE$(RTRIM$(__UI_Controls(i).Name)) = UCASE$(RTRIM$(ObjectName$)) THEN
             __UI_GetID = i
             EXIT FUNCTION
         END IF
@@ -1686,7 +1702,7 @@ FUNCTION __UI_NewObject (ObjType AS INTEGER, ObjName AS STRING, NewWidth AS INTE
 
     IF NextSlot > UBOUND(__UI_Controls) THEN
         'No empty slots. We must increase __UI_Controls() and its helper arrays
-        REDIM _PRESERVE __UI_Controls(0 TO NextSlot + 99) AS ObjectTYPE
+        REDIM _PRESERVE __UI_Controls(0 TO NextSlot + 99) AS __UI_ControlTYPE
         REDIM _PRESERVE __UI_Captions(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_Texts(1 TO NextSlot + 99) AS STRING
     END IF
@@ -1706,7 +1722,7 @@ FUNCTION __UI_NewObject (ObjType AS INTEGER, ObjName AS STRING, NewWidth AS INTE
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-'SUB __UI_DestroyObject (__UI_EmptyObject AS ObjectTYPE)
+'SUB __UI_DestroyObject (__UI_EmptyObject AS __UI_ControlTYPE)
 '    __UI_EmptyObject.ID = 0
 '    __UI_EmptyObject.ParentID = 0
 '    __UI_EmptyObject.Type = 0
@@ -1912,7 +1928,7 @@ SUB __UI_CursorAdjustments
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_DrawProgressBar (This AS ObjectTYPE)
+SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE)
     DIM DisplayValue AS _FLOAT
 
     IF This.Value > This.Max THEN ERROR 5
@@ -1983,6 +1999,44 @@ SUB __UI_AddListBoxItem (WhichListBox$, Item$)
 END SUB
 
 '---------------------------------------------------------------------------------
+SUB __UI_RemoveListBoxItem (WhichListBox$, ItemToRemove AS INTEGER)
+    DIM This AS __UI_ControlTYPE, TempText$, ThisItem%, FindLF&, Tempcaption$
+
+    This = __UI_Controls(__UI_GetID(WhichListBox$))
+    IF This.Type <> __UI_Type_ListBox THEN ERROR 5: EXIT SUB
+
+    IF ItemToRemove > This.Max THEN ERROR 5: EXIT SUB
+
+    TempText$ = __UI_Texts(This.ID)
+    __UI_Texts(This.ID) = ""
+
+    ThisItem% = 0
+    DO WHILE LEN(TempText$)
+        ThisItem% = ThisItem% + 1
+        FindLF& = INSTR(TempText$, CHR$(13))
+        IF FindLF& THEN
+            Tempcaption$ = LEFT$(TempText$, FindLF& - 1)
+            TempText$ = MID$(TempText$, FindLF& + 1)
+        ELSE
+            Tempcaption$ = TempText$
+            TempText$ = ""
+        END IF
+
+        IF ThisItem% <> ItemToRemove THEN __UI_Texts(This.ID) = __UI_Texts(This.ID) + Tempcaption$ + CHR$(13)
+    LOOP
+
+    This.Max = This.Max - 1
+    This.LastVisibleItem = 0 'Reset this var so it'll be recalculated
+    IF This.Value = ItemToRemove THEN
+        This.Value = 0
+    ELSEIF This.Value > ItemToRemove THEN
+        This.Value = This.Value - 1
+    END IF
+
+    __UI_Controls(This.ID) = This
+END SUB
+
+'---------------------------------------------------------------------------------
 FUNCTION __UI_ClipText$ (Text AS STRING, Width AS INTEGER)
     DIM ClipTextLen, Temp$
     IF _PRINTWIDTH(Text) > Width THEN
@@ -2005,11 +2059,11 @@ FUNCTION __UI_ClipText$ (Text AS STRING, Width AS INTEGER)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-SUB __UI_DrawVScrollBar (TempThis AS ObjectTYPE)
+SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE)
     DIM CaptionIndent AS INTEGER
     DIM TrackHeight AS INTEGER, ThumbHeight AS INTEGER, ThumbTop AS INTEGER
     DIM Ratio AS SINGLE, ButtonsHeight AS INTEGER
-    DIM This AS ObjectTYPE
+    DIM This AS __UI_ControlTYPE
 
     This = TempThis
 
