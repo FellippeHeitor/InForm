@@ -2550,18 +2550,19 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             _FREEIMAGE This.Canvas
         END IF
 
-        This.Canvas = _NEWIMAGE(This.Width + 2, This.Height + 2, 32)
+        This.Canvas = _NEWIMAGE(This.Width, This.Height, 32)
 
         PrevDest = _DEST
         _DEST This.Canvas
         _FONT __UI_Fonts(This.Font)
-        CLS , _RGBA32(0, 0, 0, 0)
 
         '------
         IF This.BackStyle = __UI_Opaque THEN
             _PRINTMODE _FILLBACKGROUND
+            CLS , This.BackColor
         ELSE
             _PRINTMODE _KEEPBACKGROUND
+            CLS , _RGBA32(0, 0, 0, 0)
         END IF
 
         TempCaption$ = __UI_ClipText(__UI_Captions(This.ID), This.Width - CaptionIndent * 2)
