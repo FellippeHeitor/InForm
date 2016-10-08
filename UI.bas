@@ -75,7 +75,6 @@ REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
 REDIM SHARED __UI_Texts(1 TO 100) AS STRING
 REDIM SHARED __UI_TempTexts(1 TO 100) AS STRING
 REDIM SHARED __UI_Controls(0 TO 100) AS __UI_ControlTYPE
-REDIM SHARED __UI_MenubarItems(0) AS __UI_ControlTYPE
 
 DIM SHARED __UI_Fonts(2) AS LONG
 __UI_Fonts(0) = 16
@@ -100,7 +99,7 @@ DIM SHARED __UI_HoveringID AS LONG
 DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
 DIM SHARED __UI_IsSelectingText AS _BYTE, __UI_IsSelectingTextOnID AS LONG
 DIM SHARED __UI_SelectedText AS STRING, __UI_SelectionLength AS LONG
-DIM SHARED __UI_DraggingThumb AS _BYTE
+DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_ThumbDragTop AS INTEGER
 DIM SHARED __UI_DraggingThumbOnID AS LONG
 DIM SHARED __UI_HasInput AS _BYTE, __UI_LastInputReceived AS DOUBLE
 DIM SHARED __UI_UnloadSignal AS _BYTE
@@ -108,7 +107,7 @@ DIM SHARED __UI_ExitTriggered AS _BYTE
 DIM SHARED __UI_Loaded AS _BYTE
 DIM SHARED __UI_RefreshTimer AS INTEGER
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
-DIM SHARED __UI_FormID AS LONG, __UI_MenuBarID AS LONG
+DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
 DIM SHARED __UI_ScrollbarWidth AS INTEGER
 DIM SHARED __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE
@@ -180,8 +179,19 @@ NewID = __UI_NewControl(__UI_Type_Form, "Form1", 640, 400, 0)
 __UI_Controls(__UI_FormID).Font = 2
 __UI_SetCaption "Form1", "Hello, world!"
 
-NewID = __UI_NewControl(__UI_Type_MenuBar, "MenuBar1", 0, 0, 0)
-__UI_SetText "MenuBar1", "&File\&Edit\&View\\&Help"
+NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 0, 0, 0)
+__UI_SetCaption "FileMenu", "&File"
+
+NewID = __UI_NewControl(__UI_Type_MenuBar, "EditMenu", 0, 0, 0)
+__UI_SetCaption "EditMenu", "&Edit"
+
+NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 0, 0, 0)
+__UI_SetCaption "ViewMenu", "&View"
+__UI_Controls(NewID).Disabled = __UI_True
+
+NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 0, 0, 0)
+__UI_Controls(NewID).Align = __UI_Right
+__UI_SetCaption "HelpMenu", "&Help"
 
 NewID = __UI_NewControl(__UI_Type_Button, "Button1", 0, 0, 0)
 __UI_Controls(NewID).Top = 100
@@ -304,7 +314,7 @@ NewID = __UI_NewControl(__UI_Type_DropdownList, "ListBox1", 0, 0, __UI_GetID("Fr
 __UI_Controls(NewID).Top = 110
 __UI_Controls(NewID).Left = 15
 __UI_Controls(NewID).Width = 200
-__UI_Controls(NewID).Height = 25
+__UI_Controls(NewID).Height = 23
 __UI_Controls(NewID).CanHaveFocus = __UI_True
 __UI_AddListBoxItem "ListBox1", "Type in the textbox"
 __UI_AddListBoxItem "ListBox1", "to add items here"
@@ -359,6 +369,10 @@ SUB __UI_Load
     _DEST __UI_Controls(__UI_FormID).Canvas
     COLOR __UI_Controls(__UI_FormID).ForeColor, __UI_Controls(__UI_FormID).BackColor
     CLS
+    IF __UI_HasMenuBar THEN
+        LINE (0, _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_FormID).Font)) * 1.5)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+        LINE (0, _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_FormID).Font)) * 1.5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
+    END IF
     _DEST 0
     __UI_MakeHardwareImageFromCanvas __UI_Controls(__UI_FormID)
 
@@ -773,18 +787,8 @@ SUB __UI_ProcessInput
             END IF
         NEXT
         __UI_HoveringID = TempHover
-
-        IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
-            'Detect which menu item is being hovered
-            DIM CheckMenu AS INTEGER
-            _FONT __UI_Fonts(__UI_Controls(__UI_HoveringID).Font)
-            FOR CheckMenu = 1 TO UBOUND(__UI_MenuBarItems)
-                IF __UI_MouseLeft >= __UI_MenubarItems(CheckMenu).Left AND __UI_MouseLeft <= __UI_MenubarItems(CheckMenu).Left + __UI_MenubarItems(CheckMenu).Width THEN
-                    __UI_Controls(__UI_HoveringID).Value = CheckMenu
-                    EXIT FOR
-                END IF
-            NEXT
-            IF CheckMenu = UBOUND(__UI_MenuBarItems) + 1 THEN __UI_Controls(__UI_HoveringID).Value = 0
+        IF __UI_Controls(__UI_Focus).Type = __UI_Type_MenuBar AND __UI_Controls(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
+            __UI_Focus = __UI_HoveringID
         END IF
     END IF
 
@@ -898,6 +902,10 @@ SUB __UI_UpdateDisplay
         _DEST __UI_Controls(__UI_FormID).Canvas
         COLOR __UI_Controls(__UI_FormID).ForeColor, __UI_Controls(__UI_FormID).BackColor
         CLS
+        IF __UI_HasMenuBar THEN
+            LINE (0, _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_FormID).Font)) * 1.5)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+            LINE (0, _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_FormID).Font)) * 1.5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
+        END IF
         _DEST 0
         __UI_MakeHardwareImageFromCanvas __UI_Controls(__UI_FormID)
     END IF
@@ -914,7 +922,9 @@ SUB __UI_UpdateDisplay
 
             IF ((__UI_MouseIsDown AND i = __UI_MouseDownOnID) OR (__UI_KeyIsDown AND i = __UI_KeyDownOnID AND __UI_KeyDownOnID = __UI_Focus)) AND NOT __UI_Controls(i).Disabled THEN
                 ControlState = 3
-            ELSEIF i = __UI_HoveringID AND NOT __UI_Controls(i).Disabled THEN
+            ELSEIF (i = __UI_HoveringID AND __UI_Controls(i).Type = __UI_Type_MenuBar) THEN
+                ControlState = 2
+            ELSEIF (i = __UI_HoveringID AND __UI_Controls(i).Type <> __UI_Type_MenuBar AND NOT __UI_Controls(i).Disabled) THEN
                 ControlState = 2
             ELSEIF __UI_Controls(i).Disabled THEN
                 ControlState = 4
@@ -1048,7 +1058,6 @@ END FUNCTION
 
 SUB __UI_EventDispatcher
     STATIC __UI_LastHoveringID AS LONG
-    STATIC __UI_ThumbDragY AS INTEGER
     STATIC __UI_LastMouseIconSet AS _BYTE
     DIM i AS LONG, ThisItem%
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
@@ -1214,7 +1223,7 @@ SUB __UI_EventDispatcher
                 ELSEIF __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 3 THEN
                     IF NOT __UI_DraggingThumb THEN
                         __UI_DraggingThumb = __UI_True
-                        __UI_ThumbDragY = __UI_MouseTop
+                        __UI_ThumbDragTop = __UI_MouseTop
                         __UI_DraggingThumbOnID = __UI_HoveringID
                     END IF
                 END IF
@@ -1253,6 +1262,9 @@ SUB __UI_EventDispatcher
                 ELSEIF NOT __UI_Controls(__UI_MouseDownOnID).Disabled AND __UI_Controls(__UI_MouseDownOnID).HoveringVScrollbarButton = 5 AND TIMER - __UI_MouseDownOnListBox < .3 THEN
                     'Mousedown on "track" area below the thumb
                     __UI_Controls(__UI_MouseDownOnID).InputViewStart = __UI_Controls(__UI_MouseDownOnID).InputViewStart + (__UI_Controls(__UI_MouseDownOnID).LastVisibleItem - 1)
+                    IF __UI_Controls(__UI_MouseDownOnID).InputViewStart > __UI_Controls(__UI_MouseDownOnID).Max - __UI_Controls(__UI_MouseDownOnID).LastVisibleItem - 1 THEN
+                        __UI_Controls(__UI_MouseDownOnID).InputViewStart = __UI_Controls(__UI_MouseDownOnID).Max - __UI_Controls(__UI_MouseDownOnID).LastVisibleItem - 1
+                    END IF
                 END IF
             END IF
         END IF
@@ -1379,15 +1391,22 @@ SUB __UI_EventDispatcher
     END IF
     IF __UI_DraggingThumb = __UI_True THEN
         IF __UI_MouseTop >= __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_Controls(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight AND __UI_MouseTop <= __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_Controls(__UI_DraggingThumbOnID).ParentID).Top + __UI_Controls(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
-            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).InputViewStart + ((__UI_MouseTop - __UI_ThumbDragY) / __UI_Controls(__UI_DraggingThumbOnID).VScrollbarRatio)
+            'Dragging in the track area
+            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).InputViewStart + ((__UI_MouseTop - __UI_ThumbDragTop) * __UI_Controls(__UI_DraggingThumbOnID).VScrollbarRatio)
             IF __UI_Controls(__UI_DraggingThumbOnID).InputViewStart + __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem - 1 > __UI_Controls(__UI_DraggingThumbOnID).Max THEN __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).Max - __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem + 1
+            __UI_ThumbDragTop = __UI_MouseTop
 
-            __UI_ThumbDragY = __UI_MouseTop
+        ELSEIF __UI_MouseTop < __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_Controls(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight THEN
+            'Dragging above the track area
+            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = 1
+        ELSEIF __UI_MouseTop > __UI_Controls(__UI_DraggingThumbOnID).Top + __UI_Controls(__UI_Controls(__UI_DraggingThumbOnID).ParentID).Top + __UI_Controls(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
+            'Dragging below the track area
+            __UI_Controls(__UI_DraggingThumbOnID).InputViewStart = __UI_Controls(__UI_DraggingThumbOnID).Max - __UI_Controls(__UI_DraggingThumbOnID).LastVisibleItem + 1
         END IF
     END IF
 
     'Keyboard handler
-    'IF __UI_KeyHit = 27 THEN __UI_Controls(__UI_HoveringID).Disabled = NOT __UI_Controls(__UI_HoveringID).Disabled
+    IF __UI_KeyHit = 15360 THEN __UI_Controls(__UI_HoveringID).CanDrag = NOT __UI_Controls(__UI_HoveringID).CanDrag
 
     IF __UI_KeyHit = 100303 OR __UI_KeyHit = 100304 THEN __UI_ShiftIsDown = __UI_True
     IF __UI_KeyHit = -100303 OR __UI_KeyHit = -100304 THEN __UI_ShiftIsDown = __UI_False
@@ -1396,7 +1415,7 @@ SUB __UI_EventDispatcher
     IF __UI_KeyHit = 100307 OR __UI_KeyHit = 100308 THEN __UI_AltIsDown = __UI_True
     IF __UI_KeyHit = -100307 OR __UI_KeyHit = -100308 THEN __UI_AltIsDown = __UI_False
 
-    IF __UI_AltIsDown AND __UI_Focus = __UI_MenuBarID THEN
+    IF __UI_AltIsDown AND __UI_Controls(__UI_Focus).Type = __UI_Type_MenuBar THEN
         __UI_Focus = __UI_PreviousFocus
         __UI_AltIsDown = __UI_False
     END IF
@@ -1414,18 +1433,6 @@ SUB __UI_EventDispatcher
                 __UI_AltCombo$ = __UI_AltCombo$ + CHR$(__UI_KeyHit)
 
                 IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
-                IF __UI_MenuBarID > 0 THEN
-                    'Search for a matching hot key in menu bar items
-                    FOR i = 1 TO UBOUND(__UI_MenubarItems)
-                        IF __UI_MenubarItems(i).HotKey = __UI_KeyHit AND NOT __UI_MenubarItems(i).Disabled THEN
-                            __UI_PreviousFocus = __UI_Focus
-                            __UI_Focus = __UI_MenuBarID
-                            __UI_Controls(__UI_MenuBarID).Value = i
-                            __UI_KeyHit = 0
-                            EXIT FOR
-                        END IF
-                    NEXT
-                END IF 'Has menu bar
 
                 IF __UI_KeyHit > 0 THEN
                     'Search for a matching hot key in controls
@@ -1481,10 +1488,9 @@ SUB __UI_EventDispatcher
             ELSE
                 'Alt was released with no key having been pressed in the meantime,
                 'so the menubar will be activated, if it exists
-                IF __UI_MenuBarID > 0 THEN
+                IF __UI_HasMenuBar THEN
                     __UI_PreviousFocus = __UI_Focus
-                    __UI_Focus = __UI_MenuBarID
-                    __UI_Controls(__UI_MenuBarID).Value = 1
+                    __UI_Focus = __UI_FirstMenuBarControl
                 END IF
             END IF
         END IF
@@ -1516,9 +1522,9 @@ SUB __UI_EventDispatcher
                         CASE 27 'Esc
                             __UI_Focus = __UI_PreviousFocus
                         CASE 19200 'Left
-                            __UI_Controls(__UI_Focus).Value = (__UI_Controls(__UI_Focus).Value + __UI_Controls(__UI_Focus).Max - 2) MOD __UI_Controls(__UI_Focus).Max + 1
+                            __UI_Focus = __UI_PreviousMenuBarControl(__UI_Focus)
                         CASE 19712 'Right
-                            __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value MOD __UI_Controls(__UI_Focus).Max + 1
+                            __UI_Focus = __UI_NextMenuBarControl(__UI_Focus)
                         CASE 18432, 20480 'Up, down
                             __UI_Focus = __UI_PreviousFocus
                     END SELECT
@@ -1778,8 +1784,8 @@ END FUNCTION
 FUNCTION __UI_NewControl (ObjType AS INTEGER, ObjName AS STRING, NewWidth AS INTEGER, NewHeight AS INTEGER, ParentID AS LONG)
     DIM NextSlot AS LONG, i AS LONG
 
-    IF ObjType = __UI_Type_Form OR ObjType = __UI_Type_MenuBar THEN
-        'Make sure only one Form and MenuBar exist, as these must be unique
+    IF ObjType = __UI_Type_Form THEN
+        'Make sure only one Form exists, as it must be unique
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).Type = ObjType THEN ERROR 5: EXIT FUNCTION
         NEXT
@@ -1821,7 +1827,9 @@ FUNCTION __UI_NewControl (ObjType AS INTEGER, ObjName AS STRING, NewWidth AS INT
     IF ObjType = __UI_Type_MenuBar THEN
         __UI_Controls(NextSlot).Width = __UI_Controls(__UI_FormID).Width
         __UI_Controls(NextSlot).Height = _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_FormID).Font)) * 1.5
-        __UI_MenuBarID = NextSlot
+        __UI_HasMenuBar = __UI_True
+    ELSEIF ObjType = __UI_Type_MenuPanel THEN
+        __UI_Controls(NextSlot).Hidden = __UI_True
     ELSEIF ObjType = __UI_Type_Frame OR ObjType = __UI_Type_Form THEN
         __UI_Controls(NextSlot).Canvas = _NEWIMAGE(NewWidth, NewHeight, 32)
     END IF
@@ -1848,7 +1856,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
         __UI_Texts(This.ID) = ""
         __UI_TempTexts(This.ID) = ""
 
-        IF This.Type = __UI_Type_MenuBar THEN __UI_MenuBarID = 0
+        IF This.Type = __UI_Type_MenuBar THEN __UI_HasMenuBar = (__UI_FirstMenuBarControl > 0)
     END IF
     This.ID = 0
     This.ParentID = 0
@@ -1913,15 +1921,6 @@ SUB __UI_SetCaption (Control$, TempCaption$)
 
     FindSep% = INSTR(NewCaption$, "&")
     IF FindSep% > 0 AND FindSep% < LEN(NewCaption$) THEN
-        IF __UI_MenuBarID > 0 THEN
-            'Check if this hot key isn't already assigned to a menu bar item
-            FOR i = 1 TO UBOUND(__UI_MenubarItems)
-                IF __UI_MenubarItems(i).HotKey > 0 THEN
-                    UsedList$ = UsedList$ + CHR$(__UI_MenubarItems(i).HotKey)
-                END IF
-            NEXT
-        END IF
-
         FOR i = 1 TO UBOUND(__UI_Controls)
             'Check if this hot key isn't already assigned to another control
             IF __UI_Controls(i).HotKey > 0 THEN
@@ -1964,77 +1963,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_SetText (Control$, NewText$)
-    DIM ThisID AS LONG
-
-    ThisID = __UI_GetID(Control$)
-
-    __UI_Texts(ThisID) = NewText$
-
-    IF __UI_Controls(ThisID).Type = __UI_Type_MenuBar THEN
-        'Parse menu items into __UI_MenuBarItems()
-        DIM TempCaption$, TempText$, FindSep%, ThisItem%, NextIsLast AS _BYTE
-        DIM PrevFont AS LONG, PrevDest AS LONG, TempCanvas AS LONG, ItemOffset%
-
-        PrevFont = _FONT
-
-        IF _PIXELSIZE = 0 THEN
-            'Temporarily create a 32bit screen for proper font handling, in case
-            'we're still at form setup (SCREEN 0)
-            TempCanvas = _NEWIMAGE(10, 10, 32)
-            PrevDest = _DEST
-            _DEST TempCanvas
-        END IF
-
-        _FONT __UI_Fonts(__UI_Controls(ThisID).Font)
-
-        IF _FONTWIDTH THEN ItemOffset% = _PRINTWIDTH("__") ELSE ItemOffset% = _PRINTWIDTH("_")
-        TempText$ = NewText$
-        ThisItem% = 0
-        DO WHILE LEN(TempText$)
-            FindSep% = INSTR(TempText$, "\")
-            IF FindSep% THEN
-                TempCaption$ = LEFT$(TempText$, FindSep% - 1)
-                TempText$ = MID$(TempText$, FindSep% + 1)
-            ELSE
-                TempCaption$ = TempText$
-                TempText$ = ""
-            END IF
-            IF LEN(TempCaption$) THEN
-                ThisItem% = ThisItem% + 1
-                REDIM _PRESERVE __UI_MenubarItems(1 TO ThisItem%) AS __UI_ControlTYPE
-                FindSep% = INSTR(TempCaption$, "&")
-                IF FindSep% > 0 AND FindSep% < LEN(TempCaption$) THEN
-                    TempCaption$ = LEFT$(TempCaption$, FindSep% - 1) + MID$(TempCaption$, FindSep% + 1)
-                    __UI_MenubarItems(ThisItem%).HotKeyOffset = _PRINTWIDTH(LEFT$(TempCaption$, FindSep% - 1))
-                    __UI_MenubarItems(ThisItem%).HotKey = ASC(UCASE$(TempCaption$), FindSep%)
-                ELSE
-                    __UI_MenubarItems(ThisItem%).HotKey = 0
-                END IF
-                __UI_MenubarItems(ThisItem%).Name = TempCaption$
-                __UI_MenubarItems(ThisItem%).Width = ItemOffset% + _PRINTWIDTH(TempCaption$) + ItemOffset%
-                IF NextIsLast THEN
-                    __UI_MenubarItems(ThisItem%).Align = __UI_Right
-                    __UI_MenubarItems(ThisItem%).Left = (__UI_Controls(__UI_FormID).Width - __UI_MenubarItems(ThisItem%).Width) - ItemOffset%
-                    __UI_Controls(ThisID).Max = ThisItem%
-                    EXIT DO
-                ELSE
-                    __UI_MenubarItems(ThisItem%).Align = __UI_Left
-                    IF ThisItem% > 1 THEN
-                        __UI_MenubarItems(ThisItem%).Left = __UI_MenubarItems(ThisItem% - 1).Left + __UI_MenubarItems(ThisItem% - 1).Width
-                    ELSE
-                        __UI_MenubarItems(ThisItem%).Left = ItemOffset%
-                    END IF
-                END IF
-            ELSE
-                NextIsLast = __UI_True
-            END IF
-        LOOP
-        IF TempCanvas <> 0 THEN
-            _DEST PrevDest
-            _FREEIMAGE TempCanvas
-        END IF
-        _FONT PrevFont
-    END IF
+    __UI_Texts(__UI_GetID(Control$)) = NewText$
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -2237,7 +2166,10 @@ SUB __UI_ActivateDropdownlist (id)
         __UI_Controls(__UI_ActiveDropdownList).Left = __UI_Controls(id).Left + __UI_Controls(__UI_Controls(id).ParentID).Left
         __UI_Controls(__UI_ActiveDropdownList).Width = __UI_Controls(id).Width
         __UI_Controls(__UI_ActiveDropdownList).Top = __UI_Controls(id).Top + __UI_Controls(id).Height + __UI_Controls(__UI_Controls(id).ParentID).Top
+
+        'Make up to 10 items visible:
         __UI_Controls(__UI_ActiveDropdownList).Height = _FONTHEIGHT(__UI_Fonts(__UI_Controls(id).Font)) * 10.5
+
         IF __UI_Controls(__UI_ActiveDropdownList).Top + __UI_Controls(__UI_ActiveDropdownList).Height > _HEIGHT THEN
             __UI_Controls(__UI_ActiveDropdownList).Top = _HEIGHT - __UI_Controls(__UI_ActiveDropdownList).Height
         END IF
@@ -2293,6 +2225,78 @@ SUB __UI_MakeHardwareImage (This AS LONG)
     This = TempCanvas
 END SUB
 
+'---------------------------------------------------------------------------------
+FUNCTION __UI_FirstMenuBarControl
+    DIM i AS LONG
+    FOR i = 1 TO UBOUND(__UI_Controls)
+        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type = __UI_Type_MenuBar AND NOT __UI_Controls(i).Hidden THEN
+            __UI_FirstMenuBarControl = i
+            EXIT FUNCTION
+        END IF
+    NEXT
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_NextMenuBarControl (CurrentMenuBarControl)
+    DIM i AS LONG
+    i = CurrentMenuBarControl
+    DO
+        i = i + 1
+        IF i > UBOUND(__UI_Controls) THEN i = 1
+        IF i = CurrentMenuBarControl THEN EXIT DO
+        IF __UI_Controls(i).Type = __UI_Type_MenuBar AND NOT __UI_Controls(i).Hidden THEN
+            EXIT DO
+        END IF
+    LOOP
+    __UI_NextMenuBarControl = i
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_PreviousMenuBarControl (CurrentMenuBarControl)
+    DIM i AS LONG
+    i = CurrentMenuBarControl
+    DO
+        i = i - 1
+        IF i < 1 THEN i = UBOUND(__UI_Controls)
+        IF i = CurrentMenuBarControl THEN EXIT DO
+        IF __UI_Controls(i).Type = __UI_Type_MenuBar AND NOT __UI_Controls(i).Hidden THEN
+            EXIT DO
+        END IF
+    LOOP
+    __UI_PreviousMenuBarControl = i
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+SUB __UI_RefreshMenuBar
+    'Calculate menu items' .Left and .Width
+    DIM LeftOffset AS INTEGER, ItemOffset AS INTEGER, i AS LONG
+    DIM TotalItems AS INTEGER, LastMenuItem AS LONG
+
+    _FONT __UI_Fonts(__UI_Controls(__UI_FormID).Font)
+    IF _FONTWIDTH THEN ItemOffset = _PRINTWIDTH("__") ELSE ItemOffset = _PRINTWIDTH("_")
+
+    FOR i = 1 TO UBOUND(__UI_Controls)
+        IF __UI_Controls(i).ID > 0 THEN
+            IF __UI_Controls(i).Type = __UI_Type_MenuBar AND NOT __UI_Controls(i).Hidden THEN
+                TotalItems = TotalItems + 1
+                IF TotalItems = 1 THEN
+                    LeftOffset = ItemOffset
+                ELSE
+                    LeftOffset = LeftOffset + __UI_Controls(LastMenuItem).Width
+                END IF
+                __UI_Controls(i).Width = ItemOffset + _PRINTWIDTH(__UI_Captions(i)) + ItemOffset
+                IF __UI_Controls(i).Align = __UI_Left THEN
+                    __UI_Controls(i).Left = LeftOffset
+                ELSE
+                    __UI_Controls(i).Left = __UI_Controls(__UI_FormID).Width - 1 - ItemOffset - __UI_Controls(i).Width
+                END IF
+                LastMenuItem = i
+            END IF
+        END IF
+    NEXT
+END SUB
+
+'---------------------------------------------------------------------------------
 '*** XP ***
 'UI theme mimicking Windows XP's controls style
 'Images located under xp.files\
@@ -2865,11 +2869,9 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         _PRINTMODE _KEEPBACKGROUND
 
         IF This.BackStyle = __UI_Opaque THEN
-            _PRINTMODE _FILLBACKGROUND
             CLS , This.BackColor
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
-            _PRINTMODE _KEEPBACKGROUND
         END IF
 
         CaptionIndent = 0
@@ -3302,58 +3304,61 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
     _PUTIMAGE (This.Left, This.Top - _FONTHEIGHT(__UI_Fonts(This.Font)) \ 2), This.HWCanvas
 END SUB
 
+'---------------------------------------------------------------------------------
 SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
-    STATIC PrevAltState
 
-    IF __UI_AltIsDown <> PrevAltState OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.ControlState <> ControlState OR __UI_Texts(This.ID) <> __UI_TempTexts(This.ID) THEN
+    IF This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.ControlState <> ControlState OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.ControlState = ControlState
         This.PreviousValue = This.Value
-        PrevAltState = __UI_AltIsDown
-        __UI_TempTexts(This.ID) = __UI_Texts(This.ID)
+
+        IF __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) THEN
+            __UI_RefreshMenuBar
+        END IF
+
+        __UI_TempCaptions(This.ID) = __UI_Captions(This.ID)
         This.FocusState = (__UI_Focus = This.ID)
 
         IF This.Canvas <> 0 THEN
             _FREEIMAGE This.Canvas
         END IF
 
-        This.Canvas = _NEWIMAGE(__UI_Controls(__UI_FormID).Width, _FONTHEIGHT(__UI_Fonts(This.Font)) * 1.5, 32)
-        This.Width = __UI_Controls(__UI_FormID).Width
+        This.Height = _FONTHEIGHT(__UI_Fonts(This.Font)) * 1.5
+        This.Canvas = _NEWIMAGE(This.Width, This.Height, 32)
 
         PrevDest = _DEST
         _DEST This.Canvas
         _FONT __UI_Fonts(This.Font)
-        CLS , _RGBA32(0, 0, 0, 0)
 
         '---
         DIM ItemOffset%
         IF _FONTWIDTH THEN ItemOffset% = _PRINTWIDTH("__") ELSE ItemOffset% = _PRINTWIDTH("_")
 
-        LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BackColor, BF
+        CLS , This.BackColor
         _PRINTMODE _KEEPBACKGROUND
 
         DIM i AS INTEGER, c AS _UNSIGNED LONG
-        FOR i = 1 TO UBOUND(__UI_MenuBarItems)
-            TempCaption$ = RTRIM$(__UI_MenubarItems(i).Name)
+        TempCaption$ = __UI_Captions(This.ID)
 
-            IF This.Value = i AND (__UI_HoveringID = This.ID OR __UI_Focus = This.ID) THEN
-                LINE (__UI_MenubarItems(i).Left, 0)-STEP(__UI_MenubarItems(i).Width, This.Height - 1), This.SelectedBackColor, BF
-                c = This.SelectedForeColor
-            ELSE
-                c = This.ForeColor
-            END IF
+        IF __UI_HoveringID = This.ID OR __UI_Focus = This.ID THEN
+            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.SelectedBackColor, BF
+            c = This.SelectedForeColor
+        ELSE
+            c = This.ForeColor
+        END IF
 
-            COLOR c
+        IF This.Disabled THEN
+            c = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+        END IF
 
-            _PRINTSTRING (__UI_MenubarItems(i).Left + ItemOffset%, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
-            IF __UI_MenubarItems(i).HotKey > 0 AND __UI_AltIsDown THEN
-                'Has "hot-key"
-                LINE (ItemOffset% + __UI_MenubarItems(i).Left + __UI_MenubarItems(i).HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) - 1)-STEP(_PRINTWIDTH(CHR$(__UI_MenubarItems(i).HotKey)) - 1, 0), c
-            END IF
-        NEXT
+        COLOR c
 
-        LINE (0, This.Height - 1)-STEP(This.Width, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+        _PRINTSTRING (ItemOffset%, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
+        IF This.HotKey > 0 AND __UI_AltIsDown THEN
+            'Has "hot-key"
+            LINE (ItemOffset% + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) - 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), c
+        END IF
         '---
 
         __UI_MakeHardwareImageFromCanvas This
@@ -3362,3 +3367,97 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     _PUTIMAGE (This.Left, This.Top), This.Canvas
 END SUB
+
+'SUB __UI_DrawMenuPanel (ThisID AS LONG)
+'    IF __UI_Controls(ThisID).Type = __UI_Type_MenuBar THEN
+'        'Parse menu items into __UI_MenuBarItems()
+'        DIM TempCaption$, TempText$, FindSep%, ThisItem%, NextIsLast AS _BYTE
+'        DIM PrevFont AS LONG, PrevDest AS LONG, TempCanvas AS LONG, ItemOffset%
+'        DIM TempNum$, i AS LONG
+
+'        PrevFont = _FONT
+
+'        IF _PIXELSIZE = 0 THEN
+'            'Temporarily create a 32bit screen for proper font handling, in case
+'            'we're still at form setup (SCREEN 0)
+'            TempCanvas = _NEWIMAGE(10, 10, 32)
+'            PrevDest = _DEST
+'            _DEST TempCanvas
+'        END IF
+
+'        _FONT __UI_Fonts(__UI_Controls(ThisID).Font)
+
+'        IF _FONTWIDTH THEN ItemOffset% = _PRINTWIDTH("__") ELSE ItemOffset% = _PRINTWIDTH("_")
+'        TempText$ = NewText$
+'        ThisItem% = 0
+'        DO WHILE LEN(TempText$)
+'            FindSep% = INSTR(TempText$, "\")
+'            IF FindSep% THEN
+'                TempCaption$ = LEFT$(TempText$, FindSep% - 1)
+'                TempText$ = MID$(TempText$, FindSep% + 1)
+'            ELSE
+'                TempCaption$ = TempText$
+'                TempText$ = ""
+'            END IF
+'            IF LEN(TempCaption$) THEN
+'                ThisItem% = ThisItem% + 1
+'                REDIM _PRESERVE __UI_MenuBarItems(1 TO ThisItem%) AS __UI_ControlTYPE
+'                FindSep% = INSTR(TempCaption$, "#") 'Parse menu item ID
+'                IF FindSep% > 0 THEN
+'                    TempNum$ = ""
+'                    i = FindSep%
+'                    DO
+'                        i = i + 1
+'                        IF ASC(TempCaption$, i) < 48 OR ASC(TempCaption$, i) > 57 THEN EXIT DO
+'                        TempNum$ = TempNum$ + CHR$(ASC(TempCaption$, i))
+'                    LOOP
+'                    __UI_MenuBarItems(ThisItem%).ID = VAL(TempNum$)
+'                    TempCaption$ = MID$(TempCaption$, i)
+'                END IF
+
+'                FindSep% = INSTR(TempCaption$, "&") 'Parse hot key
+'                IF FindSep% > 0 AND FindSep% < LEN(TempCaption$) THEN
+'                    TempCaption$ = LEFT$(TempCaption$, FindSep% - 1) + MID$(TempCaption$, FindSep% + 1)
+'                    __UI_MenuBarItems(ThisItem%).HotKeyOffset = _PRINTWIDTH(LEFT$(TempCaption$, FindSep% - 1))
+'                    __UI_MenuBarItems(ThisItem%).HotKey = ASC(UCASE$(TempCaption$), FindSep%)
+'                ELSE
+'                    __UI_MenuBarItems(ThisItem%).HotKey = 0
+'                END IF
+'                __UI_MenuBarItems(ThisItem%).Name = TempCaption$
+'                __UI_MenuBarItems(ThisItem%).Width = ItemOffset% + _PRINTWIDTH(TempCaption$) + ItemOffset%
+'                IF NextIsLast THEN
+'                    __UI_MenuBarItems(ThisItem%).Align = __UI_Right
+'                    __UI_MenuBarItems(ThisItem%).Left = (__UI_Controls(__UI_FormID).Width - __UI_MenuBarItems(ThisItem%).Width) - ItemOffset%
+'                    __UI_Controls(ThisID).Max = ThisItem%
+'                    EXIT DO
+'                ELSE
+'                    __UI_MenuBarItems(ThisItem%).Align = __UI_Left
+'                    IF ThisItem% > 1 THEN
+'                        __UI_MenuBarItems(ThisItem%).Left = __UI_MenuBarItems(ThisItem% - 1).Left + __UI_MenuBarItems(ThisItem% - 1).Width
+'                    ELSE
+'                        __UI_MenuBarItems(ThisItem%).Left = ItemOffset%
+'                    END IF
+'                END IF
+'            ELSE
+'                NextIsLast = __UI_True
+'            END IF
+'        LOOP
+'        IF TempCanvas <> 0 THEN
+'            _DEST PrevDest
+'            _FREEIMAGE TempCanvas
+'        END IF
+'        _FONT PrevFont
+'    END IF
+'end sub
+
+'---------------------------------------------------------------------------------
+SUB __UI_ShadowBox (b.X AS INTEGER, b.Y AS INTEGER, b.W AS INTEGER, b.H AS INTEGER, C AS LONG, shadow.Level AS INTEGER, shadow.Size AS INTEGER)
+    DIM i AS INTEGER
+
+    FOR i = 1 TO shadow.Size
+        LINE (b.X + i, b.Y + i)-STEP(b.W, b.H), _RGBA32(0, 0, 0, shadow.Level - (shadow.Level / shadow.Size) * i), BF
+    NEXT i
+
+    LINE (b.X, b.Y)-STEP(b.W, b.H), C, BF
+END SUB
+
