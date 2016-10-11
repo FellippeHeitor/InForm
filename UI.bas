@@ -1715,8 +1715,9 @@ SUB __UI_EventDispatcher
                             __UI_Focus = __UI_PreviousFocus
                     END SELECT
                     __UI_LastMouseClick = TIMER
-                    __UI_Click __UI_HoveringID
                     __UI_JustOpenedMenu = __UI_False
+                    __UI_MouseDownOnID = 0
+                    __UI_Click __UI_HoveringID
                 ELSE
                     IF __UI_ActiveMenu > 0 THEN
                         __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
