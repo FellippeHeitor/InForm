@@ -499,7 +499,7 @@ SUB __UI_Click (id AS LONG)
             b$ = MKL$(UBOUND(__UI_Controls))
             PUT #2, , b$
             FOR i = 1 TO UBOUND(__UI_Controls)
-                IF __UI_Controls(i).ID > 0 THEN
+                IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 THEN
                     a$ = "__UI_NewID = __UI_NewControl("
                     SELECT CASE __UI_Controls(i).Type
                         CASE __UI_Type_Form: a$ = a$ + "__UI_Type_Form, "
@@ -514,7 +514,6 @@ SUB __UI_Click (id AS LONG)
                         CASE __UI_Type_DropdownList: a$ = a$ + "__UI_Type_DropdownList, "
                         CASE __UI_Type_MenuBar: a$ = a$ + "__UI_Type_MenuBar, "
                         CASE __UI_Type_MenuItem: a$ = a$ + "__UI_Type_MenuItem, "
-                        CASE __UI_Type_MenuPanel: a$ = a$ + "__UI_Type_MenuPanel, "
                         CASE __UI_Type_PictureBox: a$ = a$ + "__UI_Type_PictureBox, "
                     END SELECT
                     a$ = a$ + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ","
@@ -1713,6 +1712,8 @@ SUB __UI_EventDispatcher
                             END IF
                         CASE __UI_Type_MenuItem
                             __UI_Focus = __UI_PreviousFocus
+                            __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+                            __UI_ForceRedraw = __UI_True
                     END SELECT
                     __UI_LastMouseClick = TIMER
                     __UI_JustOpenedMenu = __UI_False
@@ -1735,8 +1736,12 @@ SUB __UI_EventDispatcher
             __UI_IsSelectingText = __UI_False
             __UI_IsSelectingTextOnID = 0
             __UI_MouseIsDown = __UI_False
-            IF __UI_HoveringID = __UI_MouseDownOnID THEN __UI_MouseUp __UI_HoveringID
+            IF __UI_HoveringID = __UI_MouseDownOnID AND __UI_MouseDownOnID > 0 THEN
+                __UI_MouseDownOnID = 0
+                __UI_MouseUp __UI_HoveringID
+            END IF
             __UI_MouseDownOnID = 0
+            __UI_PreviousMouseDownOnID = 0
         END IF
     END IF
 
@@ -2245,6 +2250,8 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidth AS INTEGER, NewHeight AS INTEGER, NewLeft AS INTEGER, NewTop AS INTEGER, ParentID AS LONG)
     DIM NextSlot AS LONG, i AS LONG
+
+    IF ControlType = 0 OR ControlName = "" THEN EXIT SUB
 
     IF ControlType = __UI_Type_Form THEN
         'Make sure only one Form exists, as it must be unique
@@ -2913,6 +2920,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION __UI_MessageBox& (Message$, Title$, Setup AS LONG)
+    _DELAY .1 'So the interface can redraw before the messagebox kicks in
     $IF WIN THEN
         __UI_MessageBox& = __UI_MB(0, Title$ + CHR$(0), Message$ + CHR$(0), Setup)
     $ELSE
@@ -2969,9 +2977,9 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
     IF NOT This.Disabled THEN
         IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
-        __UI_ParentMenu = This.ID
         __UI_ActiveMenu = __UI_NewControl(__UI_Type_MenuPanel, RTRIM$(This.Name) + CHR$(254) + "Panel", 0, 0, 0, 0, 0)
-        __UI_Texts(__UI_ActiveMenu) = __UI_Texts(This.ID)
+        IF __UI_ActiveMenu = 0 THEN EXIT SUB
+        __UI_ParentMenu = This.ID
         __UI_Controls(__UI_ActiveMenu).Left = This.Left
         __UI_Controls(__UI_ActiveMenu).Font = This.Font
 
@@ -3198,9 +3206,16 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF ControlImage = -1 THEN ERROR 5: ControlImage = 0: EXIT SUB
     END IF
 
-    IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    TempControlState = ControlState
+    IF TempControlState = 1 THEN
+        IF (This.ID = __UI_DefaultButtonID AND This.ID <> __UI_Focus AND __UI_Controls(__UI_Focus).Type <> __UI_Type_Button) OR This.ID = __UI_Focus THEN
+            TempControlState = 5
+        END IF
+    END IF
+
+    IF This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
-        This.ControlState = ControlState
+        This.ControlState = TempControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = __UI_Captions(This.ID)
         This.PreviousParentID = This.ParentID
@@ -3217,13 +3232,6 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _FONT __UI_Fonts(This.Font)
         CLS , _RGBA32(0, 0, 0, 0)
         TempCaption$ = __UI_Captions(This.ID)
-
-        TempControlState = ControlState
-        IF TempControlState = 1 THEN
-            IF (This.ID = __UI_DefaultButtonID AND This.ID <> __UI_Focus AND __UI_Controls(__UI_Focus).Type <> __UI_Type_Button) OR This.ID = __UI_Focus THEN
-                TempControlState = 5
-            END IF
-        END IF
 
         'Back surface
         _PUTIMAGE (0, 3)-(This.Width - 1, This.Height - 4), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 3)-STEP(11, ButtonHeight - 7)
@@ -3256,6 +3264,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             LINE ((This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) + 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
+        'Focus outline:
         IF __UI_Focus = This.ID THEN
             LINE (2, 2)-STEP(This.Width - 5, This.Height - 5), _RGB32(0, 0, 0), B , 21845
         END IF
@@ -3397,10 +3406,6 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         CaptionIndent = CaptionIndent + ImageWidth * 1.5
         TempCaption$ = __UI_Captions(This.ID)
 
-        IF __UI_Focus = This.ID THEN
-            LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
-        END IF
-
         IF NOT This.Disabled THEN
             COLOR This.ForeColor, This.BackColor
         ELSE
@@ -3412,6 +3417,11 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         'Hot key:
         IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
             LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+        END IF
+
+        'Focus outline
+        IF __UI_Focus = This.ID THEN
+            LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
         END IF
 
         '------
@@ -3479,10 +3489,6 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         CaptionIndent = CaptionIndent + ImageWidth * 1.5
         TempCaption$ = __UI_Captions(This.ID)
 
-        IF __UI_Focus = This.ID THEN
-            LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
-        END IF
-
         IF NOT This.Disabled THEN
             COLOR This.ForeColor, This.BackColor
         ELSE
@@ -3494,6 +3500,11 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         'Hot key:
         IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
             LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+        END IF
+
+        'Focus outline
+        IF __UI_Focus = This.ID THEN
+            LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
         END IF
         '------
 
