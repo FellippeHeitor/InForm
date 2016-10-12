@@ -76,6 +76,11 @@ TYPE __UI_ControlTYPE
     FocusState AS LONG
 END TYPE
 
+TYPE __UI_Types
+    Name AS STRING * 16
+    Count AS LONG
+END TYPE
+
 REDIM SHARED __UI_Captions(1 TO 100) AS STRING
 REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
 REDIM SHARED __UI_Texts(1 TO 100) AS STRING
@@ -120,21 +125,22 @@ DIM SHARED __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
 
 'Control types:
-CONST __UI_Type_Form = 1
-CONST __UI_Type_Frame = 2
-CONST __UI_Type_Button = 3
-CONST __UI_Type_Label = 4
-CONST __UI_Type_CheckBox = 5
-CONST __UI_Type_RadioButton = 6
-CONST __UI_Type_TextBox = 7
-CONST __UI_Type_ProgressBar = 8
-CONST __UI_Type_ListBox = 9
-CONST __UI_Type_DropdownList = 10
-CONST __UI_Type_MenuBar = 11
-CONST __UI_Type_MenuItem = 12
-CONST __UI_Type_MenuPanel = 13
-CONST __UI_Type_PictureBox = 14
-CONST __UI_Type_MultiLineTextBox = 15
+DIM SHARED __UI_Type(0 TO 15) AS __UI_Types
+CONST __UI_Type_Form = 1: __UI_Type(1).Name = "Form"
+CONST __UI_Type_Frame = 2: __UI_Type(2).Name = "Frame"
+CONST __UI_Type_Button = 3: __UI_Type(3).Name = "Button"
+CONST __UI_Type_Label = 4: __UI_Type(4).Name = "Label"
+CONST __UI_Type_CheckBox = 5: __UI_Type(5).Name = "CheckBox"
+CONST __UI_Type_RadioButton = 6: __UI_Type(6).Name = "RadioButton"
+CONST __UI_Type_TextBox = 7: __UI_Type(7).Name = "TextBox"
+CONST __UI_Type_ProgressBar = 8: __UI_Type(8).Name = "ProgressBar"
+CONST __UI_Type_ListBox = 9: __UI_Type(9).Name = "ListBox"
+CONST __UI_Type_DropdownList = 10: __UI_Type(10).Name = "DropdownList"
+CONST __UI_Type_MenuBar = 11: __UI_Type(11).Name = "MenuBar"
+CONST __UI_Type_MenuItem = 12: __UI_Type(12).Name = "MenuItem"
+CONST __UI_Type_MenuPanel = 13: __UI_Type(13).Name = "MenuPanel"
+CONST __UI_Type_PictureBox = 14: __UI_Type(14).Name = "PictureBox"
+CONST __UI_Type_MultiLineTextBox = 15: __UI_Type(15).Name = "MultiLineTextBox"
 
 'Back styles:
 CONST __UI_Opaque = 0
@@ -298,7 +304,7 @@ __UI_SetCaption "ProgressBar1", "Ready"
 NewID = __UI_NewControl(__UI_Type_Button, "STARTTASK", 130, 23, 340, 370, 0)
 __UI_SetCaption "STARTTASK", "Start task"
 
-NewID = __UI_NewControl(__UI_Type_PictureBox, "QB64Logo", 230, 150, 400, 215, 0)
+NewID = __UI_NewControl(__UI_Type_PictureBox, "PictureBox1", 230, 150, 400, 215, 0)
 __UI_LoadImage __UI_Controls(NewID), "test.png"
 
 NewID = __UI_NewControl(__UI_Type_Button, "OkButton", 70, 23, 550, 370, 0)
@@ -347,15 +353,10 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG
-    STATIC nextbutton AS LONG, nextlabel AS LONG, nexttb AS LONG
-
-    IF nextbutton = 0 THEN nextbutton = 10
-    IF nextlabel = 0 THEN nextlabel = 10
-    IF nexttb = 0 THEN nexttb = 10
 
     SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))
         CASE "STRETCHBT"
-            __UI_Controls(__UI_GetID("QB64Logo")).Stretch = NOT __UI_Controls(__UI_GetID("QB64Logo")).Stretch
+            __UI_Controls(__UI_GetID("PictureBox1")).Stretch = NOT __UI_Controls(__UI_GetID("PictureBox1")).Stretch
         CASE "FILEMENULOAD"
             DIM a$, b$, i AS LONG
             DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
@@ -373,12 +374,11 @@ SUB __UI_Click (id AS LONG)
                 END IF
 
                 __UI_AutoRefresh = __UI_False
-                b$ = SPACE$(4): GET #1, , b$
-
                 FOR i = 1 TO UBOUND(__UI_Controls)
-                    IF __UI_Controls(i).Canvas <> 0 THEN _FREEIMAGE __UI_Controls(i).Canvas
-                    IF __UI_Controls(i).HelperCanvas <> 0 THEN _FREEIMAGE __UI_Controls(i).HelperCanvas
+                    __UI_DestroyControl __UI_Controls(i)
                 NEXT
+
+                b$ = SPACE$(4): GET #1, , b$
 
                 REDIM __UI_Captions(1 TO CVL(b$)) AS STRING
                 REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
@@ -679,18 +679,15 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(-1024): PUT #2, , b$ 'end of file
             CLOSE #1, #2
         CASE "ADDBUTTON"
-            nextbutton = nextbutton + 1
-            Dummy = __UI_NewControl(__UI_Type_Button, "Button" + LTRIM$(STR$(nextbutton)), 60, 23, 0, 0, 0)
+            Dummy = __UI_NewControl(__UI_Type_Button, "", 80, 23, 0, 0, 0)
             __UI_Controls(Dummy).CanDrag = __UI_True
             __UI_SetCaption __UI_Controls(Dummy).Name, RTRIM$(__UI_Controls(Dummy).Name)
         CASE "ADDLABEL"
-            nextlabel = nextlabel + 1
-            Dummy = __UI_NewControl(__UI_Type_Label, "Label" + LTRIM$(STR$(nextlabel)), 60, 23, 0, 0, 0)
+            Dummy = __UI_NewControl(__UI_Type_Label, "", 80, 23, 0, 0, 0)
             __UI_Controls(Dummy).CanDrag = __UI_True
             __UI_SetCaption __UI_Controls(Dummy).Name, RTRIM$(__UI_Controls(Dummy).Name)
         CASE "ADDTEXTBOX"
-            nexttb = nexttb + 1
-            Dummy = __UI_NewControl(__UI_Type_TextBox, "TextBox" + LTRIM$(STR$(nexttb)), 100, 23, 0, 0, 0)
+            Dummy = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, 0, 0, 0)
             IF _FONTWIDTH(__UI_Fonts(__UI_Controls(Dummy).Font)) = 0 THEN __UI_Controls(Dummy).Font = 0
             __UI_Controls(Dummy).CanDrag = __UI_True
             __UI_Controls(Dummy).FieldArea = __UI_Controls(Dummy).Width \ _FONTWIDTH(__UI_Fonts(__UI_Controls(Dummy).Font)) - 1
@@ -855,16 +852,14 @@ END SUB
 SUB __UI_BeforeUpdateDisplay
     STATIC Pass AS LONG
 
-    IF LEN(__UI_Texts(__UI_GetID("TextBox1"))) THEN
+    DIM textboxID AS LONG
+    textboxID = __UI_GetID("TextBox1")
+    __UI_DefaultButtonID = __UI_GetID("okbutton")
+    IF LEN(__UI_Texts(textboxID)) > 0 THEN
         __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_False
+        IF __UI_Focus = textboxID THEN __UI_DefaultButtonID = __UI_GetID("AddItemBT")
     ELSE
         __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_True
-    END IF
-
-    IF __UI_Focus = __UI_GetID("TextBox1") THEN
-        __UI_DefaultButtonID = __UI_GetID("AddItemBT")
-    ELSE
-        __UI_DefaultButtonID = __UI_GetID("okbutton")
     END IF
 
     IF __UI_Focus THEN
@@ -872,18 +867,12 @@ SUB __UI_BeforeUpdateDisplay
         IF LEN(__UI_SelectedText) THEN
             __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
         END IF
-        IF __UI_Focus = __UI_GetID("ListBox1") THEN
-            __UI_SetCaption "FocusLabel", "__UI_ActiveDropdownList=" + STR$(__UI_ActiveDropdownList)
-        END IF
     ELSE
         __UI_SetCaption "FocusLabel", "No control has focus now"
     END IF
 
     IF __UI_HoveringID THEN
-        __UI_SetCaption "HoverLabel", "(" + STR$(__UI_MouseTop) + "," + STR$(__UI_MouseLeft) + ") Hovering " + RTRIM$(__UI_Controls(__UI_HoveringID).Name)
-        IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_Controls(__UI_HoveringID).Value > 0 THEN
-            __UI_Captions(__UI_GetID("hoverlabel")) = __UI_Captions(__UI_GetID("hoverlabel")) + "." + LTRIM$(STR$(__UI_Controls(__UI_HoveringID).Value))
-        END IF
+        __UI_SetCaption "HoverLabel", "(" + STR$(__UI_MouseTop) + "," + STR$(__UI_MouseLeft) + ") Hovering " + RTRIM$(__UI_Controls(__UI_HoveringID).Name) + " (" + RTRIM$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Name) + " count:" + STR$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Count) + ")"
     END IF
 
     IF __UI_IsDragging = __UI_False THEN
@@ -1325,7 +1314,7 @@ SUB __UI_UpdateDisplay
                 CASE __UI_Type_MenuBar
                     __UI_DrawMenuBar __UI_Controls(i), ControlState
                 CASE __UI_Type_PictureBox
-                    __ui_DrawPictureBox __UI_Controls(i), ControlState
+                    __UI_DrawPictureBox __UI_Controls(i), ControlState
             END SELECT
         END IF
 
@@ -1424,7 +1413,7 @@ SUB __UI_EventDispatcher
     $END IF
 
     'Hover actions
-    IF __UI_LastHoveringID <> __UI_HoveringID THEN
+    IF __UI_LastHoveringID <> __UI_HoveringID OR __UI_HoveringID = __UI_ActiveDropdownList THEN
         'MouseEnter, MouseLeave
         IF __UI_LastHoveringID THEN __UI_MouseLeave __UI_LastHoveringID
         __UI_MouseEnter __UI_HoveringID
@@ -2251,14 +2240,16 @@ END FUNCTION
 FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidth AS INTEGER, NewHeight AS INTEGER, NewLeft AS INTEGER, NewTop AS INTEGER, ParentID AS LONG)
     DIM NextSlot AS LONG, i AS LONG
 
-    IF ControlType = 0 OR ControlName = "" THEN EXIT SUB
+    IF ControlType = 0 THEN EXIT SUB
 
     IF ControlType = __UI_Type_Form THEN
         'Make sure only one Form exists, as it must be unique
-        FOR i = 1 TO UBOUND(__UI_Controls)
-            IF __UI_Controls(i).Type = ControlType THEN ERROR 5: EXIT FUNCTION
-        NEXT
+        IF __UI_Type(__UI_Type_Form).Count > 0 THEN ERROR 5: EXIT FUNCTION
     END IF
+
+    'Increase the global count of controls of this type
+    __UI_Type(ControlType).Count = __UI_Type(ControlType).Count + 1
+    IF ControlName = "" THEN ControlName = RTRIM$(__UI_Type(ControlType).Name) + LTRIM$(STR$(__UI_Type(ControlType).Count))
 
     'Make sure this ControlName is unique:
     FOR i = 1 TO UBOUND(__UI_Controls)
@@ -2341,7 +2332,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
-    IF This.ID THEN
+    IF This.ID > 0 THEN
         __UI_Captions(This.ID) = ""
         __UI_TempCaptions(This.ID) = ""
         __UI_Texts(This.ID) = ""
@@ -2360,7 +2351,10 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
                 __UI_ParentMenu = 0
             END IF
         END IF
+
+        __UI_Type(This.Type).Count = __UI_Type(This.Type).Count - 1
     END IF
+
     This.ID = 0
     This.ParentID = 0
     This.PreviousParentID = 0
@@ -3766,7 +3760,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                     IF ThisItemTop% + _FONTHEIGHT > This.Height THEN EXIT DO
                     LastVisibleItem = LastVisibleItem + 1
 
-                    IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN __UI_SelectedText = TempCaption$
+                    IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN __UI_Captions(This.ID) = TempCaption$
 
                     IF NOT This.Disabled THEN
                         COLOR This.ForeColor, This.BackColor
@@ -4002,7 +3996,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
                 IF ThisItem% = This.Value THEN
                     ThisItemTop% = This.Height \ 2 - _FONTHEIGHT \ 2 + 1
 
-                    IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN __UI_SelectedText = TempCaption$
+                    IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN __UI_Captions(This.ID) = TempCaption$
 
                     IF NOT This.Disabled THEN
                         COLOR This.ForeColor, This.BackColor
@@ -4301,7 +4295,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __ui_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
+SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
