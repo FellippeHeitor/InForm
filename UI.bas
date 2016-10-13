@@ -81,11 +81,17 @@ TYPE __UI_Types
     Count AS LONG
 END TYPE
 
+TYPE __UI_ThemeImagesType
+    FileName AS STRING * 32
+    Handle AS LONG
+END TYPE
+
 REDIM SHARED __UI_Captions(1 TO 100) AS STRING
 REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
 REDIM SHARED __UI_Texts(1 TO 100) AS STRING
 REDIM SHARED __UI_TempTexts(1 TO 100) AS STRING
 REDIM SHARED __UI_Controls(0 TO 100) AS __UI_ControlTYPE
+REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
 
 DIM SHARED __UI_Fonts(2) AS LONG
 __UI_Fonts(0) = 16
@@ -569,9 +575,11 @@ SUB __UI_Click (id AS LONG)
                         PUT #2, , b$
                         PUT #2, , __UI_Texts(i)
                     END IF
-                    IF __UI_Controls(i).Stretch THEN PRINT #1, "__UI_Controls(__UI_NewID).Stretch = __UI_True"
-                    b$ = MKI$(-4)
-                    PUT #2, , b$
+                    IF __UI_Controls(i).Stretch THEN
+                        PRINT #1, "__UI_Controls(__UI_NewID).Stretch = __UI_True"
+                        b$ = MKI$(-4)
+                        PUT #2, , b$
+                    END IF
                     'Inheritable properties won't be saved if they are the same as the parent's
                     IF __UI_Controls(i).Type = __UI_Type_Form THEN
                         PRINT #1, "__UI_Controls(__UI_NewID).Font =" + STR$(__UI_Controls(i).Font)
@@ -850,51 +858,51 @@ SUB __UI_MouseUp (id AS LONG)
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    STATIC Pass AS LONG
+    'STATIC Pass AS LONG
 
-    DIM textboxID AS LONG
-    textboxID = __UI_GetID("TextBox1")
-    __UI_DefaultButtonID = __UI_GetID("okbutton")
-    IF LEN(__UI_Texts(textboxID)) > 0 THEN
-        __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_False
-        IF __UI_Focus = textboxID THEN __UI_DefaultButtonID = __UI_GetID("AddItemBT")
-    ELSE
-        __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_True
-    END IF
+    'DIM textboxID AS LONG
+    'textboxID = __UI_GetID("TextBox1")
+    '__UI_DefaultButtonID = __UI_GetID("okbutton")
+    'IF LEN(__UI_Texts(textboxID)) > 0 THEN
+    '    __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_False
+    '    IF __UI_Focus = textboxID THEN __UI_DefaultButtonID = __UI_GetID("AddItemBT")
+    'ELSE
+    '    __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_True
+    'END IF
 
-    IF __UI_Focus THEN
-        __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
-        IF LEN(__UI_SelectedText) THEN
-            __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
-        END IF
-    ELSE
-        __UI_SetCaption "FocusLabel", "No control has focus now"
-    END IF
+    'IF __UI_Focus THEN
+    '    __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
+    '    IF LEN(__UI_SelectedText) THEN
+    '        __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
+    '    END IF
+    'ELSE
+    '    __UI_SetCaption "FocusLabel", "No control has focus now"
+    'END IF
 
-    IF __UI_HoveringID THEN
-        __UI_SetCaption "HoverLabel", "(" + STR$(__UI_MouseTop) + "," + STR$(__UI_MouseLeft) + ") Hovering " + RTRIM$(__UI_Controls(__UI_HoveringID).Name) + " (" + RTRIM$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Name) + " count:" + STR$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Count) + ")"
-    END IF
+    'IF __UI_HoveringID THEN
+    '    __UI_SetCaption "HoverLabel", "(" + STR$(__UI_MouseTop) + "," + STR$(__UI_MouseLeft) + ") Hovering " + RTRIM$(__UI_Controls(__UI_HoveringID).Name) + " (" + RTRIM$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Name) + " count:" + STR$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Count) + ")"
+    'END IF
 
-    IF __UI_IsDragging = __UI_False THEN
-        IF __UI_Controls(__UI_Focus).Type = __UI_Type_TextBox THEN
-            IF __UI_IsSelectingText THEN
-                __UI_SetCaption "Label2", "Sel.Start=" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).SelectionStart) + " Cursor=" + STR$(__UI_Controls(__UI_Focus).Cursor)
-                __UI_SetCaption "HoverLabel", "Selected?" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).TextIsSelected)
-            ELSE
-                __UI_SetCaption "Label2", "Editing text on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
-            END IF
-        ELSE
-            IF __UI_MouseIsDown AND __UI_MouseDownOnID > 0 THEN
-                __UI_SetCaption "Label2", "MouseDownOnID=" + RTRIM$(__UI_Controls(__UI_MouseDownOnID).Name)
-            ELSEIF __UI_MouseIsDown THEN
-                __UI_SetCaption "Label2", "HoveringID <> ID originally clicked"
-            ELSE
-                __UI_SetCaption "Label2", "Idle."
-            END IF
-        END IF
-    ELSE
-        __UI_SetCaption "Label2", "Dragging..." + STR$(__UI_PreviewLeft) + "," + STR$(__UI_PreviewTop)
-    END IF
+    'IF __UI_IsDragging = __UI_False THEN
+    '    IF __UI_Controls(__UI_Focus).Type = __UI_Type_TextBox THEN
+    '        IF __UI_IsSelectingText THEN
+    '            __UI_SetCaption "Label2", "Sel.Start=" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).SelectionStart) + " Cursor=" + STR$(__UI_Controls(__UI_Focus).Cursor)
+    '            __UI_SetCaption "HoverLabel", "Selected?" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).TextIsSelected)
+    '        ELSE
+    '            __UI_SetCaption "Label2", "Editing text on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
+    '        END IF
+    '    ELSE
+    '        IF __UI_MouseIsDown AND __UI_MouseDownOnID > 0 THEN
+    '            __UI_SetCaption "Label2", "MouseDownOnID=" + RTRIM$(__UI_Controls(__UI_MouseDownOnID).Name)
+    '        ELSEIF __UI_MouseIsDown THEN
+    '            __UI_SetCaption "Label2", "HoveringID <> ID originally clicked"
+    '        ELSE
+    '            __UI_SetCaption "Label2", "Idle."
+    '        END IF
+    '    END IF
+    'ELSE
+    '    __UI_SetCaption "Label2", "Dragging..." + STR$(__UI_PreviewLeft) + "," + STR$(__UI_PreviewTop)
+    'END IF
 END SUB
 
 SUB __UI_BeforeUnload
@@ -1554,6 +1562,7 @@ SUB __UI_EventDispatcher
                 IF __UI_IsDragging = __UI_False THEN
                     __UI_IsDragging = __UI_True
                     __UI_DraggingID = __UI_HoveringID
+                    __UI_MouseDownOnID = 0
                     __UI_BeginDrag __UI_DraggingID
                     __UI_DragY = __UI_MouseTop
                     __UI_DragX = __UI_MouseLeft
@@ -2490,7 +2499,7 @@ SUB __UI_LoadImage (This AS __UI_ControlTYPE, File$)
     END IF
 
     IF LEN(ErrorMessage$) THEN
-        IF NotFoundImage = 0 THEN NotFoundImage = __UI_LoadImageFromCode("notfound.png")
+        IF NotFoundImage = 0 THEN NotFoundImage = __UI_LoadThemeImage("notfound.png")
 
         PrevDest = _DEST
         This.HelperCanvas = _NEWIMAGE(This.Width, This.Height, 32)
@@ -2509,16 +2518,26 @@ SUB __UI_LoadImage (This AS __UI_ControlTYPE, File$)
 END SUB
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_LoadImageFromCode& (FileName$)
+FUNCTION __UI_LoadThemeImage& (FileName$)
     'Contains portions of Dav's BIN2BAS
     'http://www.qbasicnews.com/dav/qb64.php
 
     DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
-    DIM MemoryBlock AS _MEM, TempImage AS LONG
+    DIM MemoryBlock AS _MEM, TempImage AS LONG, NextSlot AS LONG
     DIM NewWidth AS INTEGER, NewHeight AS INTEGER
 
+    'Check if this FileName$ has already been loaded
+    FOR NextSlot = 1 TO UBOUND(__UI_ThemeImages)
+        IF UCASE$(RTRIM$(__UI_ThemeImages(NextSlot).FileName)) = UCASE$(FileName$) THEN
+            __UI_LoadThemeImage& = __UI_ThemeImages(NextSlot).Handle
+            EXIT FUNCTION
+        ELSEIF RTRIM$(__UI_ThemeImages(NextSlot).FileName) = "" THEN
+            'Found an empty slot
+        END IF
+    NEXT
+
     A$ = __UI_ImageData$(FileName$)
-    IF LEN(A$) = 0 THEN ERROR 5: EXIT SUB
+    IF LEN(A$) = 0 THEN EXIT FUNCTION
 
     NewWidth = CVI(LEFT$(A$, 2))
     NewHeight = CVI(MID$(A$, 3, 2))
@@ -2540,188 +2559,764 @@ FUNCTION __UI_LoadImageFromCode& (FileName$)
     MemoryBlock = _MEMIMAGE(TempImage)
 
     __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
-
     _MEMFREE MemoryBlock
-    __UI_LoadImageFromCode& = TempImage
+
+    IF NextSlot > UBOUND(__UI_ThemeImages) THEN
+        'No empty slots. We must increase __UI_ThemeImages()
+        REDIM _PRESERVE __UI_ThemeImages(1 TO NextSlot + 99) AS __UI_ThemeImagesType
+    END IF
+    __UI_ThemeImages(NextSlot).FileName = FileName$
+    __UI_ThemeImages(NextSlot).Handle = TempImage
+
+    __UI_LoadThemeImage& = TempImage
 END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION __UI_ImageData$ (File$)
+    'Data generated using Dav's BIN2BAS
+    'http://www.qbasicnews.com/dav/qb64.php
     DIM A$
 
     SELECT CASE LCASE$(File$)
+        CASE "frame.png"
+            A$ = MKI$(22) + MKI$(20) 'Width, Height
+            A$ = A$ + "o3`ooo?0ooOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]e"
+            A$ = A$ + "ooKdAooo0looo3`ooo?0ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oo?aC?moIG]eoo?0ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooGldCoOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo6MdoWMeFooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooWMeFoOfEKmoo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0ooOf"
+            A$ = A$ + "EKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looIG]eoWMeFooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooWMeFoOfEKmoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looIG]eoWMeFooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooWMeFoOfEKmoo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looIG]eoWMeFooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooWMeFoOfEKmoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looIG]eoWMeFooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oooKdAoOfEKmo"
+            A$ = A$ + "IG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oGldCoOfEKmoo3`ooWMeFoOfEKmoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooCldCoOfEKmoo3`ooo?0oooo0looIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOf"
+            A$ = A$ + "EKmoIG]eoWMeFoOfEKmoIG]eoWMeFoo_A7moo3`ooo?0%oo?"
+        CASE "arrows.png"
+            A$ = MKI$(9) + MKI$(144)
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?7IKmoo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo0looo3`ooo?0oooLT]eocAfFo?7IKmoLT]eocAfFoo?0oooo0looo3`oo?7I"
+            A$ = A$ + "KmoLT]eocAfFoo?0oooLT]eocAfFo?7IKmoo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo0loocAfFo?7IKmoLT]eoo3`oo?7IKmoo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`oo?7IKmoo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN"
+            A$ = A$ + "[m?Qk]fo4^gJoo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oo?Qk]fo4^gJoChN[moo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo"
+            A$ = A$ + "0loo4^gJoChN[m?Qk]foo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[m?Qk]fo4^gJoo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oo?Qk]fo4^gJoChN[moo"
+            A$ = A$ + "0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooChN[moo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?nbgnoo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0looo3`ooo?0oooh;OkoS_l]o?nbgnoh;OkoS_l]oo?0oooo0looo3`oo?nbgnoh"
+            A$ = A$ + ";OkoS_l]oo?0oooh;OkoS_l]o?nbgnoo0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0looS_l]o?nbgnoh;Okoo3`oo?nbgnoo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`oo?nbgnoo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`oo?7IKmoo0looo3`ooo?0oooo0looo3`oo?7IKmoo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo"
+            A$ = A$ + "0loocAfFo?7IKmoLT]eoo3`oo?7IKmoLT]eocAfFoo?0oooLT]eocAfFo?7IKmoo0looo3`ooo?0oooLT]eocAfFo?7IKmoLT]eo"
+            A$ = A$ + "cAfFoo?0oooo0looo3`ooo?0oooo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?7IKmoo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooChN[moo"
+            A$ = A$ + "0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooChN[m?Qk]fo4^gJoo?0oo?Qk]fo4^gJoChN[moo0loo"
+            A$ = A$ + "o3`ooo?0oo?Qk]fo4^gJoChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[moo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooChN[moo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooChN[m?Qk]fo"
+            A$ = A$ + "4^gJoo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oo?Qk]fo4^gJoChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0oooo0loo4^gJ"
+            A$ = A$ + "oChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`oo?nbgnoo0looo3`ooo?0oooo0looo3`oo?nbgnoo0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0loo"
+            A$ = A$ + "S_l]o?nbgnoh;Okoo3`oo?nbgnoh;OkoS_l]oo?0oooh;OkoS_l]o?nbgnoo0looo3`ooo?0oooh;OkoS_l]o?nbgnoh;OkoS_l]"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?nbgnoo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?7IKmoo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo0looo3`ooo?0oooLT]eocAfFo?7IKmoo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`oo?7IKmoLT]eocAfFoo?0oooo0looo3`ooo?0oooo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "o?7IKmoLT]eocAfFoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooLT]eocAfFo?7IKmoo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0loocAfFo?7IKmoLT]eoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?7IKmoo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo"
+            A$ = A$ + "4^gJoChN[moo0looo3`ooo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN"
+            A$ = A$ + "[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[moo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]fo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?nbgnoo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0looo3`ooo?0oooh;OkoS_l]o?nbgnoo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "o?nbgnoh;OkoS_l]oo?0oooo0looo3`ooo?0oooo0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?nb"
+            A$ = A$ + "gnoh;OkoS_l]oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooh;OkoS_l]o?nbgnoo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looS_l]o?nbgnoh;Okoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?nbgnoo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "cAfFoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooLT]eocAfFo?7IKmoo0looo3`ooo?0oooo0looo3`ooo?0oooo0loocAfF"
+            A$ = A$ + "o?7IKmoLT]eoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?7IKmoLT]eocAfFoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooLT]eocAfFo?7IKmoo0looo3`ooo?0oooo0looo3`oo?7IKmoLT]eocAfFoo?0oooo0looo3`ooo?0oooo0loocAfFo?7IKmoL"
+            A$ = A$ + "T]eoo3`ooo?0oooo0looo3`ooo?0oooLT]eocAfFo?7IKmoo0looo3`ooo?0oooo0looo3`ooo?0oooo0loocAfFoo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[moo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0loo4^gJoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo4^gJoChN[moo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooChN[m?Qk]fo4^gJoo?0oooo0looo3`ooo?0oooo0loo4^gJoChN[m?Qk]foo3`ooo?0oooo0looo3`ooo?0oo?Qk]fo"
+            A$ = A$ + "4^gJoChN[moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo4^gJoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looS_l]"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooh;OkoS_l]o?nbgnoo0looo3`ooo?0oooo0looo3`ooo?0oooo0looS_l]o?nb"
+            A$ = A$ + "gnoh;Okoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`oo?nbgnoh;OkoS_l]oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooh"
+            A$ = A$ + ";OkoS_l]o?nbgnoo0looo3`ooo?0oooo0looo3`oo?nbgnoh;OkoS_l]oo?0oooo0looo3`ooo?0oooo0looS_l]o?nbgnoh;Oko"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooh;OkoS_l]o?nbgnoo0looo3`ooo?0oooo0looo3`ooo?0oooo0looS_l]oo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0loo%%%0"
+        CASE "scrolltrack.png"
+            A$ = MKI$(17) + MKI$(68)
+            A$ = A$ + "oW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmooo>i"
+            A$ = A$ + "oo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?l"
+            A$ = A$ + "UoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooo"
+            A$ = A$ + "bWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcno"
+            A$ = A$ + "oKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_l"
+            A$ = A$ + "oo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOn"
+            A$ = A$ + "foooiKooo[omooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOnfooo"
+            A$ = A$ + "jOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWoo"
+            A$ = A$ + "o_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_On"
+            A$ = A$ + "ooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOj"
+            A$ = A$ + "Hooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo"
+            A$ = A$ + "`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gno"
+            A$ = A$ + "o7oioo_lYooodcnooKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Oj"
+            A$ = A$ + "oo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m"
+            A$ = A$ + "_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooo"
+            A$ = A$ + "hCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoo"
+            A$ = A$ + "oW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[om"
+            A$ = A$ + "ooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOnfooojOooo_Onooon"
+            A$ = A$ + "ioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWooo_Onoooniooo"
+            A$ = A$ + "YSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmo"
+            A$ = A$ + "oo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oi"
+            A$ = A$ + "oo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOl"
+            A$ = A$ + "WooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooo"
+            A$ = A$ + "dcnooKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofono"
+            A$ = A$ + "oO_loo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?m"
+            A$ = A$ + "ooOnfoooiKooo[omooonioookWooo_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOn"
+            A$ = A$ + "fooojOooo_OnooonioookWoooW>fooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngooo"
+            A$ = A$ + "kWooo_OnooonioooYSmooW>foookTooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWoo"
+            A$ = A$ + "o_OnooOjHoooYSmooo>ioo?lUooo`Gnoo7oioo_lYooodcnooKokooombooohCoooW_mooOnfooojOooo_OnooonioookWoooW>f"
+            A$ = A$ + "ooOjHooo_Cnoo3Oioo?lUoooaOnoo;Ojoo?m\ooofonooO_loo?ndoooiKoooW_moo_ngoookWooo_OnooonioooYSmooW>foook"
+            A$ = A$ + "Tooo`Gnoo3OiooOlWooobWnooC?koo_m_ooog;oooS?mooOnfoooiKooo[omooonioookWooo_OnooOjHo?h8Ckob[]aoC?g8o?m"
+            A$ = A$ + "LSloh3>coWOh=oooW?mooW>foookRoooaOnoo?_jooolZoooeknooO_looombooog;ooPS<]o3>bdn_lJKlodc=boC?g8o?nPclo"
+            A$ = A$ + "i7NcoooiCoooYSmooo^hooOlWoooc[noo?_jooOm^ooog;oooO_looombo?h8CkoPS<]o;_f6o?mLSlodc=boS?h<oOnQglooOnd"
+            A$ = A$ + "ooOjHooo_;noo7oiooolZoooc[nooG_kooombooog;oooO_lo3>bdn?h8Ckob[]aoC?g8o?mLSloh3>coWOh=oooW?mooW>foook"
+            A$ = A$ + "RoooaOnoo?_jooolZoooeknooO_looombooog;ooPS<]o3>bdn_lJKlodc=boC?g8o?nPcloi7NcoooiCoooYSmooo^hooOlWooo"
+            A$ = A$ + "c[noo?_jooOm^ooog;oooO_looombo?h8CkoPS<]o;_f6o?mLSlodc=boS?h<oOnQglooOndooOjHooo_;noo7oiooolZoooc[no"
+            A$ = A$ + "oG_kooombooog;oooO_lo3>bdn?h8Ckob[]aoC?g8o?mLSloh3>coWOh=oooW?mooW>foookRoooaOnoo?_jooolZoooeknooO_l"
+            A$ = A$ + "ooombooog;ooPS<]o3>bdn_lJKlodc=boC?g8o?nPcloi7NcoooiCoooYSmooo^hooOlWoooc[noo?_jooOm^ooog;oooO_looom"
+            A$ = A$ + "bo?h8CkoPS<]o;_f6o?mLSlodc=boS?h<oOnQglooOndooOjHooo_;noo7oiooolZoooc[nooG_kooombooog;oooO_lo3>bdn?h"
+            A$ = A$ + "8Ckob[]aoC?g8o?mLSloh3>coWOh=oooW?mooW>foookRoooaOnoo?_jooolZoooeknooO_looombooog;ooPS<]o3>bdn_lJKlo"
+            A$ = A$ + "dc=boC?g8o?nPcloi7NcoooiCoooYSmooo^hooOlWoooc[noo?_jooOm^ooog;oooO_looombo?h8CkoPS<]o;_f6o?mLSlodc=b"
+            A$ = A$ + "oS?h<oOnQglooOndooOjHooo_;noo7oiooolZoooc[nooG_kooombooog;oooO_lo3>bdn?h8Ckob[]aoC?g8o?mLSloh3>coWOh"
+            A$ = A$ + "=oooW?mooW>foookRoooaOnoo?_jooolZoooeknooO_looombooog;ooPS<]o3>bdn_lJKlodc=boC?g8o?nPcloi7NcoooiCooo"
+            A$ = A$ + "YSmooo^hooOlWoooc[noo?_jooOm^ooog;oooO_looombo?h8CkoPS<]o;_f6o?mLSlodc=boS?h<oOnQglooOndooOjHooo_;no"
+            A$ = A$ + "o7oiooolZoooc[nooG_kooombooog;oooO_lo3>bdn?h8Ckob[]aoC?g8o?mLSloh3>coWOh=oooW?mooW>foookRoooaOnoo?_j"
+            A$ = A$ + "ooolZoooeknooO_looombooog;ooPS<]o3>bdn_lJKlodc=boC?g8o?nPcloi7NcoooiCoooYSmooo^hooOlWoooc[noo?_jooOm"
+            A$ = A$ + "^ooog;oooO_looombo?h8CkookNhooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoooniooo"
+            A$ = A$ + "kWooo_Onoo_kQooo^7noo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWoo"
+            A$ = A$ + "okNhoo_kQoookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoooniooo^7nookNh"
+            A$ = A$ + "ooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoo_kQooo^7noo_Onooon"
+            A$ = A$ + "ioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWoookNhoo_kQoookWooo_Onoooniooo"
+            A$ = A$ + "kWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoooniooo^7nookNhooonioookWooo_OnooonioookWoo"
+            A$ = A$ + "o_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoo_kQooo^7noo_OnooonioookWooo_OnooonioookWooo_On"
+            A$ = A$ + "ooonioookWooo_OnooonioookWooo_OnooonioookWoookNhoo_kQoookWooo_OnooonioookWooo_OnooonioookWooo_Onooon"
+            A$ = A$ + "ioookWooo_OnooonioookWooo_Onoooniooo^7nookNhooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoooniooo"
+            A$ = A$ + "kWooo_OnooonioookWooo_Onoo_kQooo^7noo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWoo"
+            A$ = A$ + "o_OnooonioookWoookNhoo_kQoookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_On"
+            A$ = A$ + "oooniooo^7nookNhooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoo_k"
+            A$ = A$ + "Qooo^7noo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWoookNhoo_kQooo"
+            A$ = A$ + "kWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoooniooo^7nookNhooonioookWoo"
+            A$ = A$ + "o_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWooo_Onoo_kQooo^7noo_OnooonioookWooo_On"
+            A$ = A$ + "ooonioookWooo_OnooonioookWooo_OnooonioookWooo_OnooonioookWoookNh%%o3"
+        CASE "scrollthumb.png"
+            A$ = MKI$(15) + MKI$(88)
+            A$ = A$ + "okNhooOoloO[E6hoC_kYo?m^WnodkNjoC_kYo3=^TnodkNjoC_kYo?m^WnodkNjoC_kYogJU1noo^7nookNho7KV5n_lJKlooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooo;_f6oO\IFhookNho7KV5noooooooO_loookRooo_;noocNgoooi"
+            A$ = A$ + "CoomO_loaWMao_ndonOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_iBoomO_loaWMao_ndonOj"
+            A$ = A$ + "AgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_iBoomO_loaWMaoc>e0oOjAgkoZ;]_ooooooO\IFho"
+            A$ = A$ + "okNho7KV5noooooooO_loookRooo_;noocNgoooiCo?nPcloaWMao_ndonOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_l"
+            A$ = A$ + "oookRooo_;noo_>gok_iBo?nPcloaWMao_ndonOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_i"
+            A$ = A$ + "Bo?nPcloaWMaoc>e0oOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_iBo?nPcloaWMao_ndonOj"
+            A$ = A$ + "AgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>goooiCoomO_loaWMaoc>e0oOjAgkoZ;]_ooooooO\IFho"
+            A$ = A$ + "okNho7KV5noooooooO_loookRooo_;noocNgoooiCoomO_loaWMao_ndonOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_l"
+            A$ = A$ + "oookRooo_;noo_>gok_iBoomO_loaWMao_ndonOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_i"
+            A$ = A$ + "BoomO_loaWMaoc>e0oOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noocNgoooiCo?nPcloaWMao_ndonOj"
+            A$ = A$ + "AgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_iBo?nPcloaWMao_ndonOjAgkoZ;]_ooooooO\IFho"
+            A$ = A$ + "okNho7KV5noooooooO_loookRooo_;noo_>gok_iBo?nPcloaWMaoc>e0oOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_l"
+            A$ = A$ + "oookRooo_;noo_>gok_iBo?nPcloaWMao_ndonOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>goooi"
+            A$ = A$ + "CoomO_loaWMaoc>e0oOjAgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>gok_iBoomO_loaWMao_ndonOj"
+            A$ = A$ + "AgkoZ;]_ooooooO\IFhookNho7KV5noooooooO_loookRooo_;noo_>goooiCo?nPcloaWMao_ndonOjAgkoZ;]_ooooooO\IFho"
+            A$ = A$ + "okNho7KV5nOnQglo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`oWOh=oO\IFhookNhoo?lUo?Z@bgoj:ZS"
+            A$ = A$ + "o[[X>n_^Rjhoj:ZSo[[X>n_^Rjhoj:ZSo[[X>n_^Rjhok>jSo_jTomoo^7nooo>ioomacn_OV9eonIVDokWIBm_OV9eonIVDokWI"
+            A$ = A$ + "Bm_OV9eonIVDokWIBm_OV9eonIVDokWIBmog7?kooo>iokWIBm_lJKlooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooo;_f6o_OV9eooo>iokWIBmoooooook_ooo_m_ooobWnooo^hoo?jGoOnQglo`S=ao[^dnnoi?_koY7M_oooooo_OV9eo"
+            A$ = A$ + "oo>iokWIBmoooooook_ooo_m_ooobWnooo^hoooiEo?nPclo`S=ao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_o"
+            A$ = A$ + "oo_m_ooobWnooo^hoo?jGo?nPclo`S=ao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_ooo_m_ooobWnooo^hoo?j"
+            A$ = A$ + "GoOnQgloaWMao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_ooo_m_ooobWnooo^hoooiEoOnQglo`S=ao[^dnnoi"
+            A$ = A$ + "?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_oooOm^ooobWnooo^hoooiEoOnQglo`S=aoWNdmnoi?_koY7M_oooooo_OV9eo"
+            A$ = A$ + "oo>iokWIBmoooooook_oooOm^ooobWnooo>ioo?jGoOnQglo`S=aoWNdmnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_o"
+            A$ = A$ + "ooOm^ooobWnooo^hoooiEo?nPclo`S=ao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_oooOm^ooobWnooo^hoo?j"
+            A$ = A$ + "Go?nPclo`S=aoWNdmnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_oooOm^ooobWnooo>ioo?jGo?nPclo`S=ao[^dnnoi"
+            A$ = A$ + "?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_ooo_m_ooobWnooo^hoo?jGo?nPclo`S=ao[^dnnoi?_koY7M_oooooo_OV9eo"
+            A$ = A$ + "oo>iokWIBmoooooook_ooo_m_ooobWnooo^hoo?jGoOnQgloaWMao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_o"
+            A$ = A$ + "oo_m_ooobWnooo^hoooiEoOnQglo`S=ao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_ooo_m_ooobWnooo^hoooi"
+            A$ = A$ + "EoOnQglo`S=aoWNdmnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_ooo_m_ooobWnooo>ioo?jGoOnQglo`S=aoWNdmnoi"
+            A$ = A$ + "?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_oooOm^ooobWnooo^hoooiEo?nPclo`S=ao[^dnnoi?_koY7M_oooooo_OV9eo"
+            A$ = A$ + "oo>iokWIBmoooooook_ooo_m_ooobWnooo^hoo?jGo?nPclo`S=aoWNdmnoi?_koY7M_oooooo_OV9eooo>iokWIBmoooooook_o"
+            A$ = A$ + "oo_m_ooobWnooo>ioo?jGo?nPclo`S=ao[^dnnoi?_koY7M_oooooo_OV9eooo>iokWIBmomO_lo`S=ao3?f4o?lHClo`S=ao3?f"
+            A$ = A$ + "4o?lHClo`S=ao3?f4o?lHClo`S=aoOog;o_OV9eooo>ioomacn_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_O"
+            A$ = A$ + "V9eonIVDokWIBmog7?kookNhooOolo_H:IcoRYT=o;VBfl_H:IcoRYT=o;VBfl_H:IcoRYT=o;VBfl_H:IcoRYT=o;VBfloo^7no"
+            A$ = A$ + "okNho;VBfl?mLSlooooooooooooooooooooooooooooooooooooooooooooooooooooooC?g8o_H:IcookNho;VBflooooooS_l]"
+            A$ = A$ + "oS>dlnOjAgko`S=aoc?i@ooo]omoo;Ojooomaoool_oooooooooooo_H:IcookNho;VBflooooooS_l]oS>dlnOjAgko`S=ao_oh"
+            A$ = A$ + "?ooo]omoo;Ojooombooomcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dlnOjAgko`S=aoc?i@ooo]omoo;Ojooomaooo"
+            A$ = A$ + "mcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dln?j@ckoaWMaoc?i@ooo]omoo;Ojooombooomcoooooooooooo_H:Ico"
+            A$ = A$ + "okNho;VBflooooooS_l]oS>dlnOjAgkoaWMaoc?i@ooo]omoo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]"
+            A$ = A$ + "oS>dln?j@cko`S=aoc?i@ooo]omoo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dln?j@cko`S=aoc?i"
+            A$ = A$ + "@ooo^7noo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dlnOjAgko`S=ao_oh?ooo]omoo;Ojooomaooo"
+            A$ = A$ + "mcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dln?j@cko`S=aoc?i@ooo]omoo;Ojooomaooomcoooooooooooo_H:Ico"
+            A$ = A$ + "okNho;VBflooooooS_l]oS>dlnOjAgko`S=aoc?i@ooo^7noo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]"
+            A$ = A$ + "oS>dlnOjAgko`S=aoc?i@ooo]omoo;Ojooombooomcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dln?j@ckoaWMaoc?i"
+            A$ = A$ + "@ooo]omoo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dlnOjAgkoaWMaoc?i@ooo]omoo;Ojooomaooo"
+            A$ = A$ + "mcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dln?j@cko`S=aoc?i@ooo]omoo;Ojooomaooomcoooooooooooo_H:Ico"
+            A$ = A$ + "okNho;VBflooooooS_l]oS>dln?j@cko`S=aoc?i@ooo^7noo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]"
+            A$ = A$ + "oS>dlnOjAgko`S=ao_oh?ooo]omoo;Ojooomaooomcoooooooooooo_H:IcookNho;VBflooooooS_l]oS>dln?j@cko`S=aoc?i"
+            A$ = A$ + "@ooo]omoo;Ojooomaooomcoooooooooooo_H:IcookNho;VBfl?cd2joS_l]oS>dlnOjAgko`S=aoc?i@ooo^7noo;Ojooomaooo"
+            A$ = A$ + "mcoooooooc<]Pn_H:IcookNho;VBfl_H:Ico<C;Xoc<]Pn?cd2jo<C;Xoc<]Pn?cd2jo<C;Xoc<]Pn?cd2jo<C;Xo;VBfl_H:Ico"
+            A$ = A$ + "okNhoo_jJo_H:IcoRYT=o;VBfl_H:IcoRYT=o;VBfl_H:IcoRYT=o;VBfl_H:IcoRYT=o;VBflooZ[moogngoooniooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooo\gmoogngoooooooog7ooo7oioo_kQooo\gmoo[^fooOj"
+            A$ = A$ + "HoooWGmooONeok_iBo?oT3moo?_jooooooooXOmoogngooooooooaOnooOOlooOm^oooc[noo;OjooOlWoooaOnoo7oioo_kQooo"
+            A$ = A$ + "[cmonK^doooooo_lJKloogngoooooo_oV;mooo>ioo?lUooo`Gnooo>ioookTooo^7noo_>gooOjHoooYSmonK^doooooo_h:Kko"
+            A$ = A$ + "ogngooooooooWGmoo3OiooOlWooo`Gnooo>ioo_kQooo]omoo_>goo_jJoooZ[mooOndoooooo_h:KkoogngooooooooW?moo3Oi"
+            A$ = A$ + "oo?lUooo`Gnooo>ioo_kQooo^7noo_>goo_jJoooYSmonK^doooooo_h:Kkoogngoooooo_oV;mooo>ioo?lUooo`Gnooo>ioook"
+            A$ = A$ + "Tooo^7noo_>gooOjHoooYSmonK^doooooo_h:KkoogngooooooooWGmoo3OiooOlWooo`Gnooo>ioo_kQooo]omoo_>goo_jJooo"
+            A$ = A$ + "Z[mooOndoooooo_h:KkoogngooooooooW?moo3Oioo?lUooo`Gnooo>ioo_kQooo^7noo_>goo_jJoooYSmonK^doooooo_h:Kko"
+            A$ = A$ + "ogngoooooo_oV;mooo>ioo?lUooo`Gnooo>ioookTooo^7noo_>gooOjHoooYSmonK^doooooo_h:KkoogngooooooooWGmoo3Oi"
+            A$ = A$ + "ooOlWooo`Gnooo>ioo_kQooo]omoo_>goo_jJoooZ[mooOndoooooo_h:KkoogngooooooooW?moo3Oioo?lUooo`Gnooo>ioo_k"
+            A$ = A$ + "Qooo^7noo_>goo_jJoooYSmonK^doooooo_h:Kkoogngoooooo_oV;mooo>ioo?lUooo`Gnooo>ioookTooo^7noo_>gooOjHooo"
+            A$ = A$ + "YSmonK^doooooo_h:KkoogngooooooooWGmoo3OiooOlWooo`Gnooo>ioo_kQooo]omoo_>goo_jJoooZ[mooOndoooooo_h:Kko"
+            A$ = A$ + "ogngooooooooWGmoo3Oioo?lUooo`Gnooo>ioo_kQooo^7noo_>goo_jJoooYSmonK^doooooo_h:KkoogngooooooooWGmooo>i"
+            A$ = A$ + "oo?lUooo`Gnooo>ioookTooo^7noo_>gooOjHoooYSmonK^doooooo_h:KkoogngooooooooYSmoo3OiooOlWooo`Gnooo>ioo_k"
+            A$ = A$ + "Qooo]omoo_>goo_jJoooZ[mooOndoooooo_h:KkoogngooooooooZ[moo3Oioo?lUooo`Gnooo>ioo_kQooo^7noo_>goo_jJooo"
+            A$ = A$ + "YSmonK^doooooo_h:KkoogngooooooooZ[mooo>ioo?lUooo`Gnooo>ioookTooo^7noo_>gooOjHoooYSmonK^doooooo_h:Kko"
+            A$ = A$ + "ogngoooooooobWnomGNdok_iBo_oV;monK^dok_iBo_oV;monK^dogOiAoonSoloo7oiooooooojCokoogngoOncknoooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooo3?f4ooo\gmoogngooolZooh;OkoK?l[o[]`^nOf1gjoI7L[oWM`"
+            A$ = A$ + "]n_f2kjoJ;\[o_m`_nOg57koVk\^ooOm^ooo\gmo%%%0"
+        CASE "scrollbuttons.png"
+            A$ = MKI$(17) + MKI$(136)
+            A$ = A$ + "okNhoC?g8o?[D2hoAWKYo3=^Tn?dhBjo@S;Yo3=^Tn?dhBjo@S;Yo3=^Tn?dhBjo@S;Yo3=^Tnocg>joY6IOoC?g8ooo^7noaVIQ"
+            A$ = A$ + "o;_f6ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo_lJKloaVIQoo_kQoO\IFhooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooO\IFhookNho7KV5noooooooconoo?okooo"
+            A$ = A$ + "l_oooconoo?okoool_oooconoo?okoool_oooconoo?okoool_ooooooo7KV5noo^7noaVIQooooooooeknooG_kooOm^oooekno"
+            A$ = A$ + "oG_kooOm^oooeknooG_kooOm^oooeknooG_kooOm^oooooooaVIQoo_kQoO\IFhooooooookRooo_;nooo^hoookRooo_;nocAfF"
+            A$ = A$ + "oookRooo_;nooo^hoookRooo_;nooo^hooooooO\IFhookNho7KV5noooooooOndoooiCoooW?mooOndo?7IKmoLT]eocAfFoooi"
+            A$ = A$ + "CoooW?mooOndoooiCoooW?moooooo7KV5noo^7noaVIQoooooo_mN[lofk]boK_g:ooLT]eocAfFo?7IKmoLT]eocAfFoK_g:o_m"
+            A$ = A$ + "N[lofk]boK_g:oooooooaVIQoo_kQoO\IFhooooook^e2o_kF;locAfFo?7IKmoLT]eo^K]`o?7IKmoLT]eocAfFok^e2o_kF;lo"
+            A$ = A$ + "^K]`ooooooO\IFhookNho7KV5nooooooY7M_o?7IKmoLT]eocAfFoWNdmnOjAgkoY7M_o?7IKmoLT]eocAfFoWNdmnOjAgkooooo"
+            A$ = A$ + "o7KV5noo^7noaVIQoooooo?j@ckoX3=_o?7IKm?j@ckoX3=_oS>dln?j@ckoX3=_o?7IKm?j@ckoX3=_oS>dlnooooooaVIQoo_k"
+            A$ = A$ + "QoO\IFhooooooS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_ooooooO\IFhookNho7KV5noo"
+            A$ = A$ + "ooooX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoooooo7KV5noo^7noaVIQoooooo?j@cko"
+            A$ = A$ + "X3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dlnooooooaVIQoo_kQoO\IFhooooooS>dln?j@ckoX3=_"
+            A$ = A$ + "oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_ooooooO\IFhookNho7KV5nOnQglofk]boK_g:o_mN[lofk]boK_g"
+            A$ = A$ + ":o_mN[lofk]boK_g:o_mN[lofk]boK_g:o_mN[loi7Nco7KV5noo^7nooo^hoS:Tlm_^Rjhoj:ZSo[[X>n_^Rjhoj:ZSo[[X>n_^"
+            A$ = A$ + "Rjhoj:ZSo[[X>n_^Rjhoj:ZSo[[X>noY?^gooSneoo_kQo?mLSlonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eo"
+            A$ = A$ + "nIVDokWIBm_OV9eonIVDokWIBm?mLSlookNhokWIBm_lJKlooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooob[]aokWIBmoo^7nonIVDoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooonIVDoo_kQo_OV9eooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo_O"
+            A$ = A$ + "V9eookNhokWIBmoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooookWIBmoo^7no"
+            A$ = A$ + "nIVDoooooooooooooooooooooooooooooooooChN[moooooooooooooooooooooooooooooooooooooonIVDoo_kQo_OV9eooooo"
+            A$ = A$ + "ooonioookWooo_Onooonio?Qk]fo4^gJoChN[mookWooo_OnooonioookWooo_Onoooooo_OV9eookNhokWIBmooooooo7oiooOl"
+            A$ = A$ + "WoooaOno4^gJoChN[m?Qk]fo4^gJoChN[mooaOnoo7oiooOlWoooaOnooooookWIBmoo^7nonIVDooooooooW?mooOndoChN[m?Q"
+            A$ = A$ + "k]fo4^gJoooiCo?Qk]fo4^gJoChN[mooW?mooOndoooiCooooooonIVDoo_kQo_OV9eooooooGOg9o?Qk]fo4^gJoChN[mOmMWlo"
+            A$ = A$ + "egMboGOg9o?Qk]fo4^gJoChN[mOmMWloegMboooooo_OV9eookNhokWIBmoooooo_Om`oone3o?Qk]fo_Om`oone3ookG?lo_Om`"
+            A$ = A$ + "oone3o?Qk]fo_Om`oone3ookG?looooookWIBmoo^7nonIVDooooooOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe"
+            A$ = A$ + "1oOkE7lo]GM`ogNe1ooooooonIVDoo_kQo_OV9eoooooogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOk"
+            A$ = A$ + "E7lo]GM`oooooo_OV9eookNhokWIBmoooooo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo"
+            A$ = A$ + "oooookWIBmoo^7nonIVDooooooOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1ooooooonIVD"
+            A$ = A$ + "oo_kQo_OV9eoi7NcoK_g:o_mN[lofk]boK_g:o_mN[lofk]boK_g:o_mN[lofk]boK_g:o_mN[lofk]boWOh=o_OV9eookNhoook"
+            A$ = A$ + "Ro_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDoo?jGooo^7noX3=_okWIBm_O"
+            A$ = A$ + "V9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eoI7L[oo_kQo_OV9eodc=booombooog;oo"
+            A$ = A$ + "oO_looombooog;oooO_looombooog;oooO_looombooog;oooO_loC?g8o_OV9eookNhokWIBmooooooOOl\oomacnog7?koOOl\"
+            A$ = A$ + "oomacnog7?koOOl\oomacnog7?koOOl\oomacnog7?kooooookWIBmoo^7nonIVDoooooookG?lo_Om`oone3ookG?lo_Om`oone"
+            A$ = A$ + "3ookG?lo_Om`oone3ookG?lo_Om`oone3ooooooonIVDoo_kQo_OV9eooooook_iBo_nRkloj;^co[_h>o_nRkloj;^co_oh?oon"
+            A$ = A$ + "Solok?ncok_iBo_oV;monK^doooooo_OV9eookNhokWIBmooooooo;Ojoo_kQooo^7nookNhoo_kQo?Qk]fooo^hoookRooo`Gno"
+            A$ = A$ + "o;Ojoo_lYooobWnooooookWIBmoo^7nonIVDooooooooooooog?oooOolooomcoo4^gJoChN[m?Qk]fook_ooo_onooonkoooooo"
+            A$ = A$ + "oooooooooooonIVDoo_kQo_OV9eooooooooooooooooooooooChN[m?Qk]fo4^gJoChN[m?Qk]fooooooooooooooooooooooooo"
+            A$ = A$ + "oo_OV9eookNhokWIBmoooooooooooooooo?Qk]fo4^gJoChN[moooooo4^gJoChN[m?Qk]fooooooooooooooooooooookWIBmoo"
+            A$ = A$ + "^7nonIVDoooooooooooo4^gJoChN[m?Qk]fooooooooooooooooo4^gJoChN[m?Qk]fooooooooooooooooonIVDoo_kQo_OV9eo"
+            A$ = A$ + "oooooooooooooooo4^gJoooooooooooooooooooooooooooo4^gJoooooooooooooooooooooo_OV9eookNhokWIBmoooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooookWIBmoo^7nonIVDoooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooonIVDoo_kQo_OV9eooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooo_OV9eookNhokWIBm?cd2jooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooo<C;XokWIBmoo^7nonIVDokWIBm?cd2jo<C;Xoc<]Pn?cd2jo<C;Xoc<]Pn?cd2jo<C;X"
+            A$ = A$ + "oc<]Pn?cd2jo<C;Xoc<]Pn_OV9eonIVDoo_kQo?f0cjonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWI"
+            A$ = A$ + "Bm_OV9eonIVDokWIBm_djJjookNhoo?okooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooOkOooo^7noooooooomboooaOnooo^hooOkOooo\gmoo_>gooOjHoooYSmooSneoo?jGoooWGmonK^dooolZooooooo"
+            A$ = A$ + "oOndoo_kQoooooooo7oiooombooofonoo?_joo_lYoooaOnoo7oiooOlWooo`Gnooo>ioookRooo]omooONeooooooOnQglookNh"
+            A$ = A$ + "oooooooo_;nooKokooOm^ooobWnoo7oiooOlWooo`Gnooo>ioookTooo_;nookNhooOkOoooWGmoooooo7Of5ooo^7noooooooOk"
+            A$ = A$ + "Ooooc[noo;OjooOlWooo`Gnoo3Oioo?lUooo^7noogngooOkOooo]omoogngoo?jGooooooo\C=`oo_kQoooooooo_>gooOlWooo"
+            A$ = A$ + "aOnoo7oioo?lUooo`GnoS_l]ooOkOooo]omoogngooOkOooo]omooSneoooooo?j@ckookNhoooooooo[cmoo7oiooOlWooo`Gno"
+            A$ = A$ + "o3Oio?nbgnoh;OkoS_l]ooOkOooo\gmoogngoo?kMoooXOmooooooK^cjnoo^7noooooooOjHooo`Gnoo7oiooOlWooh;OkoS_l]"
+            A$ = A$ + "o?nbgnoh;OkoS_l]oo?kMooo\gmoocNgoo?jGoooooooUgL^oo_kQooooooooSneoo?lUooo`GnoS_l]o?nbgnoh;OkookNho?nb"
+            A$ = A$ + "gnoh;OkoS_l]oo?kMooo[cmooONeooooooOi=WkookNhooooooooWGmooo>io?nbgnoh;OkoS_l]oookTooo_;noogngo?nbgnoh"
+            A$ = A$ + ";OkoS_l]ooojLoooWGmooooooGNcinoo^7nooooooooiEooo_;nooo>io?nbgnoo_Cnooo^hoookRooo]omoo_>go?nbgnoo[cmo"
+            A$ = A$ + "o[^foooiEoooooooUgL^oo_kQooooooooOndoo_kQooo_;nooo^hoookRooo_;nookNhooOkOooo\gmoo_>goo_jJoooYSmooOnd"
+            A$ = A$ + "ooooooOi=WkookNhooooooooW?moogngoo_kQooo^7nookNhoo_kQooo]omoocNgoo?kMooo[cmoo[^foo?jGo_oV;mooooooGNc"
+            A$ = A$ + "inoo^7nooooooc?i@ooo[cmoocNgooOkOooo]omoocNgoo?kMooo[cmoo[^fooOjHoooXOmooONeogOiAoooooooUgL^oo_kQooo"
+            A$ = A$ + "ooooo;OjoooiCoooWGmooONeoooiEoooWGmooONeoooiEoooWGmooOndoooiCoOoU7moo7oiooooooojCokookNhoc?i@ooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooodc=booOkOooo^7noo?_jo3?f4oOi=WkoR[\]"
+            A$ = A$ + "ok]abnOg57koMGL\ogMaanOg57koMGL\ogMaanOg57koOOl\oWNdmnoofonoogngoo_kQo?mLSlo\B9Po7M^Un?dhBjo@S;Yo3=^"
+            A$ = A$ + "Tn?dhBjo@S;Yo3=^Tn?dhBjo@S;Yo3=^Tn?dhBjo?OkXoWJTmm?mLSlookNho7KV5n_lJKlooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooob[]ao7KV5noo^7noaVIQoooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooaVIQoo_kQoO\IFhooooooo?okoool_oooconoo?okoool_oooconoo?okoool_ooocon"
+            A$ = A$ + "oo?okoool_oooconooooooO\IFhookNho7KV5noooooooG_kooOm^oooeknooG_kooOm^oooeknooG_kooOm^oooeknooG_kooOm"
+            A$ = A$ + "^oooeknoooooo7KV5noo^7noaVIQoooooooo_;nooo^hoookRooo_;nooo^hoookRooo_;nooo^hoookRooo_;nooo^hoookRooo"
+            A$ = A$ + "ooooaVIQoo_kQoO\IFhooooooooiCoooW?mocAfFoooiCoooW?mooOndoooiCoooW?mocAfFoooiCoooW?mooOndooooooO\IFho"
+            A$ = A$ + "okNho7KV5noooooofk]bo?7IKmoLT]eocAfFoK_g:o_mN[lofk]bo?7IKmoLT]eocAfFoK_g:o_mN[loooooo7KV5noo^7noaVIQ"
+            A$ = A$ + "oooooo_kF;lo^K]`o?7IKmoLT]eocAfFok^e2ooLT]eocAfFo?7IKm_kF;lo^K]`ok^e2oooooooaVIQoo_kQoO\IFhooooooWNd"
+            A$ = A$ + "mnOjAgkoY7M_o?7IKmoLT]eocAfFo?7IKmoLT]eoY7M_oWNdmnOjAgkoY7M_ooooooO\IFhookNho7KV5nooooooX3=_oS>dln?j"
+            A$ = A$ + "@ckoX3=_o?7IKmoLT]eocAfFoS>dln?j@ckoX3=_oS>dln?j@ckoooooo7KV5noo^7noaVIQoooooo?j@ckoX3=_oS>dln?j@cko"
+            A$ = A$ + "X3=_o?7IKm?j@ckoX3=_oS>dln?j@ckoX3=_oS>dlnooooooaVIQoo_kQoO\IFhooooooS>dln?j@ckoX3=_oS>dln?j@ckoX3=_"
+            A$ = A$ + "oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_ooooooO\IFhookNho7KV5nooooooX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>d"
+            A$ = A$ + "ln?j@ckoX3=_oS>dln?j@ckoooooo7KV5noo^7noaVIQoooooo?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j@ckoX3=_oS>dln?j"
+            A$ = A$ + "@ckoX3=_oS>dlnooooooaVIQoo_kQoO\IFhoi7NcoK_g:o_mN[lofk]boK_g:o_mN[lofk]boK_g:o_mN[lofk]boK_g:o_mN[lo"
+            A$ = A$ + "fk]boWOh=oO\IFhookNhoookRo?Z@bgoj:ZSo[[X>n_^Rjhoj:ZSo[[X>n_^Rjhoj:ZSo[[X>n_^Rjhoj:ZSo[[X>n_^RjhoWnhN"
+            A$ = A$ + "oo?jGooo^7nodc=bokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eodc=boo_k"
+            A$ = A$ + "Qo_OV9eob[]aooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo;_f6o_OV9eookNhokWIBmoo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooookWIBmoo^7nonIVDoooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooonIVDoo_kQo_OV9eooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooo_OV9eookNhokWIBmoooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooookWIBmoo^7nonIVDooooooookWooo_OnoChN[mookWooo_Onoooniooo"
+            A$ = A$ + "kWooo_OnoChN[mookWooo_OnoooniooooooonIVDoo_kQo_OV9eoooooooOlWo?Qk]fo4^gJoChN[mooaOnoo7oiooOlWo?Qk]fo"
+            A$ = A$ + "4^gJoChN[mooaOnoo7oioooooo_OV9eookNhokWIBmoooooooOndoooiCo?Qk]fo4^gJoChN[mooW?mo4^gJoChN[m?Qk]fooOnd"
+            A$ = A$ + "oooiCoooW?mooooookWIBmoo^7nonIVDooooooOmMWloegMboGOg9o?Qk]fo4^gJoChN[m?Qk]fo4^gJoGOg9oOmMWloegMboGOg"
+            A$ = A$ + "9ooooooonIVDoo_kQo_OV9eooooooone3ookG?lo_Om`oone3o?Qk]fo4^gJoChN[mokG?lo_Om`oone3ookG?lo_Om`oooooo_O"
+            A$ = A$ + "V9eookNhokWIBmoooooo]GM`ogNe1oOkE7lo]GM`ogNe1o?Qk]fo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7looooookWIBmoo^7no"
+            A$ = A$ + "nIVDooooooOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1ooooooonIVDoo_kQo_OV9eooooo"
+            A$ = A$ + "ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`oooooo_OV9eookNhokWIBmoooooo]GM`ogNe"
+            A$ = A$ + "1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7lo]GM`ogNe1oOkE7looooookWIBmoo^7nonIVDoWOh=o_mN[lofk]boK_g:o_m"
+            A$ = A$ + "N[lofk]boK_g:o_mN[lofk]boK_g:o_mN[lofk]boK_g:oOnQglonIVDoo_kQooo_;nonIVDokWIBm_OV9eonIVDokWIBm_OV9eo"
+            A$ = A$ + "nIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBmooXOmookNhoS>dln_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVD"
+            A$ = A$ + "okWIBm_OV9eonIVDokWIBm_OV9eonIVDoWM`]noo^7nonIVDoC?g8ooog;oooO_looombooog;oooO_looombooog;oooO_looom"
+            A$ = A$ + "booog;oooO_looombo?mLSlonIVDoo_kQo_OV9eooooooomacnog7?koOOl\oomacnog7?koOOl\oomacnog7?koOOl\oomacnog"
+            A$ = A$ + "7?koOOl\oooooo_OV9eookNhokWIBmoooooo_Om`oone3ookG?lo_Om`oone3ookG?lo_Om`oone3ookG?lo_Om`oone3ookG?lo"
+            A$ = A$ + "oooookWIBmoo^7nonIVDoooooo_oV;moj;^co[_h>o_nRkloj;^co[_h>oonSolok?nco_oh?o_oV;monK^dok_iBooooooonIVD"
+            A$ = A$ + "oo_kQo_OV9eooooooo_lYooo^7nookNhoo_kQooo^7nookNhoookRooo_;noo3Oioo_lYooobWnoo;Ojoooooo_OV9eookNhokWI"
+            A$ = A$ + "BmooooooooooooOolo?Qk]foog?oooOolooomcoook_ooo_ono?Qk]fook_ooooooooooooooooookWIBmoo^7nonIVDoooooooo"
+            A$ = A$ + "oooo4^gJoChN[m?Qk]fooooooooooooooooo4^gJoChN[m?Qk]fooooooooooooooooonIVDoo_kQo_OV9eooooooooooooooooo"
+            A$ = A$ + "4^gJoChN[m?Qk]fooooooChN[m?Qk]fo4^gJoooooooooooooooooooooo_OV9eookNhokWIBmoooooooooooooooooooooo4^gJ"
+            A$ = A$ + "oChN[m?Qk]fo4^gJoChN[moooooooooooooooooooooooooookWIBmoo^7nonIVDoooooooooooooooooooooooooooo4^gJoChN"
+            A$ = A$ + "[m?Qk]fooooooooooooooooooooooooooooooooonIVDoo_kQo_OV9eooooooooooooooooooooooooooooooooo4^gJoooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooo_OV9eookNhokWIBmoooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooookWIBmoo^7nonIVDoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooonIVDoo_kQo_OV9eo<C;Xoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooc<]"
+            A$ = A$ + "Pn_OV9eookNhokWIBm_OV9eo<C;Xoc<]Pn?cd2jo<C;Xoc<]Pn?cd2jo<C;Xoc<]Pn?cd2jo<C;Xoc<]Pn?cd2jonIVDokWIBmoo"
+            A$ = A$ + "^7noH3<[okWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eonIVDokWIBm_OV9eoB[[Yoo_kQoool_oo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo]omookNhoooooooog;ooo7oi"
+            A$ = A$ + "oookRooo]omoocNgooojLoooYSmooW>foo?jGoooXOmooONeok_iBoooc[nooooooooiCooo^7noooooooOlWooog;oooKokoool"
+            A$ = A$ + "ZooobWnoo7oiooOlWoooaOnoo3OioookTooo_;noogngoooiEoooooooi7Ncoo_kQooooooooo^hoo_m_oooeknoo;OjooOlWooo"
+            A$ = A$ + "aOnoo3OioookTooo_Cnooo^hoo_kQooo]omooONeooooooOlIGlookNhoooooooo]omoo?_joo_lYoooaOnoo3Oioo?lUooo`Gno"
+            A$ = A$ + "okNhooOkOooo]omoogngooOkOoooXOmooooooc>e0ooo^7noooooooojLoooaOnoo7oiooOlWooo`Gnoo3Oioo?lUooo]omoogng"
+            A$ = A$ + "ooOkOooo]omoogngoo?jGoooooooX3=_oo_kQoooooooo_>gooOlWoooaOnoS_l]oo?lUooo`GnoogngooOkOooo]omoS_l]ooOk"
+            A$ = A$ + "Oooo\gmooSneoooooo_i>[kookNhooooooooYSmoo3Oio?nbgnoh;OkoS_l]oo_kQooo^7noocNgo?nbgnoh;OkoS_l]oo?kMooo"
+            A$ = A$ + "XOmooooooGNcinoo^7nooooooo?jGooo`Gnoo3Oio?nbgnoh;OkoS_l]oo_kQooh;OkoS_l]o?nbgnoo\gmoo_>goooiEooooooo"
+            A$ = A$ + "UgL^oo_kQooooooooONeoookTooo_Cnooo>io?nbgnoh;OkoS_l]o?nbgnoh;OkoocNgoo?kMooo[cmooONeooooooOi=WkookNh"
+            A$ = A$ + "ooooooooWGmooo^hoookTooo_Cnooo>io?nbgnoh;OkoS_l]ooojLooo[cmoo_>goo_jJoooWGmooooooGNcinoo^7nooooooooi"
+            A$ = A$ + "Cooo^7nooo^hoookRooo_;nooo^ho?nbgnoo]omoocNgooojLoooZ[mooW>foooiCoooooooUgL^oo_kQooooooooOndooOkOooo"
+            A$ = A$ + "^7nookNhoo_kQooo^7noogngoo?kMooo\gmoo_>goo_jJoooXOmonK^dooooooOi=WkookNhoooooo?oT3moo_>goo?kMooo]omo"
+            A$ = A$ + "ogngoo?kMooo\gmoo_>goo_jJoooYSmooSneoooiEoOoU7mooooooGNcinoo^7nooooooo_lYoooW?mooONeoooiEoooWGmooONe"
+            A$ = A$ + "oooiEoooWGmooONeoooiCoooW?momGNdooOlWooooooo[?m_oo_kQo?oT3mooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooC?g8ooo]omookNhooolZo?lHCloUgL^o;^bfn_g6;koMGL\ogMaanOg57koMGL\ogMaanOg"
+            A$ = A$ + "57koMGL\oomacnOjAgkooKokooOk%Oo?"
+        CASE "radiobutton.png"
+            A$ = MKI$(13) + MKI$(104)
+            A$ = A$ + "oooo0looo3`ooo?00657J0HDLl5PAaA]0657e3HDLD;PAaaG0657Jlooo3`ooo?0oooo0looo30PAaQ00657<1HDLTOX6Bfo1OkY"
+            A$ = A$ + "o[=gJo_aj^joVV8Jo3HDLT?PAa1C06572looo3`ooo?00657<YYNEmo_eJjoK3>hok]hRo_hUGnoUS>joW>k\oOc1;koQ6hFo3HD"
+            A$ = A$ + "L`dooo?00657J0HDLTo_eJjoK3>hok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo3=aen?PAaAn0657J0HDLlEX6BfoK3>hok]hRo_h"
+            A$ = A$ + "UGnoUS>joW>k\o?k_ono_7Olo7olco?meGoo\nXKo3HDLl5PAaA]1OkYok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo7olco?meGoo"
+            A$ = A$ + "fOomoG=bin?PAaA]0657e[=gJo_hUGnoUS>joW>k\o?k_ono_7Olo7olco?meGoofOomoSOnioOmd;oo0657e3HDLD[aj^joUS>j"
+            A$ = A$ + "oW>k\o?k_ono_7Olo7olco?meGoofOomoSOnio_nk_ooH_<_o3HDLD;PAaaGVV8JoW>k\o?k_ono_7Olo7olco?meGoofOomoSOn"
+            A$ = A$ + "io_nk_oolgOoooJT`m?PAaaG0657J0HDLTOc1;ko_7Olo7olco?meGoofOomoSOnio_nk_oolgOooW=cln?PAaAn0657Jlooo30P"
+            A$ = A$ + "Aa1CQ6hFo3=aen?meGoofOomoSOnio_nk_oolgOooW=cln_Y52fo0657<mooo3`ooo?0065720HDL`4PAaAn\nXKoG=binOmd;oo"
+            A$ = A$ + "H_<_ooJT`m?PAaAn0657<1HDL8`ooo?0oooo0looo3`ooo?00657J0HDLl5PAaA]0657e3HDLD;PAaaG0657Jlooo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo00HDLX1PAaaG0657e2HDLD?PAaA]0657O1HDLXaooo?0oooo0looo3`ooo?0065720HDL`4PAaAn@R8LoCY]"
+            A$ = A$ + "ln?SDCoo3n:_ooGP_m?PAaAn0657<1HDL8`ooo?0oooo00HDL`DTn1foOV;_ocigno?SIgoo4JMoocgdlo?M@cooaQZ^oO7MNm?P"
+            A$ = A$ + "Aa1Coooo00HDLX1PAaAnOV;_ocigno?VL_ooc>nmoOMkbo?[PKook5]no?6bkoOISZko0657i3HDLX1PAaaG@R8Locigno?VL_oo"
+            A$ = A$ + "Jk^loomkaoog_7ooOoNloSMkboOK;WooD9\nogVN_m?PAaaG0657eBY]ln?SIgooc>nmoomkaoog_7ooOoNloomkaoog_7ooLVMm"
+            A$ = A$ + "ok4`jo?FNVko0657e2HDLD?SDCoo4JMooOMkboog_7ooOoNloomkaoog_7ooOoNloCmjbo?BmVoo5M;lo3HDLD?PAaA]3n:_ocgd"
+            A$ = A$ + "lo?[PKooOoNloomkaoog_7ooOoNloomkaooUGGoo3]Kno7eVin?PAaA]0657OmGP_m?M@cook5]noSMkboog_7ooOoNloomkaooe"
+            A$ = A$ + "\7ooI9<nokC^io_Igifo0657O1HDLX1PAaAnaQZ^o?6bkoOK;WooLVMmoCmjbooUGGooI9<nokC^io_CIVko0657i3HDLXaooo?0"
+            A$ = A$ + "0657<M7MNmOISZkoD9\nok4`jo?BmVoo3]KnokC^io_CIVkoZmVGo3HDL`dooo?0oooo00HDL80PAa1C0657igVN_m?FNVko5M;l"
+            A$ = A$ + "o7eVin_Igifo0657i3HDL`4PAaQ0oooo0looo3`ooo?0oooo00HDLX1PAaaG0657e2HDLD?PAaA]0657O1HDLXaooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo30PAaQ60657O1HDLD;PAaAm0657e2HDLl5PAaQ6oooo0looo3`ooo?0oooo00HDL80PAa1C0657i3YMDm?X"
+            A$ = A$ + "IZho_N[]oK:XAn_Umaeo0657i3HDL`4PAaQ0oooo0looo30PAa1C<f6BokiU7nO[gNkoa^;_oKK`1oo^6Olo0cLco7;[MnOUhAeo"
+            A$ = A$ + "0657<mooo30PAaQ60657ikiU7nO[gNkoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmof:;Yo3HDLT?PAaQ60657O1YMDmO[gNkoa^;_"
+            A$ = A$ + "oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLgOooW7Jfo0657O1HDLD;XIZhoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLg"
+            A$ = A$ + "OoodQ?nomZkZo3HDLD;PAaAm_N[]oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?noFG^ioK]hRo?PAaAm0657eJ:XAno^"
+            A$ = A$ + "6Olo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?noFG^ioW=jZoO`n2ko0657e2HDLlUUmaeo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?no"
+            A$ = A$ + "FG^ioW=jZoof[gnoS^hJo3HDLl5PAaQ60657i7;[Mn?bEOmo<[mfooLgOoodQ?noFG^ioW=jZoof[gno23\\o3HDLT?PAaQ6oooo"
+            A$ = A$ + "00HDL`DUhAeof:;YooLgOoodQ?noFG^ioW=jZoof[gno23\\oc9PKm?PAa1Coooo0looo30PAaQ00657<1HDLToW7JfomZkZoK]h"
+            A$ = A$ + "RoO`n2koS^hJo3HDLT?PAa1C06572looo3`ooo?0oooo0looo30PAaQ60657O1HDLD;PAaAm0657e2HDLl5PAaQ6oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?09G\aJTLa6oEb5KL]9G\aeWLa6GKb5KlG9G\aJlooo3`ooo?0oooo0looo3@b5K\09G\a<ULa6_Jb5KlH"
+            A$ = A$ + "9G\aXTLa6G@b5K<:9G\aSULa6_Jb5K<C9G\a2looo3`ooo?09G\a<ULa6CGb5Kl0oooo0looo3`ooo?0oooo0looo3@b5Kl09G\a"
+            A$ = A$ + "dULa6cdooo?09G\aJTLa6_Jb5Kl0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0TLa6?@b5KlZ9G\aJTLa6oEb5KlHoooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?09G\aSULa6oEb5KL]9G\aXlooo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0TLa6SBb5KL]9G\aeWLa6G`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3@b5KL19G\aeWLa6GKb5K<:"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?09G\aXTLa6GKb5KlG9G\aSmooo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0TLa6?Fb5KlG9G\aJTLa6_Jb5Kl0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0TLa6?@b5KlZ9G\aJloo"
+            A$ = A$ + "o3@b5K<C9G\adULa6?`ooo?0oooo0looo3`ooo?0oooo0TLa6?@b5K<M9G\a<mooo3`ooo?09G\a2TLa6cDb5KlZ9G\aSULa6SBb"
+            A$ = A$ + "5KL19G\aXTLa6?Fb5KlZ9G\a<ULa6;`ooo?0oooo0looo3`ooo?09G\aJTLa6oEb5KL]9G\aeWLa6GKb5KlG9G\aJlooo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo00HDLX1PAaaG0657e2HDLD?PAaA]0657O1HDLXaooo?0oooo0looo3`ooo?0065720HDL`4PAaAnSNXI"
+            A$ = A$ + "oG\^[nogQomo8k[[oOjRYm?PAaAn0657<1HDL8`ooo?0oooo00HDL`4WlMeo3WKZo7NiUoohWOnoV[^joW>k\o?k_ono??l\o;JP"
+            A$ = A$ + "Lm?PAa1Coooo00HDLX1PAaAn3WKZo7NiUoohWOnoV[^joW>k\o?k_ono_7Olo7olco_d5Kko0657i3HDLX1PAaaGSNXIo7NiUooh"
+            A$ = A$ + "WOnoNS^hoK:gYn_BofdoN:=XoK^kXooleGoofOomog:T^m?PAaaG0657eF\^[nohWOnoV[^joK:gYnODEGeoo<l@oK2ZYl?V<[io"
+            A$ = A$ + "fOomoSOnio_e9[ko0657e2HDLDogQomoV[^joW>k\o_Bofdoo<\@oGC^hlO8Q6boSHY9oSOnioOnj[oofGolo3HDLD?PAaA]8k[["
+            A$ = A$ + "oW>k\o?k_onoN:=XoO2ZZl?8R:bo@8i4oO9bHnOnj[ookc?ooWmbln?PAaA]0657OMjRYm?k_ono_7OloK^kXo?V<[ioTH99oOIb"
+            A$ = A$ + "HnOkcknokc?oogOomoo[A2go0657O1HDLX1PAaAn??l\o7olcooleGoofOomoSOnioOnj[ookc?oogOomoOf<cko0657i3HDLXao"
+            A$ = A$ + "oo?00657<9JPLm_d5KkofOomoSOnioOnj[ookc?oogOomoOf<ckoVF8Ho3HDL`dooo?0oooo00HDL80PAa1C0657ig:T^m_e9[ko"
+            A$ = A$ + "fGoloWmblno[A2go0657i3HDL`4PAaQ0oooo0looo3`ooo?0oooo00HDLX1PAaaG0657e2HDLD?PAaA]0657O1HDLXaooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo30PAaQ60657O1HDLD;PAaAm0657e2HDLl5PAaQ6oooo0looo3`ooo?0oooo00HDL80PAa1C0657i39R"
+            A$ = A$ + "`m?Ufbko<B=mo?h[lnoO1nfo0657i3HDL`4PAaQ0oooo0looo30PAa1CAj7HooI^ln?WOkoo<VMooCXemo?OCcood1=oo77ZjnoM"
+            A$ = A$ + "dieo0657<mooo30PAaQ60657ioI^ln?WOkooHbmno?khgooe];oo\2^mo_GdjooH8_ooU=Z^o3HDLT?PAaQ60657O19R`m?WOkoo"
+            A$ = A$ + "Hbmno;=kYo?XNcjo8mKCoCIdPn_cXOno]]LnoCU`joOKjmfo0657O1HDLD;Ufbko<VMoo?khgo?XNcjoAEMEooc`3m_9XVbo<R<V"
+            A$ = A$ + "ocIfeo_C0[ooHiI^o3HDLD;PAaAm<B=moCXemooe];oo8mKCooc`2mO=iRcoQ4J8o3BUUl?e[;oo8eKnoGd]`o?PAaAm0657e>h["
+            A$ = A$ + "ln?OCcoo\2^moCIdPno9XZboP8Z8o3QTCl?R2?ioGNMmo?d^ioODKVko0657e2HDLleO1nfod1=oo_Gdjo_cXOno<V<Vo7BUSl?R"
+            A$ = A$ + "3?io=K^ioWU`ho_?iVooVMWKo3HDLl5PAaQ60657i77ZjnoH8_oo]]LnocIfeo?e[;ooGNMmoWU`ho_?iVoo>UI^o3HDLT?PAaQ6"
+            A$ = A$ + "oooo00HDL`dMdieoU=Z^oCU`jo_C0[oo8eKno?d^io_?iVoo>UI^o[fKNm?PAa1Coooo0looo30PAaQ00657<1HDLTOKjmfoHiI^"
+            A$ = A$ + "oGd]`oODKVkoVMWKo3HDLT?PAa1C06572looo3`ooo?0oooo0looo30PAaQ60657O1HDLD;PAaAm0657e2HDLl5PAaQ6oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?00657J0HDLl5PAaA]0657e3HDLD;PAaaG0657Jlooo3`ooo?0oooo0looo30PAaQ00657<1HDLT?T"
+            A$ = A$ + "fAeoPVYRooj]fn_YP6ioFf7Go3HDLT?PAa1C06572looo3`ooo?00657<aHK8m_WGNho]Nk]o7k^ln_]17lokJlao3<c=oO\\fio"
+            A$ = A$ + "ER7Eo3HDL`dooo?00657J0HDLT_WGNho]Nk]o7k^ln_]17lokJlao3<c=oOaA;mo8GmeoK[\Tn?PAaAn0657J0HDLl5TfAeo]Nk]"
+            A$ = A$ + "o7k^ln?\1_ko:FlToGd^9m?Qofhoo6Mcoc\fKoocMomoONXIo3HDLl5PAaA]PVYRo7k^ln_]17lo:FlTo7EeEmo?3?doVPJ:o3h^"
+            A$ = A$ + ";nocMomoC7nhog[^[n?PAaA]0657eoj]fn_]17lokJlaoGd^9mo?3;doeT;>o7BXQlo7C>boC7nhoKMiVo_eR;no0657e3HDLD[Y"
+            A$ = A$ + "P6iokJlao3<c=oOQofhoWPZ:o3RXRl?4B>ao0Z[RoKMiVoOfX[no1k;\o3HDLD;PAaaGFf7Go3<c=oOaA;moo6Mco38_;n?8C6bo"
+            A$ = A$ + "0Z[RoclgKoOfX[noK_Nko?jR[m?PAaaG0657J0HDLTO\\fio8Gmeoc\fKoocMomoC7nhoKMiVoOfX[noK_Nko;<`bn?PAaAn0657"
+            A$ = A$ + "Jlooo30PAa1CER7EoK[\TnocMomoC7nhoKMiVoOfX[noK_Nko;<`bn?W0^eo0657<mooo3`ooo?0065720HDL`4PAaAnONXIog[^"
+            A$ = A$ + "[n_eR;no1k;\o?jR[m?PAaAn0657<1HDL8`ooo?0oooo0looo3`ooo?00657J0HDLl5PAaA]0657e3HDLD;PAaaG0657Jlooo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0TLa6[Ab5KlG9G\aeVLa6GOb5KL]9G\aOULa6[aooo?0oooo0looo3`ooo?09G\a2TLa6cDb5KlZ"
+            A$ = A$ + "9G\aSULa6SBb5KL19G\aXTLa6?Fb5KlZ9G\a<ULa6;`ooo?0oooo0TLa6cDb5K<M9G\a3looo3`ooo?0oooo0looo3`ooo?09G\a"
+            A$ = A$ + "3TLa6CGb5K<Coooo0TLa6[Ab5KlZ9G\a3looo3`ooo?0oooo0looo3`ooo?0oooo0looo3@b5Kl09G\a[VLa6[Ab5KlG9G\aSmoo"
+            A$ = A$ + "o3`ooo?09G\ahTLa63Jb5K<l9G\aPVLa6Scooo?0oooo0TLa6?Fb5KlG9G\aeVLa6Sbooo?0oooo0TLa63Jb5Klo9G\aoWLa6oOb"
+            A$ = A$ + "5K<Xoooo0looo3@b5K<:9G\aeVLa6GOb5KL1oooo0looo3@b5K<l9G\aoWLa6oOb5Klo9G\a`oooo3`ooo?09G\a5TLa6GOb5KL]"
+            A$ = A$ + "9G\aXlooo3`ooo?09G\aPVLa6oOb5Klo9G\aoWLa63jooo?0oooo0TLa6SBb5KL]9G\aOULa6?fooo?0oooo0TLa6SCb5K<X9G\a"
+            A$ = A$ + "`WLa63Jb5K<>oooo0looo3@b5KlH9G\aOULa6[Ab5KlZ9G\a3looo3`ooo?0oooo0looo3`ooo?0oooo0looo3@b5Kl09G\a[VLa"
+            A$ = A$ + "6[aooo?09G\a<ULa6CGb5Kl0oooo0looo3`ooo?0oooo0looo3@b5Kl09G\adULa6cdooo?0oooo0TLa6;@b5K<C9G\a[VLa6?Fb"
+            A$ = A$ + "5K<:9G\a5TLa6SBb5KlH9G\a[VLa6cDb5K\0oooo0looo3`ooo?0oooo0TLa6[Ab5KlG9G\aeVLa6GOb5KL]9G\aOULa6[aooo?0"
+            A$ = A$ + "oooo0loo%o30"
+        CASE "progresstrack.png"
+            A$ = MKI$(9) + MKI$(19)
+            A$ = A$ + "oooooOjZ\nOOnmgoXQ6JoS6JXm?JXQfoXQ6JoS6JXmok_onoV^:[oOgMgm__njkonj[_ok[_nn__njkonj[_oS6JXmo\c>komigO"
+            A$ = A$ + "ok[_nn__njko_onkoonk_ook_ono_onkok[_nnOP16hoXQ6Jok[_nnok_ono_onkoooooooooooo_onkoonk_o?JXQfoXQ6Jok[_"
+            A$ = A$ + "nnok_onoooooooooooonk_oooooooonk_o?JXQfoXQ6Jok[_nnok_onoooooooooooonk_oooooooonk_o?JXQfoXQ6Jok[_nnok"
+            A$ = A$ + "_onooooooooooo?nhSoooooooonk_o?JXQfoXQ6Jok[_nnok_onoooooooooooOmeGoooooooonk_o?JXQfoXQ6Jok[_nnok_ono"
+            A$ = A$ + "ooooooooooolc?oooooooonk_o?JXQfoXQ6Jok[_nnok_onooooooooooo?l`3oooooooonk_o?JXQfoXQ6Jok[_nnok_onooooo"
+            A$ = A$ + "oooooook_onooooooonk_o?JXQfoXQ6Jok[_nnok_onooooooooooo_lb;oooooooonk_o?JXQfoXQ6Jok[_nnok_onooooooooo"
+            A$ = A$ + "ooOmeGoooooooonk_o?JXQfoXQ6Jok[_nnok_onooooooooooo?nhSoooooooonk_o?JXQfoXQ6Jok[_nnok_onooooooooooo_n"
+            A$ = A$ + "j[oooooooonk_o?JXQfoXQ6Jok[_nnok_onoooooooooooonk_oooooooonk_o?JXQfomigOok[_nnok_ono_onkoooooooooooo"
+            A$ = A$ + "_onkoonk_oOOnmgoW^:[oOgMgmok_ono_onkoonk_ook_ono_onkoOgMgm_Y[bjooooooKjZ\nOOnmgoXQ6JoS6JXm?JXQfomigO"
+            A$ = A$ + "oOjZ\noooooo%%%0"
+        CASE "progresschunk.png"
+            A$ = MKI$(10) + MKI$(12)
+            A$ = A$ + ">=X5okdPFl_C3Jao>=X5okdPFl_C3Jao>=X5okdPFl_C3Jao>=X5ok:eVn_[DOjo^BmYok:eWn_[DOjo^BmYok:eWn_[DOjo^BmY"
+            A$ = A$ + "ok:eWnoP3cgo3><Oo?h`lmoP3cgo3><Oo?h`lmoP3cgo4>LOoCh`mmoP3cgoZmkIo[f_Wm_JoNfoZmkIo[f_Wm_JoNfo[m;Jo[f_"
+            A$ = A$ + "Xm_JoRfo[m;Jo;V_MmoHnjeoSm[Go?f_NmoHojeoTm[GoCf_Om?IoneoTmkGoCf_Om_HnfeoRiKGo;V_Mm_HnfeoRiKGo;V_Mm_H"
+            A$ = A$ + "nfeoRiKGo;V_Mm_Hnfeo7ml>oOdckloA@_co71m>oODdkloAA_co75=?oSDdll?BAcco85=?oOBfHlo9ISaoWT=6oOBfHlo9JOao"
+            A$ = A$ + "WXm5oORfGlo9JOaoWXm5oORfGl_=V3bofH>8oKSiPl_=V3bofD>8oKCiPlo=V3bogH>8oOSiPlo=V3bo\\N7ocbjMl?;[gao\\N7"
+            A$ = A$ + "ocbjMl?;[gao\\N7ocRjMl?;[kao\\^7ok1jEl_7XGaoNPN5ok1jEl_7XGaoNPN5okAjEl_7YGaoNTN5okAjEl_C3Jao>=X5okdP"
+            A$ = A$ + "Fl_C3Jao>=X5okdPFl_C3Jao>=X5okdPFl_C3Jao%%%0"
+        CASE "button.png"
+            A$ = MKI$(18) + MKI$(105)
+            A$ = A$ + ":O;ZoKiLDmoPAibo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo36E;o;9K;m_bgRjoCfVC"
+            A$ = A$ + "oCKTkm?kPKmo\k=eoc^gEo?kNGmo\kMeoc^gEo?kNGmo\kMeoc^gEo?kNGmo\kMeoc^gEo?kNCmo\3^eoCKTkmoT]ido36e;oG?j"
+            A$ = A$ + "OoookSooogOnooOoiooomWooogOnooOoiooomWooogOnooOoiooomWooogOnooOoiooomWooo_?noG?jOooPAmbo22E;o7?hGooo"
+            A$ = A$ + "m_oooSoloo?ncoooh?oooSoloo?ncoooh?oooSoloo?ncoooh?oooSoloo?ncoooh?ooogono7?hGo_P@ebo22E;o3OgBooolWoo"
+            A$ = A$ + "nkOook_omo_ongoonkOook_omo_ongoonkOook_omo_ongoonkOook_omo_ongooocOno3OgBo_P@ebo22E;ognf?o_ojSoomgon"
+            A$ = A$ + "ogOokoOom_oomgonogOokoOom_oomgonogOokoOom_oomgonogOokoOom_oon[?nognf?o_P@ebo22E;o_ne;oOoiKoolc?noc?o"
+            A$ = A$ + "ho?olSoolc?noc?oho?olSoolc?noc?oho?olSoolc?noc?oho?olSoomW_mo_ne;o_P@ebo22E;oS>e7o?ohGooj[?mo[_ndo_n"
+            A$ = A$ + "jCooj[?mo[_ndo_njCooj[?mo[_ndo_njCooj[?mo[_ndo_njCoolSOmoS>e7o_P@ebo22E;oONd4oonf?ooiSOloW?naoOnh7oo"
+            A$ = A$ + "iSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOloW?naoOnh7ookKoloONd4o_P@ebo22E;oC^c1o_ne;oogCOkoO?m]oomdgnogCOk"
+            A$ = A$ + "oO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m]oomdgnojG_loC^c1o_P@ebo22E;o7>bhnom`gnoe7OjoGOlYoOmaWnoe7OjoGOl"
+            A$ = A$ + "YoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnog3Oko7>bhn_P@ebo22E;oc=``nol\Onoc_nho?ojSool[?noc_nho?ojSool"
+            A$ = A$ + "[?noc_nho?ojSool[?noc_nho?ojSool[?noccnioc=``n_P@ebo22E;o[M_\nOlZCno[c=do_>g@oojL3mo[c=do_>g@oojL3mo"
+            A$ = A$ + "[c=do_>g@oojL3mo[c=do_>g@oojL3moa[>io[M_\n_P@ebo22E;oO]^Xn?lX;noWGmaoONe7ooiEOloWGmaoONe7ooiEOloWGma"
+            A$ = A$ + "oONe7ooiEOloWGmaoONe7ooiEOlo`S^hoO]^Xn_P@ebo22E;oGM]Sn_kUkmoRoL`o;nc1o_h?7loRoL`o;nc1o_h?7loRoL`o;nc"
+            A$ = A$ + "1o_h?7loRoL`o;nc1o_h?7lo^G^goGM]Sn_P@ebo22E;o?m\PnOkScmoN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koN[l^ok]bkn_g"
+            A$ = A$ + ":_koN[l^ok]bkn_g:_ko]?>go?m\Pn_P@ebo22E;o;M\LnojQWmoH;L\oS]`an?f27koH;L\oS]`an?f27koH;L\oS]`an?f27ko"
+            A$ = A$ + "H;L\oS]`an?f27ko[7Nfo;M\Ln_P@ebo22E;o7][Hn_jQWmoCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZ"
+            A$ = A$ + "o?M_[nodm^joZ7Nfo7][Hn_P@ebo36e;o7M[Hn?iGglo?S[Yoo<^VnochJjo?S[Yoo<^VnochJjo?S[Yoo<^VnochJjo?S[Yoo<^"
+            A$ = A$ + "VnochJjoTOMco7M[HnoPAmbo?JFAoS:OOm?cW2io=S:Tog<Z@nOcX2io=S:Tog<Z@nOcX2io=S:Tog<Z@nOcX2io=S:Tog<Z@nOc"
+            A$ = A$ + "X2io<O:ToS:OOm?TXMdo:O;ZoKILBmoPAmbo22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo"
+            A$ = A$ + "36U;o?9K;m_bgRjo:O;ZoKiLDmoPAibo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo36E;"
+            A$ = A$ + "o;9K;m_bgRjoCfVCoCKTkmOXXGooQRNmo7:jeoOXXGooQRNmo7:jeoOXXGooQRNmo7:jeoOXXGooQRNmo7:jeoOXXGooQRNmoCKT"
+            A$ = A$ + "kmoT]ido36e;o7:jeoOXXGoo6nlkoKhc_o_Q?ono6nlkoKhc_o_Q?ono6nlkoKhc_o_Q?ono6nlkoKhc_o_Q?onoQRNmo7:jeooP"
+            A$ = A$ + "Ambo22E;o7:jeoOXXGoonkOook_omo_ongoonkOook_omo_ongoonkOook_omo_ongoonkOook_omo_ongooQRNmo7:jeo_P@ebo"
+            A$ = A$ + "22E;oc9idoOXXGoonkOook_omo_ongoonkOook_omo_ongoonkOook_omo_ongoonkOook_omo_ongooQRNmoc9ido_P@ebo22E;"
+            A$ = A$ + "oKYgco_WVCoomgonogOokoOom_oomgonogOokoOom_oomgonogOokoOom_oomgonogOokoOom_ooNJ>moKYgco_P@ebo22E;okhe"
+            A$ = A$ + "aooVSCoolc?noc?oho?olSoolc?noc?oho?olSoolc?noc?oho?olSoolc?noc?oho?olSooK>>mokheao_P@ebo22E;oKhc_ooU"
+            A$ = A$ + "O?ooj[?mo[_ndo_njCooj[?mo[_ndo_njCooj[?mo[_ndo_njCooj[?mo[_ndo_njCooGnmloKhc_o_P@ebo22E;ogga]ooTK;oo"
+            A$ = A$ + "iSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOloW?naoOnh7ooC^]locga]o_P@ebo22E;o?W_[ooSG7oogCOk"
+            A$ = A$ + "oO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m]oomdgno?NMlo?g_[o_P@ebo22E;oSF]Yo_RC3ooe7OjoGOl"
+            A$ = A$ + "YoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWno:>=loWF]Xo_P@ebo22E;okeZWo?Q>onoc_nho?ojSool"
+            A$ = A$ + "[?noc_nho?ojSool[?noc_nho?ojSool[?noc_nho?ojSool[?no4jlkok5[Wo_P@ebo22E;oCUXUooQ:kno[c=do_>g@oojL3mo"
+            A$ = A$ + "[c=do_>g@oojL3mo[c=do_>g@oojL3mo[c=do_>g@oojL3mo6Z\koCeXTo_P@ebo22E;o[TVRoON5gnoWGmaoONe7ooiEOloWGma"
+            A$ = A$ + "oONe7ooiEOloWGmaoONe7ooiEOloWGmaoONe7ooiEOlojELko[TVRo_P@ebo22E;o7DTPoOKo^noRoL`o;nc1o_h?7loRoL`o;nc"
+            A$ = A$ + "1o_h?7loRoL`o;nc1o_h?7loRoL`o;nc1o_h?7lo]mkjo;TTPo_P@ebo22E;oWSRNo_HjVnoN[l^ok]bkn_g:_koN[l^ok]bkn_g"
+            A$ = A$ + ":_koN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koQYKjoSSRNo_P@ebo22E;o7cPMooEeRnoH;L\oS]`an?f27koH;L\oS]`an?f27ko"
+            A$ = A$ + "H;L\oS]`an?f27koH;L\oS]`an?f27koGEkio7cPLo_P@ebo22E;o_ROKoOCbNnoCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZ"
+            A$ = A$ + "o?M_[nodm^joCgkZo?M_[nodm^jo=9kio_BOKo_P@ebo36e;oKBNJoOAZJnoPQKlok5^ao?Hh6ooPQKlo36^ao?Hh6ooPQKlo36^"
+            A$ = A$ + "ao?Hh6ooPQKlo36^ao?Hh6oo5YZioKBNJooPAmbo?JFAoS:OOm_9iYmoVTWfoKBNJo_9iYmoVTWfoKBNJo_9iYmoVTWfoKBNJo_9"
+            A$ = A$ + "iYmoVTWfoKBNJo_9iYmoVTWfoS:OOm?TXMdo:O;ZoKILBmoPAmbo22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo"
+            A$ = A$ + "22E;o;8D]l_P@ebo36U;o?9K;m_bgRjo:O;ZoKiLDmoPAibo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo2nd:o;hC[l_P?]bo2nd:"
+            A$ = A$ + "o;hC[l_P?]bo36E;o;9K;m_bgRjoCfVCoCKTkm?kPKmo\k=eoc^gEo?kNGmo\kMeoc^gEo?kNGmo\kMeoc^gEo?kNGmo\kMeoc^g"
+            A$ = A$ + "Eo?kNCmo\3^eoCKTkmoT]ido36e;o[[TgmO^ANgoj:iMo[[Tgm_^BNgoj:iMo[[Tgm_^BNgoj:iMo[[Tgm_^BNgoj:iMo[[Tgm_^"
+            A$ = A$ + "BNgoi6iMoc[W8noPAmbo22E;o[[TgmochJjo?S[Yoo<^VnochJjo?S[Yoo<^VnochJjo?S[Yoo<^VnochJjo?S[Yoo<^VnochJjo"
+            A$ = A$ + "?S[Yoc;W5n_P@ebo22E;o[[Tgmodm^joCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZ"
+            A$ = A$ + "o_[V3n_P@ebo22E;o[[Tgm?f27koH;L\oS]`an?f27koH;L\oS]`an?f27koH;L\oS]`an?f27koH;L\oS]`an?f27koH;L\o[kU"
+            A$ = A$ + "om_P@ebo22E;o[[Tgm_g:_koN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koN[l^o[KUlm_P"
+            A$ = A$ + "@ebo22E;o[[Tgm_h?7loRoL`o;nc1o_h?7loRoL`o;nc1o_h?7loRoL`o;nc1o_h?7loRoL`o;nc1o_h?7loRoL`o[kTim_P@ebo"
+            A$ = A$ + "22E;o[[TgmoiEOloWGmaoONe7ooiEOloWGmaoONe7ooiEOloWGmaoONe7ooiEOloWGmaoONe7ooiEOloWGmaoWKTgm_P@ebo22E;"
+            A$ = A$ + "o[[TgmojL3mo[c=do_>g@oojL3mo[c=do_>g@oojL3mo[c=do_>g@oojL3mo[c=do_>g@oojL3mo[c=doWKTgm_P@ebo22E;o[[T"
+            A$ = A$ + "gmol[?noc_nho?ojSool[?noc_nho?ojSool[?noc_nho?ojSool[?noc_nho?ojSool[?noc_nhoWKTgm_P@ebo22E;o[[TgmOm"
+            A$ = A$ + "aWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnoe7OjoWKTgm_P@ebo22E;o[[Tgmomdgno"
+            A$ = A$ + "gCOkoO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m]oomdgnogCOkoWKTgm_P@ebo22E;o[[TgmOnh7ooiSOl"
+            A$ = A$ + "oW?naoOnh7ooiSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOloWKTgm_P@ebo22E;o[[Tgm_njCooj[?mo[_n"
+            A$ = A$ + "do_njCooj[?mo[_ndo_njCooj[?mo[_ndo_njCooj[?mo[_ndo_njCooj[?moWKTgm_P@ebo22E;o[[Tgm?olSoolc?noc?oho?o"
+            A$ = A$ + "lSoolc?noc?oho?olSoolc?noc?oho?olSoolc?noc?oho?olSoolc?noWKTgm_P@ebo22E;o[[TgmOom_oomgonogOokoOom_oo"
+            A$ = A$ + "mgonogOokoOom_oomgonogOokoOom_oomgonogOokoOom_oomgonoWKTgm_P@ebo22E;o[[Tgm_ongoonkOook_omo_ongoonkOo"
+            A$ = A$ + "ok_omo_ongoonkOook_omo_ongoonkOook_omo_ongoonkOooWKTgm_P@ebo36e;o[[Tgmooh?oooSoloo?ncoooh?oooSoloo?n"
+            A$ = A$ + "coooh?oooSoloo?ncoooh?oooSoloo?ncoooh?oooSoloWKTgmoPAmbo?JFAoS:OOmoomWooogOnooOoiooomWooogOnooOoiooo"
+            A$ = A$ + "mWooogOnooOoiooomWooogOnooOoiooomWooogOnokILBm?TXMdo:O;ZoKILBmoPAmbo22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo"
+            A$ = A$ + "22E;o;8D]l_P@ebo22E;o;8D]l_P@ebo36U;oG9L@m_bgRjo^W>ioWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\a"
+            A$ = A$ + "oWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6o_kYCno9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooOb5Klo9G\aooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb"
+            A$ = A$ + "5Klo9G\aooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo"
+            A$ = A$ + "9G\aooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\a"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo^W>ioWLa6oOb5Klo9G\aoWLa6oOb5Klo"
+            A$ = A$ + "9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6o_kYCno:O;Zo3[E]l?\Febo`JE;o3[E]l?\Febo`JE;"
+            A$ = A$ + "o3[E]l?\Febo`JE;o3[E]l?\Febo`JE;o3[E]l?\Febo`JE;o3[E]l_bgRjo`JE;o?[ORm_jkjgoZ3lRo[>`;n_j0_hoZ3lRo[>`"
+            A$ = A$ + ";n_j0_hoZ3lRo[>`;n_j0_hoZ3lRo[>`;n_j0_hoZ_[Oo?[ORmoT]ido`JE;oWMXam?hi>joPWkXo3N^Sn?hi>joPWkXo3N^Sn?h"
+            A$ = A$ + "i>joPWkXo3N^Sn?hi>joPWkXo3N^Sn?hi>joPWkXoWMXam?\Febo`JE;o[mXdm?hkNjooSoloo?ncoooh?oooSoloo?ncoooh?oo"
+            A$ = A$ + "oSoloo?ncoooh?oooSoloo?ncoooh?ooP_kYo[mXdm?\Febo`JE;oWMXbm?hh6jonkOook_omo_ongoonkOook_omo_ongoonkOo"
+            A$ = A$ + "ok_omo_ongoonkOook_omo_ongooPSKXoWMXbm?\Febo`JE;oS=X`m?gefiomgonogOokoOom_oomgonogOokoOom_oomgonogOo"
+            A$ = A$ + "koOom_oomgonogOokoOom_ooLG[WoS=X`m?\Febo`JE;oO]W^mOfaViolc?noc?oho?olSoolc?noc?oho?olSoolc?noc?oho?o"
+            A$ = A$ + "lSoolc?noc?oho?olSooI7KVoO]W^m?\Febo`JE;oKMW\m_e]Fioj[?mo[_ndo_njCooj[?mo[_ndo_njCooj[?mo[_ndo_njCoo"
+            A$ = A$ + "j[?mo[_ndo_njCooFg:UoKMW\m?\Febo`JE;oGmV[mOeZ:ioiSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOloW?naoOnh7ooiSOl"
+            A$ = A$ + "oW?naoOnh7ooE[JToGmV[m?\Febo`JE;oC]VYmOdVjhogCOkoO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m]oomdgnogCOkoO?m"
+            A$ = A$ + "]oomdgnoAOZSoC]VYm?\Febo`JE;o;mUUm_cP>hoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOmaWnoe7OjoGOlYoOm"
+            A$ = A$ + "aWno>3jPo;mUUm?\Febo`JE;o3mTQm?bGZgoc_nho?ojSool[?noc_nho?ojSool[?noc_nho?ojSool[?noc_nho?ojSool[?no"
+            A$ = A$ + "8OYNo3mTQm?\Febo`JE;oo\TOm_aCFgo[c=do_>g@oojL3mo[c=do_>g@oojL3mo[c=do_>g@oojL3mo[c=do_>g@oojL3mo6?YM"
+            A$ = A$ + "oo\TOm?\Febo`JE;og<TMmo`?6goWGmaoONe7ooiEOloWGmaoONe7ooiEOloWGmaoONe7ooiEOloWGmaoONe7ooiEOlo3oHLog<T"
+            A$ = A$ + "Mm?\Febo`JE;oc\SKm?`9^foRoL`o;nc1o_h?7loRoL`o;nc1o_h?7loRoL`o;nc1o_h?7loRoL`o;nc1o_h?7lo0[hJoc\SKm?\"
+            A$ = A$ + "Febo`JE;o_LSIm__7NfoN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koN[l^ok]bkn_g:_koN[l^ok]bkn_g:_konNhIo_LSIm?\Febo"
+            A$ = A$ + "`JE;o_<SGmO_6>foH;L\oS]`an?f27koH;L\oS]`an?f27koH;L\oS]`an?f27koH;L\oS]`an?f27komJhHo_<SGm?\Febo`JE;"
+            A$ = A$ + "o[\REm?_2jeoCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZo?M_[nodm^joCgkZo?M_[nodm^jol:XGo[\REm?\Febo`JE;o3kH"
+            A$ = A$ + "glO\]mcomJ8IocKPNm?_1jeol6XGocKPNm?_1jeol6XGocKPNm?_1jeol6XGocKPNmO_6BfogFGAo3kHgl?\Febo`JE;o;;IilO\"
+            A$ = A$ + "]mcoaff?o7KKolO\]mcoaff?o7KKolO\]mcoaff?o7KKolO\]mcoaff?o7KKolO\]mcoaff?o;KIkl?\Febo:O;Zo3[E]l?\Febo"
+            A$ = A$ + "`JE;o3[E]l?\Febo`JE;o3[E]l?\Febo`JE;o3[E]l?\Febo`JE;o3[E]l?\Febo`JE;o3[E]l_bgRjo%%%0"
+        CASE "checkbox.png"
+            A$ = MKI$(13) + MKI$(104)
+            A$ = A$ + "0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLloeLcmoGc=goO=gLoOfNkmoK3>h"
+            A$ = A$ + "ok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo3HDLl?PAaaoGc=goO=gLoOfNkmoK3>hok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo7ol"
+            A$ = A$ + "co?PAaao0657oO=gLoOfNkmoK3>hok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo7olco?meGoo0657o3HDLlOfNkmoK3>hok]hRo_h"
+            A$ = A$ + "UGnoUS>joW>k\o?k_ono_7Olo7olco?meGoofOomo3HDLl?PAaaoK3>hok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo7olco?meGoo"
+            A$ = A$ + "fOomoSOnio?PAaao0657ok]hRo_hUGnoUS>joW>k\o?k_ono_7Olo7olco?meGoofOomoSOnio_nk_oo0657o3HDLl_hUGnoUS>j"
+            A$ = A$ + "oW>k\o?k_ono_7Olo7olco?meGoofOomoSOnio_nk_oolgOoo3HDLl?PAaaoUS>joW>k\o?k_ono_7Olo7olco?meGoofOomoSOn"
+            A$ = A$ + "io_nk_oolgOook_ono?PAaao0657oW>k\o?k_ono_7Olo7olco?meGoofOomoSOnio_nk_oolgOook_onooooooo0657o3HDLl?k"
+            A$ = A$ + "_ono_7Olo7olco?meGoofOomoSOnio_nk_oolgOook_onoooooooooooo3HDLl?PAaao_7Olo7olco?meGoofOomoSOnio_nk_oo"
+            A$ = A$ + "lgOook_onooooooooooooooooo?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657"
+            A$ = A$ + "o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao?3oooKLkoo_^Yooo\B^oocig"
+            A$ = A$ + "no?SIgoo4JMoocgdlo?M@coo[alno?6bko?PAaao0657oKLkoo_^Yooo\B^oocigno?SIgoo4JMoocgdlo?M@coo[alno?6bko_F"
+            A$ = A$ + "5[oo0657o3HDLl_^Yooo\B^oo?niWoohWOnoSOnio?niWoohWOnoSOnio?niWo_F5[ooD9\no3HDLl?PAaao\B^oocignoohWOno"
+            A$ = A$ + "SOnio?niWoohWOnoSOnio?niWoohWOnoD9\nok4`jo?PAaao0657ocigno?SIgooSOnio?niWoohWOnoSOnio?niWoohWOnoSOni"
+            A$ = A$ + "ok4`jo?BmVoo0657o3HDLl?SIgoo4JMoo?niWoohWOnoSOnio?niWoohWOnoSOnio?niWo?BmVoo3]Kno3HDLl?PAaao4JMoocgd"
+            A$ = A$ + "loohWOnoSOnio?niWoohWOnoSOnio?niWoohWOno3]KnokC^io?PAaao0657ocgdlo?M@cooSOnio?niWoohWOnoSOnio?niWooh"
+            A$ = A$ + "WOnoSOniokC^io_>gVoo0657o3HDLl?M@coo[alno?niWoohWOnoSOnio?niWoohWOnoSOnio?niWo_>gVoofH;no3HDLl?PAaao"
+            A$ = A$ + "[alno?6bko_F5[ooD9\nok4`jo?BmVoo3]KnokC^io_>gVoofH;no?3]ho?PAaao0657o?6bko_F5[ooD9\nok4`jo?BmVoo3]Kn"
+            A$ = A$ + "okC^io_>gVoofH;no?3]ho?<cRoo0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HD"
+            A$ = A$ + "Ll?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657oO:\`noY`2koW2;\o[j\cnO["
+            A$ = A$ + "gNkoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmo0657o3HDLloY`2koW2;\o[j\cnO[gNkoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmo"
+            A$ = A$ + "<[mfo3HDLl?PAaaoW2;\o[j\cnO[gNkoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLgOo?PAaao0657o[j\cnO[gNkoa^;_"
+            A$ = A$ + "oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?no0657o3HDLlO[gNkoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLg"
+            A$ = A$ + "OoodQ?noFG^io3HDLl?PAaaoa^;_oKK`1oo^6Olo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?noFG^ioW=jZo?PAaao0657oKK`1oo^"
+            A$ = A$ + "6Olo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?noFG^ioW=jZoof[gno0657o3HDLlo^6Olo0cLcoGLdBo?bEOmo<[mfooLgOoodQ?no"
+            A$ = A$ + "FG^ioW=jZoof[gnoMgnko3HDLl?PAaao0cLcoGLdBo?bEOmo<[mfooLgOoodQ?noFG^ioW=jZoof[gnoMgnkoomkao?PAaao0657"
+            A$ = A$ + "oGLdBo?bEOmo<[mfooLgOoodQ?noFG^ioW=jZoof[gnoMgnkoomkaoog_7oo0657o3HDLl?bEOmo<[mfooLgOoodQ?noFG^ioW=j"
+            A$ = A$ + "Zoof[gnoMgnkoomkaoog_7ooOoNlo3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?P"
+            A$ = A$ + "Aaao9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6ooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooWLa6oOb5Klooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo9G\aoWLa6ooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooWLa6oOb5Klooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo9G\aoWLa6ooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooWLa6oOb5Klooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo9G\aoWLa"
+            A$ = A$ + "6ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooWLa6oOb5Klooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo"
+            A$ = A$ + "9G\ao3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaaoM;^hog]hRoOgR;noO?nh"
+            A$ = A$ + "o7NiUoohWOnoV[^joW>k\o?k_ono_7Olo7olco?PAaao0657og]hRoOgR;noO?nho7NiUoohWOnoV[^joW>k\o?k_ono_7Olo7ol"
+            A$ = A$ + "cooleGoo0657o3HDLlOgR;noO?nho7NiUoohWOnoV[^joW>k\o?k_ono_7Olo7BXQloleGoofOomo3HDLl?PAaaoO?nho7NiUooh"
+            A$ = A$ + "WOnoV[^joW>k\o?k_ono_7Olo7BXQlO8Q6bofOomoSOnio?PAaao0657o7NiUoohWOnoQ4J8oW>k\o?k_ono_7Olo7BXQlO8Q6bo"
+            A$ = A$ + "Q4J8oSOnioOnj[oo0657o3HDLlohWOnoV[^jo7BXQlO8Q6bo_7Olo7BXQlO8Q6boQ4J8oSOnioOnj[ookc?oo3HDLl?PAaaoV[^j"
+            A$ = A$ + "oW>k\oO8Q6boQ4J8o7BXQlO8Q6boQ4J8oSOnioOnj[ookc?oogOomo?PAaao0657oW>k\o?k_ono_7Olo7BXQlO8Q6boQ4J8oSOn"
+            A$ = A$ + "ioOnj[ookc?oogOomo_onkoo0657o3HDLl?k_ono_7Olo7olcooleGooQ4J8oSOnioOnj[ookc?oogOomo_onkooooooo3HDLl?P"
+            A$ = A$ + "Aaao_7Olo7olcooleGoofOomoSOnioOnj[ookc?oogOomo_onkoooooooooooo?PAaao0657o7olcooleGoofOomoSOnioOnj[oo"
+            A$ = A$ + "kc?oogOomo_onkoooooooooooooooooo0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657"
+            A$ = A$ + "o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657oo<loo_a]ooojVnooc:i"
+            A$ = A$ + "no?WOkoo<VMooW8fmoOUKgooGbMooOXelo_J:_oo0657o3HDLl_a]ooojVnooc:ino?WOkoo<VMooW8fmoOUKgoo\>NooK[imo_X"
+            A$ = A$ + "Ngooj1mno3HDLl?PAaaomZnoocKjnoOmgOoodK_mo??mdo?mfKoogS?noW_njoO8Q6bo^>Noo3Xdko?PAaao0657ocKjno?a\koo"
+            A$ = A$ + "i[_noO?nho?mfKoogS?noW_njoO8Q6boQ4J8o_JhmooN@_oo0657o3HDLlO]Wkoo7c^oo7BXQlOnj[oogS?noW_njoO8Q6boQ4J8"
+            A$ = A$ + "o7BXQl?ZPgoogilno3HDLl?PAaaoY>^oo?ljnoO8Q6boQ4J8oW_njoO8Q6boQ4J8o7BXQlOnj[ooBRmnoO6bjo?PAaao0657o?:h"
+            A$ = A$ + "noo_YkooQ4J8o7BXQlO8Q6boQ4J8o7BXQlOnj[oogS?noO6bjo_AlVoo0657o3HDLlOUKgoo\>NooW_njoO8Q6boQ4J8o7BXQlOn"
+            A$ = A$ + "j[oogS?noC_mfo_AlVoojLKno3HDLl?PAaaoj9=ooOXeloomhSooi[_no7BXQlOnj[oogS?noC_mfooldCoojLKnoKS]ho?PAaao"
+            A$ = A$ + "0657o_6cko_J:_ooj1mnoWiflo?ZPgooBRmnoO6bjo_AlVoojLKnoKS]hoo<dRoo0657o3HDLloH8_ooJE\no_Eajo?L<_oogiln"
+            A$ = A$ + "oO6bjo_AlVoojLKnoKS]hoo<dRoo`<;no3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HD"
+            A$ = A$ + "Ll?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLloY`2koW2;\oO:\`n_Z"
+            A$ = A$ + "c>ko]Nk]o7k^ln_]17lokJlao3<c=oOaA;mo8Gmeo3HDLl?PAaaoW2;\oO:\`n_Zc>ko]Nk]o7k^ln_]17lokJlao3<c=oOaA;mo"
+            A$ = A$ + "8Gmeoc\fKo?PAaao0657oO:\`n_Zc>ko]Nk]o7k^ln_]17lokJlao3<c=oOaA;moJH87oc\fKoocMomo0657o3HDLl_Zc>ko]Nk]"
+            A$ = A$ + "o7k^ln_]17lokJlao3<c=oOaA;moJH87o[QRLlocMomoC7nho3HDLl?PAaao]Nk]o7k^ln?6jUaokJlao3<c=oOaA;moJH87o[QR"
+            A$ = A$ + "Llo6<faoC7nhoKMiVo?PAaao0657o7k^ln_]17loHdW6oWAPKlOaA;moJH87o[QRLlo6<faoC7nhoKMiVoOfX[no0657o3HDLl_]"
+            A$ = A$ + "17lokJlaoWAPKlO64^aoJH87o[QRLlo6<faoC7nhoKMiVoOfX[noK_Nko3HDLl?PAaaokJlao3<c=oOaA;moJH87o[QRLlo6<fao"
+            A$ = A$ + "C7nhoKMiVoOfX[noK_NkogMk_o?PAaao0657o3<c=oOaA;mo8Gmeoc\fKoo6<faoC7nhoKMiVoOfX[noK_NkogMk_oog_7oo0657"
+            A$ = A$ + "o3HDLlOaA;mo8Gmeoc\fKoocMomoC7nhoKMiVoOfX[noK_NkogMk_oog_7ooOoNlo3HDLl?PAaao8Gmeoc\fKoocMomoC7nhoKMi"
+            A$ = A$ + "VoOfX[noK_NkogMk_oog_7ooOoNloomkao?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?PAaao0657o3HDLl?P"
+            A$ = A$ + "Aaao0657oWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooo9G\aoWLa6ooooooooooooooooooooooooooooooooooooooooooooWLa6ooooooooooooWLa6oOb5Klooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooWLa6oOb5KloooooooooooOb5Klo9G\aoooooooooooo9G\aoooooooooooooooooWLa6oOb"
+            A$ = A$ + "5Klo9G\aoooooooooooo9G\aoWLa6ooooooooooooWLa6oOb5KlooooooWLa6oOb5Klo9G\aoooooooooooooooooWLa6oOb5Klo"
+            A$ = A$ + "ooooooooooOb5Klo9G\aoWLa6oOb5Klo9G\aooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooWLa6oOb5Klo9G\a"
+            A$ = A$ + "oooooooooooooooooooooooooooo9G\aoWLa6ooooooooooooooooooooooo9G\aoooooooooooooooooooooooooooooooooWLa"
+            A$ = A$ + "6oOb5KloooooooooooooooooooooooooooooooooooooooooooooooooooooooooooOb5Klo9G\aoooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo9G\aoWLa6oOb5Klo"
+            A$ = A$ + "9G\aoWLa%6o?"
         CASE "notfound.png"
-            A$ = MKI$(40) + MKI$(48) 'Width, Height
-            A$ = A$ + "S=fHnS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?J"
-            A$ = A$ + "XQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6J"
-            A$ = A$ + "XM?JXQfmXQ6JgS6JXM?JXQfmVIVIkWFJYi40000000000000000000000000"
-            A$ = A$ + "000000000000000000000000000000000XVJZIoooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo7GL"
-            A$ = A$ + "am?L`1glUEFI>10000000000000000000000000000000000000000000000"
-            A$ = A$ + "000000PJZYVmoooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooo?MdAgoTC>io37L`9oIWMFC00000000"
-            A$ = A$ + "0000000000000000000000000000000000000000ZYVJfooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooodA7Mo[_njo?jXSno`17LbGFIUa400000000000000000000000000000"
-            A$ = A$ + "0000000000000XVJZIoooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooC7Mdm_nj[oooooooOniWo?L"
-            A$ = A$ + "`1WlUEFI<1000000000000000000000000000000000000PJZYVmoooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooo?MdAgoj[_nooooooooooooWOnio37L`5?ITAFA000000000000"
-            A$ = A$ + "00000000000000000000ZYVJfooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooodA7Mo[_njooooooo"
-            A$ = A$ + "oooooooooooiWOno`17LaGFIUA400000000000000000000000000XVJZIoo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooC7Mdm_nj[oooooooooooooooooooooooOniWo?L`17l"
-            A$ = A$ + "S=fH3100000000000000000000PJZYVmoooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooo?MdAgoj[_n"
-            A$ = A$ + "ooooooooooooooooooooooooooooWOnioofK_5?ITAV@0000000000000000"
-            A$ = A$ + "ZYVJfooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooodA7Mo[_njooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooohS?no^iVKb;VHR540000000000XVJZIoooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooC7M"
-            A$ = A$ + "dm_nj[ooooooooooooooooooooooooooooooooooooooo;^hRo_K^iVlR9VH"
-            A$ = A$ + "110000PJZYVmoooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooo?MdAgoj[_noooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooR;^hokVK^9?ITA6@ZYVJfooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooomgOogFK]mOK]efo]eFKogFK]mOK]efo]eFKogFK]mOK]efo]eFKogFK"
-            A$ = A$ + "]moJ[]foVIVIj[VJZIoooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_mfKooQ7Nho7NhQoOhQ7noQ7Nh"
-            A$ = A$ + "o7NhQoOhQ7noQ7Nho7NhQoOhQ7noQ7Nho7NhQoOhQ7noQ7Nho7NhQoOhQ7no"
-            A$ = A$ + "Q7Nho7NhQoOhQ7noQ7Nho7NhQo_mfKoooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooFK]eoWK^in_b:[lo:[\bo[\b:o_b:[lo:[\bo[\b:o_b:[lo:[\b"
-            A$ = A$ + "o[\b:o_b:[lo:[\bo[\b:o_b:[lo:[\bo[\b:o_b:[lo:[\bo[\b:oO^iVko"
-            A$ = A$ + "FK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
-            A$ = A$ + "ZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooFK]eoK]eFooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "o[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_eFKmo"
-            A$ = A$ + "FK]eoooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooo_lbgoo"
-            A$ = A$ + "c=WkoC=ejooooooooooooooooooooooooooooooooo?eD[ooc=Wko;_lmooo"
-            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oK]eFo_eFKmooooooooooooooooo5G<no300PoO5E<noB;]noooooooooooo"
-            A$ = A$ + "oooooooooo_dB[ooEDaho300PoOa5SooooooooooooooooooFK]eoK]eFooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
-            A$ = A$ + "oooooooNkmno000hoGA5SoodC[ooooooooooooodC[ooEDaho300PooNkmno"
-            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooFK]eoK]eFooooooooooooooooooooooooooooc7O_o?000noEDah"
-            A$ = A$ + "o?mdjooeG[ooHPaho300Po?Mdinooooooooooooooooooooooooooo_eFKmo"
-            A$ = A$ + "FK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooook]gko300Poo4C8noEDaho300PooLcinooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooIWano000ho300PooGOanooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
-            A$ = A$ + "ZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooOfI[ooJXaho300Po?000noFHahoC=e"
-            A$ = A$ + "jooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmoooooooooooooooooooooooooooOf"
-            A$ = A$ + "I[ooJXaho300Po?L`inoiUgko300Poo5G<noEG]noooooooooooooooooooo"
-            A$ = A$ + "ooooooooFK]eoK]eFooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "o[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_eFKmo"
-            A$ = A$ + "FK]eoooooooooooooooooooooo_fJ[ooJXaho300Po?L`inooooooooooo?N"
-            A$ = A$ + "hmno000hoOa5SoOeE[oooooooooooooooooooooooK]eFo_eFKmooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooo?jXcoo"
-            A$ = A$ + "JXaho300PooK_enoooooooooooooooooooooo37L^o?000noJXahoOnilooo"
-            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oK]eFo_eFKmoooooooooooooooooA7MnoG@1Qo?L`inonkoooooooooooooo"
-            A$ = A$ + "oooooooooo_onoooa5WkoG@1Qo?d@WooooooooooooooooooFK]eoK]eFooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
-            A$ = A$ + "oooooo_mfkoooooooooooooooooooooooooooooooooooooooooooo_mfkoo"
-            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooFK]eoK]eFooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooo_eFKmo"
-            A$ = A$ + "FK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
-            A$ = A$ + "ZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooK]eFo?d@3moc?olo?olcoolc?ooc?olo?olcool"
-            A$ = A$ + "c?ooc?olo?olcoolc?ooc?olo?olcoolc?ooc?olo?olcoolc?ooc?olo?ol"
-            A$ = A$ + "coolc?oo@3=doK]eFooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "o[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_hR;no"
-            A$ = A$ + "hR;^oS;^hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^hn?^"
-            A$ = A$ + "hRkohR;^oS;^hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^hn_hR;nooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
-            A$ = A$ + "ZYVJfooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "o[VJZIoHS=VoXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfm"
-            A$ = A$ + "XQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?J"
-            A$ = A$ + "XQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6J"
+            A$ = MKI$(40) + MKI$(48)
+            A$ = A$ + "S=fHnS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6J"
+            A$ = A$ + "gS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmVIVIkWFJYi4000000000000000000000000000000000000000000000"
+            A$ = A$ + "0000000000000XVJZIoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooo7GLam?L`1glUEFI>100000000000000000000000000"
+            A$ = A$ + "00000000000000000000000000PJZYVmoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo?MdAgoTC>io37L`9oIWMFC00000000"
+            A$ = A$ + "0000000000000000000000000000000000000000ZYVJfooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooodA7Mo[_njo?jXSno"
+            A$ = A$ + "`17LbGFIUa4000000000000000000000000000000000000000000XVJZIoooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooC7M"
+            A$ = A$ + "dm_nj[oooooooOniWo?L`1WlUEFI<1000000000000000000000000000000000000PJZYVmoooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooo?MdAgoj[_nooooooooooooWOnio37L`5?ITAFA00000000000000000000000000000000ZYVJfooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooodA7Mo[_njooooooooooooooooooiWOno`17LaGFIUA400000000000000000000000000XVJZIoo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooC7Mdm_nj[oooooooooooooooooooooooOniWo?L`17lS=fH3100000000000000"
+            A$ = A$ + "000000PJZYVmoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooo?MdAgoj[_nooooooooooooooooooooooooooooWOnioofK_5?I"
+            A$ = A$ + "TAV@0000000000000000ZYVJfooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooodA7Mo[_njooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooohS?no^iVKb;VHR540000000000XVJZIoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooC7Mdm_nj[oooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooo;^hRo_K^iVlR9VH110000PJZYVmoooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo?MdAgoj[_n"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooR;^hokVK^9?ITA6@ZYVJfooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooomgOogFK]mOK]efo]eFKogFK]mOK]efo]eFKogFK]mOK]efo]eFKogFK]moJ[]foVIVIj[VJZIoooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooo_mfKooQ7Nho7NhQoOhQ7noQ7Nho7NhQoOhQ7noQ7Nho7NhQoOhQ7noQ7Nho7NhQoOh"
+            A$ = A$ + "Q7noQ7Nho7NhQoOhQ7noQ7Nho7NhQoOhQ7noQ7Nho7NhQo_mfKoooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
+            A$ = A$ + "ZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoWK^in_b:[lo:[\bo[\b:o_b:[lo:[\bo[\b:o_b:[lo:[\b"
+            A$ = A$ + "o[\b:o_b:[lo:[\bo[\b:o_b:[lo:[\bo[\b:o_b:[lo:[\bo[\b:oO^iVkoFK]eoooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooo_JZYVmZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo_eFKmo"
+            A$ = A$ + "FK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooFK]eoK]eFoooooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooo_lbgooc=WkoC=ejooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oo?eD[ooc=Wko;_lmooooooooooooooooo_eFKmoFK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooooooooooo5G<no300PoO5E<noB;]noooooooooooo"
+            A$ = A$ + "oooooooooo_dB[ooEDaho300PoOa5SooooooooooooooooooFK]eoK]eFooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "o[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooooooooooNkmno000hoGA5"
+            A$ = A$ + "SoodC[ooooooooooooodC[ooEDaho300PooNkmnooooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooo_JZYVmZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooooooooo"
+            A$ = A$ + "oooooc7O_o?000noEDaho?mdjooeG[ooHPaho300Po?Mdinooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooook]gko300Poo4C8noEDaho300PooLcinoooooooooooooooooooooooooooooooooFK]eoK]eFooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_eFKmo"
+            A$ = A$ + "FK]eoooooooooooooooooooooooooooooooooooooooIWano000ho300PooGOanooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooFK]eoK]eFoooooooooooooooooooooooooooooooooOfI[ooJXaho300Po?000noFHahoC=ejooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooo_eFKmoFK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmoooooooooooooooooooooooooooOfI[ooJXaho300Po?L`inoiUgko300Poo5G<noEG]n"
+            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFoooooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooooooooo_fJ[ooJXaho300Po?L`inooooooooooo?N"
+            A$ = A$ + "hmno000hoOa5SoOeE[oooooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
+            A$ = A$ + "ZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooo?jXcooJXaho300PooK_enooooo"
+            A$ = A$ + "ooooooooooooooooo37L^o?000noJXahoOnilooooooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooooK]eFo_eFKmoooooooooooooooooA7MnoG@1Qo?L"
+            A$ = A$ + "`inonkoooooooooooooooooooooooo_onoooa5WkoG@1Qo?d@WooooooooooooooooooFK]eoK]eFooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_eFKmoFK]eoooooooooooooooo"
+            A$ = A$ + "oooooo_mfkoooooooooooooooooooooooooooooooooooooooooooo_mfkoooooooooooooooooooooooK]eFo_eFKmooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooo_JZYVmZYVJfoooooooooooooooooooooooooooooooooooooooooooFK]eoK]eFooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo_eFKmo"
+            A$ = A$ + "FK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooFK]eoK]eFoooooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooo_eFKmoFK]eoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooK]eFo_eFKmooooooooooooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooFK]eoK]eFooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooo_eFKmoFK]eooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooK]eFo?d@3moc?olo?olcoolc?ooc?olo?olcoolc?ooc?olo?olcoolc?oo"
+            A$ = A$ + "c?olo?olcoolc?ooc?olo?olcoolc?ooc?olo?olcoolc?oo@3=doK]eFooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "o[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooo_hR;nohR;^oS;^hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^"
+            A$ = A$ + "hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^hn?^hRkohR;^oS;^hn_hR;nooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooo_JZYVmZYVJfooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooZYVJf[VJZIoooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo[VJZI_JZYVmoooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo_JZYVm"
+            A$ = A$ + "ZYVJfooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooZYVJf[VJZIoooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo"
+            A$ = A$ + "ooooooooooooooooooooo[VJZIoHS=VoXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6J"
+            A$ = A$ + "gS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6J"
             A$ = A$ + "XM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXMoHS=Vo%%%0"
     END SELECT
     __UI_ImageData$ = A$
@@ -3189,16 +3784,11 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM TempColor~&, TempCaption$, HasShadow AS _BYTE
     DIM PrevDest AS LONG, TempControlState AS _BYTE
 
-    STATIC ControlImage AS LONG, Initialized AS _BYTE
+    STATIC ControlImage AS LONG
     CONST ButtonHeight = 21
     CONST ButtonWidth = 18
 
-    IF ControlImage = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-        ControlImage = _LOADIMAGE("xp.files\button.png", 32)
-        IF ControlImage = -1 THEN ERROR 5: ControlImage = 0: EXIT SUB
-    END IF
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("button.png")
 
     TempControlState = ControlState
     IF TempControlState = 1 THEN
@@ -3345,16 +3935,11 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
-    STATIC ControlImage AS LONG, Initialized AS _BYTE
+    STATIC ControlImage AS LONG
     CONST ImageHeight = 13
     CONST ImageWidth = 13
 
-    IF ControlImage = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-        ControlImage = _LOADIMAGE("xp.files\radiobutton.png", 32)
-        IF ControlImage = -1 THEN ERROR 5: ControlImage = 0: EXIT SUB
-    END IF
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("radiobutton.png")
 
     IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
@@ -3432,16 +4017,11 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
-    STATIC ControlImage AS LONG, Initialized AS _BYTE
+    STATIC ControlImage AS LONG
     CONST ImageHeight = 13
     CONST ImageWidth = 13
 
-    IF ControlImage = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-        ControlImage = _LOADIMAGE("xp.files\checkbox.png", 32)
-        IF ControlImage = -1 THEN ERROR 5: ControlImage = 0: EXIT SUB
-    END IF
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("checkbox.png")
 
     IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
@@ -3515,18 +4095,9 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage_Track AS LONG, ControlImage_Chunk AS LONG
-    STATIC Initialized AS _BYTE
 
-    IF ControlImage_Track = 0 OR ControlImage_Chunk = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-
-        ControlImage_Track = _LOADIMAGE("xp.files\progresstrack.png", 32)
-        IF ControlImage_Track = -1 THEN ERROR 5: ControlImage_Track = 0: EXIT SUB
-
-        ControlImage_Chunk = _LOADIMAGE("xp.files\progresschunk.png", 32)
-        IF ControlImage_Chunk = -1 THEN ERROR 5: ControlImage_Chunk = 0: EXIT SUB
-    END IF
+    IF ControlImage_Chunk = 0 THEN ControlImage_Chunk = __UI_LoadThemeImage("progresschunk.png")
+    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("progresstrack.png")
 
     IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
@@ -3554,13 +4125,28 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
         IF This.Value > This.Max THEN ERROR 5
 
         'Draw track
-        _PUTIMAGE (0, 0)-STEP(This.Width - 3, This.Height - 1), ControlImage_Track, , (5, 0)-(5, 19)
-        _PUTIMAGE (0, 0)-STEP(4, This.Height - 1), ControlImage_Track, , (0, 0)-STEP(4, 19)
-        _PUTIMAGE (This.Width - 4, 0)-STEP(2, This.Height - 1), ControlImage_Track, , (6, 0)-STEP(2, 19)
+        'Back
+        _PUTIMAGE (5, 4)-STEP(This.Width - 9, This.Height - 8), ControlImage_Track, , (5, 4)-STEP(0, 11)
+
+        'Left side
+        _PUTIMAGE (0, 0), ControlImage_Track, , (0, 0)-(4, 4) 'top corner
+        _PUTIMAGE (0, This.Height - 3), ControlImage_Track, , (0, 16)-STEP(3, 2) 'bottom corner
+        _PUTIMAGE (0, 4)-(4, This.Height - 4), ControlImage_Track, , (0, 4)-STEP(4, 11) 'vertical stretch
+
+        'Right side
+        _PUTIMAGE (This.Width - 4, 0), ControlImage_Track, , (6, 0)-STEP(2, 3) 'top corner
+        _PUTIMAGE (This.Width - 4, This.Height - 3), ControlImage_Track, , (6, 16)-STEP(2, 3) 'bottom corner
+        _PUTIMAGE (This.Width - 4, 4)-STEP(2, This.Height - 8), ControlImage_Track, , (6, 4)-STEP(2, 11) 'vertical stretch
+
+        'Top
+        _PUTIMAGE (4, 0)-STEP(This.Width - 9, 3), ControlImage_Track, , (4, 0)-STEP(1, 3)
+
+        'Bottom
+        _PUTIMAGE (4, This.Height - 3)-STEP(This.Width - 9, 2), ControlImage_Track, , (4, 16)-STEP(1, 2)
 
         'Draw progress
         IF This.Value THEN
-            _PUTIMAGE (4, 4)-STEP(((This.Width - 9) / This.Max) * This.Value, This.Height - 9), ControlImage_Chunk
+            _PUTIMAGE (4, 3)-STEP(((This.Width - 9) / This.Max) * This.Value, This.Height - 7), ControlImage_Chunk
         END IF
 
         IF This.ShowPercentage AND LEN(__UI_Captions(This.ID)) > 0 THEN
@@ -3586,7 +4172,7 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
             END IF
 
             IF _PRINTWIDTH(TempCaption$) < This.Width THEN
-                _PRINTSTRING (This.Width / 2 - _PRINTWIDTH(TempCaption$) / 2, This.Height / 2 - _FONTHEIGHT / 2), TempCaption$
+                _PRINTSTRING (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2, This.Height \ 2 - _FONTHEIGHT \ 2 + 1), TempCaption$
             END IF
         END IF
         '------
@@ -3718,7 +4304,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             _FREEIMAGE This.Canvas
         END IF
 
-        This.Canvas = _NEWIMAGE(This.Width + 2, This.Height + 2, 32)
+        This.Canvas = _NEWIMAGE(This.Width, This.Height, 32)
 
         PrevDest = _DEST
         _DEST This.Canvas
@@ -3734,10 +4320,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         CaptionIndent = 0
-        IF This.HasBorder = __UI_True THEN
-            CaptionIndent = 5
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
-        END IF
+        CaptionIndent = ABS(This.HasBorder) * 5
 
         IF LEN(__UI_Texts(This.ID)) THEN
             DIM TempText$, FindLF&, ThisItem%, ThisItemTop%
@@ -3794,6 +4377,10 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             ELSE
                 This.HasVScrollbar = __UI_False
             END IF
+
+            IF This.HasBorder = __UI_True THEN
+                LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+            END IF
         END IF
         '------
 
@@ -3812,25 +4399,14 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     STATIC ControlImage_Button AS LONG, ControlImage_Track AS LONG
     STATIC ControlImage_Thumb AS LONG
-    STATIC Initialized AS _BYTE
     CONST ImageHeight_Button = 17
     CONST ImageWidth_Button = 17
     CONST ImageHeight_Thumb = 22
     CONST ImageWidth_Thumb = 15
 
-    IF ControlImage_Button = 0 OR ControlImage_Track = 0 OR ControlImage_Thumb = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-
-        ControlImage_Button = _LOADIMAGE("xp.files\scrollbuttons.png", 32)
-        IF ControlImage_Button = -1 THEN ERROR 5: ControlImage_Button = 0: EXIT SUB
-
-        ControlImage_Track = _LOADIMAGE("xp.files\scrolltrack.png", 32)
-        IF ControlImage_Track = -1 THEN ERROR 5: ControlImage_Track = 0: EXIT SUB
-
-        ControlImage_Thumb = _LOADIMAGE("xp.files\scrollthumb.png", 32)
-        IF ControlImage_Thumb = -1 THEN ERROR 5: ControlImage_Thumb = 0: EXIT SUB
-    END IF
+    IF ControlImage_Button = 0 THEN ControlImage_Button = __UI_LoadThemeImage("scrollbuttons.png")
+    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("scrolltrack.png")
+    IF ControlImage_Thumb = 0 THEN ControlImage_Thumb = __UI_LoadThemeImage("scrollthumb.png")
 
     This = TempThis
 
@@ -3838,8 +4414,9 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Min = 0
         This.Max = This.Max - This.LastVisibleItem
         This.Value = This.InputViewStart - 1
-        This.Left = This.Width - __UI_ScrollbarWidth
-        This.Top = 0
+        This.Left = This.Width - __UI_ScrollbarWidth - 1
+        This.Top = 1
+        This.Height = This.Height - 1
         This.Width = __UI_ScrollbarWidth
         This.ForeColor = _RGB32(61, 116, 255)
         This.HasBorder = __UI_True
@@ -3916,22 +4493,16 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
     DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
-    STATIC ControlImage AS LONG, Initialized AS _BYTE
+    STATIC ControlImage AS LONG
     STATIC ControlImage_Arrow AS LONG
     CONST ButtonHeight = 21
     CONST ButtonWidth = 18
     CONST ArrowWidth = 9
     CONST ArrowHeight = 9
 
-    IF ControlImage = 0 OR ControlImage_Arrow = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-
-        ControlImage = _LOADIMAGE("xp.files\button.png", 32)
-        IF ControlImage = -1 THEN ERROR 5: ControlImage = 0: EXIT SUB
-
-        ControlImage_Arrow = _LOADIMAGE("xp.files\arrows.png", 32)
-        IF ControlImage_Arrow = -1 THEN ERROR 5: ControlImage_Arrow = 0: EXIT SUB
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("button.png")
+    IF ControlImage_Arrow = 0 THEN
+        ControlImage_Arrow = __UI_LoadThemeImage("arrows.png")
         _SOURCE ControlImage_Arrow
         _CLEARCOLOR POINT(0, 0), ControlImage_Arrow
         _SOURCE 0
@@ -4067,13 +4638,10 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
     DIM TempCaption$, CaptionIndent AS INTEGER
     DIM TempCanvas AS LONG, HWTempCanvas AS LONG
 
-    STATIC ControlImage AS LONG, Initialized AS _BYTE
+    STATIC ControlImage AS LONG
 
     IF ControlImage = 0 THEN
-        IF Initialized THEN ERROR 5: EXIT SUB
-        Initialized = __UI_True
-        ControlImage = _LOADIMAGE("xp.files\frame.png", 32)
-        IF ControlImage = -1 THEN ERROR 5: ControlImage = 0: EXIT SUB
+        ControlImage = __UI_LoadThemeImage("frame.png")
         _SOURCE ControlImage
         _CLEARCOLOR POINT(0, 0), ControlImage
         _SOURCE 0
