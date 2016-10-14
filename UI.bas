@@ -23,6 +23,7 @@ TYPE __UI_ControlTYPE
     ID AS LONG
     ParentID AS LONG
     PreviousParentID AS LONG
+    ContextMenuID AS LONG
     Type AS INTEGER
     Name AS STRING * 256
     Top AS INTEGER
@@ -46,6 +47,7 @@ TYPE __UI_ControlTYPE
     PreviousValue AS _FLOAT
     Min AS _FLOAT
     Max AS _FLOAT
+    Interval AS _FLOAT
     HotKey AS INTEGER
     HotKeyOffset AS INTEGER
     ShowPercentage AS _BYTE
@@ -90,13 +92,14 @@ REDIM SHARED __UI_Captions(1 TO 100) AS STRING
 REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
 REDIM SHARED __UI_Texts(1 TO 100) AS STRING
 REDIM SHARED __UI_TempTexts(1 TO 100) AS STRING
+REDIM SHARED __UI_Tips(1 TO 100) AS STRING
 REDIM SHARED __UI_Controls(0 TO 100) AS __UI_ControlTYPE
 REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
 
 DIM SHARED __UI_Fonts(2) AS LONG
 __UI_Fonts(0) = 16
 __UI_Fonts(1) = 8
-__UI_Fonts(2) = __UI_LoadFont("arial.ttf", 12, "")
+__UI_Fonts(2) = __UI_LoadFont("NotoMono-Regular.ttf", 12, "monospace")
 
 DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
 DIM SHARED __UI_MouseWheel AS INTEGER
@@ -104,6 +107,7 @@ DIM SHARED __UI_PrevMouseLeft AS INTEGER, __UI_PrevMouseTop AS INTEGER
 DIM SHARED __UI_MouseButton1 AS _BYTE, __UI_MouseButton2 AS _BYTE
 DIM SHARED __UI_PreviewTop AS INTEGER, __UI_PreviewLeft AS INTEGER
 DIM SHARED __UI_MouseIsDown AS _BYTE, __UI_MouseDownOnID AS LONG
+DIM SHARED __UI_Mouse2IsDown AS _BYTE, __UI_Mouse2DownOnID AS LONG
 DIM SHARED __UI_KeyIsDown AS _BYTE, __UI_KeyDownOnID AS LONG
 DIM SHARED __UI_ShiftIsDown AS _BYTE, __UI_CtrlIsDown AS _BYTE
 DIM SHARED __UI_AltIsDown AS _BYTE, __UI_ShowHotKeys AS _BYTE, __UI_AltCombo$
@@ -111,8 +115,8 @@ DIM SHARED __UI_LastMouseClick AS DOUBLE, __UI_MouseDownOnListBox AS DOUBLE
 DIM SHARED __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
 DIM SHARED __UI_DefaultButtonID AS LONG
 DIM SHARED __UI_KeyHit AS LONG
-DIM SHARED __UI_Focus AS LONG, __UI_PreviousFocus AS LONG
-DIM SHARED __UI_HoveringID AS LONG
+DIM SHARED __UI_Focus AS LONG, __UI_PreviousFocus AS LONG, __UI_KeyboardFocus AS _BYTE
+DIM SHARED __UI_HoveringID AS LONG, __UI_LastHoveringID AS LONG
 DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
 DIM SHARED __UI_IsSelectingText AS _BYTE, __UI_IsSelectingTextOnID AS LONG
 DIM SHARED __UI_SelectedText AS STRING, __UI_SelectionLength AS LONG
@@ -125,13 +129,16 @@ DIM SHARED __UI_Loaded AS _BYTE
 DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
 DIM SHARED __UI_ActiveMenu AS LONG, __UI_ParentMenu AS LONG
+DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS DOUBLE
+DIM SHARED __UI_ActiveTipTop AS INTEGER, __UI_ActiveTipLeft AS INTEGER
 DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
 DIM SHARED __UI_ScrollbarWidth AS INTEGER
 DIM SHARED __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
+DIM SHARED __UI_CurrentTitle AS STRING
 
 'Control types:
-DIM SHARED __UI_Type(0 TO 15) AS __UI_Types
+DIM SHARED __UI_Type(0 TO 16) AS __UI_Types
 CONST __UI_Type_Form = 1: __UI_Type(1).Name = "Form"
 CONST __UI_Type_Frame = 2: __UI_Type(2).Name = "Frame"
 CONST __UI_Type_Button = 3: __UI_Type(3).Name = "Button"
@@ -146,7 +153,8 @@ CONST __UI_Type_MenuBar = 11: __UI_Type(11).Name = "MenuBar"
 CONST __UI_Type_MenuItem = 12: __UI_Type(12).Name = "MenuItem"
 CONST __UI_Type_MenuPanel = 13: __UI_Type(13).Name = "MenuPanel"
 CONST __UI_Type_PictureBox = 14: __UI_Type(14).Name = "PictureBox"
-CONST __UI_Type_MultiLineTextBox = 15: __UI_Type(15).Name = "MultiLineTextBox"
+CONST __UI_Type_TrackBar = 15: __UI_Type(15).Name = "TrackBar"
+CONST __UI_Type_ContextMenu = 16: __UI_Type(16).Name = "ContextMenuPanel"
 
 'Back styles:
 CONST __UI_Opaque = 0
@@ -225,6 +233,7 @@ __UI_SetCaption "FileMenuExit", "E&xit"
 
 NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuPrefs", 0, 0, 0, 0, __UI_GetID("EditMenu"))
 __UI_SetCaption "EditMenuPrefs", "&Preferences"
+__UI_SetTip "Editmenuprefs", "Nothing to set, really. This is just to test disabled items."
 __UI_Controls(NewID).Disabled = __UI_True
 
 NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
@@ -241,6 +250,20 @@ __UI_SetCaption "AddLabel", "New label"
 
 NewID = __UI_NewControl(__UI_Type_MenuItem, "AddTextBox", 0, 0, 0, 0, __UI_GetID("ControlsMenu"))
 __UI_SetCaption "AddTextBox", "New text box"
+
+NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_TextFieldMenu", 0, 0, 0, 0, 0)
+
+NewID = __UI_NewControl(__UI_Type_MenuItem, "TextMenuCut", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
+__UI_SetCaption "TextMenuCut", "Cu&t"
+
+NewID = __UI_NewControl(__UI_Type_MenuItem, "TextMenuCopy", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
+__UI_SetCaption "TextMenuCopy", "&Copy"
+
+NewID = __UI_NewControl(__UI_Type_MenuItem, "TextMenuPaste", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
+__UI_SetCaption "TextMenuPaste", "&Paste"
+
+NewID = __UI_NewControl(__UI_Type_MenuItem, "TextMenuSelect", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
+__UI_SetCaption "TextMenuSelect", "Select &all"
 
 NewID = __UI_NewControl(__UI_Type_Button, "Button1", 73, 21, 230, 100, 0)
 __UI_SetCaption "Button1", "Click &me"
@@ -306,9 +329,14 @@ __UI_Controls(NewID).Value = 1
 NewID = __UI_NewControl(__UI_Type_ProgressBar, "ProgressBar1", 300, 23, 20, 370, 0)
 __UI_Controls(NewID).ShowPercentage = __UI_True
 __UI_SetCaption "ProgressBar1", "Ready"
+__UI_SetTip "progressbar1", "Max is set by the trackbar below"
 
 NewID = __UI_NewControl(__UI_Type_Button, "STARTTASK", 130, 23, 340, 370, 0)
 __UI_SetCaption "STARTTASK", "Start task"
+
+NewID = __UI_NewControl(__UI_Type_TrackBar, "TrackBar1", 300, 40, 20, 400, 0)
+__UI_Controls(NewID).Max = 255
+__UI_Controls(NewID).Interval = 25
 
 NewID = __UI_NewControl(__UI_Type_PictureBox, "PictureBox1", 230, 150, 400, 215, 0)
 __UI_LoadImage __UI_Controls(NewID), "test.png"
@@ -331,6 +359,8 @@ SUB __UI_Init
     DO UNTIL _SCREENEXISTS: _LIMIT 10: LOOP
 
     IF __UI_Controls(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
+
+    IF __UI_Captions(__UI_FormID) = "" THEN __UI_Captions(__UI_FormID) = RTRIM$(__UI_Controls(__UI_FormID).Name)
 
     _DISPLAYORDER _HARDWARE
     _DISPLAY
@@ -370,7 +400,7 @@ SUB __UI_Click (id AS LONG)
             DIM NewParentID AS LONG, FloatValue AS _FLOAT
 
             IF _FILEEXISTS("form.frmbin") = 0 THEN
-                Answer = __UI_MessageBox("UI", "File form.frmbin not found.", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
+                Answer = __UI_MessageBox("File form.frmbin not found.", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
             ELSE
                 OPEN "form.frmbin" FOR BINARY AS #1
                 b$ = SPACE$(2): GET #1, 1, b$
@@ -390,6 +420,7 @@ SUB __UI_Click (id AS LONG)
                 REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
                 REDIM __UI_Texts(1 TO CVL(b$)) AS STRING
                 REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
+                REDIM __UI_Tips(1 TO CVL(b$)) AS STRING
                 REDIM __UI_Controls(0 TO CVL(b$)) AS __UI_ControlTYPE
                 b$ = SPACE$(2): GET #1, , b$
                 IF CVI(b$) <> -1 THEN GOTO LoadError
@@ -480,6 +511,14 @@ SUB __UI_Click (id AS LONG)
                                 __UI_Controls(Dummy).Hidden = __UI_True
                             CASE -23
                                 __UI_Controls(Dummy).CenteredWindow = __UI_True
+                            CASE -24 'Tips
+                                b$ = SPACE$(4): GET #1, , b$
+                                b$ = SPACE$(CVL(b$))
+                                GET #1, , b$
+                                __UI_Tips(Dummy) = b$
+                            CASE -25
+                                b$ = SPACE$(4): GET #1, , b$
+                                __UI_Controls(Dummy).ContextMenuID = CVL(b$)
                             CASE ELSE
                                 EXIT DO
                         END SELECT
@@ -491,7 +530,7 @@ SUB __UI_Click (id AS LONG)
 
                 LoadError:
                 __UI_AutoRefresh = __UI_True
-                Answer = __UI_MessageBox("UI", "File form.frmbin is not valid.", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
+                Answer = __UI_MessageBox("File form.frmbin is not valid.", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
                 CLOSE #1
             END IF
         CASE "FILEMENUSAVE"
@@ -540,6 +579,14 @@ SUB __UI_Click (id AS LONG)
                         b$ = MKI$(-2) + MKL$(LEN(__UI_Captions(i))) '-2 indicates a caption
                         PUT #2, , b$
                         PUT #2, , __UI_Captions(i)
+                        PRINT #1, a$
+                    END IF
+
+                    IF LEN(__UI_Tips(i)) > 0 THEN
+                        a$ = "__UI_SetTip " + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(__UI_Tips(i))
+                        b$ = MKI$(-24) + MKL$(LEN(__UI_Tips(i))) '-24 indicates a tip
+                        PUT #2, , b$
+                        PUT #2, , __UI_Tips(i)
                         PRINT #1, a$
                     END IF
 
@@ -681,6 +728,11 @@ SUB __UI_Click (id AS LONG)
                         PRINT #1, "__UI_Controls(__UI_NewID).CenteredWindow = __UI_True"
                         b$ = MKI$(-23): PUT #2, , b$
                     END IF
+                    IF __UI_Controls(i).ContextMenuID THEN
+                        PRINT #1, "__UI_Controls(__UI_NewID).ContextMenuID = " + LTRIM$(STR$(__UI_Controls(i).ContextMenuID))
+                        b$ = MKI$(-25) + MKL$(__UI_Controls(i).ContextMenuID): PUT #2, , b$
+                    END IF
+
                     PRINT #1,
                 END IF
             NEXT
@@ -701,9 +753,9 @@ SUB __UI_Click (id AS LONG)
             __UI_Controls(Dummy).FieldArea = __UI_Controls(Dummy).Width \ _FONTWIDTH(__UI_Fonts(__UI_Controls(Dummy).Font)) - 1
             __UI_SetCaption __UI_Controls(Dummy).Name, RTRIM$(__UI_Controls(Dummy).Name)
         CASE "HELPMENUABOUT"
-            Answer = __UI_MessageBox("UI", "UI beta" + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+            Answer = __UI_MessageBox("UI beta" + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
         CASE "HELPMENUHELP"
-            Answer = __UI_MessageBox("What's all this?", "This will soon become a GUI editor, which will allow an event-driven approach to programs written in QB64.", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+            Answer = __UI_MessageBox("This will soon become a GUI editor, which will allow an event-driven approach to programs written in QB64.", "What's all this?", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
         CASE "FILEMENUEXIT"
             SYSTEM
         CASE "OKBUTTON"
@@ -758,23 +810,25 @@ SUB __UI_Click (id AS LONG)
 
             RunningTask = __UI_True
             __UI_SetCaption "Label2", "Performing task:"
-            __UI_Controls(__UI_GetID("ProgressBar1")).Max = 100
+            __UI_Controls(__UI_GetID("ProgressBar1")).Max = __UI_Controls(__UI_GetID("trackbar1")).Value
+            __UI_Controls(__UI_GetID("trackbar1")).Disabled = __UI_True
             __UI_SetCaption "starttask", "Stop task"
-            __UI_SetCaption "ProgressBar1", "Counting to 100... \#"
+            __UI_SetCaption "ProgressBar1", "Counting to" + STR$(__UI_Controls(__UI_GetID("trackbar1")).Value) + "... \#"
             __UI_Controls(__UI_GetID("ProgressBar1")).Value = 0
             i = 0
             pbid = __UI_GetID("ProgressBar1")
-            DO WHILE i < 100
+            DO WHILE i < __UI_Controls(__UI_GetID("trackbar1")).Value
                 i = i + 1
                 __UI_Controls(pbid).Value = i
                 IF NOT RunningTask THEN EXIT DO
                 __UI_DoEvents
-                _LIMIT 20
+                _LIMIT 30
             LOOP
             RunningTask = __UI_False
             __UI_SetCaption "Label2", "Idle."
+            __UI_Controls(__UI_GetID("trackbar1")).Disabled = __UI_False
             __UI_Controls(__UI_GetID("STARTTASK")).Disabled = __UI_False
-            IF i < 100 THEN
+            IF i < __UI_Controls(__UI_GetID("trackbar1")).Value THEN
                 __UI_SetCaption "ProgressBar1", "Interrupted."
             ELSE
                 __UI_SetCaption "ProgressBar1", "Done."
@@ -858,51 +912,54 @@ SUB __UI_MouseUp (id AS LONG)
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    'STATIC Pass AS LONG
+    STATIC Pass AS LONG
 
-    'DIM textboxID AS LONG
-    'textboxID = __UI_GetID("TextBox1")
-    '__UI_DefaultButtonID = __UI_GetID("okbutton")
-    'IF LEN(__UI_Texts(textboxID)) > 0 THEN
-    '    __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_False
-    '    IF __UI_Focus = textboxID THEN __UI_DefaultButtonID = __UI_GetID("AddItemBT")
-    'ELSE
-    '    __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_True
-    'END IF
+    DIM textboxID AS LONG
+    textboxID = __UI_GetID("TextBox1")
+    __UI_DefaultButtonID = __UI_GetID("okbutton")
+    IF LEN(__UI_Texts(textboxID)) > 0 THEN
+        __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_False
+        IF __UI_Focus = textboxID THEN __UI_DefaultButtonID = __UI_GetID("AddItemBT")
+    ELSE
+        __UI_Controls(__UI_GetID("AddItemBT")).Disabled = __UI_True
+    END IF
 
-    'IF __UI_Focus THEN
-    '    __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
-    '    IF LEN(__UI_SelectedText) THEN
-    '        __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
-    '    END IF
-    'ELSE
-    '    __UI_SetCaption "FocusLabel", "No control has focus now"
-    'END IF
+    IF __UI_Focus THEN
+        __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
+        IF __UI_Controls(__UI_Focus).Type = __UI_Type_TrackBar THEN
+            __UI_SetCaption "FocusLabel", "Focus is on " + RTRIM$(__UI_Controls(__UI_Focus).Name) + "(" + STR$(__UI_Controls(__UI_Focus).Value) + "/" + STR$(__UI_Controls(__UI_Focus).Max) + ")"
+        END IF
+        IF LEN(__UI_SelectedText) THEN
+            __UI_SetCaption "FocusLabel", "Selected text: " + __UI_SelectedText
+        END IF
+    ELSE
+        __UI_SetCaption "FocusLabel", "No control has focus now"
+    END IF
 
-    'IF __UI_HoveringID THEN
-    '    __UI_SetCaption "HoverLabel", "(" + STR$(__UI_MouseTop) + "," + STR$(__UI_MouseLeft) + ") Hovering " + RTRIM$(__UI_Controls(__UI_HoveringID).Name) + " (" + RTRIM$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Name) + " count:" + STR$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Count) + ")"
-    'END IF
+    IF __UI_HoveringID THEN
+        __UI_SetCaption "HoverLabel", "(" + STR$(__UI_MouseTop) + "," + STR$(__UI_MouseLeft) + ") Hovering " + RTRIM$(__UI_Controls(__UI_HoveringID).Name) + " (" + RTRIM$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Name) + " count:" + STR$(__UI_Type(__UI_Controls(__UI_HoveringID).Type).Count) + ")"
+    END IF
 
-    'IF __UI_IsDragging = __UI_False THEN
-    '    IF __UI_Controls(__UI_Focus).Type = __UI_Type_TextBox THEN
-    '        IF __UI_IsSelectingText THEN
-    '            __UI_SetCaption "Label2", "Sel.Start=" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).SelectionStart) + " Cursor=" + STR$(__UI_Controls(__UI_Focus).Cursor)
-    '            __UI_SetCaption "HoverLabel", "Selected?" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).TextIsSelected)
-    '        ELSE
-    '            __UI_SetCaption "Label2", "Editing text on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
-    '        END IF
-    '    ELSE
-    '        IF __UI_MouseIsDown AND __UI_MouseDownOnID > 0 THEN
-    '            __UI_SetCaption "Label2", "MouseDownOnID=" + RTRIM$(__UI_Controls(__UI_MouseDownOnID).Name)
-    '        ELSEIF __UI_MouseIsDown THEN
-    '            __UI_SetCaption "Label2", "HoveringID <> ID originally clicked"
-    '        ELSE
-    '            __UI_SetCaption "Label2", "Idle."
-    '        END IF
-    '    END IF
-    'ELSE
-    '    __UI_SetCaption "Label2", "Dragging..." + STR$(__UI_PreviewLeft) + "," + STR$(__UI_PreviewTop)
-    'END IF
+    IF __UI_IsDragging = __UI_False THEN
+        IF __UI_Controls(__UI_Focus).Type = __UI_Type_TextBox THEN
+            IF __UI_IsSelectingText THEN
+                __UI_SetCaption "Label2", "Sel.Start=" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).SelectionStart) + " Cursor=" + STR$(__UI_Controls(__UI_Focus).Cursor)
+                __UI_SetCaption "HoverLabel", "Selected?" + STR$(__UI_Controls(__UI_IsSelectingTextOnID).TextIsSelected)
+            ELSE
+                __UI_SetCaption "Label2", "Editing text on " + RTRIM$(__UI_Controls(__UI_Focus).Name)
+            END IF
+        ELSE
+            IF __UI_MouseIsDown AND __UI_MouseDownOnID > 0 THEN
+                __UI_SetCaption "Label2", "MouseDownOnID=" + RTRIM$(__UI_Controls(__UI_MouseDownOnID).Name)
+            ELSEIF __UI_MouseIsDown THEN
+                __UI_SetCaption "Label2", "HoveringID <> ID originally clicked"
+            ELSE
+                __UI_SetCaption "Label2", "Idle."
+            END IF
+        END IF
+    ELSE
+        __UI_SetCaption "Label2", "Dragging..." + STR$(__UI_PreviewLeft) + "," + STR$(__UI_PreviewTop)
+    END IF
 END SUB
 
 SUB __UI_BeforeUnload
@@ -966,13 +1023,18 @@ SUB __UI_KeyPress (id AS LONG)
     END SELECT
 END SUB
 
+SUB __UI_ValueChanged (id AS LONG)
+    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+        CASE "TRACKBAR1"
+    END SELECT
+END SUB
+
 '---------------------------------------------------------------------------------
 'Internal procedures: ------------------------------------------------------------
 '---------------------------------------------------------------------------------
 SUB __UI_ProcessInput
     DIM OldScreen&, i AS LONG
     DIM ContainerOffsetTop AS INTEGER, ContainerOffsetLeft AS INTEGER
-    STATIC __UI_CurrentTitle AS STRING
     STATIC __UI_CurrentResizeStatus AS _BYTE
 
     __UI_HasInput = __UI_False
@@ -1117,6 +1179,39 @@ SUB __UI_ProcessInput
         END IF
     END IF
 
+    'Check if a tooltip must be enabled
+    IF __UI_HoveringID <> __UI_LastHoveringID THEN
+        __UI_TipTimer = TIMER
+        __UI_ActiveTipID = 0
+        __UI_ActiveTipTop = -1
+        __UI_ActiveTipLeft = -1
+    ELSE
+        IF __UI_HoveringID > 0 AND NOT __UI_IsDragging THEN
+            IF TIMER - __UI_TipTimer >= .8 THEN
+                IF LEN(__UI_Tips(__UI_HoveringID)) > 0 THEN
+                    __UI_ActiveTipID = __UI_HoveringID
+                    _FONT __UI_Fonts(__UI_Controls(__UI_FormID).Font)
+                    IF __UI_ActiveTipTop = -1 THEN
+                        __UI_ActiveTipTop = __UI_MouseTop + 16
+                        IF __UI_ActiveTipTop + _FONTHEIGHT * 1.5 > __UI_Controls(__UI_FormID).Height THEN
+                            __UI_ActiveTipTop = __UI_MouseTop - _FONTHEIGHT * 1.5
+                        END IF
+                    END IF
+                    IF __UI_ActiveTipLeft = -1 THEN
+                        __UI_ActiveTipLeft = __UI_MouseLeft
+                        IF __UI_ActiveTipLeft + _PRINTWIDTH(" " + __UI_Tips(__UI_ActiveTipID) + " ") > __UI_Controls(__UI_FormID).Width THEN
+                            __UI_ActiveTipLeft = __UI_Controls(__UI_FormID).Width - _PRINTWIDTH(" " + __UI_Tips(__UI_ActiveTipID) + " ")
+                        END IF
+                    END IF
+                END IF
+            END IF
+        ELSE
+            __UI_ActiveTipID = 0
+            __UI_ActiveTipTop = -1
+            __UI_ActiveTipLeft = -1
+        END IF
+    END IF
+
     'Keyboard input:
     __UI_KeyHit = _KEYHIT
     IF __UI_KeyHit THEN __UI_HasInput = __UI_True
@@ -1155,8 +1250,8 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_UpdateDisplay
-    STATIC GridDrawn AS _BYTE
-    DIM i AS LONG, TempCaption$, TempColor~&
+    STATIC GridDrawn AS _BYTE, ActiveTipPanel AS LONG, PreviousTipID AS LONG
+    DIM i AS LONG, TempCaption$, TempColor~&, PrevDest AS LONG
     DIM CaptionIndent AS INTEGER
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
     DIM ControlState AS _BYTE '1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled;
@@ -1278,6 +1373,9 @@ SUB __UI_UpdateDisplay
                 CASE __UI_Type_ProgressBar
                     'Progress bars
                     __UI_DrawProgressBar __UI_Controls(i), ControlState
+                CASE __UI_Type_TrackBar
+                    'Track bars
+                    __UI_DrawTrackBar __UI_Controls(i), ControlState
                 CASE __UI_Type_TextBox
                     'Text boxes
                     IF __UI_Controls(i).InputViewStart = 0 THEN __UI_Controls(i).InputViewStart = 1
@@ -1350,10 +1448,30 @@ SUB __UI_UpdateDisplay
         __UI_DrawMenuPanel __UI_Controls(__UI_ActiveMenu), ControlState
     END IF
 
+    IF __UI_ActiveTipID > 0 THEN
+        IF __UI_ActiveTipID <> PreviousTipID THEN
+            PreviousTipID = __UI_ActiveTipID
+            TempCaption$ = " " + __UI_Tips(__UI_ActiveTipID) + " "
+            IF ActiveTipPanel <> 0 THEN _FREEIMAGE ActiveTipPanel
+            _FONT __UI_Fonts(__UI_Controls(__UI_FormID).Font)
+            ActiveTipPanel = _NEWIMAGE(_PRINTWIDTH(TempCaption$) + 5, _FONTHEIGHT * 1.5 + 5, 32)
+            _DEST ActiveTipPanel
+            _FONT __UI_Fonts(__UI_Controls(__UI_FormID).Font)
+            _PRINTMODE _KEEPBACKGROUND
+            __UI_ShadowBox 0, 0, _WIDTH - 6, _HEIGHT - 6, __UI_DefaultColor(__UI_Type_Form, 6), 40, 5
+            COLOR __UI_DefaultColor(__UI_Type_Form, 1)
+            _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - _FONTHEIGHT \ 2 - 1.75), TempCaption$
+            LINE (0, 0)-(_WIDTH - 6, _HEIGHT - 6), __UI_DefaultColor(__UI_Type_Form, 5), B
+            __UI_MakeHardwareImage ActiveTipPanel
+        END IF
+        _DEST 0
+        _PUTIMAGE (__UI_ActiveTipLeft, __UI_ActiveTipTop), ActiveTipPanel
+    END IF
+
     __UI_ForceRedraw = __UI_False
 
     STATIC WaitMessage AS LONG, WaitMessageSetup AS _BYTE
-    DIM PrevDest AS LONG, NoInputMessage$
+    DIM NoInputMessage$
     IF TIMER - __UI_LastInputReceived > 2 THEN
         'Visually indicate that something is hogging the input routine
         IF WaitMessage = 0 THEN
@@ -1391,7 +1509,6 @@ FUNCTION __UI_Darken~& (WhichColor~&, ByHowMuch%)
 END FUNCTION
 
 SUB __UI_EventDispatcher
-    STATIC __UI_LastHoveringID AS LONG
     STATIC __UI_LastMouseIconSet AS _BYTE
     STATIC __UI_PreviousMouseDownOnID AS LONG
     STATIC __UI_JustOpenedMenu AS _BYTE
@@ -1432,6 +1549,7 @@ SUB __UI_EventDispatcher
             ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
             IF ThisItem% >= __UI_Controls(__UI_HoveringID).Min AND ThisItem% <= __UI_Controls(__UI_HoveringID).Max THEN
                 __UI_Controls(__UI_HoveringID).Value = ThisItem%
+                IF __UI_Controls(__UI_HoveringID).PreviousValue <> __UI_Controls(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_HoveringID
             END IF
         ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_MenuBar AND LastMouseLeft <> __UI_MouseLeft THEN
             LastMouseLeft = __UI_MouseLeft
@@ -1467,6 +1585,8 @@ SUB __UI_EventDispatcher
 
     'FocusIn, FocusOut
     IF __UI_KeyHit = 9 AND __UI_IsDragging = __UI_False THEN 'TAB
+        __UI_KeyboardFocus = __UI_True
+
         DIM __UI_FocusSearch AS LONG
         __UI_FocusSearch = __UI_Focus
         DO
@@ -1517,21 +1637,31 @@ SUB __UI_EventDispatcher
             __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value + __UI_MouseWheel
             IF __UI_Controls(__UI_Focus).Value < 1 THEN __UI_Controls(__UI_Focus).Value = 1
             IF __UI_Controls(__UI_Focus).Value > __UI_Controls(__UI_Focus).Max THEN __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Max
+            IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
         END IF
     END IF
 
     'MouseDown, MouseUp, BeginDrag
     IF __UI_MouseButton2 THEN
-        'IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_ListBox THEN
-        '    DIM ItemToRemove AS INTEGER
-        '    ItemToRemove = ((__UI_MouseTop - (ContainerOffsetTop + __UI_Controls(__UI_HoveringID).Top)) \ _FONTHEIGHT(__UI_Fonts(__UI_Controls(__UI_HoveringID).Font))) + __UI_Controls(__UI_HoveringID).InputViewStart
-        '    IF ItemToRemove <= __UI_Controls(__UI_HoveringID).Max THEN
-        '        IF __UI_Controls(__UI_HoveringID).InputViewStart + __UI_Controls(__UI_HoveringID).LastVisibleItem > __UI_Controls(__UI_HoveringID).Max THEN __UI_Controls(__UI_HoveringID).InputViewStart = __UI_Controls(__UI_HoveringID).InputViewStart - 1
-        '        __UI_RemoveListBoxItem __UI_Controls(__UI_HoveringID).Name, ItemToRemove
-        '    END IF
-        'END IF
-        '__UI_DestroyControl __UI_Controls(__UI_HoveringID)
-        'EXIT SUB
+        'Second mouse button is first pressed
+        IF __UI_Mouse2IsDown = __UI_False THEN
+            __UI_Mouse2IsDown = __UI_True
+            __UI_Mouse2DownOnID = __UI_HoveringID
+        ELSE
+            'Second mouse button is still pressed
+        END IF
+    ELSE
+        'Second mousebutton is released
+        IF __UI_Mouse2IsDown THEN
+            __UI_Mouse2IsDown = __UI_False
+            __UI_Mouse2DownOnID = 0
+            'Click
+            IF __UI_Controls(__UI_HoveringID).ContextMenuID > 0 THEN
+                __UI_Focus = __UI_HoveringID
+                __UI_PreviousFocus = __UI_Focus
+                __UI_ActivateMenu __UI_Controls(__UI_Controls(__UI_HoveringID).ContextMenuID), __UI_False
+            END IF
+        END IF
     END IF
 
     IF __UI_MouseButton1 THEN
@@ -1637,7 +1767,19 @@ SUB __UI_EventDispatcher
                         __UI_Controls(__UI_MouseDownOnID).InputViewStart = __UI_Controls(__UI_MouseDownOnID).Max - __UI_Controls(__UI_MouseDownOnID).LastVisibleItem - 1
                     END IF
                 END IF
+
+                IF __UI_Controls(__UI_MouseDownOnID).Type = __UI_Type_TrackBar AND NOT __UI_Controls(__UI_MouseDownOnID).Disabled THEN
+                    __UI_Controls(__UI_HoveringID).Value = INT(((__UI_MouseLeft - (ContainerOffsetLeft + __UI_Controls(__UI_HoveringID).Left)) / __UI_Controls(__UI_HoveringID).Width) * __UI_Controls(__UI_HoveringID).Max)
+                END IF
             END IF
+
+            IF __UI_MouseDownOnID = 0 AND __UI_Controls(__UI_PreviousMouseDownOnID).Type = __UI_Type_TrackBar AND NOT __UI_Controls(__UI_PreviousMouseDownOnID).Disabled THEN
+                __UI_Controls(__UI_PreviousMouseDownOnID).Value = INT(((__UI_MouseLeft - (__UI_Controls(__UI_Controls(__UI_PreviousMouseDownOnID).ParentID).Left + __UI_Controls(__UI_PreviousMouseDownOnID).Left)) / __UI_Controls(__UI_PreviousMouseDownOnID).Width) * __UI_Controls(__UI_PreviousMouseDownOnID).Max)
+                IF __UI_Controls(__UI_PreviousMouseDownOnID).Value > __UI_Controls(__UI_PreviousMouseDownOnID).Max THEN __UI_Controls(__UI_PreviousMouseDownOnID).Value = __UI_Controls(__UI_PreviousMouseDownOnID).Max
+                IF __UI_Controls(__UI_PreviousMouseDownOnID).Value < __UI_Controls(__UI_PreviousMouseDownOnID).Min THEN __UI_Controls(__UI_PreviousMouseDownOnID).Value = __UI_Controls(__UI_PreviousMouseDownOnID).Min
+                IF __UI_Controls(__UI_PreviousMouseDownOnID).PreviousValue <> __UI_Controls(__UI_PreviousMouseDownOnID).Value THEN __UI_ValueChanged __UI_PreviousMouseDownOnID
+            END IF
+
         END IF
     ELSE
         'Mouse button is released
@@ -1696,6 +1838,9 @@ SUB __UI_EventDispatcher
                                     __UI_Focus = __UI_ParentDropdownList
                                     __UI_Controls(__UI_ParentDropdownList).Value = __UI_Controls(__UI_ActiveDropdownList).Value
                                     __UI_DestroyControl __UI_Controls(__UI_ActiveDropdownList)
+                                    IF __UI_Controls(__UI_ParentDropdownList).PreviousValue <> __UI_Controls(__UI_ParentDropdownList).Value THEN __UI_ValueChanged __UI_ParentDropdownList
+                                ELSE
+                                    IF __UI_Controls(__UI_HoveringID).PreviousValue <> __UI_Controls(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_HoveringID
                                 END IF
                             END IF
                         CASE __UI_Type_DropdownList
@@ -1716,7 +1861,29 @@ SUB __UI_EventDispatcher
                     __UI_LastMouseClick = TIMER
                     __UI_JustOpenedMenu = __UI_False
                     __UI_MouseDownOnID = 0
-                    __UI_Click __UI_HoveringID
+
+                    ProcessClick:
+                    IF RTRIM$(__UI_Controls(__UI_Controls(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" THEN
+                        'Internal context menus - Text field options
+                        __UI_Focus = __UI_PreviousFocus
+                        SELECT CASE UCASE$(RTRIM$(__UI_Controls(__UI_HoveringID).Name))
+                            CASE "TEXTMENUCUT"
+                                IF LEN(__UI_SelectedText) > 0 THEN
+                                    _CLIPBOARD$ = __UI_SelectedText
+                                    __UI_DeleteSelection
+                                END IF
+                            CASE "TEXTMENUCOPY"
+                                IF LEN(__UI_SelectedText) > 0 THEN _CLIPBOARD$ = __UI_SelectedText
+                            CASE "TEXTMENUPASTE"
+                                GOTO PasteIntoTextBox
+                            CASE "TEXTMENUSELECT"
+                                __UI_Controls(__UI_Focus).Cursor = LEN(__UI_Texts(__UI_Focus))
+                                __UI_Controls(__UI_Focus).SelectionStart = 0
+                                __UI_Controls(__UI_Focus).TextIsSelected = __UI_True
+                        END SELECT
+                    ELSE
+                        __UI_Click __UI_HoveringID
+                    END IF
                 ELSE
                     IF __UI_ActiveMenu > 0 THEN
                         __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
@@ -1907,8 +2074,10 @@ SUB __UI_EventDispatcher
         END IF
     END IF
 
+    'Control-specific keyboard handler:
     IF __UI_Focus AND __UI_KeyHit <> 0 THEN
         __UI_KeyPress __UI_Focus
+        __UI_KeyboardFocus = __UI_True
 
         'Enter activates the selected/default button, if any
         IF __UI_IsDragging = __UI_False AND __UI_KeyHit = -13 AND NOT __UI_Controls(__UI_Focus).Disabled THEN
@@ -1920,11 +2089,13 @@ SUB __UI_EventDispatcher
                     __UI_ForceRedraw = __UI_True
                     __UI_KeyHit = 0
                 END IF
-                __UI_Click i
+                __UI_HoveringID = i
+                GOTO ProcessClick
             ELSEIF __UI_Controls(__UI_Focus).Type = __UI_Type_ListBox AND __UI_Focus = __UI_ActiveDropdownList THEN
                 __UI_Focus = __UI_ParentDropdownList
                 __UI_Controls(__UI_ParentDropdownList).Value = __UI_Controls(__UI_ActiveDropdownList).Value
                 __UI_DestroyControl __UI_Controls(__UI_ActiveDropdownList)
+                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
             ELSEIF __UI_Controls(__UI_Focus).Type = __UI_Type_MenuBar THEN
                 __UI_ActivateMenu __UI_Controls(__UI_Focus), __UI_True
             ELSEIF __UI_Focus <> __UI_DefaultButtonID AND __UI_DefaultButtonID > 0 THEN
@@ -1932,6 +2103,25 @@ SUB __UI_EventDispatcher
             END IF
         ELSE
             SELECT CASE __UI_Controls(__UI_Focus).Type
+                CASE __UI_Type_TrackBar
+                    SELECT CASE __UI_KeyHit
+                        CASE 19200 'Left
+                            IF __UI_Controls(__UI_Focus).Value > __UI_Controls(__UI_Focus).Min THEN
+                                __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value - 1
+                                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                            END IF
+                        CASE 19712 'Right
+                            IF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).Max THEN
+                                __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value + 1
+                                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                            END IF
+                        CASE 18176 'Home
+                            __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Min
+                            IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                        CASE 20224 'End
+                            __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Max
+                            IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                    END SELECT
                 CASE __UI_Type_MenuBar
                     SELECT CASE __UI_KeyHit
                         CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
@@ -1975,7 +2165,11 @@ SUB __UI_EventDispatcher
                                 END IF
                             NEXT
                         CASE 27 'Esc
-                            __UI_Focus = __UI_ParentMenu
+                            IF __UI_Controls(__UI_ParentMenu).Type = __UI_Type_MenuBar THEN
+                                __UI_Focus = __UI_ParentMenu
+                            ELSE
+                                __UI_Focus = __UI_PreviousFocus
+                            END IF
                             __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
                             __UI_KeyHit = 0
                         CASE 19200 'Left
@@ -2063,6 +2257,7 @@ SUB __UI_EventDispatcher
                             CASE 18432 'Up
                                 IF __UI_Controls(__UI_Focus).Value > 1 THEN
                                     __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value - 1
+                                    IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                                 END IF
                             CASE 20480 'Down
                                 IF __UI_AltIsDown THEN
@@ -2072,21 +2267,26 @@ SUB __UI_EventDispatcher
                                 ELSE
                                     IF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).Max THEN
                                         __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value + 1
+                                        IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                                     END IF
                                 END IF
                             CASE 18688 'Page up
                                 __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value - __UI_Controls(__UI_Focus).LastVisibleItem
                                 IF __UI_Controls(__UI_Focus).Value < 1 THEN __UI_Controls(__UI_Focus).Value = 1
+                                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             CASE 20736 'Page down
                                 IF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).Max - __UI_Controls(__UI_Focus).LastVisibleItem THEN
                                     __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Value + __UI_Controls(__UI_Focus).LastVisibleItem - 1
                                 ELSE
                                     __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Max
                                 END IF
+                                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             CASE 18176 'Home
                                 __UI_Controls(__UI_Focus).Value = 1
+                                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             CASE 20224 'End
                                 __UI_Controls(__UI_Focus).Value = __UI_Controls(__UI_Focus).Max
+                                IF __UI_Controls(__UI_Focus).PreviousValue <> __UI_Controls(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             CASE 18432, 20480, 18688, 20736, 18176, 20224
                                 'Adjust view:
                                 IF __UI_Controls(__UI_Focus).Value < __UI_Controls(__UI_Focus).InputViewStart THEN
@@ -2104,6 +2304,7 @@ SUB __UI_EventDispatcher
                             CASE 32 TO 254 'Printable ASCII characters
                                 IF __UI_KeyHit = ASC("v") OR __UI_KeyHit = ASC("V") THEN 'Paste from clipboard (Ctrl+V)
                                     IF __UI_CtrlIsDown THEN
+                                        PasteIntoTextBox:
                                         Clip$ = _CLIPBOARD$
                                         FindLF& = INSTR(Clip$, CHR$(13))
                                         IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
@@ -2133,13 +2334,15 @@ SUB __UI_EventDispatcher
                                     END IF
                                 ELSEIF __UI_KeyHit = ASC("c") OR __UI_KeyHit = ASC("C") THEN 'Copy selection to clipboard (Ctrl+C)
                                     IF __UI_CtrlIsDown THEN
-                                        _CLIPBOARD$ = __UI_SelectedText
+                                        IF LEN(__UI_SelectedText) > 0 THEN _CLIPBOARD$ = __UI_SelectedText
                                         __UI_KeyHit = 0
                                     END IF
                                 ELSEIF __UI_KeyHit = ASC("x") OR __UI_KeyHit = ASC("X") THEN 'Cut selection to clipboard (Ctrl+X)
                                     IF __UI_CtrlIsDown THEN
-                                        _CLIPBOARD$ = __UI_SelectedText
-                                        __UI_DeleteSelection
+                                        IF LEN(__UI_SelectedText) > 0 THEN
+                                            _CLIPBOARD$ = __UI_SelectedText
+                                            __UI_DeleteSelection
+                                        END IF
                                         __UI_KeyHit = 0
                                     END IF
                                 ELSEIF __UI_KeyHit = ASC("a") OR __UI_KeyHit = ASC("A") THEN 'Select all text (Ctrl+A)
@@ -2253,7 +2456,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     IF ControlType = __UI_Type_Form THEN
         'Make sure only one Form exists, as it must be unique
-        IF __UI_Type(__UI_Type_Form).Count > 0 THEN ERROR 5: EXIT FUNCTION
+        IF __UI_Type(__UI_Type_Form).Count > 0 THEN ERROR 10: EXIT FUNCTION
     END IF
 
     'Increase the global count of controls of this type
@@ -2262,7 +2465,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     'Make sure this ControlName is unique:
     FOR i = 1 TO UBOUND(__UI_Controls)
-        IF __UI_Controls(i).ID > 0 AND UCASE$(RTRIM$(__UI_Controls(i).Name)) = UCASE$(RTRIM$(ControlName)) THEN ERROR 5: EXIT FUNCTION
+        IF __UI_Controls(i).ID > 0 AND UCASE$(RTRIM$(__UI_Controls(i).Name)) = UCASE$(RTRIM$(ControlName)) THEN ERROR 10: EXIT FUNCTION
     NEXT
 
     'Find an empty slot for the new control
@@ -2318,11 +2521,33 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             _DEST 0
             __UI_MakeHardwareImageFromCanvas __UI_Controls(__UI_FormID)
         END IF
-    ELSEIF ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
+    END IF
+
+    IF ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
         __UI_Controls(NextSlot).CanHaveFocus = __UI_True
-    ELSEIF ControlType = __UI_Type_Frame THEN
+    END IF
+
+    IF ControlType = __UI_Type_Frame THEN
         __UI_Controls(NextSlot).Canvas = _NEWIMAGE(NewWidth, NewHeight, 32)
-    ELSEIF ControlType = __UI_Type_Form THEN
+    END IF
+
+    IF ControlType = __UI_Type_TextBox THEN
+        'Programmer can assign any custom menus to his controls, later
+        'but by default textboxes and other textfields will be
+        'assigned the internal __UI_TextFieldMenu.
+        __UI_Controls(NextSlot).ContextMenuID = __UI_GetID("__UI_TextFieldMenu")
+    END IF
+
+    IF ControlType = __UI_Type_ProgressBar THEN
+        __UI_Controls(NextSlot).Max = 100
+    END IF
+
+    IF ControlType = __UI_Type_TrackBar THEN
+        __UI_Controls(NextSlot).Max = 10
+        __UI_Controls(NextSlot).Height = 40
+    END IF
+
+    IF ControlType = __UI_Type_Form THEN
         'Create main window hardware bg:
         __UI_Controls(__UI_FormID).Canvas = _NEWIMAGE(NewWidth, NewHeight, 32)
         _DEST __UI_Controls(__UI_FormID).Canvas
@@ -2473,6 +2698,11 @@ SUB __UI_SetText (Control$, NewText$)
 END SUB
 
 '---------------------------------------------------------------------------------
+SUB __UI_SetTip (Control$, NewTip$)
+    __UI_Tips(__UI_GetID(Control$)) = NewTip$
+END SUB
+
+'---------------------------------------------------------------------------------
 FUNCTION __UI_LoadFont& (FontFile$, Size%, Parameters$)
     DIM Handle&
     Handle& = _LOADFONT(FontFile$, Size%, Parameters$)
@@ -2578,8 +2808,12 @@ FUNCTION __UI_ImageData$ (File$)
     DIM A$
 
     SELECT CASE LCASE$(File$)
+        CASE "slidertrack.png"
+            A$ = MKI$(5) + MKI$(5) 'Width, Height
+            A$ = A$ + "EcMgoc;`0oOVLfiodS?nok>meoO[a:ko7g\coWNlboOlfOoog[_noCiUHn?i[cnoY7_lo[^lco_onkooIb9WoG]eFo?h]3ooaKom"
+            A$ = A$ + "oO_njoocCCmom:l`oooooo?mhSoo^COm%%o3"
         CASE "frame.png"
-            A$ = MKI$(22) + MKI$(20) 'Width, Height
+            A$ = MKI$(22) + MKI$(20)
             A$ = A$ + "o3`ooo?0ooOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]eoWMeFoOfEKmoIG]e"
             A$ = A$ + "ooKdAooo0looo3`ooo?0ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
             A$ = A$ + "oooo0looo3`ooo?0oo?aC?moIG]eoo?0ooOfEKmoIG]eoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
@@ -3318,6 +3552,70 @@ FUNCTION __UI_ImageData$ (File$)
             A$ = A$ + "ooooooooooooooooooooo[VJZIoHS=VoXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6J"
             A$ = A$ + "gS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6J"
             A$ = A$ + "XM?JXQfmXQ6JgS6JXM?JXQfmXQ6JgS6JXMoHS=Vo%%%0"
+        CASE "sliderdown.png"
+            A$ = MKI$(11) + MKI$(105)
+            A$ = A$ + "o3`oo?mbnnOc5Kko=CL]og<aenOc4Gko=CL]og<aen?bonjon:kWoo?0oood;kkoa6]YokFd_mOI>OfoTi\IoCVcVm?I>KfoQe\H"
+            A$ = A$ + "o?d`5m_M\>foVZiQogLafn_KAofoRelHoODa9m_A4Odo6AlAoK4a7mo@3GdoOLK8oc1YMlOV>fgo=CL]oGVcWmoA5WdoSTK9oo1^"
+            A$ = A$ + "Qlo7h6boOPK8oo1^Ql?7WjaoIHi6o;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOh"
+            A$ = A$ + "CCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo"
+            A$ = A$ + "4Kk]o;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=e"
+            A$ = A$ + "o3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eoooo"
+            A$ = A$ + "ooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T"
+            A$ = A$ + "8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eo7ndDoooooooPC=eo3>eDo?hDCmo"
+            A$ = A$ + "]ONio7ndDo?afNkoBRhMoSl__nOB5_doQ?=eo7ndDoooooooPC=eogniUoOhCCmo4Kk]oWaTJloT9Rgon:kWo_G\Ymo7h6boQ?=e"
+            A$ = A$ + "o7ndDoooooooQ?=eoC\]gn?6AZaoJA8CoghPbmoo0loobJJToK7[Smo7f6boQ?=eo7ndDo?afNkoH4Y6oWUP;m?Rnifoo3`ooo?0"
+            A$ = A$ + "oooo0loobJJToK7[Smo7f6boQ?=eoSATJlOF2^do8jWKoo?0oooo0looo3`ooo?0oooo0loobJJToK7[Smo6RfaoI9hBoSXO^moo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0loobJJToS6VHm?Rnifoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "N:9Poo?0oooo0looo3`ooo?0oooo0looo3`oo?mbnnOc5Kko=CL]og<aenOc4Gko=CL]og<aen?bonjon:kWoo?0oood;kkof2Mf"
+            A$ = A$ + "ocWcko?M<_ood]lnoCgbko?M;_oo`YlnoG5`jooO[^koVZiQogLafn?O>_ooaYlnoWU`jo?F1[ooH5\noSE`joOE0[ooe<kmoo2X"
+            A$ = A$ + "NoOV>fgo=CL]oC7ckoOF2[ooiDKnoG3]ioO=dVooe@KnoG3]io?<T>no[<ibo;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?h"
+            A$ = A$ + "DCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDooooooo"
+            A$ = A$ + "a7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhM"
+            A$ = A$ + "og<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a"
+            A$ = A$ + "6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?h"
+            A$ = A$ + "DCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4Gko"
+            A$ = A$ + "Q?=eo7ndDoooooooPC=eo3>eDo?hDCmo]ONio7ndDo?afNkoBRhMoSl__noF2[ooQ?=eo7ndDoooooooPC=eogniUoOhCCmo4Kk]"
+            A$ = A$ + "o[2T7ooT9Rgon:kWoC8\0oO=dVooQ?=eo7ndDoooooooQ?=eoC\]gn_:>BloQ=hSoghPbmoo0loobJJTokgZjn?=bJooQ?=eo7nd"
+            A$ = A$ + "Do?afNkoZh8ao3VP>n?Rnifoo3`ooo?0oooo0loobJJTokgZjn?=bJooQ?=eo[RS4o?H2jho8jWKoo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0loobJJTokgZjno;N^moP9XSoSXO^moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loobJJTo3gUUn?Rnifoo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looN:9Poo?0oooo0looo3`ooo?0oooo0looo3`oo?mbnnOc5Kko=CL]og<aenOc4Gko=CL]"
+            A$ = A$ + "og<aen?bonjon:kWoo?0oood;kko]R\YoKV^`m?GfNfoKI[Io_U]VmoFfJfoHAkHoSSY6m?LN>foVZiQogLafn_Ij2goIE;Iog3Z"
+            A$ = A$ + ":mo>WRdokL:Bo_cY8m?>VJdoB@Y8o3AQNlOV>fgo=CL]ocU]WmO?XZdoGLY9o;AURl_4E:boBDY8o;AURl?48nao?X77o;9RgmOc"
+            A$ = A$ + "4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6Klo"
+            A$ = A$ + "BK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eooooooOla7ooPC=e"
+            A$ = A$ + "o7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7nd"
+            A$ = A$ + "Doooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?a"
+            A$ = A$ + "fNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmo"
+            A$ = A$ + "PC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eo7ndDoooooooPC=eo3>eDo?hDCmo]ONio7ndDo?afNkoBRhMoSl__no?YbdoQ?=e"
+            A$ = A$ + "o7ndDoooooooPC=eogniUoOhCCmo4Kk]ok`MKloT9Rgon:kWoGgXYm_4E:boQ?=eo7ndDoooooooQ?=eoC\]gn_3e]aoFU7CoghP"
+            A$ = A$ + "bmoo0loobJJTo3WWSm_4C:boQ?=eo7ndDo?afNko>Dg6oG5N;m?Rnifoo3`ooo?0oooo0loobJJTo3WWSm_4C:boQ?=eok@MKlOE"
+            A$ = A$ + "h]do8jWKoo?0oooo0looo3`ooo?0oooo0loobJJTo3WWSm?43jaoEQgBoSXO^moo0looo3`ooo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "bJJTo?6SHm?Rnifoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looN:9Poo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "o?mbnnOc5Kko=CL]og<aenOc4Gko=CL]og<aen?bonjon:kWoo?0oood;kkof2MfocWcko?M<_ood]lnoCgbko?M;_oo`YlnoG5`"
+            A$ = A$ + "jooO[^koVZiQogLafn?O>_ooaYlnoWU`jo?F1[ooH5\noSE`joOE0[ooe<kmoo2XNoOV>fgo=CL]oC7ckoOF2[ooiDKnoG3]ioO="
+            A$ = A$ + "dVooe@KnoG3]io?<T>no[<ibo;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmo"
+            A$ = A$ + "ooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]"
+            A$ = A$ + "o;9RgmOc4GkoQ?=eooooooOla7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>e"
+            A$ = A$ + "Do_d6KloBK\aoC\]gn_T8Ngo=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eooooooOl"
+            A$ = A$ + "a7ooPC=eo7ndDo?hDCmoBK\ao;]a6o?afNkoBRhMog<aenOhCCmoooooo7Olao?hDCmoQ?=eo3>eDo_d6KloBK\aoC\]gn_T8Ngo"
+            A$ = A$ + "=CL]o7ndDoooooooa7Olo3>eDoOhCCmoPC=eo;]a6o_d6Klo4Kk]o;9RgmOc4GkoQ?=eo7ndDoooooooPC=eo3>eDo?hDCmo]ONi"
+            A$ = A$ + "o7ndDo?afNkoBRhMoSl__noF2[ooQ?=eo7ndDoooooooPC=eogniUoOhCCmo4Kk]o[2T7ooT9Rgon:kWoC8\0oO=dVooQ?=eo7nd"
+            A$ = A$ + "DoooooooQ?=eoC\]gn_:>BloQ=hSoghPbmoo0loobJJTokgZjn?=bJooQ?=eo7ndDo?afNkoZh8ao3VP>n?Rnifoo3`ooo?0oooo"
+            A$ = A$ + "0loobJJTokgZjn?=bJooQ?=eo[RS4o?H2jho8jWKoo?0oooo0looo3`ooo?0oooo0loobJJTokgZjno;N^moP9XSoSXO^moo0loo"
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0loobJJTo3gUUn?Rnifoo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looN:9P"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`oo[\eIooaDOmo6C]eoK<eFo_aDKmo6C]eoK<eFo?aBGmoojLdoo?0oo_bFWmo;G=foO\d"
+            A$ = A$ + "Co_aA;mo63]doK<dBo_a@;mo53]do3<c>o_^7[loeF<boO<eGooaB?mo53]do7<c>o?`<klo0c\co3<c>o?`<kloiJ<bo;[_0o?\"
+            A$ = A$ + "o:lo6C]eok^mgo?keKooZCOmo[>meo_jdGooZCOmo[>meo_h[cnoI?>iog:_on_aDKmo^KomocNmfo_jdGooZCOmo[>meo_jdGoo"
+            A$ = A$ + "ZCOmo;nj\oOfR?no]bk_oK<eFo_kfOoo\G_mo[>meo_jdGooZCOmo[>meo_jdGooR_>koW]hSoO[lnko6C]eok^mgo?keKooZCOm"
+            A$ = A$ + "o[>meo_jdGooZCOmo[>meo_h[cnoI;nhog:_on_aDKmo^KomocNmfo_jdGooZCOmo[>meo_jdGooZCOmo;nj\oOfR?no]bk_oK<e"
+            A$ = A$ + "Fo_kfOoo\G_mo[>meo_jdGooZCOmo[>meo_jdGooR_>koW]hSoO[lnko6C]eok^mgo?keKooZCOmo[>meo_jdGooZCOmo[>meo_h"
+            A$ = A$ + "[cnoI;nhog:_on_aDKmo^KomocNmfo_jdGooZCOmo[>meo_jdGooZCOmo;nj\oOfR?no]bk_oK<eFo_kfOoo\G_mo[>meo_jdGoo"
+            A$ = A$ + "ZCOmo[>meo_jdGooR_>koW]hSoO[lnko6C]eok^mgo?keKooZCOmo[>meo_jdGooZCOmo[>meo_h[cnoI;nhog:_on_aDKmo]Kom"
+            A$ = A$ + "ocNmfo_jdGooZCOmo[>meo_jdGooY??mo7^j[oOfR?no]bk_oC\dEo?keKoo[G_mo[>meo_jdGooZCOmoWnldoOi_3ooLKnioSMh"
+            A$ = A$ + "RoO[lnkoojLdoc[b=o_jdGooY??mo[>meoOjcCooUo>logmiXooeP7noYJK^o_J^lnoo0loojV<co[ka:oOjcCooY??moGnk`oOg"
+            A$ = A$ + "WSnoG3NhoWZ]inOZh^koo3`ooo?0oooo0loojV<co[ka:oOjcCooPW^joO=hQoOZfVkoYRk^oo?0oooo0looo3`ooo?0oooo0loo"
+            A$ = A$ + "jV<co[ka:oogYWnoYJK^oW:^knoo0looo3`ooo?0oooo0looo3`ooo?0oooo0loojV<co;;`2oOZh^koo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looa6l`oo?0oooo0looo3`ooo?0oooo0loo%%%0"
     END SELECT
     __UI_ImageData$ = A$
 END FUNCTION
@@ -3407,7 +3705,7 @@ SUB __UI_RemoveListBoxItem (WhichListBox$, ItemToRemove AS INTEGER)
     This = __UI_Controls(__UI_GetID(WhichListBox$))
     IF This.Type <> __UI_Type_ListBox THEN ERROR 5: EXIT SUB
 
-    IF ItemToRemove > This.Max THEN ERROR 5: EXIT SUB
+    IF ItemToRemove > This.Max THEN ERROR 6: EXIT SUB
 
     TempText$ = __UI_Texts(This.ID)
     __UI_Texts(This.ID) = ""
@@ -3510,13 +3808,16 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 FUNCTION __UI_MessageBox& (Message$, Title$, Setup AS LONG)
     _DELAY .1 'So the interface can redraw before the messagebox kicks in
+
+    IF Title$ = "" THEN Title$ = __UI_CurrentTitle
+
     $IF WIN THEN
-        __UI_MessageBox& = __UI_MB(0, Title$ + CHR$(0), Message$ + CHR$(0), Setup)
+        __UI_MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), Setup)
     $ELSE
         IF (Setup AND 4) THEN
-        __UI_MessageBox& = __UI_MB(0, Title$ + CHR$(0), Message$ + CHR$(0), 4)
+        __UI_MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 4)
         ELSE
-        __UI_MessageBox& = __UI_MB(0, Title$ + CHR$(0), Message$ + CHR$(0), 0)
+        __UI_MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 0)
         END IF
     $END IF
 END FUNCTION
@@ -3568,18 +3869,25 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
         __UI_ActiveMenu = __UI_NewControl(__UI_Type_MenuPanel, RTRIM$(This.Name) + CHR$(254) + "Panel", 0, 0, 0, 0, 0)
         IF __UI_ActiveMenu = 0 THEN EXIT SUB
-        __UI_ParentMenu = This.ID
-        __UI_Controls(__UI_ActiveMenu).Left = This.Left
-        __UI_Controls(__UI_ActiveMenu).Font = This.Font
 
+        __UI_ParentMenu = This.ID
+        __UI_Controls(__UI_ActiveMenu).Font = This.Font
         _FONT __UI_Fonts(This.Font)
+
+        IF This.Type = __UI_Type_MenuBar THEN
+            __UI_Controls(__UI_ActiveMenu).Left = This.Left
+            __UI_Controls(__UI_ActiveMenu).Top = _FONTHEIGHT * 1.5
+        ELSEIF This.Type = __UI_Type_ContextMenu THEN
+            __UI_Controls(__UI_ActiveMenu).Left = __UI_MouseLeft
+            __UI_Controls(__UI_ActiveMenu).Top = __UI_MouseTop
+        END IF
+
         IF _PRINTWIDTH("W") <> _PRINTWIDTH("I") THEN ItemOffset = _PRINTWIDTH("____") ELSE ItemOffset = _PRINTWIDTH("__")
 
         'Calculate panel's width and position the menu items
         __UI_Controls(__UI_ActiveMenu).Width = 120
 
         ItemHeight = _FONTHEIGHT * 1.5
-        __UI_Controls(__UI_ActiveMenu).Top = _FONTHEIGHT * 1.5
         __UI_Controls(__UI_ActiveMenu).Height = _FONTHEIGHT * .3
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).ParentID = This.ID AND NOT __UI_Controls(i).Hidden THEN
@@ -3602,6 +3910,10 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
         IF __UI_Controls(__UI_ActiveMenu).Left + __UI_Controls(__UI_ActiveMenu).Width > _WIDTH THEN
             __UI_Controls(__UI_ActiveMenu).Left = _WIDTH - __UI_Controls(__UI_ActiveMenu).Width - 5
+        END IF
+
+        IF __UI_Controls(__UI_ActiveMenu).Top + __UI_Controls(__UI_ActiveMenu).Height > _HEIGHT THEN
+            __UI_Controls(__UI_ActiveMenu).Top = _HEIGHT - __UI_Controls(__UI_ActiveMenu).Height - 5
         END IF
 
         IF SelectFirstItem THEN
@@ -3756,7 +4068,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 FUNCTION __UI_DefaultColor~& (ControlType AS _BYTE, Attribute AS _BYTE)
-    DIM Colors(1 TO 5) AS _UNSIGNED LONG
+    DIM Colors(1 TO 6) AS _UNSIGNED LONG
 
     '.ForeColor
     Colors(1) = _RGB32(0, 0, 0)
@@ -3768,6 +4080,8 @@ FUNCTION __UI_DefaultColor~& (ControlType AS _BYTE, Attribute AS _BYTE)
     Colors(4) = _RGB32(78, 150, 216)
     '.BorderColor
     Colors(5) = _RGB32(167, 166, 170)
+    'Tip color (global property)
+    Colors(6) = _RGB32(255, 255, 225)
 
     'Specific cases:
     SELECT CASE ControlType
@@ -3849,7 +4163,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         'Focus outline:
-        IF __UI_Focus = This.ID THEN
+        IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
             LINE (2, 2)-STEP(This.Width - 5, This.Height - 5), _RGB32(0, 0, 0), B , 21845
         END IF
 
@@ -3999,7 +4313,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         'Focus outline
-        IF __UI_Focus = This.ID THEN
+        IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
             LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
         END IF
 
@@ -4077,7 +4391,7 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         'Focus outline
-        IF __UI_Focus = This.ID THEN
+        IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
             LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
         END IF
         '------
@@ -4122,7 +4436,7 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
         '------
         DIM DisplayValue AS _FLOAT
 
-        IF This.Value > This.Max THEN ERROR 5
+        IF This.Value > This.Max THEN ERROR 6
 
         'Draw track
         'Back
@@ -4174,6 +4488,78 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
             IF _PRINTWIDTH(TempCaption$) < This.Width THEN
                 _PRINTSTRING (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2, This.Height \ 2 - _FONTHEIGHT \ 2 + 1), TempCaption$
             END IF
+        END IF
+        '------
+
+        __UI_MakeHardwareImageFromCanvas This
+        _DEST PrevDest
+    END IF
+
+    _PUTIMAGE (This.Left, This.Top), This.Canvas
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
+    DIM PrevDest AS LONG, i AS LONG, TempControlState AS _BYTE
+
+    STATIC ControlImage_Track AS LONG, ControlImage_Slider AS LONG
+
+    CONST SliderHeight = 21
+    CONST SliderWidth = 11
+
+    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("slidertrack.png")
+    IF ControlImage_Slider = 0 THEN
+        ControlImage_Slider = __UI_LoadThemeImage("sliderdown.png")
+        _SOURCE ControlImage_Slider
+        _CLEARCOLOR POINT(0, 0), ControlImage_Slider
+        _SOURCE 0
+    END IF
+
+    TempControlState = ControlState
+    IF This.Disabled THEN TempControlState = 5
+
+    IF This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+        'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.ControlState = TempControlState
+        This.FocusState = __UI_Focus = This.ID
+        This.PreviousValue = This.Value
+        IF This.ParentID THEN __UI_Controls(This.ParentID).ChildrenRedrawn = __UI_True
+        This.PreviousParentID = This.ParentID
+
+        IF This.Canvas <> 0 THEN
+            _FREEIMAGE This.Canvas
+        END IF
+
+        This.Canvas = _NEWIMAGE(This.Width, This.Height, 32)
+
+        PrevDest = _DEST
+        _DEST This.Canvas
+        _FONT __UI_Fonts(This.Font)
+        CLS , _RGBA32(0, 0, 0, 0)
+
+        '------
+        DIM DisplayValue AS _FLOAT
+
+        IF This.Value > This.Max THEN ERROR 6
+
+        'Draw track
+        _PUTIMAGE (3, 10), ControlImage_Track, , (0, 0)-STEP(1, 4)
+        _PUTIMAGE (5, 10)-STEP(This.Width - 10, 5), ControlImage_Track, , (2, 0)-STEP(0, 4)
+        _PUTIMAGE (This.Width - 4, 10), ControlImage_Track, , (3, 0)-STEP(1, 4)
+
+        'Interval ticks
+        LINE (5, 30)-STEP(0, 3), This.BorderColor
+        FOR i = This.Interval TO This.Max STEP This.Interval
+            LINE (5 + (This.Width - SliderWidth) * (i / This.Max), 30)-STEP(0, 2), This.BorderColor
+        NEXT i
+        LINE (5 + (This.Width - SliderWidth), 30)-STEP(0, 3), This.BorderColor
+
+        'Draw slider
+        _PUTIMAGE ((This.Width - SliderWidth) * (This.Value / This.Max), 2), ControlImage_Slider, , (0, TempControlState * SliderHeight - SliderHeight)-STEP(SliderWidth - 1, SliderHeight - 1)
+
+        'Focus outline
+        IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
+            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
         END IF
         '------
 
@@ -4244,7 +4630,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
         END IF
 
-        IF __UI_Focus = This.ID AND NOT This.Disabled THEN
+        IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu = This.ContextMenuID)) AND NOT This.Disabled THEN
             IF LEN(__UI_Texts(This.ID)) THEN
                 _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2)), MID$(__UI_Texts(This.ID), This.InputViewStart, This.FieldArea)
             ELSE
@@ -4254,7 +4640,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             IF This.TextIsSelected THEN
                 STATIC c AS _UNSIGNED LONG
                 IF c = 0 THEN
-                    c = _RGBA32(_RED32(This.SelectedBackColor), _GREEN32(This.SelectedBackColor), _BLUE32(This.SelectedBackColor), 50)
+                    c = _RGBA32(_RED32(This.SelectedBackColor), _GREEN32(This.SelectedBackColor), _BLUE32(This.SelectedBackColor), 70)
                 END IF
                 LINE (CaptionIndent + ss1 * _FONTWIDTH, ((This.Height \ 2) - _FONTHEIGHT \ 2))-STEP(ss2 * _FONTWIDTH, _FONTHEIGHT), c, BF
             END IF
