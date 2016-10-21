@@ -16,6 +16,8 @@ CONST OffsetFirstSelectedID = 27
 CONST OffsetPropertyChanged = 31
 CONST OffsetPropertyValue = 33
 
+DIM SHARED UiPreviewPID AS LONG
+
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
         FUNCTION OpenProcess& (BYVAL dwDesiredAccess AS LONG, BYVAL bInheritHandle AS LONG, BYVAL dwProcessId AS LONG)
@@ -79,6 +81,14 @@ SUB __UI_BeforeUpdateDisplay
 
     SavePreview
 
+    b$ = MKL$(UiPreviewPID)
+    SendData b$, OffsetPreviewPID
+
+    IF __UI_ControlOperation THEN
+        __UI_ControlOperation = __UI_False
+        b$ = MKI$(-1): SendData b$, OffsetNewDataFromPreview
+    END IF
+
     UiEditorFile = FREEFILE
     OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
 
@@ -115,33 +125,48 @@ SUB __UI_BeforeUpdateDisplay
         $END IF
 
         'New control:
+        DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewControl, b$
         TempValue = CVI(b$)
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewControl, b$
         IF TempValue > 0 THEN
+            IF __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+                ThisContainer = __UI_Controls(__UI_FirstSelectedID).ParentID
+                TempWidth = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width
+                TempHeight = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height
+            ELSEIF __UI_Controls(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+                ThisContainer = __UI_Controls(__UI_FirstSelectedID).ID
+                TempWidth = __UI_Controls(__UI_FirstSelectedID).Width
+                TempHeight = __UI_Controls(__UI_FirstSelectedID).Height
+            ELSE
+                TempWidth = __UI_Controls(__UI_FormID).Width
+                TempHeight = __UI_Controls(__UI_FormID).Height
+            END IF
             SELECT CASE TempValue
                 CASE __UI_Type_Button
-                    TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, _WIDTH \ 2 - 40, _HEIGHT \ 2 - 12, 0)
+                    TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
                 CASE __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton
-                    TempValue = __UI_NewControl(TempValue, "", 150, 23, _WIDTH \ 2 - 75, _HEIGHT \ 2 - 12, 0)
+                    TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_TextBox
-                    TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, _WIDTH \ 2 - 60, _HEIGHT \ 2 - 12, 0)
+                    TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
                     IF _FONTWIDTH(__UI_Controls(TempValue).Font) = 0 THEN __UI_Controls(TempValue).Font = __UI_Font("VGA Emulated", "", 16, "")
                     __UI_Controls(TempValue).FieldArea = __UI_Controls(TempValue).Width \ _FONTWIDTH(__UI_Controls(TempValue).Font) - 1
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_ListBox
-                    TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, _WIDTH \ 2 - 100, _HEIGHT \ 2 - 100, 0)
+                    TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
                     __UI_Controls(TempValue).HasBorder = __UI_True
                 CASE __UI_Type_DropdownList
-                    TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, _WIDTH \ 2 - 100, _HEIGHT \ 2 - 12, 0)
+                    TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
                 CASE __UI_Type_TrackBar
-                    TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, _WIDTH \ 2 - 150, _HEIGHT \ 2 - 23, 0)
+                    TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
                 CASE __UI_Type_ProgressBar
-                    TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, _WIDTH \ 2 - 150, _HEIGHT \ 2 - 12, 0)
+                    TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
                 CASE __UI_Type_PictureBox, __UI_Type_Frame
-                    TempValue = __UI_NewControl(TempValue, "", 230, 150, _WIDTH \ 2 - 115, _HEIGHT \ 2 - 75, 0)
-                    IF TempValue = __UI_Type_Frame THEN __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                    TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
+                CASE __UI_Type_Frame
+                    TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
+                    __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
             END SELECT
             FOR i = 1 TO UBOUND(__UI_Controls)
                 __UI_Controls(i).ControlIsSelected = __UI_False
@@ -214,6 +239,7 @@ SUB __UI_BeforeUpdateDisplay
                             END IF
                         NEXT
                     ELSE
+                        IF TempValue < 20 THEN TempValue = 20
                         __UI_Controls(__UI_FormID).Width = TempValue
                     END IF
                 CASE 7 'Height
@@ -227,6 +253,7 @@ SUB __UI_BeforeUpdateDisplay
                             END IF
                         NEXT
                     ELSE
+                        IF TempValue < 20 THEN TempValue = 20
                         __UI_Controls(__UI_FormID).Height = TempValue
                     END IF
                 CASE 8 'Font
@@ -402,14 +429,10 @@ SUB __UI_BeforeUnload
 END SUB
 
 SUB __UI_OnLoad
-    DIM b$, UiEditorFile AS INTEGER
+    DIM b$
     __UI_DesignMode = __UI_True
 
-    UiEditorFile = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
-    b$ = MKL$(__UI_GetPID)
-    PUT #UiEditorFile, OffsetPreviewPID, b$
-    CLOSE #UiEditorFile
+    UiPreviewPID = __UI_GetPID
 
     LoadPreview
 END SUB

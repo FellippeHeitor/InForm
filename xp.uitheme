@@ -1041,7 +1041,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
         __UI_ClearColor ControlImage, 0, 0
     END IF
 
-    IF This.ChildrenRedrawn OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND __UI_Controls(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw THEN
+    IF This.ChildrenRedrawn OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND __UI_Controls(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw OR __UI_DesignMode THEN
         'Last time we drew this frame its children had different images
         This.ChildrenRedrawn = __UI_False
         This.PreviousValue = This.Value
@@ -1194,6 +1194,15 @@ END SUB
 SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
 
+    DIM CheckMarkIndex AS _BYTE
+    STATIC ControlImage AS LONG
+    CONST CheckMarkWidth = 7
+    CONST CheckMarkHeight = 7
+    IF ControlImage = 0 THEN
+        ControlImage = __UI_LoadThemeImage("menucheckmark.bmp")
+        __UI_ClearColor ControlImage, 0, 0
+    END IF
+
     IF This.Value <> This.PreviousValue OR This.FocusState <> (__UI_Focus = This.ID) OR This.ControlState <> ControlState OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.FocusState = (__UI_Focus = This.ID)
@@ -1230,12 +1239,15 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 IF __UI_Focus = i OR (__UI_HoveringID = i AND __UI_Focus = i) THEN
                     LINE (3, __UI_Controls(i).Top)-STEP(This.Width - 7, __UI_Controls(i).Height - 1), This.SelectedBackColor, BF
                     c = This.SelectedForeColor
+                    CheckMarkIndex = 2
                 ELSE
                     c = This.ForeColor
+                    CheckMarkIndex = 1
                 END IF
 
                 IF __UI_Controls(i).Disabled THEN
                     c = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+                    CheckMarkIndex = 3
                 END IF
 
                 COLOR c
@@ -1245,6 +1257,11 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 IF __UI_Controls(i).HotKey > 0 THEN
                     'Has "hot-key"
                     LINE (__UI_Controls(i).Left + ItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + _FONTHEIGHT \ 2 - 1)-STEP(_PRINTWIDTH(CHR$(__UI_Controls(i).HotKey)) - 1, 0), c
+                END IF
+
+                IF __UI_Controls(i).Value = __UI_True THEN
+                    'Checked menu item
+                    _PUTIMAGE (ItemOffset \ 2 - CheckMarkWidth \ 2, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
                 END IF
             END IF
         NEXT
@@ -1321,8 +1338,18 @@ FUNCTION __UI_ImageData$ (File$)
     DIM A$
 
     SELECT CASE LCASE$(File$)
+        CASE "menucheckmark.bmp"
+            A$ = MKI$(7) + MKI$(21) 'Width, Height
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0loo0000oo?0oooo0looo3`ooo?0oooo0loo0000o3000l?000`oo3`ooo?0oooo0loo0000"
+            A$ = A$ + "o3000l?000`o0000o3000loo0loo0000o3000l?000`oo3`oo3000l?000`o0000o3000l?000`oo3`ooo?0oooo0loo0000o300"
+            A$ = A$ + "0l?000`oo3`ooo?0oooo0looo3`ooo?0oo?000`oo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooooooooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooooooooooooooooooo?0oooo0looo3`oooooooooooooooooooooooooooooo3`ooooooooooooo"
+            A$ = A$ + "oooooo?0oooooooooooooooooooooooooooooo?0oooo0looo3`ooooooooooooooooooo?0oooo0looo3`ooo?0oooo0loooooo"
+            A$ = A$ + "oo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oo_ZVNjoo3`ooo?0oooo0looo3`ooo?0oo_ZVNjoZJjYo[ZY"
+            A$ = A$ + "Wnoo0looo3`ooo?0oo_ZVNjoZJjYo[ZYWn_ZVNjoZJjYoo?0oo_ZVNjoZJjYo[ZYWnoo0looZJjYo[ZYWn_ZVNjoZJjYo[ZYWnoo"
+            A$ = A$ + "0looo3`ooo?0oo_ZVNjoZJjYo[ZYWnoo0looo3`ooo?0oooo0looo3`oo[ZYWnoo0looo3`ooo?0oooo0loo%%%0"
         CASE "slidertrack.png"
-            A$ = MKI$(5) + MKI$(5) 'Width, Height
+            A$ = MKI$(5) + MKI$(5)
             A$ = A$ + "EcMgoc;`0oOVLfiodS?nok>meoO[a:ko7g\coWNlboOlfOoog[_noCiUHn?i[cnoY7_lo[^lco_onkooIb9WoG]eFo?h]3ooaKom"
             A$ = A$ + "oO_njoocCCmom:l`oooooo?mhSoo^COm%%o3"
         CASE "frame.png"

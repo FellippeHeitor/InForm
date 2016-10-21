@@ -8,6 +8,7 @@ DIM SHARED RedTextBoxID AS LONG, GreenTextBoxID AS LONG, BlueTextBoxID AS LONG
 DIM SHARED ColorPropertiesListID AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, ColorPreviewID AS LONG
+DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -28,6 +29,9 @@ REDIM SHARED PreviewTips(0) AS STRING
 REDIM SHARED PreviewFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 
+CheckPreviewTimer = _FREETIMER
+ON TIMER(CheckPreviewTimer, .003) CheckPreview
+
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
         FUNCTION OpenProcess& (BYVAL dwDesiredAccess AS LONG, BYVAL bInheritHandle AS LONG, BYVAL dwProcessId AS LONG)
@@ -39,7 +43,6 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
-
 '$include:'InForm.ui'
 '$include:'UiEditor.frm'
 '$include:'xp.uitheme'
@@ -49,6 +52,9 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
 
     SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+        CASE "VIEWMENUPREVIEWDETACH"
+            PreviewAttached = NOT PreviewAttached
+            __UI_Controls(__UI_GetID("ViewMenuPreviewDetach")).Value = PreviewAttached
         CASE "ADDBUTTON": Dummy = __UI_Type_Button
         CASE "ADDLABEL": Dummy = __UI_Type_Label
         CASE "ADDTEXTBOX": Dummy = __UI_Type_TextBox
@@ -694,20 +700,25 @@ SUB __UI_BeforeUpdateDisplay
         LoadPreview
 
         $IF WIN THEN
-            b$ = MKI$(_SCREENX)
-            PUT #UiEditorFile, OffsetWindowLeft, b$
+            IF PreviewAttached THEN
+                b$ = MKI$(_SCREENX)
+                PUT #UiEditorFile, OffsetWindowLeft, b$
 
-            b$ = MKI$(_SCREENY)
-            PUT #UiEditorFile, OffsetWindowTop, b$
+                b$ = MKI$(_SCREENY)
+                PUT #UiEditorFile, OffsetWindowTop, b$
+            ELSE
+                b$ = MKI$(-1)
+                PUT #UiEditorFile, OffsetWindowLeft, b$
+                PUT #UiEditorFile, OffsetWindowTop, b$
+            END IF
         $END IF
-
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetPreviewPID, b$
-        UiPreviewPID = CVL(b$)
 
         'Controls in the editor lose focus when the preview is manipulated
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
-        IF CVI(b$) = -1 THEN __UI_Focus = 0
-        b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        IF CVI(b$) = -1 THEN
+            __UI_Focus = 0
+            b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        END IF
 
         b$ = SPACE$(4): GET #UiEditorFile, OffsetTotalControlsSelected, b$
         TotalSelected = CVL(b$)
@@ -836,27 +847,6 @@ SUB __UI_BeforeUpdateDisplay
             UpdateColorPreview __UI_Controls(ColorPropertiesListID).Value, ThisColor, ThisBackColor
         END IF
 
-        'Check if the editor is still alive
-        $IF WIN THEN
-            DIM hnd&, b&, ExitCode&
-            hnd& = OpenProcess(&H400, 0, UiPreviewPID)
-            b& = GetExitCodeProcess(hnd&, ExitCode&)
-            IF b& = 1 AND ExitCode& = 259 THEN
-                'Preview is active.
-                __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
-            ELSE
-                'Preview was closed.
-                __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
-            END IF
-            b& = CloseHandle(hnd&)
-        $ELSE
-            IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
-            __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
-            ELSE
-            __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
-            END IF
-        $END IF
-
         MidRead = __UI_False
         CLOSE #UiEditorFile
     END IF
@@ -915,6 +905,8 @@ SUB __UI_OnLoad
     ColorPropertiesListID = __UI_GetID("ColorPropertiesList")
     ColorPreviewID = __UI_GetID("ColorPreview")
 
+    PreviewAttached = __UI_True
+
     IF _FILEEXISTS("UiEditorPreview.frmbin") THEN KILL "UiEditorPreview.frmbin"
     IF _FILEEXISTS("UiEditor.dat") THEN KILL "UiEditor.dat"
 
@@ -923,20 +915,28 @@ SUB __UI_OnLoad
             IF _FILEEXISTS("UiEditorPreview.bas") = 0 THEN
                 GOTO UiEditorPreviewNotFound
             ELSE
+                b$ = "Compiling Preview component..."
+                GOSUB ShowMessage
                 SHELL "qb64.exe -x UiEditorPreview.bas"
                 IF _FILEEXISTS("UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
+        b$ = "Launching..."
+        GOSUB ShowMessage
         SHELL _DONTWAIT "UiEditorPreview.exe"
     $ELSE
         IF _FILEEXISTS("UiEditorPreview") = 0 THEN
         IF _FILEEXISTS("UiEditorPreview.bas") = 0 THEN
         GOTO UiEditorPreviewNotFound
         ELSE
+        b$ = "Compiling Preview component..."
+        GOSUB ShowMessage
         SHELL "./qb64 -x UiEditorPreview.bas"
         IF _FILEEXISTS("UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
+        b$ = "Launching..."
+        GOSUB ShowMessage
         SHELL _DONTWAIT "./UiEditorPreview"
     $END IF
 
@@ -946,10 +946,20 @@ SUB __UI_OnLoad
     PUT #UiEditorFile, OffsetEditorPID, b$
     CLOSE #UiEditorFile
 
+    TIMER(CheckPreviewTimer) ON
+
     EXIT SUB
     UiEditorPreviewNotFound:
     i = __UI_MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
     SYSTEM
+
+    ShowMessage:
+    _DEST 0
+    CLS , __UI_DefaultColor(__UI_Type_Form, 2)
+    COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
+    _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), b$
+    _DISPLAY
+    RETURN
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
@@ -964,7 +974,7 @@ SUB __UI_KeyPress (id AS LONG)
             SELECT CASE TempValue
                 CASE 1, 2, 3 'Name, caption, text
                     b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
-                CASE 4, 5, 6, 7 'Top, left, width, hegiht
+                CASE 4, 5, 6, 7 'Top, left, width, height
                     b$ = MKI$(VAL(__UI_Texts(PropertyValueID)))
                 CASE 8 'Font
                 CASE 9 'BackStyle
@@ -1393,3 +1403,76 @@ SUB QuickColorPreview (ThisColor AS _UNSIGNED LONG)
     __UI_Controls(ColorPreviewID).PreviousValue = 0 'Force update
 END SUB
 
+SUB CheckPreview
+    'Check if the preview window is still alive
+    DIM b$, UiEditorFile AS INTEGER
+
+    UiEditorFile = FREEFILE
+    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+    b$ = SPACE$(4): GET #UiEditorFile, OffsetPreviewPID, b$
+    CLOSE #UiEditorFile
+    UiPreviewPID = CVL(b$)
+    $IF WIN THEN
+        DIM hnd&, b&, c&, ExitCode&
+        IF UiPreviewPID > 0 THEN
+            hnd& = OpenProcess(&H400, 0, UiPreviewPID)
+            b& = GetExitCodeProcess(hnd&, ExitCode&)
+            c& = CloseHandle(hnd&)
+            IF b& = 1 AND ExitCode& = 259 THEN
+                'Preview is active.
+                __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
+            ELSE
+                'Preview was closed.
+                TIMER(__UI_EventsTimer) OFF
+                __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
+                __UI_WaitMessage = "Reloading preview window..."
+                OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+                b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
+                CLOSE #UiEditorFile
+                UiPreviewPID = 0
+                SHELL _DONTWAIT "UiEditorPreview.exe"
+                __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
+                DO
+                    _LIMIT 10
+                    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+                    b$ = SPACE$(4)
+                    GET #UiEditorFile, OffsetPreviewPID, b$
+                    CLOSE #UiEditorFile
+                LOOP UNTIL CVL(b$) > 0
+
+                UiPreviewPID = CVL(b$)
+
+                TIMER(__UI_EventsTimer) ON
+            END IF
+        END IF
+    $ELSE
+        IF UiPreviewPID > 0 THEN
+        IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
+        'Preview was closed.
+        TIMER(__UI_EventsTimer) OFF
+        __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
+        __UI_WaitMessage = "Reloading preview window..."
+        OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+        b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
+        CLOSE #UiEditorFile
+        UiPreviewPID = 0
+        SHELL _DONTWAIT "./UiEditorPreview"
+        __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
+        DO
+        _LIMIT 10
+        OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+        b$ = SPACE$(4)
+        GET #UiEditorFile, OffsetPreviewPID, b$
+        CLOSE #UiEditorFile
+        LOOP UNTIL CVL(b$) > 0
+
+        UiPreviewPID = CVL(b$)
+
+        TIMER(__UI_EventsTimer) ON
+        ELSE
+        'Preview is active.
+        __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
+        END IF
+        END IF
+    $END IF
+END SUB

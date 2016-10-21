@@ -32,6 +32,12 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreview", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
     __UI_SetCaption "ViewMenuPreview", "Open &preview window"
 
+    $IF WIN THEN
+        __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreviewDetach", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
+        __UI_Controls(__UI_NewID).Value = __UI_True
+        __UI_SetCaption "ViewMenuPreviewDetach", "&Keep preview window attached"
+    $END IF
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     __UI_SetCaption "HelpMenuHelp", "&What's all this?"
 
@@ -78,7 +84,7 @@ SUB __UI_LoadForm
     __UI_SetCaption "PropertiesFrame", "Control properties: Form1"
     __UI_Controls(__UI_NewID).HasBorder = __UI_True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "PropertiesList", 174, 21, 20, 20, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "PropertiesList", 174, 23, 20, 20, __UI_GetID("PropertiesFrame"))
     __UI_AddListBoxItem "PropertiesList", "Name"
     __UI_AddListBoxItem "PropertiesList", "Caption"
     __UI_AddListBoxItem "PropertiesList", "Text"
@@ -182,7 +188,7 @@ SUB __UI_LoadForm
     __UI_Controls(__UI_NewID).Interval = 25
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "GreenValue", 36, 23, 400, 70, __UI_GetID("ColorMixer"))
-    __UI_Controls(__UI_NewID).BorderColor = _RGB32(0, 200, 0)
+    __UI_Controls(__UI_NewID).BorderColor = _RGB32(0, 180, 0)
     __UI_Controls(__UI_NewID).HasBorder = __UI_True
     __UI_Controls(__UI_NewID).CanHaveFocus = __UI_True
 
