@@ -11,23 +11,19 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 56, 18, 14, 0, 0)
     __UI_SetCaption "FileMenu", "&File"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 56, 18, 14, 0, 0)
-    __UI_SetCaption "ViewMenu", "&View"
-
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 56, 18, 527, 0, 0)
-    __UI_SetCaption "HelpMenu", "&Help"
-    __UI_Controls(__UI_NewID).Align = __UI_Right
-
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuLoad", 140, 18, 0, 4, __UI_GetID("FileMenu"))
     __UI_SetCaption "FileMenuLoad", "&Load form.frmbin"
     __UI_Controls(__UI_NewID).Disabled = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    __UI_SetCaption "FileMenuSave", "&Save form"
+    __UI_SetCaption "FileMenuSave", "&Save form-"
     __UI_Controls(__UI_NewID).Disabled = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     __UI_SetCaption "FileMenuExit", "E&xit"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 56, 18, 14, 0, 0)
+    __UI_SetCaption "ViewMenu", "&View"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreview", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
     __UI_SetCaption "ViewMenuPreview", "Open &preview window"
@@ -37,6 +33,10 @@ SUB __UI_LoadForm
         __UI_Controls(__UI_NewID).Value = __UI_True
         __UI_SetCaption "ViewMenuPreviewDetach", "&Keep preview window attached"
     $END IF
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 56, 18, 527, 0, 0)
+    __UI_SetCaption "HelpMenu", "&Help"
+    __UI_Controls(__UI_NewID).Align = __UI_Right
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     __UI_SetCaption "HelpMenuHelp", "&What's all this?"

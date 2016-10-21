@@ -408,6 +408,12 @@ SUB __UI_ProcessInput
 
         __UI_HoveringID = TempHover
 
+        IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_Frame AND __UI_Controls(__UI_BelowHoveringID).ParentID = __UI_Controls(__UI_HoveringID).ID THEN
+            'If a control was created before its container, the following line
+            'will allow it to be properly hovered/focused/selected.
+            SWAP __UI_HoveringID, __UI_BelowHoveringID
+        END IF
+
         'Design mode specific hover:
         IF __UI_DesignMode AND __UI_IsResizing = __UI_False AND __UI_IsDragging = __UI_False THEN
             __UI_ResizeHandleHover = 0
@@ -2362,6 +2368,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     IF ControlType = __UI_Type_ProgressBar THEN
         __UI_Controls(NextSlot).Max = 100
+        __UI_Captions(NextSlot) = "\#"
     END IF
 
     IF ControlType = __UI_Type_TrackBar THEN
@@ -3001,6 +3008,10 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
                 'Grow the panel:
                 __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + ItemHeight
+
+                IF RIGHT$(__UI_Captions(i), 1) = "-" THEN 'Separator
+                    __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + ItemHeight / 2
+                END IF
             END IF
         NEXT
 

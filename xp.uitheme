@@ -1231,10 +1231,17 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         __UI_ShadowBox 0, 0, This.Width - 1, This.Height - 1, _RGB32(255, 255, 255), 40, 5
         LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
 
-        DIM i AS LONG, c AS _UNSIGNED LONG
+        DIM i AS LONG, c AS _UNSIGNED LONG, HasSeparator as _BYTE
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).Type = __UI_Type_MenuItem AND NOT __UI_Controls(i).Hidden AND __UI_Controls(i).ParentID = __UI_ParentMenu THEN
                 TempCaption$ = __UI_Captions(i)
+
+                IF RIGHT$(TempCaption$, 1) = "-" THEN
+                    HasSeparator = __UI_True
+                    TempCaption$ = LEFT$(TempCaption$, LEN(TempCaption$) - 1)
+                ELSE
+                    HasSeparator = __UI_False
+                END IF
 
                 IF __UI_Focus = i OR (__UI_HoveringID = i AND __UI_Focus = i) THEN
                     LINE (3, __UI_Controls(i).Top)-STEP(This.Width - 7, __UI_Controls(i).Height - 1), This.SelectedBackColor, BF
@@ -1262,6 +1269,10 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 IF __UI_Controls(i).Value = __UI_True THEN
                     'Checked menu item
                     _PUTIMAGE (ItemOffset \ 2 - CheckMarkWidth \ 2, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                END IF
+
+                IF HasSeparator THEN
+                    LINE (4, __UI_Controls(i).Top + __UI_Controls(i).Height + __UI_Controls(i).Height / 4)-STEP(This.Width - 9, 0), This.BorderColor
                 END IF
             END IF
         NEXT
