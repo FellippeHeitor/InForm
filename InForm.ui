@@ -1173,9 +1173,11 @@ SUB __UI_EventDispatcher
                     END IF
                 END IF
             ELSEIF __UI_Controls(__UI_HoveringID).CanHaveFocus AND NOT __UI_Controls(__UI_HoveringID).Disabled THEN
+                DIM JustEnteredTextBox AS _BYTE
                 IF __UI_Focus <> __UI_HoveringID THEN
                     __UI_FocusOut __UI_Focus
                     __UI_Focus = __UI_HoveringID
+                    IF __UI_Controls(__UI_Focus).Type = __UI_Type_TextBox THEN JustEnteredTextBox = __UI_True
                     __UI_FocusIn __UI_Focus
                 END IF
             ELSE
@@ -1195,7 +1197,7 @@ SUB __UI_EventDispatcher
             __UI_MouseDownOnID = __UI_HoveringID
 
             IF NOT __UI_DesignMode THEN
-                IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_TextBox AND NOT __UI_Controls(__UI_HoveringID).Disabled THEN
+                IF __UI_Controls(__UI_HoveringID).Type = __UI_Type_TextBox AND NOT __UI_Controls(__UI_HoveringID).Disabled AND NOT JustEnteredTextBox THEN
                     _FONT __UI_Controls(__UI_HoveringID).Font
                     __UI_Controls(__UI_HoveringID).TextIsSelected = __UI_False
                     __UI_SelectedText = ""
@@ -1206,6 +1208,10 @@ SUB __UI_EventDispatcher
                     IF __UI_Controls(__UI_HoveringID).Cursor > LEN(__UI_Texts(__UI_HoveringID)) THEN __UI_Controls(__UI_HoveringID).Cursor = LEN(__UI_Texts(__UI_HoveringID))
                     __UI_IsSelectingText = __UI_True
                     __UI_IsSelectingTextOnID = __UI_HoveringID
+                ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_TextBox AND NOT __UI_Controls(__UI_HoveringID).Disabled AND JustEnteredTextBox THEN
+                    __UI_Controls(__UI_Focus).Cursor = LEN(__UI_Texts(__UI_Focus))
+                    __UI_Controls(__UI_Focus).SelectionStart = 0
+                    __UI_Controls(__UI_Focus).TextIsSelected = __UI_True
                 ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_ListBox AND NOT __UI_Controls(__UI_HoveringID).Disabled THEN
                     IF __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 1 OR __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 2 OR __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 4 OR __UI_Controls(__UI_HoveringID).HoveringVScrollbarButton = 5 THEN
                         __UI_MouseDownOnListBox = TIMER
