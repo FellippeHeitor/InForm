@@ -41,12 +41,6 @@ SUB __UI_Click (id AS LONG)
     SendData b$, OffsetNewDataFromPreview
 END SUB
 
-SUB __UI_EndDrag
-END SUB
-
-SUB __UI_EndResize
-END SUB
-
 SUB __UI_MouseEnter (id AS LONG)
     DIM b$
     b$ = MKI$(-1)
@@ -83,11 +77,6 @@ SUB __UI_BeforeUpdateDisplay
 
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
-
-    IF __UI_ControlOperation THEN
-        __UI_ControlOperation = __UI_False
-        b$ = MKI$(-1): SendData b$, OffsetNewDataFromPreview
-    END IF
 
     UiEditorFile = FREEFILE
     OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
@@ -150,7 +139,7 @@ SUB __UI_BeforeUpdateDisplay
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_TextBox
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                    IF _FONTWIDTH(__UI_Controls(TempValue).Font) = 0 THEN __UI_Controls(TempValue).Font = __UI_Font("VGA Emulated", "", 16, "")
+                    IF _FONTWIDTH(__UI_Controls(TempValue).Font) = 0 THEN __UI_Controls(TempValue).Font = __UI_Font("", 16, "")
                     __UI_Controls(TempValue).FieldArea = __UI_Controls(TempValue).Width \ _FONTWIDTH(__UI_Controls(TempValue).Font) - 1
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_ListBox
@@ -162,7 +151,7 @@ SUB __UI_BeforeUpdateDisplay
                     TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
                 CASE __UI_Type_ProgressBar
                     TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
-                CASE __UI_Type_PictureBox, __UI_Type_Frame
+                CASE __UI_Type_PictureBox
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
                 CASE __UI_Type_Frame
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
@@ -187,10 +176,18 @@ SUB __UI_BeforeUpdateDisplay
             TempValue = CVI(b$)
             SELECT CASE TempValue
                 CASE 1 'Name
+                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    IF __UI_GetID(b$) > 0 THEN
+                        DO
+                            b$ = b$ + "_"
+                            IF __UI_GetID(b$) = 0 THEN EXIT DO
+                        LOOP
+                    END IF
                     IF __UI_TotalSelectedControls = 1 THEN
-                        b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                        b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                         __UI_Controls(__UI_FirstSelectedID).Name = b$
+                    ELSE
+                        __UI_Controls(__UI_FormID).Name = b$
                     END IF
                 CASE 2 'Caption
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -198,7 +195,7 @@ SUB __UI_BeforeUpdateDisplay
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(__UI_Controls)
                             IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Captions(i) = b$
+                                __UI_SetCaption RTRIM$(__UI_Controls(i).Name), b$
                             END IF
                         NEXT
                     ELSE
@@ -210,6 +207,9 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(__UI_Controls)
                         IF __UI_Controls(i).ControlIsSelected THEN
                             __UI_Texts(i) = b$
+                            IF __UI_Controls(i).Type = __UI_Type_Button OR __UI_Controls(i).Type = __UI_Type_PictureBox THEN
+                                __UI_LoadImage __UI_Controls(i), b$
+                            END IF
                         END IF
                     NEXT
                 CASE 4 'Top
@@ -257,7 +257,44 @@ SUB __UI_BeforeUpdateDisplay
                         __UI_Controls(__UI_FormID).Height = TempValue
                     END IF
                 CASE 8 'Font
-                CASE 9 'BackStyle
+                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    DIM NewFontFile AS STRING
+                    DIM NewFontSize AS INTEGER, NewFontParameters AS STRING
+                    DIM FindSep AS INTEGER, TotalSep AS INTEGER
+
+                    'Parse b$ into Font data
+                    FindSep = INSTR(b$, "*")
+                    IF FindSep THEN TotalSep = TotalSep + 1
+                    NewFontFile = LEFT$(b$, FindSep - 1)
+                    b$ = MID$(b$, FindSep + 1)
+
+                    FindSep = INSTR(b$, "*")
+                    IF FindSep THEN TotalSep = TotalSep + 1
+                    NewFontParameters = LEFT$(b$, FindSep - 1)
+                    b$ = MID$(b$, FindSep + 1)
+
+                    NewFontSize = VAL(b$)
+
+                    IF TotalSep = 2 AND NewFontSize > 0 THEN
+                        IF __UI_TotalSelectedControls > 0 THEN
+                            FOR i = 1 TO UBOUND(__UI_Controls)
+                                IF __UI_Controls(i).ControlIsSelected THEN
+                                    __UI_Controls(i).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                                END IF
+                            NEXT
+                        ELSE
+                            __UI_Controls(__UI_FormID).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                        END IF
+                    END IF
+                CASE 9 'Tooltip
+                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    FOR i = 1 TO UBOUND(__UI_Controls)
+                        IF __UI_Controls(i).ControlIsSelected THEN
+                            __UI_Tips(i) = b$
+                        END IF
+                    NEXT
                 CASE 10 'Value
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(__UI_Controls)
@@ -337,6 +374,7 @@ SUB __UI_BeforeUpdateDisplay
                     NEXT
                 CASE 21 'CenteredWindow
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
                         __UI_Controls(__UI_FormID).CenteredWindow = TempValue
                     END IF
@@ -401,6 +439,19 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     ELSE
                         __UI_Controls(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
+                    END IF
+                CASE 28 'BackStyle
+                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    FOR i = 1 TO UBOUND(__UI_Controls)
+                        IF __UI_Controls(i).ControlIsSelected THEN
+                            __UI_Controls(i).BackStyle = CVI(b$)
+                        END IF
+                    NEXT
+                CASE 29 'CanResize
+                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    TempValue = CVI(b$)
+                    IF __UI_TotalSelectedControls = 0 THEN
+                        __UI_Controls(__UI_FormID).CanResize = TempValue
                     END IF
             END SELECT
             __UI_ForceRedraw = __UI_True
@@ -473,7 +524,7 @@ SUB LoadPreview
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
 
         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVI(b$))
+        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
 
         REDIM _PRESERVE __UI_Captions(1 TO CVL(b$)) AS STRING
         REDIM _PRESERVE __UI_TempCaptions(1 TO CVL(b$)) AS STRING
@@ -528,7 +579,7 @@ SUB LoadPreview
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         b$ = SPACE$(CVL(b$))
                         GET #BinaryFileNum, , b$
-                        __UI_Captions(TempValue) = b$
+                        __UI_SetCaption RTRIM$(__UI_Controls(TempValue).Name), b$
                         IF LogFileLoad THEN PRINT #LogFileNum, "CAPTION:" + __UI_Captions(TempValue)
                     CASE -3 'Text
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
@@ -551,18 +602,15 @@ SUB LoadPreview
                         FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
                         IF LogFileLoad THEN PRINT #LogFileNum, FontSetup$
 
-                        FindSep = INSTR(FontSetup$, "\")
-                        NewFontName = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
-
-                        FindSep = INSTR(FontSetup$, "\")
+                        FindSep = INSTR(FontSetup$, "*")
                         NewFontFile = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
-                        FindSep = INSTR(FontSetup$, "\")
-                        NewFontSize = VAL(LEFT$(FontSetup$, FindSep - 1)): FontSetup$ = MID$(FontSetup$, FindSep + 1)
+                        FindSep = INSTR(FontSetup$, "*")
+                        NewFontAttributes = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
-                        NewFontAttributes = FontSetup$
+                        NewFontSize = VAL(FontSetup$)
 
-                        __UI_Controls(TempValue).Font = __UI_Font(NewFontName, NewFontFile, NewFontSize, NewFontAttributes)
+                        __UI_Controls(TempValue).Font = __UI_Font(NewFontFile, NewFontSize, NewFontAttributes)
                     CASE -6 'ForeColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         __UI_Controls(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
@@ -707,13 +755,23 @@ SUB SavePreview
             b$ = MKI$(-1) + MKL$(i) + MKI$(__UI_Controls(i).Type) '-1 indicates a new control
             b$ = b$ + MKI$(LEN(RTRIM$(__UI_Controls(i).Name)))
             b$ = b$ + RTRIM$(__UI_Controls(i).Name)
-            b$ = b$ + MKI$(__UI_Controls(i).Width) + MKI$(__UI_Controls(i).Height) + MKI$(__UI_Controls(i).Left) + MKI$(__UI_Controls(i).Top) + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name)
+            b$ = b$ + MKI$(__UI_Controls(i).Width) + MKI$(__UI_Controls(i).Height) + MKI$(__UI_Controls(i).Left) + MKI$(__UI_Controls(i).Top)
+            IF __UI_Controls(i).ParentID > 0 THEN
+                b$ = b$ + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name)
+            ELSE
+                b$ = b$ + MKI$(0)
+            END IF
             PUT #BinFileNum, , b$
 
             IF LEN(__UI_Captions(i)) > 0 THEN
-                b$ = MKI$(-2) + MKL$(LEN(__UI_Captions(i))) '-2 indicates a caption
+                IF __UI_Controls(i).HotKeyPosition > 0 THEN
+                    a$ = LEFT$(__UI_Captions(i), __UI_Controls(i).HotKeyPosition - 1) + "&" + MID$(__UI_Captions(i), __UI_Controls(i).HotKeyPosition)
+                ELSE
+                    a$ = __UI_Captions(i)
+                END IF
+                b$ = MKI$(-2) + MKL$(LEN(a$)) '-2 indicates a caption
                 PUT #BinFileNum, , b$
-                PUT #BinFileNum, , __UI_Captions(i)
+                PUT #BinFileNum, , a$
             END IF
 
             IF LEN(__UI_Tips(i)) > 0 THEN
@@ -740,12 +798,12 @@ SUB SavePreview
                 IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
                     'Internal fonts
                     SaveInternalFont:
-                    FontSetup$ = "VGA Emulated\\" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max)) + "\"
+                    FontSetup$ = "**" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 ELSE
                     SaveExternalFont:
-                    FontSetup$ = RTRIM$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Name) + "\" + __UI_Texts(__UI_GetFontID(__UI_Controls(i).Font)) + "\" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max)) + "\" + __UI_Captions(__UI_GetFontID(__UI_Controls(i).Font))
+                    FontSetup$ = __UI_Texts(__UI_GetFontID(__UI_Controls(i).Font)) + "*" + __UI_Captions(__UI_GetFontID(__UI_Controls(i).Font)) + "*" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 END IF
@@ -809,12 +867,12 @@ SUB SavePreview
             IF __UI_Controls(i).Max <> 0 THEN
                 b$ = MKI$(-16) + _MK$(_FLOAT, __UI_Controls(i).Max): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).HotKey <> 0 THEN
-                b$ = MKI$(-17) + MKI$(__UI_Controls(i).HotKey): PUT #BinFileNum, , b$
-            END IF
-            IF __UI_Controls(i).HotKeyOffset <> 0 THEN
-                b$ = MKI$(-18) + MKI$(__UI_Controls(i).HotKeyOffset): PUT #BinFileNum, , b$
-            END IF
+            'IF __UI_Controls(i).HotKey <> 0 THEN
+            '    b$ = MKI$(-17) + MKI$(__UI_Controls(i).HotKey): PUT #BinFileNum, , b$
+            'END IF
+            'IF __UI_Controls(i).HotKeyOffset <> 0 THEN
+            '    b$ = MKI$(-18) + MKI$(__UI_Controls(i).HotKeyOffset): PUT #BinFileNum, , b$
+            'END IF
             IF __UI_Controls(i).ShowPercentage THEN
                 b$ = MKI$(-19): PUT #BinFileNum, , b$
             END IF
@@ -841,6 +899,9 @@ SUB SavePreview
             END IF
             IF __UI_Controls(i).CanResize AND __UI_Controls(i).Type = __UI_Type_Form THEN
                 b$ = MKI$(-29): PUT #BinFileNum, , b$
+            END IF
+            IF __UI_Controls(i).HotKey > 0 THEN
+                b$ = MKI$(-30) + MKI$(__UI_Controls(i).HotKeyPosition): PUT #BinFileNum, , b$
             END IF
         END IF
     NEXT

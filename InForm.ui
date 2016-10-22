@@ -57,6 +57,7 @@ TYPE __UI_ControlTYPE
     Interval AS _FLOAT
     HotKey AS INTEGER
     HotKeyOffset AS INTEGER
+    HotKeyPosition AS INTEGER
     ShowPercentage AS _BYTE
     InputViewStart AS LONG
     PreviousInputViewStart AS LONG
@@ -137,13 +138,13 @@ DIM SHARED __UI_ActiveMenu AS LONG, __UI_ParentMenu AS LONG
 DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS DOUBLE
 DIM SHARED __UI_ActiveTipTop AS INTEGER, __UI_ActiveTipLeft AS INTEGER
 DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
-DIM SHARED __UI_ScrollbarWidth AS INTEGER
-DIM SHARED __UI_ScrollbarButtonHeight AS INTEGER
+DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
+DIM SHARED __UI_MenuBarOffset AS INTEGER, __UI_MenuItemOffset AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
 DIM SHARED __UI_CurrentTitle AS STRING, __UI_WindowHandle AS LONG
 DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG, __UI_ResizingForm AS _BYTE
 DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
-DIM SHARED __UI_WaitMessageHandle AS LONG, __UI_ControlOperation AS _BYTE
+DIM SHARED __UI_WaitMessageHandle AS LONG
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 17) AS __UI_Types
@@ -211,6 +212,8 @@ CONST __UI_MsgBox_Continue = 11
 CONST __UI_True = -1
 CONST __UI_False = 0
 
+ON ERROR GOTO __UI_ErrorHandler
+
 __UI_LoadForm
 
 __UI_Init
@@ -219,6 +222,10 @@ __UI_Init
 DO
     _LIMIT 1
 LOOP
+
+SYSTEM
+__UI_ErrorHandler:
+RESUME NEXT
 
 '---------------------------------------------------------------------------------
 SUB __UI_Init
@@ -231,7 +238,7 @@ SUB __UI_Init
 
     IF __UI_Controls(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
 
-    IF __UI_Controls(__UI_FormID).Font = 0 THEN __UI_Controls(__UI_FormID).Font = __UI_Font("VGA Emulated", "", 16, "")
+    IF __UI_Controls(__UI_FormID).Font = 0 THEN __UI_Controls(__UI_FormID).Font = __UI_Font("", 16, "")
 
     IF __UI_Captions(__UI_FormID) = "" THEN __UI_Captions(__UI_FormID) = RTRIM$(__UI_Controls(__UI_FormID).Name)
 
@@ -554,6 +561,8 @@ SUB __UI_UpdateDisplay
     DIM ControlState AS _BYTE '1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled;
 
     IF __UI_AutoRefresh = __UI_False THEN EXIT SUB
+
+    ON ERROR GOTO __UI_ErrorHandler
 
     __UI_BeforeUpdateDisplay
 
@@ -1335,12 +1344,10 @@ SUB __UI_EventDispatcher
                 __UI_Controls(__UI_DraggingID).Top = __UI_PreviewTop
                 __UI_Controls(__UI_DraggingID).Left = __UI_PreviewLeft
                 __UI_DraggingID = 0
-                __UI_EndDrag
             END IF
             IF __UI_IsResizing THEN
                 __UI_IsResizing = __UI_False
                 __UI_ResizingID = 0
-                __UI_EndResize
             END IF
             IF __UI_DraggingThumb THEN
                 __UI_DraggingThumb = __UI_False
@@ -2063,7 +2070,6 @@ SUB __UI_EventDispatcher
                         NEXT
                     END IF
                 END IF
-                __UI_ControlOperation = __UI_True
             CASE ASC("C"), ASC("c")
                 IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
                     ControlClipboard$ = MKL$(__UI_TotalSelectedControls)
@@ -2074,7 +2080,6 @@ SUB __UI_EventDispatcher
                     NEXT
                     _CLIPBOARD$ = "InForm" + CHR$(1)
                 END IF
-                __UI_ControlOperation = __UI_True
             CASE ASC("V"), ASC("v")
                 IF __UI_CtrlIsDown THEN
                     Clip$ = _CLIPBOARD$
@@ -2122,7 +2127,6 @@ SUB __UI_EventDispatcher
                         __UI_AutoRefresh = __UI_True
                     END IF
                 END IF
-                __UI_ControlOperation = __UI_True
             CASE 21248 'Delete
                 FOR i = 1 TO UBOUND(__UI_Controls)
                     IF __UI_Controls(i).ControlIsSelected THEN
@@ -2140,7 +2144,6 @@ SUB __UI_EventDispatcher
                         __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
                     END IF
                 NEXT
-                __UI_ControlOperation = __UI_True
             CASE 19200 'Left arrow key
                 FOR i = 1 TO UBOUND(__UI_Controls)
                     IF __UI_Controls(i).ControlIsSelected THEN
@@ -2204,8 +2207,8 @@ FUNCTION __UI_GetFontID (FontHandle&)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_Font& (NewFontName AS STRING, NewFontFile AS STRING, NewFontSize AS INTEGER, NewFontAttributes AS STRING)
-    DIM NextSlot AS LONG, i AS LONG, Temp$
+FUNCTION __UI_Font& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAttributes AS STRING)
+    DIM NextSlot AS LONG, i AS LONG, Temp$, NewFontAttributes AS STRING
 
     'If the passed font is already loaded, we'll just return its handle
     FOR NextSlot = 1 TO UBOUND(__UI_Controls)
@@ -2242,13 +2245,41 @@ FUNCTION __UI_Font& (NewFontName AS STRING, NewFontFile AS STRING, NewFontSize A
     __UI_DestroyControl __UI_Controls(NextSlot) 'This control is inactive but may still retain properties
     __UI_Controls(NextSlot).ID = NextSlot
     __UI_Controls(NextSlot).Type = __UI_Type_Font
-    __UI_Controls(NextSlot).Name = NewFontName
+    __UI_Controls(NextSlot).Name = "Font" + LTRIM$(STR$(__UI_Type(__UI_Type_Font).Count))
 
     IF NewFontFile = "" THEN
         'Internal emulated fonts
-        __UI_Controls(NextSlot).Value = NewFontSize
-        __UI_Controls(NextSlot).Max = NewFontSize
+        IF NewFontSize <> 8 AND NewFontSize <> 16 THEN
+            __UI_Controls(NextSlot).Value = 16
+            __UI_Controls(NextSlot).Max = 16
+        ELSE
+            __UI_Controls(NextSlot).Value = NewFontSize
+            __UI_Controls(NextSlot).Max = NewFontSize
+        END IF
     ELSE
+        'Parse attributes
+        IF INSTR(UCASE$(TempNewFontAttributes), "MONOSPACE") THEN NewFontAttributes = "MONOSPACE"
+        IF INSTR(UCASE$(TempNewFontAttributes), "BOLD") THEN
+            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
+            NewFontAttributes = NewFontAttributes + "BOLD"
+        END IF
+        IF INSTR(UCASE$(TempNewFontAttributes), "ITALIC") THEN
+            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
+            NewFontAttributes = NewFontAttributes + "ITALIC"
+        END IF
+        IF INSTR(UCASE$(TempNewFontAttributes), "UNDERLINE") THEN
+            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
+            NewFontAttributes = NewFontAttributes + "UNDERLINE"
+        END IF
+        IF INSTR(UCASE$(TempNewFontAttributes), "UNICODE") THEN
+            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
+            NewFontAttributes = NewFontAttributes + "UNICODE"
+        END IF
+        IF INSTR(UCASE$(TempNewFontAttributes), "DONTBLEND") THEN
+            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
+            NewFontAttributes = NewFontAttributes + "DONTBLEND"
+        END IF
+
         __UI_Controls(NextSlot).Value = _LOADFONT(NewFontFile, NewFontSize, NewFontAttributes)
         __UI_Controls(NextSlot).Max = NewFontSize
         __UI_Texts(NextSlot) = NewFontFile
@@ -2259,6 +2290,7 @@ FUNCTION __UI_Font& (NewFontName AS STRING, NewFontFile AS STRING, NewFontSize A
         'If loading the requested font fails, we default to _FONT 16
         IF __UI_Controls(NextSlot).Value <= 0 THEN
             __UI_DestroyControl __UI_Controls(NextSlot)
+            __UI_Controls(NextSlot).Value = 16
             __UI_Font& = 16
         END IF
     END IF
@@ -2320,7 +2352,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         __UI_Controls(NextSlot).Font = __UI_Controls(ParentID).Font
     END IF
 
-    IF __UI_Controls(NextSlot).Font = 0 THEN __UI_Controls(NextSlot).Font = __UI_Font("VGA Emulated", "", 16, "")
+    IF __UI_Controls(NextSlot).Font = 0 THEN __UI_Controls(NextSlot).Font = __UI_Font("", 16, "")
 
     __UI_Controls(NextSlot).Width = NewWidth
     __UI_Controls(NextSlot).Height = NewHeight
@@ -2504,7 +2536,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_SetCaption (Control$, TempCaption$)
     DIM i AS LONG, FindSep%, ThisID AS LONG, NewCaption$, UsedList$, TempKey AS _UNSIGNED _BYTE
-    DIM PrevFont AS LONG, TempCanvas AS LONG, PrevDest AS LONG, ItemOffset AS INTEGER
+    DIM PrevFont AS LONG, TempCanvas AS LONG, PrevDest AS LONG
 
     ThisID = __UI_GetID(Control$)
     IF ThisID = 0 THEN EXIT SUB
@@ -2524,6 +2556,7 @@ SUB __UI_SetCaption (Control$, TempCaption$)
         TempKey = ASC(UCASE$(NewCaption$), FindSep%)
         IF INSTR(UsedList$, CHR$(TempKey)) = 0 THEN
             __UI_Controls(ThisID).HotKey = TempKey
+            __UI_Controls(ThisID).HotKeyPosition = FindSep%
 
             PrevFont = _FONT
 
@@ -2580,10 +2613,6 @@ SUB __UI_LoadImage (This AS __UI_ControlTYPE, File$)
 
     IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas
 
-    IF This.Type = __UI_Type_PictureBox OR This.Type = __UI_Type_Button THEN
-        __UI_Texts(This.ID) = File$
-    END IF
-
     IF _FILEEXISTS(File$) THEN
         This.HelperCanvas = _LOADIMAGE(File$, 32)
         IF This.HelperCanvas = -1 THEN ErrorMessage$ = "Unable to load file:"
@@ -2607,6 +2636,10 @@ SUB __UI_LoadImage (This AS __UI_ControlTYPE, File$)
         _PRINTSTRING (5, 5), ErrorMessage$
         _PRINTSTRING (5, 5 + _FONTHEIGHT), File$
         _DEST PrevDest
+    ELSE
+        IF This.Type = __UI_Type_PictureBox OR This.Type = __UI_Type_Button OR This.Type = __UI_Type_MenuItem THEN
+            __UI_Texts(This.ID) = File$
+        END IF
     END IF
 END SUB
 
@@ -2783,7 +2816,7 @@ SUB __UI_RemoveListBoxItem (WhichListBox$, ItemToRemove AS INTEGER)
     DIM This AS __UI_ControlTYPE, TempText$, ThisItem%, FindLF&, TempCaption$
 
     This = __UI_Controls(__UI_GetID(WhichListBox$))
-    IF This.Type <> __UI_Type_ListBox THEN ERROR 5: EXIT SUB
+    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN ERROR 5: EXIT SUB
 
     IF ItemToRemove > This.Max THEN ERROR 6: EXIT SUB
 
@@ -2814,6 +2847,38 @@ SUB __UI_RemoveListBoxItem (WhichListBox$, ItemToRemove AS INTEGER)
     END IF
 
     __UI_Controls(This.ID) = This
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_ReplaceListBoxItem (WhichListBox$, ItemToReplace AS INTEGER, NewText$)
+    DIM This AS __UI_ControlTYPE, TempText$, ThisItem%, FindLF&, TempCaption$
+
+    This = __UI_Controls(__UI_GetID(WhichListBox$))
+    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN ERROR 5: EXIT SUB
+
+    IF ItemToReplace > This.Max THEN ERROR 6: EXIT SUB
+
+    TempText$ = __UI_Texts(This.ID)
+    __UI_Texts(This.ID) = ""
+
+    ThisItem% = 0
+    DO WHILE LEN(TempText$)
+        ThisItem% = ThisItem% + 1
+        FindLF& = INSTR(TempText$, CHR$(13))
+        IF FindLF& THEN
+            TempCaption$ = LEFT$(TempText$, FindLF& - 1)
+            TempText$ = MID$(TempText$, FindLF& + 1)
+        ELSE
+            TempCaption$ = TempText$
+            TempText$ = ""
+        END IF
+
+        IF ThisItem% <> ItemToReplace THEN
+            __UI_Texts(This.ID) = __UI_Texts(This.ID) + TempCaption$ + CHR$(13)
+        ELSE
+            __UI_Texts(This.ID) = __UI_Texts(This.ID) + NewText$ + CHR$(13)
+        END IF
+    LOOP
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -2968,7 +3033,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
-    DIM i AS LONG, ItemOffset AS INTEGER, TotalItems AS INTEGER, ItemHeight AS INTEGER
+    DIM i AS LONG, TotalItems AS INTEGER, ItemHeight AS INTEGER
 
     IF NOT This.Disabled THEN
         IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
@@ -2987,17 +3052,13 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
             __UI_Controls(__UI_ActiveMenu).Top = __UI_MouseTop
         END IF
 
-        IF _PRINTWIDTH("W") <> _PRINTWIDTH("I") THEN ItemOffset = _PRINTWIDTH("____") ELSE ItemOffset = _PRINTWIDTH("__")
-
         'Calculate panel's width and position the menu items
-        __UI_Controls(__UI_ActiveMenu).Width = 120
-
         ItemHeight = _FONTHEIGHT * 1.5
         __UI_Controls(__UI_ActiveMenu).Height = _FONTHEIGHT * .3
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).ParentID = This.ID AND NOT __UI_Controls(i).Hidden THEN
                 TotalItems = TotalItems + 1
-                __UI_Controls(i).Width = ItemOffset * 2 + _PRINTWIDTH(__UI_Captions(i))
+                __UI_Controls(i).Width = __UI_MenuItemOffset * 2 + _PRINTWIDTH(__UI_Captions(i))
                 IF __UI_Controls(__UI_ActiveMenu).Width < __UI_Controls(i).Width THEN
                     __UI_Controls(__UI_ActiveMenu).Width = __UI_Controls(i).Width
                 END IF
@@ -3138,26 +3199,25 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 SUB __UI_RefreshMenuBar
     'Calculate menu items' .Left and .Width
-    DIM LeftOffset AS INTEGER, ItemOffset AS INTEGER, i AS LONG
+    DIM LeftOffset AS INTEGER, i AS LONG
     DIM TotalItems AS INTEGER, LastMenuItem AS LONG
 
     _FONT (__UI_Controls(__UI_FormID).Font)
-    IF _PRINTWIDTH("W") <> _PRINTWIDTH("I") THEN ItemOffset = _PRINTWIDTH("__") ELSE ItemOffset = _PRINTWIDTH("__")
 
     FOR i = 1 TO UBOUND(__UI_Controls)
         IF __UI_Controls(i).ID > 0 THEN
             IF __UI_Controls(i).Type = __UI_Type_MenuBar AND NOT __UI_Controls(i).Hidden THEN
                 TotalItems = TotalItems + 1
                 IF TotalItems = 1 THEN
-                    LeftOffset = ItemOffset
+                    LeftOffset = __UI_MenuBarOffset
                 ELSE
                     LeftOffset = LeftOffset + __UI_Controls(LastMenuItem).Width
                 END IF
-                __UI_Controls(i).Width = ItemOffset + _PRINTWIDTH(__UI_Captions(i)) + ItemOffset
+                __UI_Controls(i).Width = __UI_MenuBarOffset + _PRINTWIDTH(__UI_Captions(i)) + __UI_MenuBarOffset
                 IF __UI_Controls(i).Align = __UI_Left THEN
                     __UI_Controls(i).Left = LeftOffset
                 ELSE
-                    __UI_Controls(i).Left = __UI_Controls(__UI_FormID).Width - 1 - ItemOffset - __UI_Controls(i).Width
+                    __UI_Controls(i).Left = __UI_Controls(__UI_FormID).Width - 1 - __UI_MenuBarOffset - __UI_Controls(i).Width
                 END IF
                 LastMenuItem = i
             END IF

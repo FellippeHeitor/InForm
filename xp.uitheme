@@ -9,6 +9,8 @@ SUB __UI_ThemeSetup
     'Metrics
     __UI_ScrollbarWidth = 17
     __UI_ScrollbarButtonHeight = 17
+    __UI_MenuBarOffset = 8
+    __UI_MenuItemOffset = 22
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -91,7 +93,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Does this button have a helper canvas (icon)?
         DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
-        IF This.HelperCanvas < -1 THEN
+        IF This.HelperCanvas < -1 AND LEN(__UI_Texts(This.ID)) > 0 THEN
             IF LEN(TempCaption$) THEN
                 'Icon will be to the left of caption
                 IconHeight = This.Height - 6
@@ -131,7 +133,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _PRINTSTRING ((IconWidth / 2) + (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), ((This.Height \ 2) - _FONTHEIGHT \ 2) + 2), TempCaption$
 
         'Hot key:
-        IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
+        IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
             LINE ((This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) + 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
@@ -222,7 +224,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             LOOP
 
             'Hot key:
-            IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
+            IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
                 LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + _FONTHEIGHT + 2)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
@@ -240,7 +242,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             _PRINTSTRING (CaptionLeft, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
 
             'Hot key:
-            IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
+            IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
                 LINE (CaptionLeftFirstLine + This.HotKeyOffset, ((This.Height \ 2) + (_FONTHEIGHT \ 2)))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         END IF
@@ -319,7 +321,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2) + 1), TempCaption$
 
         'Hot key:
-        IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
+        IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
             LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
@@ -397,7 +399,7 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2) + 1), TempCaption$
 
         'Hot key:
-        IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
+        IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
             LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
@@ -591,9 +593,11 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
     IF This.Type = __UI_Type_TextBox THEN
         'Make sure textboxes have fixed width fonts and a proper FieldArea property
         IF _FONTWIDTH((This.Font)) = 0 THEN
-            This.Font = __UI_Font(RTRIM$(__UI_Controls(__UI_GetFontID(This.Font)).Name), __UI_Texts(__UI_GetFontID(This.Font)), __UI_Controls(__UI_GetFontID(This.Font)).Max, "monospace")
+            This.Font = __UI_Font(__UI_Texts(__UI_GetFontID(This.Font)), __UI_Controls(__UI_GetFontID(This.Font)).Max, "monospace")
         END IF
-        This.FieldArea = This.Width \ _FONTWIDTH((This.Font)) - 1
+        This.FieldArea = This.Width / _FONTWIDTH((This.Font)) - 1
+    ELSE
+        EXIT SUB
     END IF
 
     IF This.ControlState <> ControlState OR _
@@ -1109,7 +1113,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
                 _PRINTSTRING (CaptionLeft, 0), TempCaption$
 
                 'Hot key:
-                IF This.HotKey > 0 AND __UI_ShowHotKeys AND NOT This.Disabled THEN
+                IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
                     LINE (CaptionLeft + _PRINTWIDTH(" ") + This.HotKeyOffset, 0 + _FONTHEIGHT)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
                 END IF
             END IF
@@ -1152,9 +1156,6 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _FONT (This.Font)
 
         '---
-        DIM ItemOffset%
-        IF _PRINTWIDTH("W") <> _PRINTWIDTH("I") THEN ItemOffset% = _PRINTWIDTH("__") ELSE ItemOffset% = _PRINTWIDTH("__")
-
         CLS , This.BackColor
         _PRINTMODE _KEEPBACKGROUND
 
@@ -1176,10 +1177,10 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         COLOR c
 
-        _PRINTSTRING (ItemOffset%, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
-        IF This.HotKey > 0 AND (__UI_AltIsDown OR __UI_Controls(__UI_Focus).Type = __UI_Type_MenuBar) THEN
+        _PRINTSTRING (__UI_MenuBarOffset, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
+        IF This.HotKey > 0 AND ((__UI_AltIsDown OR __UI_Controls(__UI_Focus).Type = __UI_Type_MenuBar) OR __UI_DesignMode) THEN
             'Has "hot-key"
-            LINE (ItemOffset% + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) - 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), c
+            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) - 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), c
         END IF
         '---
 
@@ -1220,9 +1221,6 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _FONT (This.Font)
 
         '---
-        DIM ItemOffset AS INTEGER
-        IF _PRINTWIDTH("W") <> _PRINTWIDTH("I") THEN ItemOffset = _PRINTWIDTH("____") ELSE ItemOffset = _PRINTWIDTH("__")
-
         COLOR , _RGBA32(0, 0, 0, 0)
         CLS
         _PRINTMODE _KEEPBACKGROUND
@@ -1259,16 +1257,25 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
                 COLOR c
 
-                _PRINTSTRING (__UI_Controls(i).Left + ItemOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - _FONTHEIGHT \ 2), TempCaption$
+                _PRINTSTRING (__UI_Controls(i).Left + __UI_MenuItemOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - _FONTHEIGHT \ 2), TempCaption$
 
                 IF __UI_Controls(i).HotKey > 0 THEN
                     'Has "hot-key"
-                    LINE (__UI_Controls(i).Left + ItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + _FONTHEIGHT \ 2 - 1)-STEP(_PRINTWIDTH(CHR$(__UI_Controls(i).HotKey)) - 1, 0), c
+                    LINE (__UI_Controls(i).Left + __UI_MenuItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + _FONTHEIGHT \ 2 - 1)-STEP(_PRINTWIDTH(CHR$(__UI_Controls(i).HotKey)) - 1, 0), c
                 END IF
 
                 IF __UI_Controls(i).Value = __UI_True THEN
                     'Checked menu item
-                    _PUTIMAGE (ItemOffset \ 2 - CheckMarkWidth \ 2, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                    _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                ELSE
+                    'Does this menu item have a helper canvas (icon)?
+                    DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
+                    IF __UI_Controls(i).HelperCanvas < -1 AND LEN(__UI_Texts(__UI_Controls(i).ID)) > 0 THEN
+                        'Icon will be to the left of caption
+                        IconHeight = 16
+                        IconWidth = _WIDTH(__UI_Controls(i).HelperCanvas) * IconHeight / _HEIGHT(__UI_Controls(i).HelperCanvas)
+                        _PUTIMAGE (3, __UI_Controls(i).Top + __UI_Controls(i).Height / 2 - IconHeight / 2)-STEP(IconWidth - 1, IconHeight - 1), __UI_Controls(i).HelperCanvas
+                    END IF
                 END IF
 
                 IF HasSeparator THEN
