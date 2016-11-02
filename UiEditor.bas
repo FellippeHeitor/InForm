@@ -8,8 +8,9 @@ DIM SHARED RedTextBoxID AS LONG, GreenTextBoxID AS LONG, BlueTextBoxID AS LONG
 DIM SHARED ColorPropertiesListID AS LONG, PropertyValueID AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, ColorPreviewID AS LONG
-DIM SHARED BackStyleListID AS LONG
+DIM SHARED BackStyleListID AS LONG, PropertyUpdateStatusID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE
+DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -446,7 +447,11 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 2 'Caption
                     __UI_Texts(PropertyValueID) = PreviewCaptions(FirstSelected)
                 CASE 3 'Text
-                    __UI_Texts(PropertyValueID) = PreviewTexts(FirstSelected)
+                    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
+                        __UI_Texts(PropertyValueID) = __UI_ReplaceText(PreviewTexts(FirstSelected), CHR$(13), "\n", __UI_False, 0)
+                    ELSE
+                        __UI_Texts(PropertyValueID) = PreviewTexts(FirstSelected)
+                    END IF
                 CASE 4 'Top
                     __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
                 CASE 5 'Left
@@ -467,9 +472,64 @@ SUB __UI_BeforeUpdateDisplay
                     __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
                 CASE 13 'Interval
                     __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
+                CASE 14 'Padding
+                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
             END SELECT
+            __UI_Controls(PropertyUpdateStatusID).Hidden = __UI_True
         ELSE
             __UI_CursorAdjustments
+            DIM PropertyAccept AS _BYTE
+            SELECT CASE SelectedProperty
+                CASE 1 'Name
+                    IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = __UI_True
+                CASE 2 'Caption
+                    IF __UI_Texts(PropertyValueID) = PreviewCaptions(FirstSelected) THEN PropertyAccept = __UI_True
+                CASE 3 'Text
+                    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
+                        IF __UI_ReplaceText(__UI_Texts(PropertyValueID), "\n", CHR$(13), __UI_False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
+                    ELSE
+                        IF __UI_Texts(PropertyValueID) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
+                    END IF
+                CASE 4 'Top
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN PropertyAccept = __UI_True
+                CASE 5 'Left
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN PropertyAccept = __UI_True
+                CASE 6 'Width
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN PropertyAccept = __UI_True
+                CASE 7 'Height
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = __UI_True
+                CASE 8 'Font
+                    IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = __UI_True
+                CASE 9 'Tooltip
+                    IF __UI_Texts(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = __UI_True
+                CASE 10 'Value
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = __UI_True
+                CASE 11 'Min
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN PropertyAccept = __UI_True
+                CASE 12 'Max
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN PropertyAccept = __UI_True
+                CASE 13 'Interval
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN PropertyAccept = __UI_True
+                CASE 14 'Padding
+                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = __UI_True
+            END SELECT
+            __UI_Controls(PropertyUpdateStatusID).Hidden = __UI_False
+            _DEST __UI_Controls(PropertyUpdateStatusID).HelperCanvas
+            CLS , _RGBA32(0, 0, 0, 0)
+            IF PropertyAccept AND LEN(RTRIM$(__UI_Texts(PropertyValueID))) > 0 THEN
+                _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
+                __UI_SetTip "PropertyUpdateStatus", "The property value entered is valid"
+            ELSEIF LEN(RTRIM$(__UI_Texts(PropertyValueID))) > 0 THEN
+                IF TIMER - LastKeyPress > .5 THEN
+                    _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
+                    __UI_SetTip "PropertyUpdateStatus", "Invalid property value"
+                ELSE
+                    _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 32)-STEP(15, 15)
+                    __UI_SetTip "PropertyUpdateStatus", ""
+                END IF
+            END IF
+            _DEST 0
+            __UI_Controls(PropertyUpdateStatusID).PreviousValue = 0 'Force update
         END IF
 
         'Update checkboxes:
@@ -502,6 +562,7 @@ SUB __UI_BeforeUpdateDisplay
         __UI_Controls(BackStyleListID).Disabled = __UI_True
         __UI_ReplaceListBoxItem "PropertiesList", 3, "Text"
         __UI_Controls(__UI_GetID("Resizable")).Disabled = __UI_True
+        __UI_Captions(PropertyValueID) = ""
         IF TotalSelected > 0 THEN
             SELECT EVERYCASE PreviewControls(FirstSelected).Type
                 CASE __UI_Type_PictureBox
@@ -517,7 +578,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_Frame, __UI_Type_Label
                     __UI_Controls(BackStyleListID).Disabled = __UI_False
                     SELECT CASE SelectedProperty
-                        CASE 1, 2, 4, 5, 6, 7, 8, 9
+                        CASE 1, 2, 4, 5, 6, 7, 8, 9, 14
                             __UI_Controls(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
                             __UI_Controls(PropertyValueID).Disabled = __UI_True
@@ -582,13 +643,19 @@ SUB __UI_BeforeUpdateDisplay
             'Properties relative to the form
             __UI_Controls(__UI_GetID("CenteredWindow")).Disabled = __UI_False
             __UI_Controls(__UI_GetID("Resizable")).Disabled = __UI_False
+            __UI_ReplaceListBoxItem "PropertiesList", 3, "Icon"
 
             SELECT CASE SelectedProperty
-                CASE 1, 2, 6, 7, 8 'Name, Caption, Width, Height, Font
+                CASE 1, 2, 3, 6, 7, 8 'Name, Caption, Width, Height, Font
                     __UI_Controls(PropertyValueID).Disabled = __UI_False
                 CASE ELSE
                     __UI_Controls(PropertyValueID).Disabled = __UI_True
             END SELECT
+        END IF
+
+        IF __UI_Controls(PropertyValueID).Disabled THEN
+            __UI_Texts(PropertyValueID) = ""
+            __UI_Captions(PropertyValueID) = "Property not available"
         END IF
 
         'Update the color mixer
@@ -701,6 +768,8 @@ SUB __UI_OnLoad
     __UI_Controls(__UI_GetID("AddFrame")).HelperCanvas = _NEWIMAGE(16, 16, 32)
     i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddFrame")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
 
+    PropertyUpdateStatusImage = _LOADIMAGE("InForm\oknowait.bmp", 32)
+    __UI_ClearColor PropertyUpdateStatusImage, 0, 0
 
     'Properly loaded helper images assign a file name to the control's text property.
     'Any text will do for internallly stored images:
@@ -728,6 +797,9 @@ SUB __UI_OnLoad
     BackStyleListID = __UI_GetID("BackStyleOptions")
     ColorPreviewID = __UI_GetID("ColorPreview")
     PropertyValueID = __UI_GetID("PropertyValue")
+    PropertyUpdateStatusID = __UI_GetID("PropertyUpdateStatus")
+
+    __UI_Controls(PropertyValueID).FieldArea = __UI_Controls(PropertyValueID).Width / _FONTWIDTH((__UI_Controls(PropertyValueID).Font)) - 4
 
     PreviewAttached = __UI_True
 
@@ -814,29 +886,45 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
+    LastKeyPress = TIMER
     SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))
         CASE "PROPERTYVALUE"
             'Send the preview the new property value
             DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
+            STATIC PreviousValue$
 
-            TempValue = __UI_Controls(__UI_GetID("PropertiesList")).Value
-            SELECT CASE TempValue
-                CASE 1, 2, 3, 9 'Name, caption, text, tooltips
-                    b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
-                CASE 4, 5, 6, 7 'Top, left, width, height
-                    b$ = MKI$(VAL(__UI_Texts(PropertyValueID)))
-                CASE 8 'Font
-                    b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
-                CASE 10, 11, 12, 13 'Value, min, max, interval
-                    b$ = _MK$(_FLOAT, VAL(__UI_Texts(PropertyValueID)))
-            END SELECT
-            SendData b$, TempValue
+            IF PreviousValue$ <> __UI_Texts(PropertyValueID) THEN
+                PreviousValue$ = __UI_Texts(PropertyValueID)
+                TempValue = __UI_Controls(__UI_GetID("PropertiesList")).Value
+                SELECT CASE TempValue
+                    CASE 1, 2, 3, 9 'Name, caption, text, tooltips
+                        b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
+                    CASE 4, 5, 6, 7, 14 'Top, left, width, height, padding
+                        b$ = MKI$(VAL(__UI_Texts(PropertyValueID)))
+                        IF TempValue = 14 THEN TempValue = 31
+                    CASE 8 'Font
+                        b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
+                    CASE 10, 11, 12, 13 'Value, min, max, interval
+                        b$ = _MK$(_FLOAT, VAL(__UI_Texts(PropertyValueID)))
+                END SELECT
+                SendData b$, TempValue
+            END IF
     END SELECT
 END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
     DIM b$
     SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+        CASE "PROPERTIESLIST"
+            _DELAY .1 'Give the screen update routine time to finish
+            IF __UI_Controls(PropertyValueID).Disabled = __UI_False THEN
+                __UI_Focus = PropertyValueID
+                IF LEN(__UI_Texts(__UI_Focus)) > 0 THEN
+                    __UI_Controls(__UI_Focus).Cursor = LEN(__UI_Texts(__UI_Focus))
+                    __UI_Controls(__UI_Focus).SelectionStart = 0
+                    __UI_Controls(__UI_Focus).TextIsSelected = __UI_True
+                END IF
+            END IF
         CASE "ALIGNOPTIONS"
             b$ = MKI$(__UI_Controls(__UI_GetID("AlignOptions")).Value - 1)
             SendData b$, 22
@@ -1207,6 +1295,9 @@ SUB LoadPreview
                     CASE -30
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).HotKeyPosition = CVI(b$)
+                    CASE -31
+                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                        PreviewControls(Dummy).Padding = CVI(b$)
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -1355,6 +1446,10 @@ SUB SaveForm
     PRINT #TextFileNum, "'-----------------------------------------------------------"
     PRINT #TextFileNum, "SUB __UI_LoadForm"
     PRINT #TextFileNum,
+    IF LEN(PreviewTexts(PreviewFormID)) > 0 THEN
+        PRINT #TextFileNum, "    $EXEICON:'" + PreviewTexts(PreviewFormID) + "'"
+        PRINT #TextFileNum, "    _ICON"
+    END IF
     PRINT #TextFileNum, "    DIM __UI_NewID AS LONG"
     PRINT #TextFileNum,
     b$ = "InForm" + CHR$(1)
@@ -1362,12 +1457,14 @@ SUB SaveForm
     b$ = MKL$(UBOUND(PreviewControls))
     PUT #BinaryFileNum, , b$
 
-    'First pass is for the main form and containers (frames and menubars)
-    'Second pass is for the rest of controls
+    'First pass is for the main form and containers (frames and menubars).
+    'Second pass is for the rest of controls.
+    'Controls named __UI_+anything are ignored, as they are automatically created.
     DIM ThisPass AS _BYTE
     FOR ThisPass = 1 TO 2
         FOR i = 1 TO UBOUND(PreviewControls)
             IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(PreviewControls(i).Name)) > 0 THEN
+                IF UCASE$(LEFT$(PreviewControls(i).Name, 5)) = "__UI_" THEN GOTO EndOfThisPass 'Internal controls
                 a$ = "    __UI_NewID = __UI_NewControl("
                 SELECT CASE PreviewControls(i).Type
                     CASE __UI_Type_Form: a$ = a$ + "__UI_Type_Form, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
@@ -1404,11 +1501,11 @@ SUB SaveForm
                 PUT #BinaryFileNum, , b$
 
                 IF LEN(PreviewCaptions(i)) > 0 THEN
-                    IF PreviewControls(i).HotKeyPosition > 0 THEN
-                        a$ = LEFT$(PreviewCaptions(i), PreviewControls(i).HotKeyPosition - 1) + "&" + MID$(PreviewCaptions(i), PreviewControls(i).HotKeyPosition)
-                    ELSE
-                        a$ = PreviewCaptions(i)
-                    END IF
+                    'IF PreviewControls(i).HotKeyPosition > 0 THEN
+                    '    a$ = LEFT$(PreviewCaptions(i), PreviewControls(i).HotKeyPosition - 1) + "&" + MID$(PreviewCaptions(i), PreviewControls(i).HotKeyPosition)
+                    'ELSE
+                    '    a$ = PreviewCaptions(i)
+                    'END IF
                     a$ = "    __UI_SetCaption " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(a$)
                     b$ = MKI$(-2) + MKL$(LEN(PreviewCaptions(i))) '-2 indicates a caption
                     PUT #BinaryFileNum, , b$

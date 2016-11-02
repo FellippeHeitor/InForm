@@ -1,7 +1,0 @@
-http://www.iconarchive.com/show/matrilineare-icons-by-sora-meliae/Apps-dconf-editor-icon.html
-
-"Apps dconf editor Icon"
-Artist: sora-meliae
-Iconset: Matrilineare Icons (126 icons)
-License: GNU General Public License
-Commercial usage: Allowed

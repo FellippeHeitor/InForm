@@ -52,7 +52,7 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     'ControlState: 1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled
-    DIM TempColor~&, TempCaption$, HasShadow AS _BYTE
+    DIM TempCaption$, HasShadow AS _BYTE, TempColor~&, Temp&
     DIM PrevDest AS LONG, TempControlState AS _BYTE
 
     STATIC ControlImage AS LONG
@@ -98,7 +98,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 'Icon will be to the left of caption
                 IconHeight = This.Height - 6
                 IconWidth = _WIDTH(This.HelperCanvas) * IconHeight / _HEIGHT(This.HelperCanvas)
-                _PUTIMAGE ((This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2) - ((IconWidth / 2) + 5), This.Height / 2 - ((This.Height - 4) / 2) + 1)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
+                _PUTIMAGE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) - ((IconWidth / 2) + 5), This.Height / 2 - ((This.Height - 4) / 2) + 1)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
             ELSE
                 'Icon will be centered
                 IconHeight = This.Height - 6
@@ -124,17 +124,16 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _PUTIMAGE (This.Width - 3, This.Height - 3), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - 3)-STEP(2, 2)
 
         'Caption:
-        _PRINTMODE _KEEPBACKGROUND
         IF NOT This.Disabled THEN
-            COLOR This.ForeColor, TempColor~&
+            TempColor~& = This.ForeColor
         ELSE
-            COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), TempColor~&
+            TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
         END IF
-        _PRINTSTRING ((IconWidth / 2) + (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), ((This.Height \ 2) - _FONTHEIGHT \ 2) + 2), TempCaption$
+        Temp& = uprint((IconWidth / 2) + (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2), ((This.Height \ 2) - uspacing& \ 2), TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
         'Hot key:
         IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
-            LINE ((This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) + 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+            LINE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) + 1)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
         'Focus outline:
@@ -151,7 +150,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, TempColor~&, Temp&
     DIM CaptionIndent AS INTEGER, TempCaption$, TempLine$
 
     IF This.ControlState <> ControlState OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
@@ -169,81 +168,93 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         PrevDest = _DEST
         _DEST This.Canvas
-        _FONT (This.Font)
+        _FONT This.Font
 
         IF This.HasBorder THEN CaptionIndent = 5 ELSE CaptionIndent = 0
 
         IF This.BackStyle = __UI_Opaque THEN
-            _PRINTMODE _FILLBACKGROUND
             CLS , This.BackColor
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
-            _PRINTMODE _KEEPBACKGROUND
         END IF
 
         IF NOT This.Disabled THEN
-            COLOR This.ForeColor, This.BackColor
+            TempColor~& = This.ForeColor
         ELSE
-            COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
+            TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
         END IF
 
         'Caption:
-        DIM CaptionLeft AS INTEGER, FindLF&, ThisLine%
+        DIM CaptionLeft AS INTEGER, FindLF&, FindSep&, ThisLine%
         DIM CaptionLeftFirstLine AS INTEGER, TextTop%
-        DIM TotalLInes AS INTEGER
-
-        TempCaption$ = __UI_WordWrap(__UI_Captions(This.ID), This.Width - CaptionIndent * 5, TotalLInes)
-
-        IF This.WordWrap AND TotalLInes > 1 THEN
+        DIM TotalLines AS INTEGER
+        IF This.WordWrap THEN
+            TempCaption$ = __UI_WordWrap(__UI_Captions(This.ID), This.Width - ((CaptionIndent + This.Padding) * 2), TotalLines)
             DO WHILE LEN(TempCaption$)
                 ThisLine% = ThisLine% + 1
-                TextTop% = CaptionIndent + ThisLine% * _FONTHEIGHT - _FONTHEIGHT + 2
-
-                FindLF& = INSTR(TempCaption$, CHR$(10))
-                IF FindLF& > 0 THEN
-                    TempLine$ = LEFT$(TempCaption$, FindLF& - 1)
-                    TempCaption$ = MID$(TempCaption$, FindLF& + 1)
+                IF TotalLines < This.Height \ uspacing& THEN
+                    'Center vertically if less lines than fits the box
+                    TextTop% = (This.Height \ 2) - ((TotalLines * uspacing& - uspacing&) \ 2) - uspacing& \ 2 + (((ThisLine%) * uspacing& - uspacing&) + 2)
                 ELSE
-                    TempLine$ = TempCaption$
-                    TempCaption$ = ""
-                    IF ThisLine% = 1 THEN TextTop% = ((This.Height \ 2) - _FONTHEIGHT \ 2)
+                    'Snap to top of the label's boundaries
+                    'if there are more lines than meet the eye
+                    TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing& + 2
+                END IF
+
+                FindSep& = INSTR(TempCaption$, CHR$(1)) 'Search for soft breaks
+                FindLF& = INSTR(TempCaption$, CHR$(10)) 'Search for hard breaks
+                IF (FindSep& > 0 AND FindLF& > 0 AND FindSep& < FindLF&) OR (FindSep& > 0 AND FindLF& = 0) THEN
+                    TempLine$ = LEFT$(TempCaption$, FindSep& - 1)
+                    TempCaption$ = MID$(TempCaption$, FindSep& + 1)
+                ELSEIF FindSep& = 0 THEN
+                    IF FindLF& > 0 THEN
+                        TempLine$ = LEFT$(TempCaption$, FindLF& - 1)
+                        TempCaption$ = MID$(TempCaption$, FindLF& + 1)
+                    ELSE
+                        TempLine$ = TempCaption$
+                        TempCaption$ = ""
+                        IF ThisLine% = 1 THEN
+                            'Wordwrap was requested, but the caption didn't require it
+                            TextTop% = ((This.Height \ 2) - uspacing& \ 2)
+                        END IF
+                    END IF
                 END IF
 
                 SELECT CASE This.Align
                     CASE __UI_Left
-                        CaptionLeft = CaptionIndent
+                        CaptionLeft = CaptionIndent + This.Padding
                     CASE __UI_Center
-                        CaptionLeft = (This.Width \ 2 - _PRINTWIDTH(TempLine$) \ 2)
+                        CaptionLeft = (This.Width \ 2 - __UI_PrintWidth&(TempLine$) \ 2)
                     CASE __UI_Right
-                        CaptionLeft = (This.Width - _PRINTWIDTH(TempLine$)) - CaptionIndent
+                        CaptionLeft = (This.Width - __UI_PrintWidth&(TempLine$)) - (CaptionIndent + This.Padding)
                 END SELECT
 
-                _PRINTSTRING (CaptionLeft, TextTop%), TempLine$
+                Temp& = uprint(CaptionLeft, TextTop%, TempLine$, LEN(TempLine$), TempColor~&, 0)
 
                 IF ThisLine% = 1 THEN CaptionLeftFirstLine = CaptionLeft
             LOOP
 
             'Hot key:
             IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + _FONTHEIGHT + 2)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + uspacing& + 2)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
             TempCaption$ = __UI_Captions(This.ID)
             SELECT CASE This.Align
                 CASE __UI_Left
-                    CaptionLeft = CaptionIndent
+                    CaptionLeft = CaptionIndent + This.Padding
                 CASE __UI_Center
-                    CaptionLeft = (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2)
+                    CaptionLeft = (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2)
                 CASE __UI_Right
-                    CaptionLeft = (This.Width - _PRINTWIDTH(TempCaption$)) - CaptionIndent
+                    CaptionLeft = This.Width - __UI_PrintWidth&(TempCaption$) - (CaptionIndent + This.Padding)
             END SELECT
 
             CaptionLeftFirstLine = CaptionLeft
-            _PRINTSTRING (CaptionLeft, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
+            Temp& = uprint(CaptionLeft, (This.Height \ 2) - uspacing& \ 2, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
             'Hot key:
             IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, ((This.Height \ 2) + (_FONTHEIGHT \ 2)))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, ((This.Height \ 2) + (uspacing& \ 2)))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         END IF
 
@@ -260,7 +271,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, Temp&, TempColor~&
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -287,18 +298,15 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         PrevDest = _DEST
         _DEST This.Canvas
-        _FONT (This.Font)
+        _FONT This.Font
         '------
         IF This.BackStyle = __UI_Opaque THEN
-            _PRINTMODE _FILLBACKGROUND
             CLS , This.BackColor
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
-            _PRINTMODE _KEEPBACKGROUND
         END IF
 
-        DIM i AS SINGLE, BoxSize%
-        BoxSize% = 10
+        DIM i AS SINGLE
 
         CaptionIndent = 0
         IF This.HasBorder = __UI_True THEN
@@ -313,16 +321,16 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         TempCaption$ = __UI_Captions(This.ID)
 
         IF NOT This.Disabled THEN
-            COLOR This.ForeColor, This.BackColor
+            TempColor~& = This.ForeColor
         ELSE
-            COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
+            TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
         END IF
 
-        _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2) + 1), TempCaption$
+        Temp& = uprint(CaptionIndent, ((This.Height \ 2) - uspacing& \ 2) + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
         'Hot key:
         IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
-            LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+            LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2))-STEP(__UI_PrintWidth(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
         'Focus outline
@@ -341,7 +349,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, TempColor~&, Temp&
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -368,19 +376,16 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         PrevDest = _DEST
         _DEST This.Canvas
-        _FONT (This.Font)
+        _FONT This.Font
 
         '------
         IF This.BackStyle = __UI_Opaque THEN
-            _PRINTMODE _FILLBACKGROUND
             CLS , This.BackColor
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
-            _PRINTMODE _KEEPBACKGROUND
         END IF
 
-        DIM i AS SINGLE, BoxSize%
-        BoxSize% = 10
+        DIM i AS SINGLE
 
         CaptionIndent = 0
 
@@ -391,16 +396,16 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         TempCaption$ = __UI_Captions(This.ID)
 
         IF NOT This.Disabled THEN
-            COLOR This.ForeColor, This.BackColor
+            TempColor~& = This.ForeColor
         ELSE
-            COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
+            TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
         END IF
 
-        _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2) + 1), TempCaption$
+        Temp& = uprint(CaptionIndent, ((This.Height \ 2) - uspacing& \ 2) + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
         'Hot key:
         IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
-            LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2))-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+            LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2))-STEP(__UI_PrintWidth(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
         'Focus outline
@@ -418,7 +423,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, Temp&, TempColor~&
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage_Track AS LONG, ControlImage_Chunk AS LONG
@@ -490,16 +495,15 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
                 TempCaption$ = ProgressString$
             END IF
 
-            _PRINTMODE _KEEPBACKGROUND
-
             IF NOT This.Disabled THEN
-                COLOR This.ForeColor
+                TempColor~& = This.ForeColor
             ELSE
-                COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 70)
+                TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 70)
             END IF
 
-            IF _PRINTWIDTH(TempCaption$) < This.Width THEN
-                _PRINTSTRING (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2, This.Height \ 2 - _FONTHEIGHT \ 2 + 1), TempCaption$
+            Temp& = __UI_PrintWidth(TempCaption$)
+            IF Temp& < This.Width THEN
+                Temp& = uprint(This.Width \ 2 - Temp& \ 2, This.Height \ 2 - uspacing& \ 2 + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
             END IF
         END IF
         '------
@@ -593,9 +597,11 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
     IF This.Type = __UI_Type_TextBox THEN
         'Make sure textboxes have fixed width fonts and a proper FieldArea property
         IF _FONTWIDTH((This.Font)) = 0 THEN
-            This.Font = __UI_Font(__UI_Texts(__UI_GetFontID(This.Font)), __UI_Controls(__UI_GetFontID(This.Font)).Max, "monospace")
+            This.Font = __UI_Font(__UI_Texts(__UI_GetFontID(This.Font)), __UI_Controls(__UI_GetFontID(This.Font)).Max, "MONOSPACE")
         END IF
-        This.FieldArea = This.Width / _FONTWIDTH((This.Font)) - 1
+        IF This.FieldArea = 0 THEN This.FieldArea = This.Width / _FONTWIDTH((This.Font)) - 1
+        IF This.FirstVisibleLine = 0 THEN This.FirstVisibleLine = 1
+        IF This.CurrentLine = 0 THEN This.CurrentLine = 1
     ELSE
         EXIT SUB
     END IF
@@ -604,9 +610,12 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.FocusState <> (__UI_Focus = This.ID) OR _
         __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR _
         __UI_Texts(This.ID) <> __UI_TempTexts(This.ID) OR _
-        (TIMER - SetCursor# > .4 AND __UI_Focus = This.ID) OR _
+        (TIMER - SetCursor# > .3 AND __UI_Focus = This.ID) OR _
         (__UI_SelectionLength <> This.SelectionLength AND __UI_Focus = This.ID) OR _
         This.Cursor <> This.PrevCursor OR This.PreviousParentID <> This.ParentID OR _
+        This.VisibleCursor <> This.PrevVisibleCursor OR _
+        This.FirstVisibleLine <> This.PrevFirstVisibleLine OR _
+        This.CurrentLine <> This.PrevCurrentLine OR _
         __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.ControlState = ControlState
@@ -615,8 +624,11 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         __UI_TempTexts(This.ID) = __UI_Texts(This.ID)
         This.SelectionLength = __UI_SelectionLength
         This.PrevCursor = This.Cursor
+        This.PrevVisibleCursor = This.VisibleCursor
         IF This.ParentID THEN __UI_Controls(This.ParentID).ChildrenRedrawn = __UI_True
         This.PreviousParentID = This.ParentID
+        This.PrevFirstVisibleLine = This.FirstVisibleLine
+        This.PrevCurrentLine = This.CurrentLine
 
         IF This.Canvas <> 0 THEN
             _FREEIMAGE This.Canvas
@@ -635,10 +647,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         TempCaption$ = __UI_Captions(This.ID)
         CaptionIndent = 0
 
-        IF This.HasBorder THEN
-            CaptionIndent = 5
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
-        END IF
+        IF This.HasBorder THEN CaptionIndent = 5
 
         IF NOT This.Disabled AND LEN(__UI_Texts(This.ID)) THEN
             COLOR This.ForeColor, This.BackColor
@@ -646,37 +655,116 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
         END IF
 
-        IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu = This.ContextMenuID)) AND NOT This.Disabled THEN
-            IF LEN(__UI_Texts(This.ID)) THEN
-                _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2)), MID$(__UI_Texts(This.ID), This.InputViewStart, This.FieldArea)
+        STATIC c AS _UNSIGNED LONG
+        IF c = 0 THEN
+            c = _RGBA32(_RED32(This.SelectedBackColor), _GREEN32(This.SelectedBackColor), _BLUE32(This.SelectedBackColor), 70)
+        END IF
+
+        IF NOT This.Multiline THEN
+            'Single line textbox
+            IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu = This.ContextMenuID)) AND NOT This.Disabled THEN
+                IF LEN(__UI_Texts(This.ID)) THEN
+                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), MID$(__UI_Texts(This.ID), This.InputViewStart, This.FieldArea)
+                ELSE
+                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+                END IF
+
+                IF This.TextIsSelected THEN
+                    LINE (CaptionIndent + ss1 * _FONTWIDTH, ((This.Height \ 2) - uspacing& \ 2))-STEP(ss2 * _FONTWIDTH, uspacing&), c, BF
+                END IF
+
+                IF TIMER - SetCursor# > .3 THEN
+                    SetCursor# = TIMER
+                    cursorBlink%% = NOT cursorBlink%%
+                ELSEIF TIMER - __UI_LastInputReceived < .1 THEN
+                    SetCursor# = TIMER
+                    cursorBlink%% = __UI_True
+                END IF
+                IF cursorBlink%% THEN
+                    LINE (CaptionIndent + (This.Cursor - (This.InputViewStart - 1)) * _FONTWIDTH, ((This.Height \ 2) - uspacing& \ 2))-STEP(0, uspacing&), _RGB32(0, 0, 0)
+                END IF
             ELSE
-                _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
+                IF LEN(__UI_Texts(This.ID)) THEN
+                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), MID$(__UI_Texts(This.ID), 1, This.FieldArea)
+                ELSE
+                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+                END IF
             END IF
+        ELSE
+            'Multi line textbox
+            DIM ThisLine AS LONG, ThisTop AS INTEGER, TempLine AS STRING
+            DIM TotalLines AS LONG, i AS LONG, ThisLineStart AS LONG
+            DIM s1 AS LONG, s2 AS LONG
 
             IF This.TextIsSelected THEN
-                STATIC c AS _UNSIGNED LONG
-                IF c = 0 THEN
-                    c = _RGBA32(_RED32(This.SelectedBackColor), _GREEN32(This.SelectedBackColor), _BLUE32(This.SelectedBackColor), 70)
-                END IF
-                LINE (CaptionIndent + ss1 * _FONTWIDTH, ((This.Height \ 2) - _FONTHEIGHT \ 2))-STEP(ss2 * _FONTWIDTH, _FONTHEIGHT), c, BF
+                s1 = This.SelectionStart + 1
+                s2 = This.Cursor + 1
+
+                IF s1 > s2 THEN SWAP s1, s2
             END IF
 
-            IF TIMER - SetCursor# > .4 THEN
+            ThisTop = CaptionIndent - uspacing&
+            TotalLines = __UI_CountLines(This.ID)
+
+            IF TIMER - SetCursor# > .3 THEN
                 SetCursor# = TIMER
                 cursorBlink%% = NOT cursorBlink%%
             ELSEIF TIMER - __UI_LastInputReceived < .1 THEN
                 SetCursor# = TIMER
                 cursorBlink%% = __UI_True
             END IF
-            IF cursorBlink%% THEN
-                LINE (CaptionIndent + (This.Cursor - (This.InputViewStart - 1)) * _FONTWIDTH, ((This.Height \ 2) - _FONTHEIGHT \ 2))-STEP(0, _FONTHEIGHT), _RGB32(0, 0, 0)
-            END IF
-        ELSE
-            IF LEN(__UI_Texts(This.ID)) THEN
-                _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2)), MID$(__UI_Texts(This.ID), 1, This.FieldArea)
+            dim a$
+            FOR ThisLine = This.FirstVisibleLine TO TotalLines
+                IF ThisTop > This.Height THEN EXIT FOR 'Print until out of the box
+                ThisTop = ThisTop + uspacing&
+                TempLine = __UI_GetTextBoxLine$(This.ID, ThisLine, ThisLineStart)
+
+                IF LEN(TempLine) THEN
+                    __UI_PrintString CaptionIndent, ThisTop, MID$(TempLine, This.InputViewStart)
+                END IF
+
+                IF This.TextIsSelected THEN
+                    IF s1 >= ThisLineStart AND s2 < ThisLineStart + LEN(TempLine) THEN
+                        'Only a portion of this line is selected
+                        LINE (CaptionIndent + __UI_ThisLineChars(s1 - ThisLineStart), ThisTop)-(__UI_ThisLineChars(s2 - ThisLineStart + 1), ThisTop + uspacing& - 1), c, BF
+                    ELSEIF s1 >= ThisLineStart AND s1 <= ThisLineStart + LEN(TempLine) THEN
+                        'The beginning of the selection is in this line waiting to be highlighted.
+                        LINE (CaptionIndent + __UI_ThisLineChars(s1 - ThisLineStart), ThisTop)-STEP(This.Width, uspacing& - 1), c, BF
+                    ELSEIF s1 < ThisLineStart AND s2 > ThisLineStart + LEN(TempLine) THEN
+                        'This whole line is selected
+                        LINE (CaptionIndent, ThisTop)-STEP(This.Width, uspacing& - 1), c, BF
+                    ELSEIF s1< ThisLineStart AND s2 <= ThisLineStart + LEN(TempLine) THEN
+                        'Selection ends in this line
+                        LINE (CaptionIndent, ThisTop)-STEP(__UI_ThisLineChars(s2 - ThisLineStart), uspacing& - 1), c, BF
+                    END IF
+                END IF
+
+                IF ThisLine = This.CurrentLine THEN
+                    IF cursorBlink%% AND __UI_Focus = This.ID AND This.CurrentLine >= This.FirstVisibleLine AND This.CurrentLine <= This.FirstVisibleLine + This.Height \ uspacing& THEN
+                        LINE (CaptionIndent + __UI_ThisLineChars(This.VisibleCursor - (This.InputViewStart - 1)), ThisTop)-STEP(0, uspacing&), _RGB32(0, 0, 0)
+                    END IF
+                END IF
+            NEXT
+
+            FOR i = __UI_Controls(__UI_Focus).Cursor TO 0 STEP -1
+                IF MID$(__UI_Texts(__UI_Focus), i, 1) = CHR$(10) OR i = 0 THEN
+                    __UI_Controls(__UI_Focus).VisibleCursor = __UI_Controls(__UI_Focus).Cursor - i
+                    EXIT FOR
+                END IF
+            NEXT
+
+            IF TotalLines > This.Height \ uspacing& THEN
+                This.FieldArea = This.Width / _FONTWIDTH((This.Font)) - 3
+                This.HasVScrollbar = __UI_True
+                __UI_DrawVScrollBar This, ControlState
             ELSE
-                _PRINTSTRING (CaptionIndent, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
+                This.HasVScrollbar = __UI_False
             END IF
+
+        END IF
+
+        IF This.HasBorder THEN
+            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------
 
@@ -689,7 +777,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, Temp&, TempColor~&
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.PreviousValue <> This.Value OR __UI_Texts(This.ID) <> __UI_TempTexts(This.ID) OR This.PreviousInputViewStart <> This.InputViewStart OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
@@ -713,8 +801,6 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         _FONT (This.Font)
 
         '------
-        _PRINTMODE _KEEPBACKGROUND
-
         IF This.BackStyle = __UI_Opaque THEN
             CLS , This.BackColor
         ELSE
@@ -741,38 +827,39 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                     TempText$ = ""
                 END IF
                 IF ThisItem% >= This.InputViewStart THEN
-                    ThisItemTop% = ((ThisItem% - This.InputViewStart + 1) * _FONTHEIGHT - _FONTHEIGHT) + CaptionIndent
-                    IF ThisItemTop% + _FONTHEIGHT > This.Height THEN EXIT DO
+                    ThisItemTop% = ((ThisItem% - This.InputViewStart + 1) * uspacing& - uspacing&) + CaptionIndent
+                    IF ThisItemTop% + uspacing& > This.Height THEN EXIT DO
                     LastVisibleItem = LastVisibleItem + 1
 
                     IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN __UI_Captions(This.ID) = TempCaption$
 
                     IF NOT This.Disabled THEN
-                        COLOR This.ForeColor, This.BackColor
+                        TempColor~& = This.ForeColor
                     ELSE
-                        COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
+                        TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
                     END IF
 
                     IF ThisItem% = This.Value THEN
                         IF __UI_Focus = This.ID THEN
                             COLOR This.SelectedForeColor, This.SelectedBackColor
-                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, _FONTHEIGHT), This.SelectedBackColor, BF
+                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, uspacing&), This.SelectedBackColor, BF
                         ELSE
-                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, _FONTHEIGHT), _RGBA32(0, 0, 0, 50), BF
+                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, uspacing&), _RGBA32(0, 0, 0, 50), BF
                         END IF
                     END IF
 
                     SELECT CASE This.Align
                         CASE __UI_Left
-                            _PRINTSTRING (CaptionIndent * 2, ThisItemTop%), TempCaption$
+                            Temp& = uprint(CaptionIndent * 2, ThisItemTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
                         CASE __UI_Center
-                            _PRINTSTRING ((This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), ThisItemTop%), TempCaption$
+                            Temp& = uprint((This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
                         CASE __UI_Right
-                            _PRINTSTRING ((This.Width - _PRINTWIDTH(TempCaption$)) - CaptionIndent, ThisItemTop%), TempCaption$
+                            Temp& = uprint((This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
                     END SELECT
                 END IF
             LOOP
             IF This.LastVisibleItem = 0 THEN This.LastVisibleItem = LastVisibleItem
+
             IF This.Max > This.LastVisibleItem THEN
                 This.HasVScrollbar = __UI_True
                 __UI_DrawVScrollBar This, ControlState
@@ -812,10 +899,23 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     This = TempThis
 
+    _FONT This.Font
+
     IF This.Type = __UI_Type_ListBox THEN
         This.Min = 0
         This.Max = This.Max - This.LastVisibleItem
         This.Value = This.InputViewStart - 1
+        This.Left = This.Width - __UI_ScrollbarWidth - 1
+        This.Top = 1
+        This.Height = This.Height - 1
+        This.Width = __UI_ScrollbarWidth
+        This.ForeColor = _RGB32(61, 116, 255)
+        This.HasBorder = __UI_True
+        This.BorderColor = _RGB32(0, 0, 0)
+    ELSEIF This.Type = __UI_Type_TextBox THEN
+        This.Min = 0
+        This.Max = __UI_CountLines(This.ID) - This.Height \ uspacing&
+        This.Value = This.FirstVisibleLine - 1
         This.Left = This.Width - __UI_ScrollbarWidth - 1
         This.Top = 1
         This.Height = This.Height - 1
@@ -833,8 +933,6 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
     IF ThumbHeight > TrackHeight THEN ThumbHeight = TrackHeight
     ThumbTop = This.Top + (TrackHeight - ThumbHeight) * (This.Value / This.Max)
     TempThis.ThumbTop = TempThis.Top + ThumbTop + __UI_ScrollbarButtonHeight
-
-    _PRINTMODE _KEEPBACKGROUND
 
     'Draw the bar
     IF NOT This.Disabled THEN
@@ -892,7 +990,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, Temp&, TempColor~&
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -932,15 +1030,13 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
 
         PrevDest = _DEST
         _DEST This.Canvas
-        _FONT (This.Font)
+        _FONT This.Font
 
         '------
         IF This.BackStyle = __UI_Opaque THEN
-            _PRINTMODE _FILLBACKGROUND
             CLS , This.BackColor
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
-            _PRINTMODE _KEEPBACKGROUND
         END IF
 
         CaptionIndent = 0
@@ -965,28 +1061,28 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
                     TempText$ = ""
                 END IF
                 IF ThisItem% = This.Value THEN
-                    ThisItemTop% = This.Height \ 2 - _FONTHEIGHT \ 2 + 1
+                    ThisItemTop% = This.Height \ 2 - uspacing& \ 2 + 1
 
                     IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN __UI_Captions(This.ID) = TempCaption$
 
                     IF NOT This.Disabled THEN
-                        COLOR This.ForeColor, This.BackColor
+                        TempColor~& = This.ForeColor
                     ELSE
-                        COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
+                        TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
                     END IF
 
                     IF __UI_Focus = This.ID THEN
-                        COLOR This.SelectedForeColor, This.SelectedBackColor
+                        TempColor~& = This.SelectedForeColor
                         LINE (CaptionIndent, 3)-STEP(This.Width - CaptionIndent * 2, This.Height - 7), This.SelectedBackColor, BF
                     END IF
 
                     SELECT CASE This.Align
                         CASE __UI_Left
-                            _PRINTSTRING (CaptionIndent * 2, ThisItemTop%), TempCaption$
+                            Temp& = uprint(CaptionIndent * 2, ThisItemTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
                         CASE __UI_Center
-                            _PRINTSTRING ((This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2), ThisItemTop%), TempCaption$
+                            Temp& = uprint((This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
                         CASE __UI_Right
-                            _PRINTSTRING ((This.Width - _PRINTWIDTH(TempCaption$)) - CaptionIndent, ThisItemTop%), TempCaption$
+                            Temp& = uprint((This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
                     END SELECT
                     EXIT DO
                 END IF
@@ -1035,7 +1131,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
-    DIM TempCaption$, CaptionIndent AS INTEGER
+    DIM TempCaption$, CaptionIndent AS INTEGER, Temp&, TempColor~&
     DIM TempCanvas AS LONG, HWTempCanvas AS LONG
 
     STATIC ControlImage AS LONG
@@ -1051,51 +1147,50 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
         This.PreviousValue = This.Value
         __UI_TempCaptions(This.ID) = __UI_Captions(This.ID)
 
-        TempCanvas = _NEWIMAGE(This.Width, This.Height + _FONTHEIGHT((This.Font)) \ 2, 32)
+        _FONT This.Font
+        TempCanvas = _NEWIMAGE(This.Width, This.Height + uspacing& \ 2, 32)
 
         _DEST TempCanvas
-        _FONT (This.Font)
+        _FONT This.Font
 
         '------
         IF LEN(__UI_Captions(This.ID)) > 0 THEN TempCaption$ = " " + __UI_Captions(This.ID) + " "
 
-        _FONT (This.Font)
+        _FONT This.Font
 
         IF This.Hidden = __UI_False THEN
             IF This.BackStyle = __UI_Opaque THEN
-                _PRINTMODE _FILLBACKGROUND
                 CLS , This.BackColor
             ELSE
                 CLS , _RGBA32(0, 0, 0, 0)
-                _PRINTMODE _KEEPBACKGROUND
             END IF
 
             CaptionIndent = 0
             IF This.HasBorder THEN CaptionIndent = 5
 
             IF NOT This.Disabled THEN
-                COLOR This.ForeColor, This.BackColor
+                TempColor~& = This.ForeColor
             ELSE
-                COLOR __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80), This.BackColor
+                TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
             END IF
 
             'This.Canvas holds the children controls' images
-            _PUTIMAGE (CaptionIndent, CaptionIndent + _FONTHEIGHT((This.Font)) \ 2), This.Canvas, TempCanvas, (CaptionIndent, CaptionIndent)-(This.Width, This.Height)
+            _PUTIMAGE (CaptionIndent, CaptionIndent + uspacing& \ 2), This.Canvas, TempCanvas, (CaptionIndent, CaptionIndent)-(This.Width, This.Height)
 
             IF This.HasBorder THEN
                 'Four corners;
-                _PUTIMAGE (0, _FONTHEIGHT((This.Font)) \ 2), ControlImage, , (0, 0)-STEP(2, 2)
-                _PUTIMAGE (This.Width - 3, _FONTHEIGHT((This.Font)) \ 2), ControlImage, , (19, 0)-STEP(2, 2)
-                _PUTIMAGE (0, This.Height + _FONTHEIGHT((This.Font)) \ 2 - 3), ControlImage, , (0, 17)-STEP(2, 2)
-                _PUTIMAGE (This.Width - 3, This.Height + _FONTHEIGHT((This.Font)) \ 2 - 3), ControlImage, , (19, 17)-STEP(2, 2)
+                _PUTIMAGE (0, uspacing& \ 2), ControlImage, , (0, 0)-STEP(2, 2)
+                _PUTIMAGE (This.Width - 3, uspacing& \ 2), ControlImage, , (19, 0)-STEP(2, 2)
+                _PUTIMAGE (0, This.Height + uspacing& \ 2 - 3), ControlImage, , (0, 17)-STEP(2, 2)
+                _PUTIMAGE (This.Width - 3, This.Height + uspacing& \ 2 - 3), ControlImage, , (19, 17)-STEP(2, 2)
 
                 'Two vertical lines
-                _PUTIMAGE (0, _FONTHEIGHT((This.Font)) \ 2 + 2)-(0, This.Height + _FONTHEIGHT((This.Font)) \ 2 - 4), ControlImage, , (0, 3)-(0, 16)
-                _PUTIMAGE (This.Width - 1, _FONTHEIGHT((This.Font)) \ 2 + 2)-(This.Width - 1, This.Height + _FONTHEIGHT((This.Font)) \ 2 - 4), ControlImage, , (0, 3)-(0, 16)
+                _PUTIMAGE (0, uspacing& \ 2 + 2)-(0, This.Height + uspacing& \ 2 - 4), ControlImage, , (0, 3)-(0, 16)
+                _PUTIMAGE (This.Width - 1, uspacing& \ 2 + 2)-(This.Width - 1, This.Height + uspacing& \ 2 - 4), ControlImage, , (0, 3)-(0, 16)
 
                 'Two horizontal lines
-                _PUTIMAGE (3, _FONTHEIGHT((This.Font)) \ 2)-STEP(This.Width - 6, 0), ControlImage, , (3, 0)-STEP(15, 0)
-                _PUTIMAGE (3, This.Height + _FONTHEIGHT((This.Font)) \ 2 - 1)-STEP(This.Width - 6, 0), ControlImage, , (3, 0)-STEP(15, 0)
+                _PUTIMAGE (3, uspacing& \ 2)-STEP(This.Width - 6, 0), ControlImage, , (3, 0)-STEP(15, 0)
+                _PUTIMAGE (3, This.Height + uspacing& \ 2 - 1)-STEP(This.Width - 6, 0), ControlImage, , (3, 0)-STEP(15, 0)
             END IF
 
             DIM CaptionLeft AS INTEGER
@@ -1105,16 +1200,17 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
                     CASE __UI_Left
                         CaptionLeft = CaptionIndent
                     CASE __UI_Center
-                        CaptionLeft = (This.Width \ 2 - _PRINTWIDTH(TempCaption$) \ 2)
+                        CaptionLeft = (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2)
                     CASE __UI_Right
-                        CaptionLeft = (This.Width - _PRINTWIDTH(TempCaption$)) - CaptionIndent
+                        CaptionLeft = (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent
                 END SELECT
 
-                _PRINTSTRING (CaptionLeft, 0), TempCaption$
+                Temp& = uprint(CaptionLeft, 0, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
                 'Hot key:
                 IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
-                    LINE (CaptionLeft + _PRINTWIDTH(" ") + This.HotKeyOffset, 0 + _FONTHEIGHT)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                    Temp& = __UI_PrintWidth(CHR$(This.HotKey))
+                    LINE (CaptionLeft + Temp& + This.HotKeyOffset, 0 + uspacing&)-STEP(Temp& - 1, 0), This.ForeColor
                 END IF
             END IF
         END IF
@@ -1126,12 +1222,14 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
         _DEST 0
     END IF
 
-    _PUTIMAGE (This.Left, This.Top - _FONTHEIGHT((This.Font)) \ 2), This.HelperCanvas
+    _FONT This.Font
+    _PUTIMAGE (This.Left, This.Top - uspacing& \ 2), This.HelperCanvas
 END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
+    DIM Temp&, TempColor~&
 
     IF This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.ControlState <> ControlState OR __UI_Captions(This.ID) <> __UI_TempCaptions(This.ID) OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
@@ -1157,30 +1255,28 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         '---
         CLS , This.BackColor
-        _PRINTMODE _KEEPBACKGROUND
 
-        DIM i AS INTEGER, c AS _UNSIGNED LONG
+        DIM i AS INTEGER
         TempCaption$ = __UI_Captions(This.ID)
 
         IF __UI_Focus = This.ID OR _
            (__UI_ParentMenu = This.ID AND (__UI_Controls(__UI_Focus).Type = __UI_Type_MenuPanel OR __UI_Controls(__UI_Focus).Type = __UI_Type_MenuItem)) OR _
            (__UI_HoveringID = This.ID AND (__UI_Controls(__UI_Focus).Type <> __UI_Type_MenuPanel AND __UI_Controls(__UI_Focus).Type <> __UI_Type_MenuBar AND __UI_Controls(__UI_Focus).Type <> __UI_Type_MenuItem)) THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.SelectedBackColor, BF
-            c = This.SelectedForeColor
+            TempColor~& = This.SelectedForeColor
         ELSE
-            c = This.ForeColor
+            TempColor~& = This.ForeColor
         END IF
 
         IF This.Disabled THEN
-            c = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+            TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
         END IF
 
-        COLOR c
-
-        _PRINTSTRING (__UI_MenuBarOffset, ((This.Height \ 2) - _FONTHEIGHT \ 2)), TempCaption$
+        Temp& = uprint(__UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), TempCaption$, LEN(TempCaption$), TempColor~&, 0)
         IF This.HotKey > 0 AND ((__UI_AltIsDown OR __UI_Controls(__UI_Focus).Type = __UI_Type_MenuBar) OR __UI_DesignMode) THEN
             'Has "hot-key"
-            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + _FONTHEIGHT \ 2) - 1)-STEP(_PRINTWIDTH(CHR$(This.HotKey)) - 1, 0), c
+            Temp& = __UI_PrintWidth(CHR$(This.HotKey))
+            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) - 1)-STEP(Temp& - 1, 0), TempColor~&
         END IF
         '---
 
@@ -1194,6 +1290,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
+    DIM TempColor~&, Temp&
 
     DIM CheckMarkIndex AS _BYTE
     STATIC ControlImage AS LONG
@@ -1223,13 +1320,12 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         '---
         COLOR , _RGBA32(0, 0, 0, 0)
         CLS
-        _PRINTMODE _KEEPBACKGROUND
 
         'White panel:
         __UI_ShadowBox 0, 0, This.Width - 1, This.Height - 1, _RGB32(255, 255, 255), 40, 5
         LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
 
-        DIM i AS LONG, c AS _UNSIGNED LONG, HasSeparator as _BYTE
+        DIM i AS LONG, HasSeparator as _BYTE
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).Type = __UI_Type_MenuItem AND NOT __UI_Controls(i).Hidden AND __UI_Controls(i).ParentID = __UI_ParentMenu THEN
                 TempCaption$ = __UI_Captions(i)
@@ -1243,25 +1339,24 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
                 IF __UI_Focus = i OR (__UI_HoveringID = i AND __UI_Focus = i) THEN
                     LINE (3, __UI_Controls(i).Top)-STEP(This.Width - 7, __UI_Controls(i).Height - 1), This.SelectedBackColor, BF
-                    c = This.SelectedForeColor
+                    TempColor~& = This.SelectedForeColor
                     CheckMarkIndex = 2
                 ELSE
-                    c = This.ForeColor
+                    TempColor~& = This.ForeColor
                     CheckMarkIndex = 1
                 END IF
 
                 IF __UI_Controls(i).Disabled THEN
-                    c = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+                    TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
                     CheckMarkIndex = 3
                 END IF
 
-                COLOR c
-
-                _PRINTSTRING (__UI_Controls(i).Left + __UI_MenuItemOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - _FONTHEIGHT \ 2), TempCaption$
+                Temp& = uprint(__UI_Controls(i).Left + __UI_MenuItemOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - uspacing& \ 2, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
                 IF __UI_Controls(i).HotKey > 0 THEN
                     'Has "hot-key"
-                    LINE (__UI_Controls(i).Left + __UI_MenuItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + _FONTHEIGHT \ 2 - 1)-STEP(_PRINTWIDTH(CHR$(__UI_Controls(i).HotKey)) - 1, 0), c
+                    Temp& = __UI_PrintWidth(CHR$(__UI_Controls(i).HotKey))
+                    LINE (__UI_Controls(i).Left + __UI_MenuItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + uspacing& \ 2 - 1)-STEP(Temp& - 1, 0), TempColor~&
                 END IF
 
                 IF __UI_Controls(i).Value = __UI_True THEN

@@ -100,15 +100,20 @@ SUB __UI_LoadForm
     __UI_AddListBoxItem "PropertiesList", "Min"
     __UI_AddListBoxItem "PropertiesList", "Max"
     __UI_AddListBoxItem "PropertiesList", "Interval"
+    __UI_AddListBoxItem "PropertiesList", "Padding (Left/Right)"
     __UI_Controls(__UI_NewID).HasBorder = __UI_True
     __UI_Controls(__UI_NewID).Value = 1
-    __UI_Controls(__UI_NewID).Max = 13
+    __UI_Controls(__UI_NewID).Max = 14
     __UI_Controls(__UI_NewID).CanHaveFocus = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "PropertyValue", 250, 23, 200, 20, __UI_GetID("PropertiesFrame"))
     __UI_Controls(__UI_NewID).HasBorder = __UI_True
     __UI_Controls(__UI_NewID).CanHaveFocus = __UI_True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "PropertyUpdateStatus", 16, 16, 430, 23, __UI_GetID("PropertiesFrame"))
+    __UI_Controls(__UI_NewID).HasBorder = __UI_False
+    __UI_Controls(__UI_NewID).BackStyle = __UI_Transparent
+    
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 150, 17, 22, 59, __UI_GetID("PropertiesFrame"))
     __UI_SetCaption "Stretch", "Stretch"
     __UI_Controls(__UI_NewID).CanHaveFocus = __UI_True
@@ -182,7 +187,6 @@ SUB __UI_LoadForm
     __UI_Controls(__UI_NewID).CanHaveFocus = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "ColorPreview", 159, 115, 10, 51, __UI_GetID("ColorMixer"))
-    __UI_Controls(__UI_NewID).HasBorder = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Red", 198, 40, 191, 17, __UI_GetID("ColorMixer"))
     __UI_Controls(__UI_NewID).Max = 255

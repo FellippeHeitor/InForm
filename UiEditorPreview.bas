@@ -17,6 +17,7 @@ CONST OffsetPropertyChanged = 31
 CONST OffsetPropertyValue = 33
 
 DIM SHARED UiPreviewPID AS LONG
+DIM SHARED ExeIcon AS LONG
 
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
@@ -29,7 +30,6 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
-
 '$include:'InForm.ui'
 '$include:'UiEditorPreview.frm'
 '$include:'xp.uitheme'
@@ -178,15 +178,21 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 1 'Name
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
-                    IF __UI_GetID(b$) > 0 THEN
-                        DO
-                            b$ = b$ + "_"
-                            IF __UI_GetID(b$) = 0 THEN EXIT DO
-                        LOOP
-                    END IF
                     IF __UI_TotalSelectedControls = 1 THEN
+                        IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FirstSelectedID THEN
+                            DO
+                                b$ = b$ + "_"
+                                IF __UI_GetID(b$) = 0 THEN EXIT DO
+                            LOOP
+                        END IF
                         __UI_Controls(__UI_FirstSelectedID).Name = b$
                     ELSE
+                        IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FormID THEN
+                            DO
+                                b$ = b$ + "_"
+                                IF __UI_GetID(b$) = 0 THEN EXIT DO
+                            LOOP
+                        END IF
                         __UI_Controls(__UI_FormID).Name = b$
                     END IF
                 CASE 2 'Caption
@@ -202,16 +208,33 @@ SUB __UI_BeforeUpdateDisplay
                         __UI_Captions(__UI_FormID) = b$
                     END IF
                 CASE 3 'Text
+                    DIM TotalReplacements AS LONG
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Texts(i) = b$
-                            IF __UI_Controls(i).Type = __UI_Type_Button OR __UI_Controls(i).Type = __UI_Type_PictureBox THEN
-                                __UI_LoadImage __UI_Controls(i), b$
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(__UI_Controls)
+                            IF __UI_Controls(i).ControlIsSelected THEN
+                                __UI_Texts(i) = b$
+                                IF __UI_Controls(i).Type = __UI_Type_Button OR __UI_Controls(i).Type = __UI_Type_PictureBox THEN
+                                    __UI_LoadImage __UI_Controls(i), b$
+                                ELSEIF __UI_Controls(i).Type = __UI_Type_ListBox OR __UI_Controls(i).Type = __UI_Type_DropdownList THEN
+                                    __UI_Texts(i) = __UI_ReplaceText(b$, "\n", CHR$(13), __UI_False, TotalReplacements)
+                                    IF __UI_Controls(i).Max < TotalReplacements + 1 THEN __UI_Controls(i).Max = TotalReplacements + 1
+                                    __UI_Controls(i).LastVisibleItem = 0 'Reset it so it's recalculated
+                                END IF
                             END IF
+                        NEXT
+                    ELSE
+                        IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
+                        ExeIcon = IconPreview&(b$)
+                        IF ExeIcon < -1 THEN
+                            _ICON ExeIcon
+                            __UI_Texts(__UI_FormID) = b$
+                        ELSE
+                            _ICON
+                            __UI_Texts(__UI_FormID) = ""
                         END IF
-                    NEXT
+                    END IF
                 CASE 4 'Top
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
@@ -453,6 +476,16 @@ SUB __UI_BeforeUpdateDisplay
                     IF __UI_TotalSelectedControls = 0 THEN
                         __UI_Controls(__UI_FormID).CanResize = TempValue
                     END IF
+                CASE 31 'Padding
+                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    TempValue = CVI(b$)
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(__UI_Controls)
+                            IF __UI_Controls(i).ControlIsSelected THEN
+                                __UI_Controls(i).Padding = TempValue
+                            END IF
+                        NEXT
+                    END IF
             END SELECT
             __UI_ForceRedraw = __UI_True
         END IF
@@ -588,6 +621,12 @@ SUB LoadPreview
                         __UI_Texts(TempValue) = b$
                         IF __UI_Controls(TempValue).Type = __UI_Type_PictureBox OR __UI_Controls(TempValue).Type = __UI_Type_Button THEN
                             __UI_LoadImage __UI_Controls(TempValue), __UI_Texts(TempValue)
+                        ELSEIF __UI_Controls(TempValue).Type = __UI_Type_Form THEN
+                            IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
+                            ExeIcon = IconPreview&(b$)
+                            IF ExeIcon < -1 THEN
+                                _ICON ExeIcon
+                            END IF
                         END IF
                         IF LogFileLoad THEN PRINT #LogFileNum, "TEXT:" + __UI_Texts(TempValue)
                     CASE -4 'Stretch
@@ -703,6 +742,10 @@ SUB LoadPreview
                     CASE -29
                         __UI_Controls(TempValue).CanResize = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "CANRESIZE"
+                    CASE -31
+                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                        __UI_Controls(TempValue).Padding = CVI(b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "PADDING" + STR$(CVI(b$))
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL:-1"
                         EXIT DO
@@ -903,6 +946,10 @@ SUB SavePreview
             IF __UI_Controls(i).HotKey > 0 THEN
                 b$ = MKI$(-30) + MKI$(__UI_Controls(i).HotKeyPosition): PUT #BinFileNum, , b$
             END IF
+            IF __UI_Controls(i).Padding > 0 THEN
+                b$ = MKI$(-31) + MKI$(__UI_Controls(i).Padding): PUT #BinFileNum, , b$
+            END IF
+
         END IF
     NEXT
     b$ = MKI$(-1024): PUT #BinFileNum, , b$ 'end of file
@@ -919,3 +966,98 @@ SUB SendData (b$, Offset AS LONG)
     CLOSE #FileNum
 END SUB
 
+FUNCTION IconPreview& (IconFile$)
+    DIM IconFileNum AS INTEGER
+    DIM Preferred AS INTEGER, Largest AS INTEGER
+    DIM i AS LONG, a$
+
+    TYPE ICONTYPE
+        Reserved AS INTEGER: ID AS INTEGER: Count AS INTEGER
+    END TYPE
+
+    TYPE ICONENTRY
+        PWidth AS _UNSIGNED _BYTE: PDepth AS _UNSIGNED _BYTE
+        NumColors AS _BYTE: RES2 AS _BYTE
+        NumberPlanes AS INTEGER: BitsPerPixel AS INTEGER
+        DataSize AS LONG: DataOffset AS LONG
+    END TYPE
+
+    TYPE BMPENTRY
+        ID AS STRING * 2: Size AS LONG: Res1 AS INTEGER: Res2 AS INTEGER: Offset AS LONG
+    END TYPE
+
+    TYPE BMPHeader
+        Hsize AS LONG: PWidth AS LONG: PDepth AS LONG
+        Planes AS INTEGER: BPP AS INTEGER
+        Compression AS LONG: ImageBytes AS LONG
+        Xres AS LONG: Yres AS LONG: NumColors AS LONG: SigColors AS LONG
+    END TYPE
+
+    DIM ICO AS ICONTYPE
+    DIM BMP AS BMPENTRY
+    DIM BMPHeader AS BMPHeader
+
+    IF _FILEEXISTS(IconFile$) = 0 THEN EXIT FUNCTION
+
+    IconFileNum = FREEFILE
+    OPEN IconFile$ FOR BINARY AS #IconFileNum
+    GET #IconFileNum, 1, ICO
+    IF ICO.ID <> 1 THEN CLOSE #IconFileNum: EXIT FUNCTION
+
+    DIM Entry(ICO.Count) AS ICONENTRY
+    Preferred = 0
+    Largest = 0
+
+    FOR i = 1 TO ICO.Count
+        GET #IconFileNum, , Entry(i)
+        IF Entry(i).BitsPerPixel = 32 THEN
+            IF Entry(i).PWidth = 0 THEN Entry(i).PWidth = 256
+            IF Entry(i).PWidth > Largest THEN Largest = Entry(i).PWidth: Preferred = i
+        END IF
+    NEXT
+
+    IF Preferred = 0 THEN EXIT FUNCTION
+
+    a$ = SPACE$(Entry(Preferred).DataSize)
+    GET #IconFileNum, Entry(Preferred).DataOffset + 1, a$
+    CLOSE #IconFileNum
+
+    IF LEFT$(a$, 4) = CHR$(137) + "PNG" THEN
+        'PNG data can be dumped to the disk directly
+        OPEN IconFile$ + ".preview.png" FOR BINARY AS #IconFileNum
+        PUT #IconFileNum, 1, a$
+        CLOSE #IconFileNum
+        i = _LOADIMAGE(IconFile$ + ".preview.png", 32)
+        IF i = -1 THEN i = 0
+        IconPreview& = i
+        KILL IconFile$ + ".preview.png"
+        EXIT FUNCTION
+    ELSE
+        'BMP data requires a header to be added
+        BMP.ID = "BM"
+        BMP.Size = LEN(BMP) + LEN(BMPHeader) + LEN(a$)
+        BMP.Offset = LEN(BMP) + LEN(BMPHeader)
+        BMPHeader.Hsize = 40
+        BMPHeader.PWidth = Entry(Preferred).PWidth
+        BMPHeader.PDepth = Entry(Preferred).PDepth: IF BMPHeader.PDepth = 0 THEN BMPHeader.PDepth = 256
+        BMPHeader.Planes = 1
+        BMPHeader.BPP = 32
+        OPEN IconFile$ + ".preview.bmp" FOR BINARY AS #IconFileNum
+        PUT #IconFileNum, 1, BMP
+        PUT #IconFileNum, , BMPHeader
+        a$ = MID$(a$, 41)
+        PUT #IconFileNum, , a$
+        CLOSE #IconFileNum
+        i = _LOADIMAGE(IconFile$ + ".preview.bmp", 32)
+        IF i < -1 THEN 'Loaded properly
+            _SOURCE i
+            IF POINT(0, 0) = _RGB32(0, 0, 0) THEN _CLEARCOLOR _RGB32(0, 0, 0), i
+            _SOURCE 0
+        ELSE
+            i = 0
+        END IF
+        IconPreview& = i
+        KILL IconFile$ + ".preview.bmp"
+        EXIT FUNCTION
+    END IF
+END FUNCTION
