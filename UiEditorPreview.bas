@@ -30,6 +30,7 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
+
 '$include:'InForm.ui'
 '$include:'UiEditorPreview.frm'
 '$include:'xp.uitheme'
@@ -512,13 +513,13 @@ SUB __UI_BeforeUnload
     'END IF
 END SUB
 
-SUB __UI_OnLoad
-    DIM b$
+SUB __UI_BeforeInit
     __UI_DesignMode = __UI_True
-
     UiPreviewPID = __UI_GetPID
-
     LoadPreview
+END SUB
+
+SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
@@ -532,9 +533,10 @@ SUB LoadPreview
     DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, TempValue AS LONG
+    DIM Dummy AS LONG
     DIM BinaryFileNum AS INTEGER, LogFileNum AS INTEGER
 
-    CONST LogFileLoad = __UI_False
+    CONST LogFileLoad = __UI_True
 
     IF _FILEEXISTS("UiEditorPreview.frmbin") = 0 THEN
         EXIT SUB
@@ -551,8 +553,10 @@ SUB LoadPreview
         END IF
         IF LogFileLoad THEN PRINT #LogFileNum, "FOUND INFORM+1"
         __UI_AutoRefresh = __UI_False
-        FOR i = 1 TO UBOUND(__UI_Controls)
-            __UI_DestroyControl __UI_Controls(i)
+        FOR i = UBOUND(__UI_Controls) TO 1 STEP -1
+            IF LEFT$(__UI_Controls(i).Name, 9) <> "__UI_Text" AND LEFT$(__UI_Controls(i).Name, 16) <> "__UI_PreviewMenu" THEN
+                __UI_DestroyControl __UI_Controls(i)
+            END IF
         NEXT
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
 
@@ -560,16 +564,18 @@ SUB LoadPreview
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
 
         REDIM _PRESERVE __UI_Captions(1 TO CVL(b$)) AS STRING
-        REDIM _PRESERVE __UI_TempCaptions(1 TO CVL(b$)) AS STRING
-        REDIM _PRESERVE __UI_Texts(1 TO CVL(b$)) AS STRING
-        REDIM _PRESERVE __UI_TempTexts(1 TO CVL(b$)) AS STRING
-        REDIM _PRESERVE __UI_Tips(1 TO CVL(b$)) AS STRING
+        REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
+        REDIM __UI_Texts(1 TO CVL(b$)) AS STRING
+        REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
+        REDIM __UI_Tips(1 TO CVL(b$)) AS STRING
+        REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
         REDIM _PRESERVE __UI_Controls(0 TO CVL(b$)) AS __UI_ControlTYPE
         b$ = SPACE$(2): GET #BinaryFileNum, , b$
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL:" + STR$(CVI(b$))
         IF CVI(b$) <> -1 THEN GOTO LoadError
         DO
-            b$ = SPACE$(4): GET #BinaryFileNum, , b$ 'skip id number
+            b$ = SPACE$(4): GET #BinaryFileNum, , b$
+            Dummy = CVL(b$)
             b$ = SPACE$(2): GET #BinaryFileNum, , b$
             NewType = CVI(b$)
             IF LogFileLoad THEN PRINT #LogFileNum, "TYPE:" + STR$(CVI(b$))
@@ -590,16 +596,12 @@ SUB LoadPreview
             NewTop = CVI(b$)
             IF LogFileLoad THEN PRINT #LogFileNum, "TOP:" + STR$(CVI(b$))
             b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewParentID = SPACE$(CVI(b$)): GET #BinaryFileNum, , NewParentID
-            IF LogFileLoad THEN PRINT #LogFileNum, "PARENT:" + NewParentID
-
-            IF NewType = __UI_Type_Form THEN
-                IF NewWidth <> _WIDTH OR NewHeight <> _HEIGHT THEN
-                    DIM OldScreen&
-                    OldScreen& = _DEST
-                    SCREEN _NEWIMAGE(NewWidth, NewHeight, 32)
-                    _FREEIMAGE OldScreen&
-                END IF
+            IF CVI(b$) > 0 THEN
+                NewParentID = SPACE$(CVI(b$)): GET #BinaryFileNum, , NewParentID
+                IF LogFileLoad THEN PRINT #LogFileNum, "PARENT:" + NewParentID
+            ELSE
+                NewParentID = ""
+                IF LogFileLoad THEN PRINT #LogFileNum, "PARENT: ORPHAN/CONTAINER"
             END IF
 
             TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
@@ -747,14 +749,14 @@ SUB LoadPreview
                         __UI_Controls(TempValue).Padding = CVI(b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "PADDING" + STR$(CVI(b$))
                     CASE -1 'new control
-                        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL:-1"
+                        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
                     CASE -1024
-                        IF LogFileLoad THEN PRINT #LogFileNum, "READ END OF FILE:-1024"
+                        IF LogFileLoad THEN PRINT #LogFileNum, "READ END OF FILE: -1024"
                         __UI_EOF = __UI_True
                         EXIT DO
                     CASE ELSE
-                        IF LogFileLoad THEN PRINT #LogFileNum, "UNKNOWN DATA="; CVI(b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "UNKNOWN PROPERTY ="; CVI(b$)
                         EXIT DO
                 END SELECT
             LOOP
@@ -775,7 +777,7 @@ SUB SavePreview
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
 
-    CONST Debug = __UI_False
+    CONST Debug = __UI_True
 
     BinFileNum = FREEFILE
     OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
@@ -790,11 +792,11 @@ SUB SavePreview
     b$ = MKL$(UBOUND(__UI_Controls))
     PUT #BinFileNum, , b$
     FOR i = 1 TO UBOUND(__UI_Controls)
-        IF Debug THEN
-            PRINT #TxtFileNum, __UI_Controls(i).ID,
-            PRINT #TxtFileNum, RTRIM$(__UI_Controls(i).Name)
-        END IF
-        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 THEN
+        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 AND LEFT$(RTRIM$(__UI_Controls(i).Name), 9) <> "__UI_Text" AND LEFT$(RTRIM$(__UI_Controls(i).Name), 16) <> "__UI_PreviewMenu" THEN
+            IF Debug THEN
+                PRINT #TxtFileNum, __UI_Controls(i).ID,
+                PRINT #TxtFileNum, RTRIM$(__UI_Controls(i).Name)
+            END IF
             b$ = MKI$(-1) + MKL$(i) + MKI$(__UI_Controls(i).Type) '-1 indicates a new control
             b$ = b$ + MKI$(LEN(RTRIM$(__UI_Controls(i).Name)))
             b$ = b$ + RTRIM$(__UI_Controls(i).Name)
@@ -853,7 +855,7 @@ SUB SavePreview
             ELSE
                 IF __UI_Controls(i).ParentID > 0 THEN
                     IF __UI_Controls(i).Font > 0 AND __UI_Controls(i).Font <> __UI_Controls(__UI_Controls(i).ParentID).Font THEN
-                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 167 THEN
+                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
                             GOTO SaveInternalFont
                         ELSE
                             GOTO SaveExternalFont
@@ -861,7 +863,7 @@ SUB SavePreview
                     END IF
                 ELSE
                     IF __UI_Controls(i).Font > 0 AND __UI_Controls(i).Font <> __UI_Controls(__UI_FormID).Font THEN
-                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 167 THEN
+                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
                             GOTO SaveInternalFont
                         ELSE
                             GOTO SaveExternalFont
@@ -932,7 +934,9 @@ SUB SavePreview
                 b$ = MKI$(-23): PUT #BinFileNum, , b$
             END IF
             IF __UI_Controls(i).ContextMenuID THEN
-                b$ = MKI$(-25) + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name): PUT #BinFileNum, , b$
+                IF LEFT$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name, 9) <> "__UI_Text" AND LEFT$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name, 16) <> "__UI_PreviewMenu" THEN
+                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name): PUT #BinFileNum, , b$
+                END IF
             END IF
             IF __UI_Controls(i).Interval THEN
                 b$ = MKI$(-26) + _MK$(_FLOAT, __UI_Controls(i).Interval): PUT #BinFileNum, , b$
@@ -943,9 +947,9 @@ SUB SavePreview
             IF __UI_Controls(i).CanResize AND __UI_Controls(i).Type = __UI_Type_Form THEN
                 b$ = MKI$(-29): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).HotKey > 0 THEN
-                b$ = MKI$(-30) + MKI$(__UI_Controls(i).HotKeyPosition): PUT #BinFileNum, , b$
-            END IF
+            'IF __UI_Controls(i).HotKey > 0 THEN
+            '    b$ = MKI$(-30) + MKI$(__UI_Controls(i).HotKeyPosition): PUT #BinFileNum, , b$
+            'END IF
             IF __UI_Controls(i).Padding > 0 THEN
                 b$ = MKI$(-31) + MKI$(__UI_Controls(i).Padding): PUT #BinFileNum, , b$
             END IF
