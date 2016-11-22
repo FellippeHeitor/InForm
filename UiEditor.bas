@@ -11,6 +11,7 @@ DIM SHARED PreviewFormID AS LONG, ColorPreviewID AS LONG
 DIM SHARED BackStyleListID AS LONG, PropertyUpdateStatusID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
+DIM SHARED UiEditorTitle$
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -32,8 +33,13 @@ REDIM SHARED PreviewFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 
+DIM SHARED FontList.Names AS STRING
+REDIM SHARED FontList.FileNames(0) AS STRING
+
 CheckPreviewTimer = _FREETIMER
 ON TIMER(CheckPreviewTimer, .003) CheckPreview
+
+UiEditorTitle$ = "InForm Designer"
 
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
@@ -41,11 +47,75 @@ $IF WIN THEN
         FUNCTION CloseHandle& (BYVAL hObject AS LONG)
         FUNCTION GetExitCodeProcess& (BYVAL hProcess AS LONG, lpExitCode AS LONG)
     END DECLARE
+
+    ''Registry routines taken from the Wiki: http://www.qb64.net/wiki/index.php/Windows_Libraries#Registered_Fonts
+    ''Code courtesy of Michael Calkins
+    ''winreg.h
+    'CONST HKEY_CLASSES_ROOT = &H80000000~&
+    'CONST HKEY_CURRENT_USER = &H80000001~&
+    'CONST HKEY_LOCAL_MACHINE = &H80000002~&
+    'CONST HKEY_USERS = &H80000003~&
+    'CONST HKEY_PERFORMANCE_DATA = &H80000004~&
+    'CONST HKEY_CURRENT_CONFIG = &H80000005~&
+    'CONST HKEY_DYN_DATA = &H80000006~&
+    'CONST REG_OPTION_VOLATILE = 1
+    'CONST REG_OPTION_NON_VOLATILE = 0
+    'CONST REG_CREATED_NEW_KEY = 1
+    'CONST REG_OPENED_EXISTING_KEY = 2
+
+    ''http://msdn.microsoft.com/en-us/library/ms724884(v=VS.85).aspx
+    'CONST REG_NONE = 0
+    'CONST REG_SZ = 1
+    'CONST REG_EXPAND_SZ = 2
+    'CONST REG_BINARY = 3
+    'CONST REG_DWORD_LITTLE_ENDIAN = 4
+    'CONST REG_DWORD = 4
+    'CONST REG_DWORD_BIG_ENDIAN = 5
+    'CONST REG_LINK = 6
+    'CONST REG_MULTI_SZ = 7
+    'CONST REG_RESOURCE_LIST = 8
+    'CONST REG_FULL_RESOURCE_DESCRIPTOR = 9
+    'CONST REG_RESOURCE_REQUIREMENTS_LIST = 10
+    'CONST REG_QWORD_LITTLE_ENDIAN = 11
+    'CONST REG_QWORD = 11
+    'CONST REG_NOTIFY_CHANGE_NAME = 1
+    'CONST REG_NOTIFY_CHANGE_ATTRIBUTES = 2
+    'CONST REG_NOTIFY_CHANGE_LAST_SET = 4
+    'CONST REG_NOTIFY_CHANGE_SECURITY = 8
+
+    ''http://msdn.microsoft.com/en-us/library/ms724878(v=VS.85).aspx
+    'CONST KEY_ALL_ACCESS = &HF003F&
+    'CONST KEY_CREATE_LINK = &H0020&
+    'CONST KEY_CREATE_SUB_KEY = &H0004&
+    'CONST KEY_ENUMERATE_SUB_KEYS = &H0008&
+    'CONST KEY_EXECUTE = &H20019&
+    'CONST KEY_NOTIFY = &H0010&
+    'CONST KEY_QUERY_VALUE = &H0001&
+    'CONST KEY_READ = &H20019&
+    'CONST KEY_SET_VALUE = &H0002&
+    'CONST KEY_WOW64_32KEY = &H0200&
+    'CONST KEY_WOW64_64KEY = &H0100&
+    'CONST KEY_WRITE = &H20006&
+
+    ''winerror.h
+    ''http://msdn.microsoft.com/en-us/library/ms681382(v=VS.85).aspx
+    'CONST ERROR_SUCCESS = 0
+    'CONST ERROR_FILE_NOT_FOUND = &H2&
+    'CONST ERROR_INVALID_HANDLE = &H6&
+    'CONST ERROR_MORE_DATA = &HEA&
+    'CONST ERROR_NO_MORE_ITEMS = &H103&
+
+    'DECLARE DYNAMIC LIBRARY "advapi32"
+    '    FUNCTION RegOpenKeyExA& (BYVAL hKey AS _OFFSET, BYVAL lpSubKey AS _OFFSET, BYVAL ulOptions AS _UNSIGNED LONG, BYVAL samDesired AS _UNSIGNED LONG, BYVAL phkResult AS _OFFSET)
+    '    FUNCTION RegCloseKey& (BYVAL hKey AS _OFFSET)
+    '    FUNCTION RegEnumValueA& (BYVAL hKey AS _OFFSET, BYVAL dwIndex AS _UNSIGNED LONG, BYVAL lpValueName AS _OFFSET, BYVAL lpcchValueName AS _OFFSET, BYVAL lpReserved AS _OFFSET, BYVAL lpType AS _OFFSET, BYVAL lpData AS _OFFSET, BYVAL lpcbData AS _OFFSET)
+    'END DECLARE
 $ELSE
     DECLARE LIBRARY
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
+
 '$include:'InForm.ui'
 '$include:'UiEditor.frm'
 '$include:'xp.uitheme'
@@ -737,8 +807,13 @@ SUB __UI_BeforeUnload
     'END IF
 END SUB
 
+SUB __UI_BeforeInit
+END SUB
+
 SUB __UI_OnLoad
     DIM i AS LONG, b$, UiEditorFile AS INTEGER
+
+    'LoadFontList
 
     'Load toolbox images:
     DIM CommControls AS LONG
@@ -1506,7 +1581,7 @@ SUB SaveForm
                     'ELSE
                     '    a$ = PreviewCaptions(i)
                     'END IF
-                    a$ = "    __UI_SetCaption " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(a$)
+                    a$ = "    __UI_SetCaption " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
                     b$ = MKI$(-2) + MKL$(LEN(PreviewCaptions(i))) '-2 indicates a caption
                     PUT #BinaryFileNum, , b$
                     PUT #BinaryFileNum, , PreviewCaptions(i)
@@ -1698,8 +1773,9 @@ SUB SaveForm
     PRINT #TextFileNum, "'$INCLUDE:'xp.uitheme'"
     PRINT #TextFileNum,
     PRINT #TextFileNum, "'Event procedures: ---------------------------------------------------------------"
-    FOR i = 1 TO 12
+    FOR i = 0 TO 12
         SELECT EVERYCASE i
+            CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
             CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
             CASE 2: PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
             CASE 3: PRINT #TextFileNum, "SUB __UI_BeforeUnload"
@@ -1713,7 +1789,7 @@ SUB SaveForm
             CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
             CASE 12: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
 
-            CASE 1 TO 3
+            CASE 0 TO 3
                 PRINT #TextFileNum,
 
             CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
@@ -2003,3 +2079,109 @@ SUB SaveSelf
     b$ = MKI$(-1024): PUT #2, , b$ 'end of file
     CLOSE #1, #2
 END SUB
+
+'$IF WIN THEN
+'    SUB LoadFontList
+'        DIM hKey AS _OFFSET
+'        DIM Ky AS _OFFSET
+'        DIM SubKey AS STRING
+'        DIM Value AS STRING
+'        DIM bData AS STRING
+'        DIM t AS STRING
+'        DIM dwType AS _UNSIGNED LONG
+'        DIM numBytes AS _UNSIGNED LONG
+'        DIM numTchars AS _UNSIGNED LONG
+'        DIM l AS LONG
+'        DIM dwIndex AS _UNSIGNED LONG
+
+'        Ky = HKEY_LOCAL_MACHINE
+'        SubKey = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" + CHR$(0)
+'        Value = SPACE$(261) 'ANSI Value name limit 260 chars + 1 null
+'        bData = SPACE$(&H7FFF) 'arbitrary
+
+'        l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
+'        IF l THEN
+'            __UI_AddListBoxItem "FontList", "Access to fonts failed."
+'            EXIT SUB
+'        ELSE
+'            dwIndex = 0
+'            DO
+'                numBytes = LEN(bData)
+'                numTchars = LEN(Value)
+'                l = RegEnumValueA(hKey, dwIndex, _OFFSET(Value), _OFFSET(numTchars), 0, _OFFSET(dwType), _OFFSET(bData), _OFFSET(numBytes))
+'                IF l THEN
+'                    IF l <> ERROR_NO_MORE_ITEMS THEN
+'                        __UI_AddListBoxItem "FontList", "Access to fonts failed."
+'                    END IF
+'                    EXIT DO
+'                ELSE
+'                    IF UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".TTF" THEN
+'                        __UI_AddListBoxItem "FontList", LEFT$(Value, numTchars) + " = " + formatData(dwType, numBytes, bData)
+'                    END IF
+'                END IF
+'                dwIndex = dwIndex + 1
+'            LOOP
+'            l = RegCloseKey(hKey)
+'        END IF
+'    END SUB
+
+'    FUNCTION whatType$ (dwType AS _UNSIGNED LONG)
+'        SELECT CASE dwType
+'            CASE REG_SZ: whatType = "REG_SZ"
+'            CASE REG_EXPAND_SZ: whatType = "REG_EXPAND_SZ"
+'            CASE REG_BINARY: whatType = "REG_BINARY"
+'            CASE REG_DWORD: whatType = "REG_DWORD"
+'            CASE REG_DWORD_BIG_ENDIAN: whatType = "REG_DWORD_BIG_ENDIAN"
+'            CASE REG_LINK: whatType = "REG_LINK"
+'            CASE REG_MULTI_SZ: whatType = "REG_MULTI_SZ"
+'            CASE REG_RESOURCE_LIST: whatType = "REG_RESOURCE_LIST"
+'            CASE REG_FULL_RESOURCE_DESCRIPTOR: whatType = "REG_FULL_RESOURCE_DESCRIPTOR"
+'            CASE REG_RESOURCE_REQUIREMENTS_LIST: whatType = "REG_RESOURCE_REQUIREMENTS_LIST"
+'            CASE REG_QWORD: whatType = "REG_QWORD"
+'            CASE ELSE: whatType = "unknown"
+'        END SELECT
+'    END FUNCTION
+
+'    FUNCTION whatKey$ (hKey AS _OFFSET)
+'        SELECT CASE hKey
+'            CASE HKEY_CLASSES_ROOT: whatKey = "HKEY_CLASSES_ROOT"
+'            CASE HKEY_CURRENT_USER: whatKey = "HKEY_CURRENT_USER"
+'            CASE HKEY_LOCAL_MACHINE: whatKey = "HKEY_LOCAL_MACHINE"
+'            CASE HKEY_USERS: whatKey = "HKEY_USERS"
+'            CASE HKEY_PERFORMANCE_DATA: whatKey = "HKEY_PERFORMANCE_DATA"
+'            CASE HKEY_CURRENT_CONFIG: whatKey = "HKEY_CURRENT_CONFIG"
+'            CASE HKEY_DYN_DATA: whatKey = "HKEY_DYN_DATA"
+'        END SELECT
+'    END FUNCTION
+
+'    FUNCTION formatData$ (dwType AS _UNSIGNED LONG, numBytes AS _UNSIGNED LONG, bData AS STRING)
+'        DIM t AS STRING
+'        DIM ul AS _UNSIGNED LONG
+'        DIM b AS _UNSIGNED _BYTE
+'        SELECT CASE dwType
+'            CASE REG_SZ, REG_EXPAND_SZ, REG_MULTI_SZ
+'                formatData = LEFT$(bData, numBytes - 1)
+'            CASE REG_DWORD
+'                t = LCASE$(HEX$(CVL(LEFT$(bData, 4))))
+'                formatData = "0x" + STRING$(8 - LEN(t), &H30) + t
+'            CASE ELSE
+'                IF numBytes THEN
+'                    b = ASC(LEFT$(bData, 1))
+'                    IF b < &H10 THEN
+'                        t = t + "0" + LCASE$(HEX$(b))
+'                    ELSE
+'                        t = t + LCASE$(HEX$(b))
+'                    END IF
+'                END IF
+'                FOR ul = 2 TO numBytes
+'                    b = ASC(MID$(bData, ul, 1))
+'                    IF b < &H10 THEN
+'                        t = t + " 0" + LCASE$(HEX$(b))
+'                    ELSE
+'                        t = t + " " + LCASE$(HEX$(b))
+'                    END IF
+'                NEXT
+'                formatData = t
+'        END SELECT
+'    END FUNCTION
+'$END IF

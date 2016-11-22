@@ -6,8 +6,8 @@ SUB __UI_LoadForm
     DIM __UI_NewID AS LONG
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditorForm", 598, 430, 0, 0, 0)
-    __UI_SetCaption "UiEditorForm", "InForm Designer"
-    __UI_Controls(__UI_NewID).Font = __UI_Font("InForm\NotoMono-Regular.ttf", 12, "MONOSPACE")
+    __UI_SetCaption "UiEditorForm", UiEditorTitle$
+    __UI_Controls(__UI_NewID).Font = __UI_Font("InForm\NotoMono-Regular.ttf", 12, "")
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 44, 18, 8, 0, 0)
     __UI_SetCaption "FileMenu", "&File"
