@@ -7,13 +7,16 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditorForm", 598, 430, 0, 0, 0)
     __UI_SetCaption "UiEditorForm", UiEditorTitle$
-    __UI_Controls(__UI_NewID).Font = __UI_Font("InForm\NotoMono-Regular.ttf", 12, "")
+    __UI_Controls(__UI_NewID).Font = __UI_Font("segoeui.ttf", 12, "")
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 44, 18, 8, 0, 0)
     __UI_SetCaption "FileMenu", "&File"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 44, 18, 52, 0, 0)
     __UI_SetCaption "ViewMenu", "&View"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "InsertMenu", 44, 18, 52, 0, 0)
+    __UI_SetCaption "InsertMenu", "&Insert"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 44, 18, 545, 0, 0)
     __UI_SetCaption "HelpMenu", "&Help"
@@ -46,6 +49,13 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuLoadedFonts", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
     __UI_SetCaption "ViewMenuLoadedFonts", "&Loaded fonts"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuBar", 0, 0, 0, 0, __UI_GetID("InsertMenu"))
+    __UI_SetCaption "InsertMenuMenuBar", "Menu &Bar"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuItem", 0, 0, 0, 0, __UI_GetID("InsertMenu"))
+    __UI_SetCaption "InsertMenuMenuItem", "Menu &Item"
+    __UI_Controls(__UI_NewID).Disabled = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     __UI_SetCaption "HelpMenuHelp", "&What's all this?"

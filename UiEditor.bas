@@ -23,8 +23,9 @@ CONST OffsetNewDataFromPreview = 17
 CONST OffsetTotalControlsSelected = 19
 CONST OffsetFormID = 23
 CONST OffsetFirstSelectedID = 27
-CONST OffsetPropertyChanged = 31
-CONST OffsetPropertyValue = 33
+CONST OffsetMenuPanelIsON = 31
+CONST OffsetPropertyChanged = 33
+CONST OffsetPropertyValue = 35
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -125,6 +126,18 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
 
     SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+        CASE "INSERTMENUMENUBAR"
+            UiEditorFile = FREEFILE
+            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = MKI$(__UI_Type_MenuBar)
+            PUT #UiEditorFile, OffsetNewControl, b$
+            CLOSE #UiEditorFile
+        CASE "INSERTMENUMENUITEM"
+            UiEditorFile = FREEFILE
+            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = MKI$(__UI_Type_MenuItem)
+            PUT #UiEditorFile, OffsetNewControl, b$
+            CLOSE #UiEditorFile
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
             __UI_Controls(__UI_GetID("ViewMenuPreviewDetach")).Value = PreviewAttached
@@ -458,6 +471,7 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM b$, PreviewChanged AS _BYTE, SelectedProperty AS INTEGER, UiEditorFile AS INTEGER
+    DIM PreviewHasMenuActive AS INTEGER
     STATIC MidRead AS _BYTE
 
     IF NOT MidRead THEN
@@ -494,8 +508,16 @@ SUB __UI_BeforeUpdateDisplay
         PreviewFormID = CVL(b$)
         b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
         FirstSelected = CVL(b$)
+        b$ = SPACE$(2): GET #UiEditorFile, OffsetMenuPanelIsON, b$
+        PreviewHasMenuActive = CVI(b$)
 
         SelectedProperty = __UI_Controls(__UI_GetID("PropertiesList")).Value
+
+        IF PreviewHasMenuActive THEN
+            __UI_Controls(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_False
+        ELSE
+            __UI_Controls(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_True
+        END IF
 
         IF TotalSelected = 0 THEN
             __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
