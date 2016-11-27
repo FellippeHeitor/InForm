@@ -13,8 +13,9 @@ CONST OffsetNewDataFromPreview = 17
 CONST OffsetTotalControlsSelected = 19
 CONST OffsetFormID = 23
 CONST OffsetFirstSelectedID = 27
-CONST OffsetPropertyChanged = 31
-CONST OffsetPropertyValue = 33
+CONST OffsetMenuPanelIsON = 31
+CONST OffsetPropertyChanged = 33
+CONST OffsetPropertyValue = 35
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
@@ -79,6 +80,9 @@ SUB __UI_BeforeUpdateDisplay
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
 
+    IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
+    SendData b$, OffsetMenuPanelIsON
+
     UiEditorFile = FREEFILE
     OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
 
@@ -140,8 +144,6 @@ SUB __UI_BeforeUpdateDisplay
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_TextBox
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                    IF _FONTWIDTH(__UI_Controls(TempValue).Font) = 0 THEN __UI_Controls(TempValue).Font = __UI_Font("", 16, "")
-                    __UI_Controls(TempValue).FieldArea = __UI_Controls(TempValue).Width \ _FONTWIDTH(__UI_Controls(TempValue).Font) - 1
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_ListBox
                     TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
@@ -157,7 +159,21 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_Frame
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                CASE __UI_Type_MenuBar
+                    TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, 0)
+                    __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                    __UI_RefreshMenuBar
+                    __UI_ActivateMenu __UI_Controls(TempValue), __UI_False
+                CASE __UI_Type_MenuItem
+                    IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                        TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
+                        __UI_SetCaption __UI_Controls(TempValue).Name, "New menu item"
+                        __UI_ActivateMenu __UI_Controls(__UI_ParentMenu), __UI_False
+                    END IF
             END SELECT
+            IF __UI_ActiveMenu > 0 AND (__UI_Controls(TempValue).Type <> __UI_Type_MenuBar AND __UI_Controls(TempValue).Type <> __UI_Type_MenuItem) THEN
+                __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+            END IF
             FOR i = 1 TO UBOUND(__UI_Controls)
                 __UI_Controls(i).ControlIsSelected = __UI_False
             NEXT
@@ -203,6 +219,9 @@ SUB __UI_BeforeUpdateDisplay
                         FOR i = 1 TO UBOUND(__UI_Controls)
                             IF __UI_Controls(i).ControlIsSelected THEN
                                 __UI_SetCaption RTRIM$(__UI_Controls(i).Name), b$
+                                IF __UI_Controls(i).Type = __UI_Type_MenuItem THEN
+                                    __UI_ActivateMenu __UI_Controls(__UI_Controls(i).ParentID), __UI_False
+                                END IF
                             END IF
                         NEXT
                     ELSE
@@ -309,6 +328,14 @@ SUB __UI_BeforeUpdateDisplay
                             NEXT
                         ELSE
                             __UI_Controls(__UI_FormID).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                            DIM MustRedrawMenus AS _BYTE
+                            FOR i = 1 TO UBOUND(__UI_Controls)
+                                IF __UI_Controls(i).Type = __UI_Type_MenuBar OR __UI_Controls(i).Type = __UI_Type_MenuItem OR __UI_Controls(i).Type = __UI_Type_MenuPanel OR __UI_Controls(i).Type = __UI_Type_ContextMenu THEN
+                                    __UI_Controls(i).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                                    MustRedrawMenus = __UI_True
+                                END IF
+                            NEXT
+                            IF MustRedrawMenus THEN __UI_RefreshMenuBar
                         END IF
                     END IF
                 CASE 9 'Tooltip
@@ -419,6 +446,11 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     ELSE
                         __UI_Controls(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(__UI_Controls)
+                            IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
+                                __UI_Controls(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
                     END IF
                 CASE 24 'BackColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -430,6 +462,11 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     ELSE
                         __UI_Controls(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(__UI_Controls)
+                            IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
+                                __UI_Controls(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
                     END IF
                 CASE 25 'SelectedForeColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -441,6 +478,11 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     ELSE
                         __UI_Controls(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(__UI_Controls)
+                            IF __UI_Controls(i).Type = __UI_Type_MenuBar OR __UI_Controls(i).Type = __UI_Type_MenuItem OR __UI_Controls(i).Type = __UI_Type_MenuPanel OR __UI_Controls(i).Type = __UI_Type_ContextMenu THEN
+                                __UI_Controls(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
                     END IF
                 CASE 26 'SelectedBackColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -452,6 +494,11 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     ELSE
                         __UI_Controls(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(__UI_Controls)
+                            IF __UI_Controls(i).Type = __UI_Type_MenuBar OR __UI_Controls(i).Type = __UI_Type_MenuItem OR __UI_Controls(i).Type = __UI_Type_MenuPanel OR __UI_Controls(i).Type = __UI_Type_ContextMenu THEN
+                                __UI_Controls(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
                     END IF
                 CASE 27 'BorderColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -493,6 +540,7 @@ SUB __UI_BeforeUpdateDisplay
 
         b$ = MKL$(__UI_TotalSelectedControls)
         PUT #UiEditorFile, OffsetTotalControlsSelected, b$
+        IF __UI_Controls(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
         b$ = MKL$(__UI_FirstSelectedID)
         PUT #UiEditorFile, OffsetFirstSelectedID, b$
         b$ = MKL$(__UI_FormID)
@@ -536,7 +584,7 @@ SUB LoadPreview
     DIM Dummy AS LONG
     DIM BinaryFileNum AS INTEGER, LogFileNum AS INTEGER
 
-    CONST LogFileLoad = __UI_True
+    CONST LogFileLoad = __UI_False
 
     IF _FILEEXISTS("UiEditorPreview.frmbin") = 0 THEN
         EXIT SUB
