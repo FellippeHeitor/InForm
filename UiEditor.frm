@@ -18,6 +18,12 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "InsertMenu", 44, 18, 52, 0, 0)
     __UI_SetCaption "InsertMenu", "&Insert"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "AlignMenu", 0, 0, 0, 0, 0)
+    __UI_SetCaption "AlignMenu", "Align"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "OptionsMenu", 44, 18, 52, 0, 0)
+    __UI_SetCaption "OptionsMenu", "&Options"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 44, 18, 545, 0, 0)
     __UI_SetCaption "HelpMenu", "&Help"
     __UI_Controls(__UI_NewID).Align = __UI_Right
@@ -32,6 +38,9 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ColorMixer", 457, 175, 110, 240, 0)
     __UI_SetCaption "ColorMixer", "Color mixer"
     __UI_Controls(__UI_NewID).HasBorder = __UI_True
+
+    '__UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuNew", 91, 18, 0, 22, __UI_GetID("FileMenu"))
+    '__UI_SetCaption "FileMenuNew", "&New"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     __UI_SetCaption "FileMenuSave", "&Save form-"
@@ -57,6 +66,41 @@ SUB __UI_LoadForm
     __UI_SetCaption "InsertMenuMenuItem", "Menu &Item"
     __UI_Controls(__UI_NewID).Disabled = __UI_True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignLeft", "Align &Left"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignRight", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignRight", "Align &Right"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignTops", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignTops", "Align T&op"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignBottoms", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignBottoms", "Align &Bottom-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignCentersV", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignCentersV", "Align cent&ers Vertically"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignCentersH", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignCentersH", "Ali&gn centers Horizontally"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignCenterV", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignCenterV", "Center &Vertically"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignCenterH", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuAlignCenterH", "Center &Horizontally-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuDistributeV", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuDistributeV", "Distribute Ver&tically"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuDistributeH", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    __UI_SetCaption "AlignMenuDistributeH", "Distribute Hori&zontally"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuAutoName", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
+    __UI_SetCaption "OptionsMenuAutoName", "&Auto-name controls"
+    __UI_Controls(__UI_NewID).Value = __UI_True
+    __UI_SetTip "OptionsMenuAutoName", "Automatically set control names based on caption and type"
+    
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     __UI_SetCaption "HelpMenuHelp", "&What's all this?"
 

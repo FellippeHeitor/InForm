@@ -9,7 +9,7 @@ DIM SHARED ColorPropertiesListID AS LONG, PropertyValueID AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, ColorPreviewID AS LONG
 DIM SHARED BackStyleListID AS LONG, PropertyUpdateStatusID AS LONG
-DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE
+DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$
 
@@ -24,8 +24,9 @@ CONST OffsetTotalControlsSelected = 19
 CONST OffsetFormID = 23
 CONST OffsetFirstSelectedID = 27
 CONST OffsetMenuPanelIsON = 31
-CONST OffsetPropertyChanged = 33
-CONST OffsetPropertyValue = 35
+CONST OffsetAutoName = 33
+CONST OffsetPropertyChanged = 35
+CONST OffsetPropertyValue = 37
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -126,6 +127,25 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
 
     SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+        CASE "ALIGNMENUALIGNLEFT": Dummy = 201
+        CASE "ALIGNMENUALIGNRIGHT": Dummy = 202
+        CASE "ALIGNMENUALIGNTOPS": Dummy = 203
+        CASE "ALIGNMENUALIGNBOTTOMS": Dummy = 204
+        CASE "ALIGNMENUALIGNCENTERSV": Dummy = 205
+        CASE "ALIGNMENUALIGNCENTERSH": Dummy = 206
+        CASE "ALIGNMENUALIGNCENTERV": Dummy = 207
+        CASE "ALIGNMENUALIGNCENTERH": Dummy = 208
+        CASE "ALIGNMENUDISTRIBUTEV": Dummy = 209
+        CASE "ALIGNMENUDISTRIBUTEH": Dummy = 210
+        CASE "ALIGNMENUALIGNLEFT", "ALIGNMENUALIGNRIGHT", "ALIGNMENUALIGNTOPS", _
+        "ALIGNMENUALIGNBOTTOMS", "ALIGNMENUALIGNCENTERSV", "ALIGNMENUALIGNCENTERSH", _
+        "ALIGNMENUALIGNCENTERV", "ALIGNMENUALIGNCENTERH", "ALIGNMENUDISTRIBUTEV", _
+        "ALIGNMENUDISTRIBUTEH"
+            b$ = MKI$(0)
+            SendData b$, Dummy
+        CASE "OPTIONSMENUAUTONAME"
+            AutoNameControls = NOT AutoNameControls
+            __UI_Controls(id).Value = AutoNameControls
         CASE "INSERTMENUMENUBAR"
             UiEditorFile = FREEFILE
             OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
@@ -140,7 +160,7 @@ SUB __UI_Click (id AS LONG)
             CLOSE #UiEditorFile
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
-            __UI_Controls(__UI_GetID("ViewMenuPreviewDetach")).Value = PreviewAttached
+            __UI_Controls(id).Value = PreviewAttached
         CASE "ADDBUTTON": Dummy = __UI_Type_Button
         CASE "ADDLABEL": Dummy = __UI_Type_Label
         CASE "ADDTEXTBOX": Dummy = __UI_Type_TextBox
@@ -161,31 +181,31 @@ SUB __UI_Click (id AS LONG)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
         CASE "STRETCH"
-            b$ = MKI$(__UI_Controls(__UI_GetID("Stretch")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 14
         CASE "HASBORDER"
-            b$ = MKI$(__UI_Controls(__UI_GetID("HasBorder")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 15
         CASE "SHOWPERCENTAGE"
-            b$ = MKI$(__UI_Controls(__UI_GetID("ShowPercentage")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 16
         CASE "WORDWRAP"
-            b$ = MKI$(__UI_Controls(__UI_GetID("WordWrap")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 17
         CASE "CANHAVEFOCUS"
-            b$ = MKI$(__UI_Controls(__UI_GetID("CanHaveFocus")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 18
         CASE "DISABLED"
-            b$ = MKI$(__UI_Controls(__UI_GetID("Disabled")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 19
         CASE "HIDDEN"
-            b$ = MKI$(__UI_Controls(__UI_GetID("Hidden")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 20
         CASE "CENTEREDWINDOW"
-            b$ = MKI$(__UI_Controls(__UI_GetID("CenteredWindow")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 21
         CASE "RESIZABLE"
-            b$ = MKI$(__UI_Controls(__UI_GetID("Resizable")).Value)
+            b$ = MKI$(__UI_Controls(id).Value)
             SendData b$, 29
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
@@ -431,13 +451,20 @@ SUB __UI_Click (id AS LONG)
                 Answer = __UI_MessageBox("File form.frmbin is not valid.", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
                 CLOSE #1
             END IF
+        CASE "FILEMENUNEW"
         CASE "FILEMENUSAVE"
-            SaveForm
+            SaveForm __UI_True
         CASE "HELPMENUABOUT"
             Answer = __UI_MessageBox("InForm Designer" + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
         CASE "HELPMENUHELP"
             Answer = __UI_MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
         CASE "FILEMENUEXIT"
+            Answer = __UI_MessageBox("Save the current form before leaving?", "", __UI_MsgBox_YesNoCancel + __UI_MsgBox_Question)
+            IF Answer = __UI_MsgBox_Cancel THEN
+                EXIT SUB
+            ELSEIF Answer = __UI_MsgBox_Yes THEN
+                SaveForm __UI_False
+            END IF
             SYSTEM
     END SELECT
 END SUB
@@ -471,8 +498,8 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM b$, PreviewChanged AS _BYTE, SelectedProperty AS INTEGER, UiEditorFile AS INTEGER
-    DIM PreviewHasMenuActive AS INTEGER
-    STATIC MidRead AS _BYTE
+    DIM PreviewHasMenuActive AS INTEGER, i AS LONG
+    STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
 
     IF NOT MidRead THEN
         MidRead = __UI_True
@@ -483,10 +510,18 @@ SUB __UI_BeforeUpdateDisplay
 
         $IF WIN THEN
             IF PreviewAttached THEN
-                b$ = MKI$(_SCREENX)
+                IF _SCREENX > 0 THEN
+                    b$ = MKI$(_SCREENX)
+                ELSE
+                    b$ = MKI$(-1)
+                END IF
                 PUT #UiEditorFile, OffsetWindowLeft, b$
 
-                b$ = MKI$(_SCREENY)
+                IF _SCREENY > 0 THEN
+                    b$ = MKI$(_SCREENY)
+                ELSE
+                    b$ = MKI$(-1)
+                END IF
                 PUT #UiEditorFile, OffsetWindowTop, b$
             ELSE
                 b$ = MKI$(-1)
@@ -495,10 +530,20 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         $END IF
 
+        b$ = MKI$(AutoNameControls)
+        PUT #UiEditorFile, OffsetAutoName, b$
+
         'Controls in the editor lose focus when the preview is manipulated
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 THEN
-            __UI_Focus = 0
+            IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
+            b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        ELSEIF CVI(b$) = -2 THEN
+            'User attempted to right-click a control but the preview
+            'form is smaller than the menu panel. In such case the "Align"
+            'menu is shown in the editor.
+            __UI_ActivateMenu __UI_Controls(__UI_GetID("AlignMenu")), __UI_False
+            __UI_ForceRedraw = __UI_True
             b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
 
@@ -508,8 +553,16 @@ SUB __UI_BeforeUpdateDisplay
         PreviewFormID = CVL(b$)
         b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
         FirstSelected = CVL(b$)
+        IF PrevFirstSelected <> FirstSelected THEN
+            PrevFirstSelected = FirstSelected
+            __UI_ForceRedraw = __UI_True
+        END IF
         b$ = SPACE$(2): GET #UiEditorFile, OffsetMenuPanelIsON, b$
         PreviewHasMenuActive = CVI(b$)
+
+        IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
+            __UI_Captions(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
+        END IF
 
         SelectedProperty = __UI_Controls(__UI_GetID("PropertiesList")).Value
 
@@ -522,12 +575,68 @@ SUB __UI_BeforeUpdateDisplay
         IF TotalSelected = 0 THEN
             __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
             FirstSelected = PreviewFormID
+
+            __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+
         ELSEIF TotalSelected = 1 THEN
             IF FirstSelected > 0 AND FirstSelected <= UBOUND(PreviewControls) THEN
                 __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(FirstSelected).Name)
+
+                __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
+                __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
+                __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
+                __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
+                IF PreviewControls(FirstSelected).Type <> __UI_Type_MenuBar AND PreviewControls(FirstSelected).Type <> __UI_Type_MenuItem THEN
+                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
+                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+                ELSE
+                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
+                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
+                END IF
+                __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
+                __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
+                __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
+                __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+
             END IF
+
+        ELSEIF TotalSelected = 2 THEN
+            __UI_SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
+
+            __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
+            __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+
         ELSE
             __UI_SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
+
+            __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_False
+            __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_False
+
         END IF
 
         IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
@@ -553,7 +662,11 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 7 'Height
                     __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
                 CASE 8 'Font
-                    __UI_Texts(PropertyValueID) = PreviewFonts(FirstSelected)
+                    IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                        __UI_Texts(PropertyValueID) = PreviewFonts(FirstSelected)
+                    ELSE
+                        __UI_Texts(PropertyValueID) = PreviewFonts(PreviewFormID)
+                    END IF
                 CASE 9 'Tooltip
                     __UI_Texts(PropertyValueID) = PreviewTips(FirstSelected)
                 CASE 10 'Value
@@ -591,7 +704,11 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 7 'Height
                     IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = __UI_True
                 CASE 8 'Font
-                    IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = __UI_True
+                    IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                        IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = __UI_True
+                    ELSE
+                        IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = __UI_True
+                    END IF
                 CASE 9 'Tooltip
                     IF __UI_Texts(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = __UI_True
                 CASE 10 'Value
@@ -610,11 +727,11 @@ SUB __UI_BeforeUpdateDisplay
             CLS , _RGBA32(0, 0, 0, 0)
             IF PropertyAccept AND LEN(RTRIM$(__UI_Texts(PropertyValueID))) > 0 THEN
                 _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
-                __UI_SetTip "PropertyUpdateStatus", "The property value entered is valid"
+                __UI_SetTip "PropertyUpdateStatus", "The property value entered was accepted"
             ELSEIF LEN(RTRIM$(__UI_Texts(PropertyValueID))) > 0 THEN
                 IF TIMER - LastKeyPress > .5 THEN
                     _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
-                    __UI_SetTip "PropertyUpdateStatus", "Invalid property value"
+                    __UI_SetTip "PropertyUpdateStatus", "Property value not accepted"
                 ELSE
                     _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 32)-STEP(15, 15)
                     __UI_SetTip "PropertyUpdateStatus", ""
@@ -657,6 +774,32 @@ SUB __UI_BeforeUpdateDisplay
         __UI_Captions(PropertyValueID) = ""
         IF TotalSelected > 0 THEN
             SELECT EVERYCASE PreviewControls(FirstSelected).Type
+                CASE __UI_Type_MenuBar, __UI_Type_MenuItem
+                    __UI_Controls(__UI_GetID("Disabled")).Disabled = __UI_False
+                    __UI_Controls(__UI_GetID("Hidden")).Disabled = __UI_False
+                CASE __UI_Type_MenuBar
+                    'Check if this is the last menu bar item so that Align options can be enabled
+                    FOR i = UBOUND(PreviewControls) TO 1 STEP -1
+                        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type = __UI_Type_MenuBar THEN
+                            EXIT FOR
+                        END IF
+                    NEXT
+                    IF i = FirstSelected THEN
+                        __UI_Controls(__UI_GetID("AlignOptions")).Disabled = __UI_False
+                    END IF
+                    SELECT CASE SelectedProperty
+                        CASE 1, 2, 9
+                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                        CASE ELSE
+                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                    END SELECT
+                CASE __UI_Type_MenuItem
+                    SELECT CASE SelectedProperty
+                        CASE 1, 2, 3, 9, 10
+                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                        CASE ELSE
+                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                    END SELECT
                 CASE __UI_Type_PictureBox
                     __UI_ReplaceListBoxItem "PropertiesList", 3, "Image file"
                     __UI_Controls(__UI_GetID("Stretch")).Disabled = __UI_False
@@ -677,7 +820,7 @@ SUB __UI_BeforeUpdateDisplay
                     END SELECT
                 CASE __UI_Type_TextBox
                     __UI_Controls(BackStyleListID).Disabled = __UI_False
-                CASE __UI_Type_Button
+                CASE __UI_Type_Button, __UI_Type_MenuItem
                     __UI_ReplaceListBoxItem "PropertiesList", 3, "Image file"
                 CASE __UI_Type_Button, __UI_Type_TextBox
                     SELECT CASE SelectedProperty
@@ -820,13 +963,13 @@ SUB __UI_BeforeUpdateDisplay
 END SUB
 
 SUB __UI_BeforeUnload
-    'DIM Answer AS _BYTE
-    'Answer = __UI_MessageBox("Leaving UI", "Copy current form data to clipboard?", __UI_MsgBox_YesNoCancel + __UI_MsgBox_Question)
-    'IF Answer = __UI_MsgBox_Cancel THEN
-    '    __UI_UnloadSignal = __UI_False
-    'ELSEIF Answer = __UI_MsgBox_Yes THEN
-    '    Answer = __UI_MessageBox("Leaving UI", "Not yet implemented", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
-    'END IF
+    DIM Answer AS _BYTE
+    Answer = __UI_MessageBox("Save the current form before leaving?", "", __UI_MsgBox_YesNoCancel + __UI_MsgBox_Question)
+    IF Answer = __UI_MsgBox_Cancel THEN
+        __UI_UnloadSignal = __UI_False
+    ELSEIF Answer = __UI_MsgBox_Yes THEN
+        SaveForm __UI_False
+    END IF
 END SUB
 
 SUB __UI_BeforeInit
@@ -896,9 +1039,10 @@ SUB __UI_OnLoad
     PropertyValueID = __UI_GetID("PropertyValue")
     PropertyUpdateStatusID = __UI_GetID("PropertyUpdateStatus")
 
-    __UI_Controls(PropertyValueID).FieldArea = __UI_Controls(PropertyValueID).Width / _FONTWIDTH((__UI_Controls(PropertyValueID).Font)) - 4
+    __UI_Controls(__UI_GetID("PropertiesList")).Value = 2
 
     PreviewAttached = __UI_True
+    AutoNameControls = __UI_True
 
     IF _FILEEXISTS("UiEditorPreview.frmbin") THEN KILL "UiEditorPreview.frmbin"
 
@@ -986,6 +1130,12 @@ SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
     SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))
         CASE "PROPERTYVALUE"
+    END SELECT
+END SUB
+
+SUB __UI_TextChanged (id AS LONG)
+    SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+        CASE "PROPERTYVALUE"
             'Send the preview the new property value
             DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
             STATIC PreviousValue$
@@ -1006,6 +1156,12 @@ SUB __UI_KeyPress (id AS LONG)
                 END SELECT
                 SendData b$, TempValue
             END IF
+        CASE "REDVALUE", "GREENVALUE", "BLUEVALUE"
+            IF VAL(__UI_Texts(id)) > 255 THEN __UI_Texts(id) = "255"
+            DIM TempID AS LONG
+            TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(__UI_Controls(id).Name)), LEN(UCASE$(RTRIM$(__UI_Controls(id).Name))) - 5))
+            __UI_Controls(TempID).Value = VAL(__UI_Texts(id))
+            __UI_MouseUp TempID
     END SELECT
 END SUB
 
@@ -1522,7 +1678,7 @@ SUB CheckPreview
     $END IF
 END SUB
 
-SUB SaveForm
+SUB SaveForm (ExitToQB64 AS _BYTE)
     DIM BaseOutputFileName AS STRING, BinaryFileNum AS INTEGER
     DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
@@ -1546,6 +1702,9 @@ SUB SaveForm
     IF LEN(PreviewTexts(PreviewFormID)) > 0 THEN
         PRINT #TextFileNum, "    $EXEICON:'" + PreviewTexts(PreviewFormID) + "'"
         PRINT #TextFileNum, "    _ICON"
+    END IF
+    IF PreviewControls(PreviewFormID).CanResize THEN
+        PRINT #TextFileNum, "    $RESIZE:ON"
     END IF
     PRINT #TextFileNum, "    DIM __UI_NewID AS LONG"
     PRINT #TextFileNum,
@@ -1776,6 +1935,10 @@ SUB SaveForm
                     PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).CanResize = __UI_True"
                     b$ = MKI$(-29): PUT #BinaryFileNum, , b$
                 END IF
+                IF PreviewControls(i).Padding > 0 THEN
+                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
+                    b$ = MKI$(-31) + MKI$(PreviewControls(i).Padding): PUT #BinaryFileNum, , b$
+                END IF
                 PRINT #TextFileNum,
             END IF
             EndOfThisPass:
@@ -1795,7 +1958,7 @@ SUB SaveForm
     PRINT #TextFileNum, "'$INCLUDE:'xp.uitheme'"
     PRINT #TextFileNum,
     PRINT #TextFileNum, "'Event procedures: ---------------------------------------------------------------"
-    FOR i = 0 TO 12
+    FOR i = 0 TO 13
         SELECT EVERYCASE i
             CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
             CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
@@ -1809,7 +1972,8 @@ SUB SaveForm
             CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
             CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
             CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
-            CASE 12: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
+            CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
+            CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
 
             CASE 0 TO 3
                 PRINT #TextFileNum,
@@ -1834,7 +1998,17 @@ SUB SaveForm
                 NEXT
                 PRINT #TextFileNum, "    END SELECT"
 
-            CASE 12 'Dropdown list, List box and Track bar
+            CASE 12 'Text boxes
+                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))"
+                FOR Dummy = 1 TO UBOUND(PreviewControls)
+                    IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
+                        PRINT #TextFileNum, "        CASE " + CHR$(34) + UCASE$(RTRIM$(PreviewControls(Dummy).Name)) + CHR$(34)
+                        PRINT #TextFileNum,
+                    END IF
+                NEXT
+                PRINT #TextFileNum, "    END SELECT"
+
+            CASE 13 'Dropdown list, List box and Track bar
                 PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))"
                 FOR Dummy = 1 TO UBOUND(PreviewControls)
                     IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar) THEN
@@ -1848,14 +2022,18 @@ SUB SaveForm
         PRINT #TextFileNum,
     NEXT
     CLOSE #TextFileNum
-    Answer = __UI_MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin" + CHR$(10) + CHR$(10) + "Exit to QB64?", "", __UI_MsgBox_YesNo + __UI_MsgBox_Question)
-    IF Answer = __UI_MsgBox_No THEN EXIT SUB
-    $IF WIN THEN
-        SHELL _DONTWAIT "qb64.exe " + BaseOutputFileName + ".bas"
-    $ELSE
-        SHELL _DONTWAIT "./qb64 " + BaseOutputFileName + ".bas"
-    $END IF
-    SYSTEM
+    IF ExitToQB64 THEN
+        Answer = __UI_MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin" + CHR$(10) + CHR$(10) + "Exit to QB64?", "", __UI_MsgBox_YesNo + __UI_MsgBox_Question)
+        IF Answer = __UI_MsgBox_No THEN EXIT SUB
+        $IF WIN THEN
+            SHELL _DONTWAIT "qb64.exe " + BaseOutputFileName + ".bas"
+        $ELSE
+            SHELL _DONTWAIT "./qb64 " + BaseOutputFileName + ".bas"
+        $END IF
+        SYSTEM
+    ELSE
+        Answer = __UI_MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+    END IF
 END SUB
 
 SUB SaveSelf
