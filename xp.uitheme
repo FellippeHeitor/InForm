@@ -129,10 +129,10 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         ELSE
             TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
         END IF
-        Temp& = uprint((IconWidth / 2) + (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2), ((This.Height \ 2) - uspacing& \ 2), TempCaption$, LEN(TempCaption$), TempColor~&, 0)
+        Temp& = uprint((IconWidth / 2) + (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2), ((This.Height \ 2) - uheight& \ 2), TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
         'Hot key:
-        IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
+        IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
             LINE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) + 1)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
@@ -235,7 +235,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             LOOP
 
             'Hot key:
-            IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
+            IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
                 LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + uspacing& + 2)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
@@ -253,7 +253,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             Temp& = uprint(CaptionLeft, (This.Height \ 2) - uspacing& \ 2, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
             'Hot key:
-            IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
+            IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
                 LINE (CaptionLeftFirstLine + This.HotKeyOffset, ((This.Height \ 2) + (uspacing& \ 2)))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         END IF
@@ -329,7 +329,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         Temp& = uprint(CaptionIndent, ((This.Height \ 2) - uspacing& \ 2) + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
         'Hot key:
-        IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
+        IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
             LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2))-STEP(__UI_PrintWidth(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
@@ -404,7 +404,7 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         Temp& = uprint(CaptionIndent, ((This.Height \ 2) - uspacing& \ 2) + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
         'Hot key:
-        IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
+        IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
             LINE (CaptionIndent + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2))-STEP(__UI_PrintWidth(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
@@ -1209,10 +1209,11 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
                         CaptionLeft = (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent
                 END SELECT
 
+                LINE (CaptionLeft, 0)-STEP(__UI_PrintWidth(TempCaption$), uspacing&), This.BackColor, BF
                 Temp& = uprint(CaptionLeft, 0, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
                 'Hot key:
-                IF This.HotKey > 0 AND ((__UI_ShowHotKeys AND NOT This.Disabled) OR __UI_DesignMode) THEN
+                IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
                     Temp& = __UI_PrintWidth(CHR$(This.HotKey))
                     LINE (CaptionLeft + Temp& + This.HotKeyOffset, 0 + uspacing&)-STEP(Temp& - 1, 0), This.ForeColor
                 END IF
@@ -1220,9 +1221,9 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
         END IF
         '------
 
+        __UI_MakeHardwareImage TempCanvas
         IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas
-        This.HelperCanvas = _COPYIMAGE(TempCanvas, 33)
-        _FREEIMAGE TempCanvas
+        This.HelperCanvas = TempCanvas
         _DEST 0
     END IF
 
@@ -1365,12 +1366,12 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                     CheckMarkIndex = 3
                 END IF
 
-                Temp& = uprint(__UI_Controls(i).Left + __UI_MenuItemOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - uspacing& \ 2, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
+                Temp& = uprint(__UI_Controls(i).Left + __UI_MenuItemOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 - uheight& \ 2, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
                 IF __UI_Controls(i).HotKey > 0 THEN
                     'Has "hot-key"
                     Temp& = __UI_PrintWidth(CHR$(__UI_Controls(i).HotKey))
-                    LINE (__UI_Controls(i).Left + __UI_MenuItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + uspacing& \ 2 - 1)-STEP(Temp& - 1, 0), TempColor~&
+                    LINE (__UI_Controls(i).Left + __UI_MenuItemOffset + __UI_Controls(i).HotKeyOffset, __UI_Controls(i).Top + __UI_Controls(i).Height \ 2 + uheight& \ 2 - 1)-STEP(Temp& - 1, 0), TempColor~&
                 END IF
 
                 IF __UI_Controls(i).Value = __UI_True THEN
@@ -1395,7 +1396,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN
             TempColor~& = __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
-            Temp& = uprint(__UI_MenuItemOffset, This.Height - (uspacing& * 1.5), "Add new", 7, TempColor~&, 0)
+            Temp& = uprint(__UI_MenuItemOffset, This.Height - (uheight& + 6), "Add new", 7, TempColor~&, 0)
         END IF
         '---
 
