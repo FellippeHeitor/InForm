@@ -28,9 +28,6 @@ $ELSE
     END DECLARE
 $END IF
 
-$RESIZE:ON
-_RESIZE OFF
-
 _CONTROLCHR OFF
 
 TYPE __UI_ControlTYPE
@@ -183,7 +180,8 @@ DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
 DIM SHARED __UI_WaitMessageHandle AS LONG
 DIM SHARED __UI_LastRenderedLineWidth AS LONG, __UI_LastRenderedCharCount AS LONG
 DIM SHARED __UI_SelectionRectangleTop AS INTEGER, __UI_SelectionRectangleLeft AS INTEGER
-DIM SHARED __UI_SelectionRectangle AS _BYTE
+DIM SHARED __UI_SelectionRectangle AS _BYTE, __UI_DesignModeAlignCommand AS INTEGER
+DIM SHARED __UI_CantShowContextMenu AS _BYTE
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 17) AS __UI_Types
@@ -269,6 +267,15 @@ __UI_ErrorHandler:
 RESUME NEXT
 
 '---------------------------------------------------------------------------------
+FUNCTION uspacing&
+    IF _FONT <> 8 THEN
+        uspacing& = falcon_uspacing&
+    ELSE
+        uspacing& = falcon_uspacing& + 3
+    END IF
+END FUNCTION
+
+'---------------------------------------------------------------------------------
 SUB __UI_InternalMenus
     'Internal "design mode" context menu. -------------------------------------------
     DIM __UI_NewID AS LONG
@@ -286,6 +293,12 @@ SUB __UI_InternalMenus
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignBottoms", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     __UI_SetCaption "__UI_PreviewMenuAlignBottoms", "Align &Bottom-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCentersV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    __UI_SetCaption "__UI_PreviewMenuAlignCentersV", "Align cent&ers Vertically"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCentersH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    __UI_SetCaption "__UI_PreviewMenuAlignCentersH", "Ali&gn centers Horizontally"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCenterV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     __UI_SetCaption "__UI_PreviewMenuAlignCenterV", "Center &Vertically"
@@ -321,6 +334,7 @@ SUB __UI_Init
     IF __UI_FormID = 0 THEN SYSTEM
 
     SCREEN _NEWIMAGE(__UI_Controls(__UI_FormID).Width, __UI_Controls(__UI_FormID).Height, 32)
+    _DELAY .1
     DO UNTIL _SCREENEXISTS: _LIMIT 10: LOOP
 
     IF __UI_Controls(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
@@ -384,6 +398,11 @@ SUB __UI_ProcessInput
 
     __UI_ExitTriggered = _EXIT
     IF __UI_ExitTriggered AND 1 THEN __UI_ExitTriggered = __UI_True: __UI_HasInput = __UI_True
+
+    IF _SCREENX = -32000 AND _SCREENY = -32000 THEN
+        'Window was minimized
+        EXIT SUB
+    END IF
 
     'Mouse input (optimization kindly provided by Luke Ceddia):
     __UI_MouseWheel = 0
@@ -626,8 +645,8 @@ SUB __UI_ProcessInput
         IF __UI_HasMenuBar = __UI_True THEN
             'Add menubar div to main form's canvas
             _FONT __UI_Controls(__UI_FormID).Font
-            LINE (0, uspacing& * 1.5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& * 1.5 + 2)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
+            LINE (0, uspacing& + 5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+            LINE (0, uspacing& + 5 + 2)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
             __UI_RefreshMenuBar
         END IF
         _DEST 0
@@ -656,6 +675,11 @@ SUB __UI_UpdateDisplay
     DIM ControlState AS _BYTE '1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled;
 
     IF __UI_AutoRefresh = __UI_False THEN EXIT SUB
+
+    IF _SCREENX = -32000 AND _SCREENY = -32000 THEN
+        'Window was minimized
+        EXIT SUB
+    END IF
 
     ON ERROR GOTO __UI_ErrorHandler
 
@@ -730,8 +754,8 @@ SUB __UI_UpdateDisplay
         CLS
         IF __UI_HasMenuBar THEN
             _FONT __UI_Controls(__UI_FormID).Font
-            LINE (0, uspacing& * 1.5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& * 1.5 + 2)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
+            LINE (0, uspacing& + 5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+            LINE (0, uspacing& + 5 + 2)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
         END IF
         _DEST 0
     END IF
@@ -959,10 +983,10 @@ SUB __UI_UpdateDisplay
 
             IF TotalLines = 1 THEN
                 PanelWidth = __UI_PrintWidth(TempCaption$) + 10
-                PanelHeight = uspacing& * 1.5 + 5
+                PanelHeight = uspacing& + 5 + 5
             ELSE
                 PanelWidth = __UI_Controls(__UI_FormID).Width / 3 + 10
-                PanelHeight = (TotalLines * uspacing&) * 1.5 + 5
+                PanelHeight = (TotalLines * uspacing&) + 5 + 5
             END IF
 
             IF ActiveTipPanel <> 0 THEN _FREEIMAGE ActiveTipPanel
@@ -973,11 +997,11 @@ SUB __UI_UpdateDisplay
             COLOR __UI_DefaultColor(__UI_Type_Form, 1)
 
             IF TotalLines = 1 THEN
-                __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - uspacing& \ 2 - 1.75, TempCaption$
+                __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - uheight& \ 2 - 1.75, TempCaption$
             ELSE
                 DO WHILE LEN(TempCaption$)
                     ThisLine% = ThisLine% + 1
-                    TextTop% = 5 + ThisLine% * uspacing& - uspacing& + 2
+                    TextTop% = 3 + ThisLine% * uheight& - uheight&
 
                     FindLF& = INSTR(TempCaption$, CHR$(1))
                     IF FindLF& > 0 THEN
@@ -986,7 +1010,7 @@ SUB __UI_UpdateDisplay
                     ELSE
                         TempLine$ = TempCaption$
                         TempCaption$ = ""
-                        IF ThisLine% = 1 THEN TextTop% = ((_HEIGHT \ 2) - uspacing& \ 2)
+                        IF ThisLine% = 1 THEN TextTop% = ((_HEIGHT \ 2) - uheight& \ 2)
                     END IF
 
                     __UI_PrintString 5, TextTop%, TempLine$
@@ -1009,7 +1033,7 @@ SUB __UI_UpdateDisplay
             TempCaption$ = "Hold Ctrl to snap to the grid"
 
             TipPanelWidth = __UI_PrintWidth(TempCaption$) + 10
-            PanelHeight = uspacing& * 1.5 + 5
+            PanelHeight = uspacing& + 5 + 5
 
             DragTip = _NEWIMAGE(TipPanelWidth, PanelHeight, 32)
             _DEST DragTip
@@ -1082,6 +1106,23 @@ SUB __UI_EventDispatcher
     STATIC ControlClipboard$
     DIM i AS LONG, ThisItem%
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
+
+    IF __UI_DesignModeAlignCommand > 0 THEN
+        SELECT CASE __UI_DesignModeAlignCommand
+            CASE 201: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNLEFT")
+            CASE 202: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNRIGHT")
+            CASE 203: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNTOPS")
+            CASE 204: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNBOTTOMS")
+            CASE 205: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNCENTERSV")
+            CASE 206: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNCENTERSH")
+            CASE 207: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNCENTERV")
+            CASE 208: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuALIGNCENTERH")
+            CASE 209: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuDISTRIBUTEV")
+            CASE 210: __UI_HoveringID = __UI_GetID("__UI_PreviewMenuDISTRIBUTEH")
+        END SELECT
+        __UI_DesignModeAlignCommand = 0
+        GOTO ProcessHotKey
+    END IF
 
     IF __UI_HoveringID = 0 AND __UI_Focus = 0 THEN EXIT SUB
 
@@ -1315,6 +1356,8 @@ SUB __UI_EventDispatcher
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_True
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_True
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_True
@@ -1331,6 +1374,8 @@ SUB __UI_EventDispatcher
                         __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_True
                         __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_True
                     END IF
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_True
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_False
@@ -1342,6 +1387,8 @@ SUB __UI_EventDispatcher
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_False
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_False
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_True
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_False
@@ -1353,6 +1400,8 @@ SUB __UI_EventDispatcher
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_False
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_False
+                    __UI_Controls(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_False
                     __UI_Controls(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_False
@@ -1370,6 +1419,13 @@ SUB __UI_EventDispatcher
                 END IF
 
                 IF __UI_HoveringID > 0 AND __UI_Controls(__UI_HoveringID).Type <> __UI_Type_MenuItem AND __UI_Controls(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN __UI_ActivateMenu __UI_Controls(__UI_GetID("__UI_PreviewMenu")), __UI_False
+                __UI_CantShowContextMenu = __UI_False
+
+                IF __UI_ActiveMenu > 0 THEN
+                    IF __UI_Controls(__UI_ActiveMenu).Height > __UI_Controls(__UI_FormID).Height OR __UI_Controls(__UI_ActiveMenu).Width > __UI_Controls(__UI_FormID).Width THEN
+                        __UI_CantShowContextMenu = __UI_True
+                    END IF
+                END IF
             ELSEIF __UI_Controls(__UI_HoveringID).ContextMenuID > 0 AND __UI_Controls(__UI_HoveringID).Disabled = __UI_False THEN
                 __UI_Focus = __UI_HoveringID
                 __UI_PreviousFocus = __UI_Focus
@@ -1432,7 +1488,7 @@ SUB __UI_EventDispatcher
                         __UI_Controls(TempValue).ControlIsSelected = __UI_True
                         __UI_TotalSelectedControls = 1
                         __UI_FirstSelectedID = TempValue
-                    ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_Form AND __UI_MouseTop <= (uspacing& * 1.5) THEN
+                    ELSEIF __UI_Controls(__UI_HoveringID).Type = __UI_Type_Form AND __UI_MouseTop <= (uspacing& + 5) THEN
                         IF __UI_HasMenuBar THEN
                             TempValue = __UI_NewControl(__UI_Type_MenuBar, "", 0, 0, 0, 0, 0)
                             __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
@@ -1885,6 +1941,7 @@ SUB __UI_EventDispatcher
                             __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
                         END IF
 
+                        ProcessHotkey:
                         SELECT CASE UCASE$(RTRIM$(__UI_Controls(__UI_HoveringID).Name))
                             CASE "__UI_TEXTMENUCUT"
                                 IF LEN(__UI_SelectedText) > 0 THEN
@@ -1937,11 +1994,19 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE "__UI_PREVIEWMENUALIGNCENTERV"
                                 IF __UI_TotalSelectedControls = 1 THEN
-                                    __UI_Controls(__UI_FirstSelectedID).Top = __UI_Controls(__UI_FormID).Height / 2 - __UI_Controls(__UI_FirstSelectedID).Height / 2
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        __UI_Controls(__UI_FirstSelectedID).Top = __UI_Controls(__UI_FormID).Height / 2 - __UI_Controls(__UI_FirstSelectedID).Height / 2
+                                    ELSE
+                                        __UI_Controls(__UI_FirstSelectedID).Top = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height / 2 - __UI_Controls(__UI_FirstSelectedID).Height / 2
+                                    END IF
                                 ELSEIF __UI_TotalSelectedControls > 1 THEN
                                     DIM TopMost AS INTEGER, BottomMost AS INTEGER, SelectionHeight AS INTEGER
                                     DIM TopDifference AS INTEGER, NewTopMost AS INTEGER
-                                    TopMost = __UI_Controls(__UI_FormID).Height
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        TopMost = __UI_Controls(__UI_FormID).Height
+                                    ELSE
+                                        TopMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height
+                                    END IF
                                     BottomMost = 0
                                     FOR i = 1 TO UBOUND(__UI_Controls)
                                         IF __UI_Controls(i).ControlIsSelected THEN
@@ -1950,7 +2015,11 @@ SUB __UI_EventDispatcher
                                         END IF
                                     NEXT
                                     SelectionHeight = BottomMost - TopMost
-                                    NewTopMost = __UI_Controls(__UI_FormID).Height / 2 - SelectionHeight / 2
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        NewTopMost = __UI_Controls(__UI_FormID).Height / 2 - SelectionHeight / 2
+                                    ELSE
+                                        NewTopMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height / 2 - SelectionHeight / 2
+                                    END IF
                                     TopDifference = TopMost - NewTopMost
                                     FOR i = 1 TO UBOUND(__UI_Controls)
                                         IF __UI_Controls(i).ControlIsSelected THEN
@@ -1959,13 +2028,20 @@ SUB __UI_EventDispatcher
                                     NEXT
                                 END IF
                             CASE "__UI_PREVIEWMENUALIGNCENTERH"
-                                __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
                                 IF __UI_TotalSelectedControls = 1 THEN
-                                    __UI_Controls(__UI_FirstSelectedID).Left = __UI_Controls(__UI_FormID).Width / 2 - __UI_Controls(__UI_FirstSelectedID).Width / 2
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        __UI_Controls(__UI_FirstSelectedID).Left = __UI_Controls(__UI_FormID).Width / 2 - __UI_Controls(__UI_FirstSelectedID).Width / 2
+                                    ELSE
+                                        __UI_Controls(__UI_FirstSelectedID).Left = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width / 2 - __UI_Controls(__UI_FirstSelectedID).Width / 2
+                                    END IF
                                 ELSEIF __UI_TotalSelectedControls > 1 THEN
                                     DIM SelectionWidth AS INTEGER
                                     DIM LeftDifference AS INTEGER, NewLeftMost AS INTEGER
-                                    LeftMost = __UI_Controls(__UI_FormID).Width
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        LeftMost = __UI_Controls(__UI_FormID).Width
+                                    ELSE
+                                        LeftMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width
+                                    END IF
                                     RightMost = 0
                                     FOR i = 1 TO UBOUND(__UI_Controls)
                                         IF __UI_Controls(i).ControlIsSelected THEN
@@ -1974,11 +2050,67 @@ SUB __UI_EventDispatcher
                                         END IF
                                     NEXT
                                     SelectionWidth = RightMost - LeftMost
-                                    NewLeftMost = __UI_Controls(__UI_FormID).Width / 2 - SelectionWidth / 2
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        NewLeftMost = __UI_Controls(__UI_FormID).Width / 2 - SelectionWidth / 2
+                                    ELSE
+                                        NewLeftMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width / 2 - SelectionWidth / 2
+                                    END IF
                                     LeftDifference = LeftMost - NewLeftMost
                                     FOR i = 1 TO UBOUND(__UI_Controls)
                                         IF __UI_Controls(i).ControlIsSelected THEN
                                             __UI_Controls(i).Left = __UI_Controls(i).Left - LeftDifference
+                                        END IF
+                                    NEXT
+                                END IF
+                            CASE "__UI_PREVIEWMENUALIGNCENTERSV"
+                                IF __UI_TotalSelectedControls > 1 THEN
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        TopMost = __UI_Controls(__UI_FormID).Height
+                                    ELSE
+                                        TopMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height
+                                    END IF
+                                    BottomMost = 0
+                                    FOR i = 1 TO UBOUND(__UI_Controls)
+                                        IF __UI_Controls(i).ControlIsSelected THEN
+                                            IF __UI_Controls(i).Top < TopMost THEN TopMost = __UI_Controls(i).Top
+                                            IF __UI_Controls(i).Top + __UI_Controls(i).Height - 1 > BottomMost THEN BottomMost = __UI_Controls(i).Top + __UI_Controls(i).Height - 1
+                                        END IF
+                                    NEXT
+                                    SelectionHeight = BottomMost - TopMost
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        NewTopMost = __UI_Controls(__UI_FormID).Height / 2
+                                    ELSE
+                                        NewTopMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height / 2
+                                    END IF
+                                    FOR i = 1 TO UBOUND(__UI_Controls)
+                                        IF __UI_Controls(i).ControlIsSelected THEN
+                                            __UI_Controls(i).Top = NewTopMost - __UI_Controls(i).Height / 2
+                                        END IF
+                                    NEXT
+                                END IF
+                            CASE "__UI_PREVIEWMENUALIGNCENTERSH"
+                                IF __UI_TotalSelectedControls > 1 THEN
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        LeftMost = __UI_Controls(__UI_FormID).Width
+                                    ELSE
+                                        LeftMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width
+                                    END IF
+                                    RightMost = 0
+                                    FOR i = 1 TO UBOUND(__UI_Controls)
+                                        IF __UI_Controls(i).ControlIsSelected THEN
+                                            IF __UI_Controls(i).Left < LeftMost THEN LeftMost = __UI_Controls(i).Left
+                                            IF __UI_Controls(i).Left + __UI_Controls(i).Width - 1 > RightMost THEN RightMost = __UI_Controls(i).Left + __UI_Controls(i).Width - 1
+                                        END IF
+                                    NEXT
+                                    SelectionWidth = RightMost - LeftMost
+                                    IF __UI_Controls(__UI_FirstSelectedID).ParentID = 0 THEN
+                                        NewLeftMost = __UI_Controls(__UI_FormID).Width / 2
+                                    ELSE
+                                        NewLeftMost = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width / 2
+                                    END IF
+                                    FOR i = 1 TO UBOUND(__UI_Controls)
+                                        IF __UI_Controls(i).ControlIsSelected THEN
+                                            __UI_Controls(i).Left = NewLeftMost - __UI_Controls(i).Width / 2
                                         END IF
                                     NEXT
                                 END IF
@@ -2212,32 +2344,48 @@ SUB __UI_EventDispatcher
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).ControlIsSelected THEN
                 'Right
-                IF __UI_ResizeHandleHover = 1 THEN __UI_Controls(i).Width = __UI_Controls(i).Width + (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 'ELSE __UI_DragX = __UI_MouseLeft
+                IF __UI_ResizeHandleHover = 1 THEN __UI_Controls(i).Width = __UI_Controls(i).Width + (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4
                 'Bottom
-                IF __UI_ResizeHandleHover = 2 THEN __UI_Controls(i).Height = __UI_Controls(i).Height + (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 'ELSE __UI_DragY = __UI_MouseTop
+                IF __UI_ResizeHandleHover = 2 THEN __UI_Controls(i).Height = __UI_Controls(i).Height + (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4
                 'Left
-                IF __UI_ResizeHandleHover = 3 THEN __UI_Controls(i).Width = __UI_Controls(i).Width - (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 ELSE __UI_Controls(i).Left = __UI_Controls(i).Left + (__UI_MouseLeft - __UI_DragX): '__UI_DragX = __UI_MouseLeft
+                IF __UI_ResizeHandleHover = 3 THEN __UI_Controls(i).Width = __UI_Controls(i).Width - (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 ELSE __UI_Controls(i).Left = __UI_Controls(i).Left + (__UI_MouseLeft - __UI_DragX)
                 'Top
-                IF __UI_ResizeHandleHover = 4 THEN __UI_Controls(i).Height = __UI_Controls(i).Height - (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 ELSE __UI_Controls(i).Top = __UI_Controls(i).Top + (__UI_MouseTop - __UI_DragY): '__UI_DragY = __UI_MouseTop
+                IF __UI_ResizeHandleHover = 4 THEN __UI_Controls(i).Height = __UI_Controls(i).Height - (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 ELSE __UI_Controls(i).Top = __UI_Controls(i).Top + (__UI_MouseTop - __UI_DragY)
                 'Top-right
                 IF __UI_ResizeHandleHover = 5 THEN
-                    __UI_Controls(i).Height = __UI_Controls(i).Height - (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 ELSE __UI_Controls(i).Top = __UI_Controls(i).Top + (__UI_MouseTop - __UI_DragY): '__UI_DragY = __UI_MouseTop
-                    __UI_Controls(i).Width = __UI_Controls(i).Width + (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 'ELSE __UI_DragX = __UI_MouseLeft
+                    __UI_Controls(i).Height = __UI_Controls(i).Height - (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 ELSE __UI_Controls(i).Top = __UI_Controls(i).Top + (__UI_MouseTop - __UI_DragY)
+                    __UI_Controls(i).Width = __UI_Controls(i).Width + (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4
+                    IF __UI_Controls(i).Type = __UI_Type_PictureBox AND LEN(__UI_Texts(i)) > 0 THEN
+                        'Resizing by corners keeps original aspect ratio
+                        __UI_Controls(i).Height = (_HEIGHT(__UI_Controls(i).HelperCanvas) / _WIDTH(__UI_Controls(i).HelperCanvas)) * __UI_Controls(i).Width
+                    END IF
                 END IF
                 'Top-left
                 IF __UI_ResizeHandleHover = 6 THEN
-                    __UI_Controls(i).Height = __UI_Controls(i).Height - (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 ELSE __UI_Controls(i).Top = __UI_Controls(i).Top + (__UI_MouseTop - __UI_DragY): '__UI_DragY = __UI_MouseTop
-                    __UI_Controls(i).Width = __UI_Controls(i).Width - (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 ELSE __UI_Controls(i).Left = __UI_Controls(i).Left + (__UI_MouseLeft - __UI_DragX): '__UI_DragX = __UI_MouseLeft
+                    __UI_Controls(i).Height = __UI_Controls(i).Height - (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 ELSE __UI_Controls(i).Top = __UI_Controls(i).Top + (__UI_MouseTop - __UI_DragY)
+                    __UI_Controls(i).Width = __UI_Controls(i).Width - (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 ELSE __UI_Controls(i).Left = __UI_Controls(i).Left + (__UI_MouseLeft - __UI_DragX)
+                    IF __UI_Controls(i).Type = __UI_Type_PictureBox AND LEN(__UI_Texts(i)) > 0 THEN
+                        'Resizing by corners keeps original aspect ratio
+                        __UI_Controls(i).Height = (_HEIGHT(__UI_Controls(i).HelperCanvas) / _WIDTH(__UI_Controls(i).HelperCanvas)) * __UI_Controls(i).Width
+                    END IF
                 END IF
                 'Bottom-right
                 IF __UI_ResizeHandleHover = 7 THEN
-                    __UI_Controls(i).Height = __UI_Controls(i).Height + (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 'ELSE __UI_DragY = __UI_MouseTop
-                    __UI_Controls(i).Width = __UI_Controls(i).Width + (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 'ELSE __UI_DragX = __UI_MouseLeft
+                    __UI_Controls(i).Height = __UI_Controls(i).Height + (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4
+                    __UI_Controls(i).Width = __UI_Controls(i).Width + (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4
+                    IF __UI_Controls(i).Type = __UI_Type_PictureBox AND LEN(__UI_Texts(i)) > 0 THEN
+                        'Resizing by corners keeps original aspect ratio
+                        __UI_Controls(i).Height = (_HEIGHT(__UI_Controls(i).HelperCanvas) / _WIDTH(__UI_Controls(i).HelperCanvas)) * __UI_Controls(i).Width
+                    END IF
                 END IF
                 'Bottom-left
                 IF __UI_ResizeHandleHover = 8 THEN
-                    __UI_Controls(i).Height = __UI_Controls(i).Height + (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4 'ELSE __UI_DragY = __UI_MouseTop
-                    __UI_Controls(i).Width = __UI_Controls(i).Width - (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 ELSE __UI_Controls(i).Left = __UI_Controls(i).Left + (__UI_MouseLeft - __UI_DragX): '__UI_DragX = __UI_MouseLeft
+                    __UI_Controls(i).Height = __UI_Controls(i).Height + (__UI_MouseTop - __UI_DragY): IF __UI_Controls(i).Height < 4 THEN __UI_Controls(i).Height = 4
+                    __UI_Controls(i).Width = __UI_Controls(i).Width - (__UI_MouseLeft - __UI_DragX): IF __UI_Controls(i).Width < 4 THEN __UI_Controls(i).Width = 4 ELSE __UI_Controls(i).Left = __UI_Controls(i).Left + (__UI_MouseLeft - __UI_DragX)
+                    IF __UI_Controls(i).Type = __UI_Type_PictureBox AND LEN(__UI_Texts(i)) > 0 THEN
+                        'Resizing by corners keeps original aspect ratio
+                        __UI_Controls(i).Height = (_HEIGHT(__UI_Controls(i).HelperCanvas) / _WIDTH(__UI_Controls(i).HelperCanvas)) * __UI_Controls(i).Width
+                    END IF
                 END IF
             END IF
         NEXT
@@ -2284,7 +2432,7 @@ SUB __UI_EventDispatcher
         __UI_TotalSelectedControls = 0
         FOR i = 1 TO UBOUND(__UI_Controls)
             __UI_Controls(i).ControlIsSelected = __UI_False
-            IF __UI_Controls(i).Type <> __UI_Type_Form AND __UI_Controls(i).Type <> __UI_Type_Font AND __UI_Controls(i).Type <> __UI_Type_MenuBar AND __UI_Controls(i).Type <> __UI_Type_MenuItem AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_ContextMenu THEN
+            IF __UI_Controls(i).Type <> __UI_Type_Form AND __UI_Controls(i).Type <> __UI_Type_Font AND __UI_Controls(i).Type <> __UI_Type_MenuBar AND __UI_Controls(i).Type <> __UI_Type_MenuItem AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_ContextMenu AND __UI_Controls(i).ParentID = 0 THEN
                 IF tmx >= __UI_Controls(i).Left AND tmx <= __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND tmy >= __UI_Controls(i).Top AND tmy <= __UI_Controls(i).Top + __UI_Controls(i).Height - 1 THEN __UI_Controls(i).ControlIsSelected = -1
                 IF tsmx >= __UI_Controls(i).Left AND tsmx <= __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND tsmy >= __UI_Controls(i).Top AND tsmy <= __UI_Controls(i).Top + __UI_Controls(i).Height - 1 THEN __UI_Controls(i).ControlIsSelected = -1
                 IF __UI_Controls(i).ControlIsSelected THEN
@@ -2297,7 +2445,7 @@ SUB __UI_EventDispatcher
         'Check for corners:
         DIM WasSelected AS _BYTE
         FOR i = 1 TO UBOUND(__UI_Controls)
-            IF __UI_Controls(i).Type <> __UI_Type_Form AND __UI_Controls(i).Type <> __UI_Type_Font AND __UI_Controls(i).Type <> __UI_Type_MenuBar AND __UI_Controls(i).Type <> __UI_Type_MenuItem AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_ContextMenu THEN
+            IF __UI_Controls(i).Type <> __UI_Type_Form AND __UI_Controls(i).Type <> __UI_Type_Font AND __UI_Controls(i).Type <> __UI_Type_MenuBar AND __UI_Controls(i).Type <> __UI_Type_MenuItem AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_ContextMenu AND __UI_Controls(i).ParentID = 0 THEN
                 WasSelected = __UI_Controls(i).ControlIsSelected
                 IF tsmx <= __UI_Controls(i).Left AND tmx >= __UI_Controls(i).Left AND tsmy < __UI_Controls(i).Top AND tmy >= __UI_Controls(i).Top THEN __UI_Controls(i).ControlIsSelected = -1
                 IF tsmx <= __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND tmx >= __UI_Controls(i).Left + __UI_Controls(i).Width - 1 AND tsmy < __UI_Controls(i).Top AND tmy >= __UI_Controls(i).Top THEN __UI_Controls(i).ControlIsSelected = -1
@@ -2517,7 +2665,12 @@ SUB __UI_EventDispatcher
                                     __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
                                     __UI_ForceRedraw = __UI_True
                                     __UI_KeyHit = 0
-                                    __UI_Click i
+                                    IF LEFT$(__UI_Controls(i).Name, 5) = "__UI_" THEN
+                                        __UI_HoveringID = i
+                                        GOTO ProcessHotkey
+                                    ELSE
+                                        __UI_Click i
+                                    END IF
                                     EXIT FOR
                                 END IF
                             NEXT
@@ -2767,6 +2920,8 @@ SUB __UI_EventDispatcher
                                         __UI_SelectionLength = 0
                                         __UI_Controls(__UI_Focus).Cursor = s1 + 1
                                     END IF
+
+                                    __UI_TextChanged __UI_Focus
                                 END IF
                             CASE 8 'Backspace
                                 IF LEN(__UI_Texts(__UI_Focus)) > 0 THEN
@@ -3231,9 +3386,6 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     'Make sure this ControlName is unique:
     IF ControlType <> __UI_Type_Font THEN
-        'FOR i = 1 TO UBOUND(__UI_Controls)
-        '    IF __UI_Controls(i).ID > 0 AND UCASE$(RTRIM$(__UI_Controls(i).Name)) = UCASE$(RTRIM$(ControlName)) THEN ERROR 10: EXIT FUNCTION
-        'NEXT
         i = 1
         DO
             IF __UI_GetID(ControlName) = 0 THEN EXIT DO
@@ -3295,7 +3447,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     IF ControlType = __UI_Type_MenuBar THEN
         _FONT __UI_Controls(__UI_FormID).Font
-        __UI_Controls(NextSlot).Height = uspacing& * 1.5
+        __UI_Controls(NextSlot).Height = uspacing& + 5
         IF __UI_HasMenuBar = __UI_False THEN
             __UI_HasMenuBar = __UI_True
             'Add menubar div to main form's canvas
@@ -3305,8 +3457,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             COLOR __UI_Controls(__UI_FormID).ForeColor, __UI_Controls(__UI_FormID).BackColor
             CLS
             _FONT __UI_Controls(__UI_FormID).Font
-            LINE (0, uspacing& * 1.5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& * 1.5 + 2)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
+            LINE (0, uspacing& + 5 + 1)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 80)
+            LINE (0, uspacing& + 5 + 2)-STEP(__UI_Controls(__UI_FormID).Width - 1, 0), __UI_Darken(__UI_Controls(__UI_FormID).BackColor, 120)
             _DEST 0
         END IF
     END IF
@@ -3357,6 +3509,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     IF ControlType = __UI_Type_PictureBox THEN
         __UI_Controls(NextSlot).HelperCanvas = _NEWIMAGE(NewWIdth, NewHeight, 32)
+        __UI_Controls(NextSlot).Stretch = __UI_True
     END IF
 
     __UI_NewControl = NextSlot
@@ -4045,15 +4198,6 @@ FUNCTION __UI_PrintWidth&(Text$)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION uspacing&
-    IF _FONT <> 8 THEN
-        uspacing& = falcon_uspacing&
-    ELSE
-        uspacing& = falcon_uspacing& + 3
-    END IF
-END FUNCTION
-
-'---------------------------------------------------------------------------------
 FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGER)
     DIM Temp$, TempCaption$, FindSep AS LONG, PrevSep AS LONG
     DIM NextSlot AS LONG, TempLine$, i AS LONG, Text AS STRING
@@ -4234,7 +4378,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
         IF This.Type = __UI_Type_MenuBar THEN
             __UI_Controls(__UI_ActiveMenu).Left = This.Left
-            __UI_Controls(__UI_ActiveMenu).Top = uspacing& * 1.5
+            __UI_Controls(__UI_ActiveMenu).Top = uspacing& + 3
             __UI_ActiveMenuIsContextMenu = __UI_False
         ELSEIF This.Type = __UI_Type_ContextMenu THEN
             __UI_Controls(__UI_ActiveMenu).Left = __UI_MouseLeft
@@ -4243,8 +4387,8 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         END IF
 
         'Calculate panel's width and position the menu items
-        ItemHeight = uspacing& * 1.5
-        __UI_Controls(__UI_ActiveMenu).Height = uspacing& * .3
+        ItemHeight = uspacing& + 3
+        __UI_Controls(__UI_ActiveMenu).Height = uspacing& / 4
         FOR i = 1 TO UBOUND(__UI_Controls)
             IF __UI_Controls(i).ParentID = This.ID AND NOT __UI_Controls(i).Hidden THEN
                 TotalItems = TotalItems + 1
@@ -4261,12 +4405,12 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
                 __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + ItemHeight
 
                 IF RIGHT$(__UI_Captions(i), 1) = "-" THEN 'Separator
-                    __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + ItemHeight / 2
+                    __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + ItemHeight / 3
                 END IF
             END IF
         NEXT
 
-        __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + uspacing& * .3
+        __UI_Controls(__UI_ActiveMenu).Height = __UI_Controls(__UI_ActiveMenu).Height + (uspacing& / 4)
 
         IF __UI_Controls(__UI_ActiveMenu).Width = 0 THEN __UI_Controls(__UI_ActiveMenu).Width = __UI_Controls(__UI_FormID).Width / 4
 
