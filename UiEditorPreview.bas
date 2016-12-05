@@ -14,11 +14,28 @@ CONST OffsetTotalControlsSelected = 19
 CONST OffsetFormID = 23
 CONST OffsetFirstSelectedID = 27
 CONST OffsetMenuPanelIsON = 31
-CONST OffsetPropertyChanged = 33
-CONST OffsetPropertyValue = 35
+CONST OffsetAutoName = 33
+CONST OffsetPropertyChanged = 35
+CONST OffsetPropertyValue = 37
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
+DIM SHARED AutoNameControls AS _BYTE
+
+DIM i AS LONG
+DIM SHARED AlphaNumeric(255)
+FOR i = 48 TO 57: AlphaNumeric(i) = -1: NEXT
+FOR i = 65 TO 90: AlphaNumeric(i) = -1: NEXT
+FOR i = 97 TO 122: AlphaNumeric(i) = -1: NEXT
+AlphaNumeric(95) = -1
+
+DIM SHARED Alpha(255)
+FOR i = 65 TO 90: Alpha(i) = -1: NEXT
+FOR i = 97 TO 122: Alpha(i) = -1: NEXT
+Alpha(95) = -1
+
+DIM SHARED Numeric(255)
+FOR i = 48 TO 57: Numeric(i) = -1: NEXT
 
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
@@ -72,7 +89,7 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
-    DIM b$, TempValue AS LONG, i AS LONG, UiEditorPID AS LONG
+    DIM b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER
 
     SavePreview
@@ -101,6 +118,9 @@ SUB __UI_BeforeUpdateDisplay
                 _SCREENMOVE NewWindowLeft + 610, NewWindowTop
             END IF
         $END IF
+
+        GET #UiEditorFile, OffsetAutoName, b$
+        AutoNameControls = CVI(b$)
 
         'Check if the editor is still alive
         $IF WIN THEN
@@ -160,6 +180,12 @@ SUB __UI_BeforeUpdateDisplay
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                 CASE __UI_Type_MenuBar
+                    'Before adding a menu bar item, reset all other menu bar items' alignment
+                    FOR i = 1 TO UBOUND(__UI_Controls)
+                        IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
+                            __UI_Controls(i).Align = __UI_Left
+                        END IF
+                    NEXT
                     TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, 0)
                     __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                     __UI_RefreshMenuBar
@@ -167,7 +193,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_MenuItem
                     IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
                         TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
-                        __UI_SetCaption __UI_Controls(TempValue).Name, "New menu item"
+                        __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
                         __UI_ActivateMenu __UI_Controls(__UI_ParentMenu), __UI_False
                     END IF
             END SELECT
@@ -196,21 +222,15 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls = 1 THEN
-                        IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FirstSelectedID THEN
-                            DO
-                                b$ = b$ + "_"
-                                IF __UI_GetID(b$) = 0 THEN EXIT DO
-                            LOOP
-                        END IF
-                        __UI_Controls(__UI_FirstSelectedID).Name = b$
-                    ELSE
-                        IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FormID THEN
-                            DO
-                                b$ = b$ + "_"
-                                IF __UI_GetID(b$) = 0 THEN EXIT DO
-                            LOOP
-                        END IF
-                        __UI_Controls(__UI_FormID).Name = b$
+                        __UI_Controls(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
+                    ELSEIF __UI_TotalSelectedControls = 0 THEN
+                        'IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FormID THEN
+                        '    DO
+                        '        b$ = b$ + "_"
+                        '        IF __UI_GetID(b$) = 0 THEN EXIT DO
+                        '    LOOP
+                        'END IF
+                        __UI_Controls(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
                     END IF
                 CASE 2 'Caption
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -219,6 +239,7 @@ SUB __UI_BeforeUpdateDisplay
                         FOR i = 1 TO UBOUND(__UI_Controls)
                             IF __UI_Controls(i).ControlIsSelected THEN
                                 __UI_SetCaption RTRIM$(__UI_Controls(i).Name), b$
+                                IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                 IF __UI_Controls(i).Type = __UI_Type_MenuItem THEN
                                     __UI_ActivateMenu __UI_Controls(__UI_Controls(i).ParentID), __UI_False
                                 END IF
@@ -226,7 +247,41 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     ELSE
                         __UI_Captions(__UI_FormID) = b$
+                        i = __UI_FormID
+                        IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                     END IF
+
+                    GOTO SkipAutoName
+
+                    AutoName:
+                    IF AutoNameControls THEN
+                        DIM NewName$
+
+                        NewName$ = RTRIM$(b$)
+
+                        IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
+                            IF LEN(NewName$) > 36 THEN NewName$ = LEFT$(NewName$, 36)
+                        ELSEIF __UI_Controls(i).Type <> __UI_Type_Form AND __UI_Controls(i).Type <> __UI_Type_MenuItem AND __UI_Controls(i).Type <> __UI_Type_ListBox AND __UI_Controls(i).Type <> __UI_Type_TrackBar AND __UI_Controls(i).Type <> __UI_Type_DropdownList THEN
+                            IF LEN(NewName$) > 38 THEN NewName$ = LEFT$(NewName$, 38)
+                        END IF
+                        SELECT CASE __UI_Controls(i).Type
+                            CASE __UI_Type_Button: NewName$ = NewName$ + "BT"
+                            CASE __UI_Type_Label: NewName$ = NewName$ + "LB"
+                            CASE __UI_Type_CheckBox: NewName$ = NewName$ + "CB"
+                            CASE __UI_Type_RadioButton: NewName$ = NewName$ + "RB"
+                            CASE __UI_Type_TextBox: NewName$ = NewName$ + "TB"
+                            CASE __UI_Type_ProgressBar: NewName$ = NewName$ + "PB"
+                            CASE __UI_Type_MenuBar: NewName$ = NewName$ + "Menu"
+                            CASE __UI_Type_MenuItem
+                                NewName$ = RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name) + NewName$
+                            CASE __UI_Type_PictureBox: NewName$ = NewName$ + "PX"
+                        END SELECT
+
+                        __UI_Controls(i).Name = AdaptName$(NewName$, i)
+                    END IF
+                    RETURN
+
+                    SkipAutoName:
                 CASE 3 'Text
                     DIM TotalReplacements AS LONG
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -235,8 +290,14 @@ SUB __UI_BeforeUpdateDisplay
                         FOR i = 1 TO UBOUND(__UI_Controls)
                             IF __UI_Controls(i).ControlIsSelected THEN
                                 __UI_Texts(i) = b$
-                                IF __UI_Controls(i).Type = __UI_Type_Button OR __UI_Controls(i).Type = __UI_Type_PictureBox THEN
+                                IF __UI_Controls(i).Type = __UI_Type_Button OR __UI_Controls(i).Type = __UI_Type_MenuItem THEN
                                     __UI_LoadImage __UI_Controls(i), b$
+                                ELSEIF __UI_Controls(i).Type = __UI_Type_PictureBox THEN
+                                    __UI_LoadImage __UI_Controls(i), b$
+                                    IF LEN(__UI_Texts(i)) > 0 THEN 'Load successful
+                                        'Keep aspect ratio at load
+                                        __UI_Controls(i).Height = (_HEIGHT(__UI_Controls(i).HelperCanvas) / _WIDTH(__UI_Controls(i).HelperCanvas)) * __UI_Controls(i).Width
+                                    END IF
                                 ELSEIF __UI_Controls(i).Type = __UI_Type_ListBox OR __UI_Controls(i).Type = __UI_Type_DropdownList THEN
                                     __UI_Texts(i) = __UI_ReplaceText(b$, "\n", CHR$(13), __UI_False, TotalReplacements)
                                     IF __UI_Controls(i).Max < TotalReplacements + 1 THEN __UI_Controls(i).Max = TotalReplacements + 1
@@ -421,6 +482,9 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(__UI_Controls)
                         IF __UI_Controls(i).ControlIsSelected THEN
                             __UI_Controls(i).Hidden = CVI(b$)
+                            IF __UI_Controls(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = __UI_Controls(i).ParentID THEN
+                                __UI_ActivateMenu __UI_Controls(__UI_Controls(i).ParentID), __UI_False
+                            END IF
                         END IF
                     NEXT
                 CASE 21 'CenteredWindow
@@ -434,6 +498,11 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(__UI_Controls)
                         IF __UI_Controls(i).ControlIsSelected THEN
                             __UI_Controls(i).Align = CVI(b$)
+                            IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
+                                IF __UI_Controls(i).Align <> __UI_Left THEN __UI_Controls(i).Align = __UI_Right
+                                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+                                __UI_RefreshMenuBar
+                            END IF
                         END IF
                     NEXT
                 CASE 23 'ForeColor
@@ -534,8 +603,18 @@ SUB __UI_BeforeUpdateDisplay
                             END IF
                         NEXT
                     END IF
+                CASE 201 TO 210
+                    'Alignment commands
+                    __UI_DesignModeAlignCommand = TempValue
+                    __UI_HasInput = __UI_True
             END SELECT
             __UI_ForceRedraw = __UI_True
+        END IF
+
+        IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
+            __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+            b$ = MKI$(-2) 'Signal to the editor that the preview can't show the context menu
+            PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
 
         b$ = MKL$(__UI_TotalSelectedControls)
@@ -571,6 +650,9 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
+END SUB
+
+SUB __UI_TextChanged (id AS LONG)
 END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
@@ -825,7 +907,7 @@ SUB SavePreview
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
 
-    CONST Debug = __UI_True
+    CONST Debug = __UI_False
 
     BinFileNum = FREEFILE
     OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
@@ -840,7 +922,7 @@ SUB SavePreview
     b$ = MKL$(UBOUND(__UI_Controls))
     PUT #BinFileNum, , b$
     FOR i = 1 TO UBOUND(__UI_Controls)
-        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 AND LEFT$(RTRIM$(__UI_Controls(i).Name), 9) <> "__UI_Text" AND LEFT$(RTRIM$(__UI_Controls(i).Name), 16) <> "__UI_PreviewMenu" THEN
+        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 AND LEFT$(RTRIM$(__UI_Controls(i).Name), 5) <> "__UI_" THEN
             IF Debug THEN
                 PRINT #TxtFileNum, __UI_Controls(i).ID,
                 PRINT #TxtFileNum, RTRIM$(__UI_Controls(i).Name)
@@ -1112,4 +1194,44 @@ FUNCTION IconPreview& (IconFile$)
         KILL IconFile$ + ".preview.bmp"
         EXIT FUNCTION
     END IF
+END FUNCTION
+
+FUNCTION AdaptName$ (tName$, TargetID AS LONG)
+    DIM Name$, NewName$, i AS LONG, c$, NextIsCapital AS _BYTE, CheckID AS LONG
+    Name$ = RTRIM$(tName$)
+
+    IF NOT AlphaNumeric(ASC(Name$, 1)) AND ASC(Name$, 1) <> 38 THEN Name$ = "__" + Name$
+
+    FOR i = 1 TO LEN(Name$)
+        IF AlphaNumeric(ASC(Name$, i)) THEN
+            IF NextIsCapital THEN
+                NewName$ = NewName$ + UCASE$(CHR$(ASC(Name$, i)))
+                IF ASC(RIGHT$(NewName$, 1)) >= 65 AND ASC(RIGHT$(NewName$, 1)) <= 90 THEN NextIsCapital = __UI_False
+            ELSE
+                NewName$ = NewName$ + CHR$(ASC(Name$, i))
+            END IF
+        ELSE
+            IF ASC(Name$, i) = 32 THEN NextIsCapital = __UI_True
+        END IF
+    NEXT
+
+    IF LEN(NewName$) > 40 THEN NewName$ = LEFT$(NewName$, 40)
+    Name$ = NewName$
+
+    i = 1
+    DO
+        CheckID = __UI_GetID(NewName$)
+        IF CheckID = 0 THEN EXIT DO
+        IF CheckID = TargetID THEN EXIT DO
+        i = i + 1
+        c$ = LTRIM$(STR$(i))
+        IF LEN(Name$) + LEN(c$) <= 40 THEN
+            NewName$ = Name$ + c$
+        ELSE
+            Name$ = MID$(Name$, 1, 40 - LEN(c$))
+            NewName$ = Name$ + c$
+        END IF
+    LOOP
+
+    AdaptName$ = NewName$
 END FUNCTION

@@ -4,6 +4,9 @@
 SUB __UI_LoadForm
     DIM __UI_NewID AS LONG
 
+    $RESIZE:ON
+    _RESIZE OFF
+
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "Form1", 640, 400, 0, 0,0)
     __UI_Controls(__UI_NewID).Font = __UI_Font("segoeui.ttf", 12, "")
 END SUB
