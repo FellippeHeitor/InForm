@@ -1,7 +1,6 @@
 OPTION _EXPLICIT
 
 $EXEICON:'.\InForm\InForm.ico'
-_ICON
 
 DIM SHARED RedTrackID AS LONG, GreenTrackID AS LONG, BlueTrackID AS LONG
 DIM SHARED RedTextBoxID AS LONG, GreenTextBoxID AS LONG, BlueTextBoxID AS LONG
@@ -126,7 +125,7 @@ $END IF
 SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
 
-    SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+    SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "ALIGNMENUALIGNLEFT": Dummy = 201
         CASE "ALIGNMENUALIGNRIGHT": Dummy = 202
         CASE "ALIGNMENUALIGNTOPS": Dummy = 203
@@ -145,7 +144,7 @@ SUB __UI_Click (id AS LONG)
             SendData b$, Dummy
         CASE "OPTIONSMENUAUTONAME"
             AutoNameControls = NOT AutoNameControls
-            __UI_Controls(id).Value = AutoNameControls
+            Control(id).Value = AutoNameControls
         CASE "INSERTMENUMENUBAR"
             UiEditorFile = FREEFILE
             OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
@@ -160,7 +159,7 @@ SUB __UI_Click (id AS LONG)
             CLOSE #UiEditorFile
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
-            __UI_Controls(id).Value = PreviewAttached
+            Control(id).Value = PreviewAttached
         CASE "ADDBUTTON": Dummy = __UI_Type_Button
         CASE "ADDLABEL": Dummy = __UI_Type_Label
         CASE "ADDTEXTBOX": Dummy = __UI_Type_TextBox
@@ -181,31 +180,31 @@ SUB __UI_Click (id AS LONG)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
         CASE "STRETCH"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 14
         CASE "HASBORDER"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 15
         CASE "SHOWPERCENTAGE"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 16
         CASE "WORDWRAP"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 17
         CASE "CANHAVEFOCUS"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 18
         CASE "DISABLED"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 19
         CASE "HIDDEN"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 20
         CASE "CENTEREDWINDOW"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 21
         CASE "RESIZABLE"
-            b$ = MKI$(__UI_Controls(id).Value)
+            b$ = MKI$(Control(id).Value)
             SendData b$, 29
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
@@ -246,20 +245,20 @@ SUB __UI_Click (id AS LONG)
                 END IF
                 IF LogFileLoad THEN PRINT #2, "FOUND INFORM+1"
                 __UI_AutoRefresh = __UI_False
-                FOR i = 1 TO UBOUND(__UI_Controls)
-                    __UI_DestroyControl __UI_Controls(i)
+                FOR i = 1 TO UBOUND(Control)
+                    __UI_DestroyControl Control(i)
                 NEXT
                 IF LogFileLoad THEN PRINT #2, "DESTROYED CONTROLS"
 
                 b$ = SPACE$(4): GET #1, , b$
                 IF LogFileLoad THEN PRINT #2, "READ NEW ARRAYS:" + STR$(CVI(b$))
 
-                REDIM __UI_Captions(1 TO CVL(b$)) AS STRING
+                REDIM Caption(1 TO CVL(b$)) AS STRING
                 REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
-                REDIM __UI_Texts(1 TO CVL(b$)) AS STRING
+                REDIM Text(1 TO CVL(b$)) AS STRING
                 REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
-                REDIM __UI_Tips(1 TO CVL(b$)) AS STRING
-                REDIM __UI_Controls(0 TO CVL(b$)) AS __UI_ControlTYPE
+                REDIM ToolTip(1 TO CVL(b$)) AS STRING
+                REDIM Control(0 TO CVL(b$)) AS __UI_ControlTYPE
                 b$ = SPACE$(2): GET #1, , b$
                 IF LogFileLoad THEN PRINT #2, "READ NEW CONTROL:" + STR$(CVI(b$))
                 IF CVI(b$) <> -1 THEN GOTO LoadError
@@ -304,19 +303,19 @@ SUB __UI_Click (id AS LONG)
                                 b$ = SPACE$(4): GET #1, , b$
                                 b$ = SPACE$(CVL(b$))
                                 GET #1, , b$
-                                __UI_Captions(Dummy) = b$
-                                IF LogFileLoad THEN PRINT #2, "CAPTION:" + __UI_Captions(Dummy)
+                                Caption(Dummy) = b$
+                                IF LogFileLoad THEN PRINT #2, "CAPTION:" + Caption(Dummy)
                             CASE -3 'Text
                                 b$ = SPACE$(4): GET #1, , b$
                                 b$ = SPACE$(CVL(b$))
                                 GET #1, , b$
-                                __UI_Texts(Dummy) = b$
-                                IF __UI_Controls(Dummy).Type = __UI_Type_PictureBox OR __UI_Controls(Dummy).Type = __UI_Type_Button THEN
-                                    __UI_LoadImage __UI_Controls(Dummy), __UI_Texts(Dummy)
+                                Text(Dummy) = b$
+                                IF Control(Dummy).Type = __UI_Type_PictureBox OR Control(Dummy).Type = __UI_Type_Button THEN
+                                    __UI_LoadImage Control(Dummy), Text(Dummy)
                                 END IF
-                                IF LogFileLoad THEN PRINT #2, "TEXT:" + __UI_Texts(Dummy)
+                                IF LogFileLoad THEN PRINT #2, "TEXT:" + Text(Dummy)
                             CASE -4 'Stretch
-                                __UI_Controls(Dummy).Stretch = __UI_True
+                                Control(Dummy).Stretch = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "STRETCH"
                             CASE -5 'Font
                                 IF LogFileLoad THEN PRINT #2, "FONT:";
@@ -335,98 +334,98 @@ SUB __UI_Click (id AS LONG)
 
                                 NewFontAttributes = FontSetup$
 
-                                __UI_Controls(Dummy).Font = __UI_Font(NewFontFile, NewFontSize, NewFontAttributes)
+                                Control(Dummy).Font = __UI_Font(NewFontFile, NewFontSize, NewFontAttributes)
                             CASE -6 'ForeColor
                                 b$ = SPACE$(4): GET #1, , b$
-                                __UI_Controls(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
+                                Control(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
                                 IF LogFileLoad THEN PRINT #2, "FORECOLOR"
                             CASE -7 'BackColor
                                 b$ = SPACE$(4): GET #1, , b$
-                                __UI_Controls(Dummy).BackColor = _CV(_UNSIGNED LONG, b$)
+                                Control(Dummy).BackColor = _CV(_UNSIGNED LONG, b$)
                                 IF LogFileLoad THEN PRINT #2, "BACKCOLOR"
                             CASE -8 'SelectedForeColor
                                 b$ = SPACE$(4): GET #1, , b$
-                                __UI_Controls(Dummy).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                                Control(Dummy).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
                                 IF LogFileLoad THEN PRINT #2, "SELECTEDFORECOLOR"
                             CASE -9 'SelectedBackColor
                                 b$ = SPACE$(4): GET #1, , b$
-                                __UI_Controls(Dummy).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                                Control(Dummy).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
                                 IF LogFileLoad THEN PRINT #2, "SELECTEDBACKCOLOR"
                             CASE -10 'BorderColor
                                 b$ = SPACE$(4): GET #1, , b$
-                                __UI_Controls(Dummy).BorderColor = _CV(_UNSIGNED LONG, b$)
+                                Control(Dummy).BorderColor = _CV(_UNSIGNED LONG, b$)
                                 IF LogFileLoad THEN PRINT #2, "BORDERCOLOR"
                             CASE -11
-                                __UI_Controls(Dummy).BackStyle = __UI_Transparent
+                                Control(Dummy).BackStyle = __UI_Transparent
                                 IF LogFileLoad THEN PRINT #2, "BACKSTYLE:TRANSPARENT"
                             CASE -12
-                                __UI_Controls(Dummy).HasBorder = __UI_True
+                                Control(Dummy).HasBorder = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "HASBORDER"
                             CASE -13
                                 b$ = SPACE$(1): GET #1, , b$
-                                __UI_Controls(Dummy).Align = _CV(_BYTE, b$)
-                                IF LogFileLoad THEN PRINT #2, "ALIGN="; __UI_Controls(Dummy).Align
+                                Control(Dummy).Align = _CV(_BYTE, b$)
+                                IF LogFileLoad THEN PRINT #2, "ALIGN="; Control(Dummy).Align
                             CASE -14
                                 b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                __UI_Controls(Dummy).Value = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "VALUE="; __UI_Controls(Dummy).Value
+                                Control(Dummy).Value = _CV(_FLOAT, b$)
+                                IF LogFileLoad THEN PRINT #2, "VALUE="; Control(Dummy).Value
                             CASE -15
                                 b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                __UI_Controls(Dummy).Min = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "MIN="; __UI_Controls(Dummy).Min
+                                Control(Dummy).Min = _CV(_FLOAT, b$)
+                                IF LogFileLoad THEN PRINT #2, "MIN="; Control(Dummy).Min
                             CASE -16
                                 b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                __UI_Controls(Dummy).Max = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "MAX="; __UI_Controls(Dummy).Max
+                                Control(Dummy).Max = _CV(_FLOAT, b$)
+                                IF LogFileLoad THEN PRINT #2, "MAX="; Control(Dummy).Max
                             CASE -17
                                 b$ = SPACE$(2): GET #1, , b$
-                                __UI_Controls(Dummy).HotKey = CVI(b$)
-                                IF LogFileLoad THEN PRINT #2, "HOTKEY="; __UI_Controls(Dummy).HotKey; "("; CHR$(__UI_Controls(Dummy).HotKey); ")"
+                                Control(Dummy).HotKey = CVI(b$)
+                                IF LogFileLoad THEN PRINT #2, "HOTKEY="; Control(Dummy).HotKey; "("; CHR$(Control(Dummy).HotKey); ")"
                             CASE -18
                                 b$ = SPACE$(2): GET #1, , b$
-                                __UI_Controls(Dummy).HotKeyOffset = CVI(b$)
-                                IF LogFileLoad THEN PRINT #2, "HOTKEYOFFSET="; __UI_Controls(Dummy).HotKeyOffset
+                                Control(Dummy).HotKeyOffset = CVI(b$)
+                                IF LogFileLoad THEN PRINT #2, "HOTKEYOFFSET="; Control(Dummy).HotKeyOffset
                             CASE -19
-                                __UI_Controls(Dummy).ShowPercentage = __UI_True
+                                Control(Dummy).ShowPercentage = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "SHOWPERCENTAGE"
                             CASE -20
-                                __UI_Controls(Dummy).CanHaveFocus = __UI_True
+                                Control(Dummy).CanHaveFocus = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "CANHAVEFOCUS"
                             CASE -21
-                                __UI_Controls(Dummy).Disabled = __UI_True
+                                Control(Dummy).Disabled = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "DISABLED"
                             CASE -22
-                                __UI_Controls(Dummy).Hidden = __UI_True
+                                Control(Dummy).Hidden = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "HIDDEN"
                             CASE -23
-                                __UI_Controls(Dummy).CenteredWindow = __UI_True
+                                Control(Dummy).CenteredWindow = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "CENTEREDWINDOW"
                             CASE -24 'Tips
                                 b$ = SPACE$(4): GET #1, , b$
                                 b$ = SPACE$(CVL(b$))
                                 GET #1, , b$
-                                __UI_Tips(Dummy) = b$
-                                IF LogFileLoad THEN PRINT #2, "TIP: "; __UI_Tips(Dummy)
+                                ToolTip(Dummy) = b$
+                                IF LogFileLoad THEN PRINT #2, "TIP: "; ToolTip(Dummy)
                             CASE -25
                                 DIM ContextMenuName AS STRING
                                 b$ = SPACE$(2): GET #1, , b$
                                 ContextMenuName = SPACE$(CVI(b$)): GET #1, , ContextMenuName
-                                __UI_Controls(Dummy).ContextMenuID = __UI_GetID(ContextMenuName)
+                                Control(Dummy).ContextMenuID = __UI_GetID(ContextMenuName)
                                 IF LogFileLoad THEN PRINT #2, "CONTEXTMENU:"; ContextMenuName
                             CASE -26
                                 b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                __UI_Controls(Dummy).Interval = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "INTERVAL="; __UI_Controls(Dummy).Interval
+                                Control(Dummy).Interval = _CV(_FLOAT, b$)
+                                IF LogFileLoad THEN PRINT #2, "INTERVAL="; Control(Dummy).Interval
                             CASE -27
-                                __UI_Controls(Dummy).WordWrap = __UI_True
+                                Control(Dummy).WordWrap = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "WORDWRAP"
                             CASE -28
                                 b$ = SPACE$(4): GET #1, , b$
-                                __UI_Controls(Dummy).TransparentColor = _CV(_UNSIGNED LONG, b$)
+                                Control(Dummy).TransparentColor = _CV(_UNSIGNED LONG, b$)
                                 IF LogFileLoad THEN PRINT #2, "TRANSPARENTCOLOR"
-                                __UI_ClearColor __UI_Controls(Dummy).HelperCanvas, __UI_Controls(Dummy).TransparentColor, -1
+                                __UI_ClearColor Control(Dummy).HelperCanvas, Control(Dummy).TransparentColor, -1
                             CASE -29
-                                __UI_Controls(Dummy).CanResize = __UI_True
+                                Control(Dummy).CanResize = __UI_True
                                 IF LogFileLoad THEN PRINT #2, "CANRESIZE"
                             CASE -1 'new control
                                 IF LogFileLoad THEN PRINT #2, "READ NEW CONTROL:-1"
@@ -486,13 +485,13 @@ END SUB
 
 SUB __UI_MouseUp (id AS LONG)
     DIM b$
-    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+    SELECT CASE UCASE$(RTRIM$(Control(id).Name))
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
             DIM NewColor AS _UNSIGNED LONG
-            NewColor = _RGB32(__UI_Controls(RedTrackID).Value, __UI_Controls(GreenTrackID).Value, __UI_Controls(BlueTrackID).Value)
+            NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
             b$ = _MK$(_UNSIGNED LONG, NewColor)
-            SendData b$, __UI_Controls(ColorPropertiesListID).Value + 22
+            SendData b$, Control(ColorPropertiesListID).Value + 22
     END SELECT
 END SUB
 
@@ -510,21 +509,13 @@ SUB __UI_BeforeUpdateDisplay
 
         $IF WIN THEN
             IF PreviewAttached THEN
-                IF _SCREENX > 0 THEN
-                    b$ = MKI$(_SCREENX)
-                ELSE
-                    b$ = MKI$(-1)
-                END IF
+                b$ = MKI$(_SCREENX)
                 PUT #UiEditorFile, OffsetWindowLeft, b$
 
-                IF _SCREENY > 0 THEN
-                    b$ = MKI$(_SCREENY)
-                ELSE
-                    b$ = MKI$(-1)
-                END IF
+                b$ = MKI$(_SCREENY)
                 PUT #UiEditorFile, OffsetWindowTop, b$
             ELSE
-                b$ = MKI$(-1)
+                b$ = MKI$(-32001)
                 PUT #UiEditorFile, OffsetWindowLeft, b$
                 PUT #UiEditorFile, OffsetWindowTop, b$
             END IF
@@ -542,7 +533,7 @@ SUB __UI_BeforeUpdateDisplay
             'User attempted to right-click a control but the preview
             'form is smaller than the menu panel. In such case the "Align"
             'menu is shown in the editor.
-            __UI_ActivateMenu __UI_Controls(__UI_GetID("AlignMenu")), __UI_False
+            __UI_ActivateMenu Control(__UI_GetID("AlignMenu")), __UI_False
             __UI_ForceRedraw = __UI_True
             b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
@@ -561,81 +552,81 @@ SUB __UI_BeforeUpdateDisplay
         PreviewHasMenuActive = CVI(b$)
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
-            __UI_Captions(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
+            Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
         END IF
 
-        SelectedProperty = __UI_Controls(__UI_GetID("PropertiesList")).Value
+        SelectedProperty = Control(__UI_GetID("PropertiesList")).Value
 
         IF PreviewHasMenuActive THEN
-            __UI_Controls(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_False
+            Control(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_False
         ELSE
-            __UI_Controls(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_True
+            Control(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_True
         END IF
 
         IF TotalSelected = 0 THEN
             __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
             FirstSelected = PreviewFormID
 
-            __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
 
         ELSEIF TotalSelected = 1 THEN
             IF FirstSelected > 0 AND FirstSelected <= UBOUND(PreviewControls) THEN
                 __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(FirstSelected).Name)
 
-                __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
-                __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
-                __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
-                __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
                 IF PreviewControls(FirstSelected).Type <> __UI_Type_MenuBar AND PreviewControls(FirstSelected).Type <> __UI_Type_MenuItem THEN
-                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
-                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+                    Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
+                    Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
                 ELSE
-                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
-                    __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
+                    Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
+                    Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
                 END IF
-                __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
-                __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
-                __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
-                __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
 
             END IF
 
         ELSEIF TotalSelected = 2 THEN
             __UI_SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
 
-            __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
-            __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
 
         ELSE
             __UI_SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
 
-            __UI_Controls(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_False
 
         END IF
 
@@ -644,91 +635,91 @@ SUB __UI_BeforeUpdateDisplay
         IF __UI_Focus <> PropertyValueID THEN
             SELECT CASE SelectedProperty
                 CASE 1 'Name
-                    __UI_Texts(PropertyValueID) = RTRIM$(PreviewControls(FirstSelected).Name)
+                    Text(PropertyValueID) = RTRIM$(PreviewControls(FirstSelected).Name)
                 CASE 2 'Caption
-                    __UI_Texts(PropertyValueID) = PreviewCaptions(FirstSelected)
+                    Text(PropertyValueID) = __UI_TrimAt0$(PreviewCaptions(FirstSelected))
                 CASE 3 'Text
                     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                        __UI_Texts(PropertyValueID) = __UI_ReplaceText(PreviewTexts(FirstSelected), CHR$(13), "\n", __UI_False, 0)
+                        Text(PropertyValueID) = __UI_ReplaceText(PreviewTexts(FirstSelected), CHR$(13), "\n", __UI_False, 0)
                     ELSE
-                        __UI_Texts(PropertyValueID) = PreviewTexts(FirstSelected)
+                        Text(PropertyValueID) = PreviewTexts(FirstSelected)
                     END IF
                 CASE 4 'Top
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
                 CASE 5 'Left
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
                 CASE 6 'Width
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
                 CASE 7 'Height
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
                 CASE 8 'Font
                     IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                        __UI_Texts(PropertyValueID) = PreviewFonts(FirstSelected)
+                        Text(PropertyValueID) = PreviewFonts(FirstSelected)
                     ELSE
-                        __UI_Texts(PropertyValueID) = PreviewFonts(PreviewFormID)
+                        Text(PropertyValueID) = PreviewFonts(PreviewFormID)
                     END IF
                 CASE 9 'Tooltip
-                    __UI_Texts(PropertyValueID) = PreviewTips(FirstSelected)
+                    Text(PropertyValueID) = PreviewTips(FirstSelected)
                 CASE 10 'Value
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
                 CASE 11 'Min
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
                 CASE 12 'Max
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
                 CASE 13 'Interval
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
                 CASE 14 'Padding
-                    __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
+                    Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
             END SELECT
-            __UI_Controls(PropertyUpdateStatusID).Hidden = __UI_True
+            Control(PropertyUpdateStatusID).Hidden = __UI_True
         ELSE
             __UI_CursorAdjustments
             DIM PropertyAccept AS _BYTE
             SELECT CASE SelectedProperty
                 CASE 1 'Name
-                    IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = __UI_True
+                    IF LCASE$(Text(PropertyValueID)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = __UI_True
                 CASE 2 'Caption
-                    IF __UI_Texts(PropertyValueID) = PreviewCaptions(FirstSelected) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = PreviewCaptions(FirstSelected) THEN PropertyAccept = __UI_True
                 CASE 3 'Text
                     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                        IF __UI_ReplaceText(__UI_Texts(PropertyValueID), "\n", CHR$(13), __UI_False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
+                        IF __UI_ReplaceText(Text(PropertyValueID), "\n", CHR$(13), __UI_False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
                     ELSE
-                        IF __UI_Texts(PropertyValueID) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
+                        IF Text(PropertyValueID) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
                     END IF
                 CASE 4 'Top
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN PropertyAccept = __UI_True
                 CASE 5 'Left
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN PropertyAccept = __UI_True
                 CASE 6 'Width
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN PropertyAccept = __UI_True
                 CASE 7 'Height
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = __UI_True
                 CASE 8 'Font
                     IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                        IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = __UI_True
+                        IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = __UI_True
                     ELSE
-                        IF LCASE$(__UI_Texts(PropertyValueID)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = __UI_True
+                        IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = __UI_True
                     END IF
                 CASE 9 'Tooltip
-                    IF __UI_Texts(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = __UI_True
                 CASE 10 'Value
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = __UI_True
                 CASE 11 'Min
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN PropertyAccept = __UI_True
                 CASE 12 'Max
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN PropertyAccept = __UI_True
                 CASE 13 'Interval
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN PropertyAccept = __UI_True
                 CASE 14 'Padding
-                    IF __UI_Texts(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = __UI_True
             END SELECT
-            __UI_Controls(PropertyUpdateStatusID).Hidden = __UI_False
-            _DEST __UI_Controls(PropertyUpdateStatusID).HelperCanvas
+            Control(PropertyUpdateStatusID).Hidden = __UI_False
+            _DEST Control(PropertyUpdateStatusID).HelperCanvas
             CLS , _RGBA32(0, 0, 0, 0)
-            IF PropertyAccept AND LEN(RTRIM$(__UI_Texts(PropertyValueID))) > 0 THEN
+            IF PropertyAccept AND LEN(RTRIM$(Text(PropertyValueID))) > 0 THEN
                 _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
                 __UI_SetTip "PropertyUpdateStatus", "The property value entered was accepted"
-            ELSEIF LEN(RTRIM$(__UI_Texts(PropertyValueID))) > 0 THEN
+            ELSEIF LEN(RTRIM$(Text(PropertyValueID))) > 0 THEN
                 IF TIMER - LastKeyPress > .5 THEN
                     _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
                     __UI_SetTip "PropertyUpdateStatus", "Property value not accepted"
@@ -738,45 +729,45 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
             END IF
             _DEST 0
-            __UI_Controls(PropertyUpdateStatusID).PreviousValue = 0 'Force update
+            Control(PropertyUpdateStatusID).PreviousValue = 0 'Force update
         END IF
 
         'Update checkboxes:
-        __UI_Controls(__UI_GetID("Stretch")).Value = PreviewControls(FirstSelected).Stretch
-        __UI_Controls(__UI_GetID("HasBorder")).Value = PreviewControls(FirstSelected).HasBorder
-        __UI_Controls(__UI_GetID("ShowPercentage")).Value = PreviewControls(FirstSelected).ShowPercentage
-        __UI_Controls(__UI_GetID("WordWrap")).Value = PreviewControls(FirstSelected).WordWrap
-        __UI_Controls(__UI_GetID("CanHaveFocus")).Value = PreviewControls(FirstSelected).CanHaveFocus
-        __UI_Controls(__UI_GetID("Disabled")).Value = PreviewControls(FirstSelected).Disabled
-        __UI_Controls(__UI_GetID("Hidden")).Value = PreviewControls(FirstSelected).Hidden
-        __UI_Controls(__UI_GetID("CenteredWindow")).Value = PreviewControls(FirstSelected).CenteredWindow
-        __UI_Controls(__UI_GetID("AlignOptions")).Value = PreviewControls(FirstSelected).Align + 1
+        Control(__UI_GetID("Stretch")).Value = PreviewControls(FirstSelected).Stretch
+        Control(__UI_GetID("HasBorder")).Value = PreviewControls(FirstSelected).HasBorder
+        Control(__UI_GetID("ShowPercentage")).Value = PreviewControls(FirstSelected).ShowPercentage
+        Control(__UI_GetID("WordWrap")).Value = PreviewControls(FirstSelected).WordWrap
+        Control(__UI_GetID("CanHaveFocus")).Value = PreviewControls(FirstSelected).CanHaveFocus
+        Control(__UI_GetID("Disabled")).Value = PreviewControls(FirstSelected).Disabled
+        Control(__UI_GetID("Hidden")).Value = PreviewControls(FirstSelected).Hidden
+        Control(__UI_GetID("CenteredWindow")).Value = PreviewControls(FirstSelected).CenteredWindow
+        Control(__UI_GetID("AlignOptions")).Value = PreviewControls(FirstSelected).Align + 1
         IF PreviewControls(FirstSelected).BackStyle THEN
-            __UI_Controls(__UI_GetID("BackStyleOptions")).Value = 2
+            Control(__UI_GetID("BackStyleOptions")).Value = 2
         ELSE
-            __UI_Controls(__UI_GetID("BackStyleOptions")).Value = 1
+            Control(__UI_GetID("BackStyleOptions")).Value = 1
         END IF
-        __UI_Controls(__UI_GetID("Resizable")).Value = PreviewControls(FirstSelected).CanResize
+        Control(__UI_GetID("Resizable")).Value = PreviewControls(FirstSelected).CanResize
 
         'Disable properties that don't apply
-        __UI_Controls(__UI_GetID("Stretch")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("HasBorder")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("ShowPercentage")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("WordWrap")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("CanHaveFocus")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("Disabled")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("Hidden")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("CenteredWindow")).Disabled = __UI_True
-        __UI_Controls(__UI_GetID("AlignOptions")).Disabled = __UI_True
-        __UI_Controls(BackStyleListID).Disabled = __UI_True
+        Control(__UI_GetID("Stretch")).Disabled = __UI_True
+        Control(__UI_GetID("HasBorder")).Disabled = __UI_True
+        Control(__UI_GetID("ShowPercentage")).Disabled = __UI_True
+        Control(__UI_GetID("WordWrap")).Disabled = __UI_True
+        Control(__UI_GetID("CanHaveFocus")).Disabled = __UI_True
+        Control(__UI_GetID("Disabled")).Disabled = __UI_True
+        Control(__UI_GetID("Hidden")).Disabled = __UI_True
+        Control(__UI_GetID("CenteredWindow")).Disabled = __UI_True
+        Control(__UI_GetID("AlignOptions")).Disabled = __UI_True
+        Control(BackStyleListID).Disabled = __UI_True
         __UI_ReplaceListBoxItem "PropertiesList", 3, "Text"
-        __UI_Controls(__UI_GetID("Resizable")).Disabled = __UI_True
-        __UI_Captions(PropertyValueID) = ""
+        Control(__UI_GetID("Resizable")).Disabled = __UI_True
+        Caption(PropertyValueID) = ""
         IF TotalSelected > 0 THEN
             SELECT EVERYCASE PreviewControls(FirstSelected).Type
                 CASE __UI_Type_MenuBar, __UI_Type_MenuItem
-                    __UI_Controls(__UI_GetID("Disabled")).Disabled = __UI_False
-                    __UI_Controls(__UI_GetID("Hidden")).Disabled = __UI_False
+                    Control(__UI_GetID("Disabled")).Disabled = __UI_False
+                    Control(__UI_GetID("Hidden")).Disabled = __UI_False
                 CASE __UI_Type_MenuBar
                     'Check if this is the last menu bar item so that Align options can be enabled
                     FOR i = UBOUND(PreviewControls) TO 1 STEP -1
@@ -785,118 +776,118 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                     IF i = FirstSelected THEN
-                        __UI_Controls(__UI_GetID("AlignOptions")).Disabled = __UI_False
+                        Control(__UI_GetID("AlignOptions")).Disabled = __UI_False
                     END IF
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 9
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_MenuItem
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 3, 9, 10
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_PictureBox
                     __UI_ReplaceListBoxItem "PropertiesList", 3, "Image file"
-                    __UI_Controls(__UI_GetID("Stretch")).Disabled = __UI_False
-                    __UI_Controls(BackStyleListID).Disabled = __UI_False
+                    Control(__UI_GetID("Stretch")).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = __UI_False
                     SELECT CASE SelectedProperty
                         CASE 1, 3, 4, 5, 6, 7, 9
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_Frame, __UI_Type_Label
-                    __UI_Controls(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = __UI_False
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 14
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_TextBox
-                    __UI_Controls(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = __UI_False
                 CASE __UI_Type_Button, __UI_Type_MenuItem
                     __UI_ReplaceListBoxItem "PropertiesList", 3, "Image file"
                 CASE __UI_Type_Button, __UI_Type_TextBox
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 3, 4, 5, 6, 7, 8, 9
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                    __UI_Controls(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = __UI_False
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 10
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_ProgressBar
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_TrackBar
                     SELECT CASE SelectedProperty
                         CASE 1, 4, 5, 6, 7, 9, 10, 11, 12, 13
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                    __UI_Controls(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = __UI_False
                     SELECT CASE SelectedProperty
                         CASE 1, 3, 4, 5, 6, 7, 8, 9, 10, 12
-                            __UI_Controls(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = __UI_False
                         CASE ELSE
-                            __UI_Controls(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = __UI_True
                     END SELECT
                 CASE __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
-                    __UI_Controls(__UI_GetID("HasBorder")).Disabled = __UI_False
+                    Control(__UI_GetID("HasBorder")).Disabled = __UI_False
                 CASE __UI_Type_ProgressBar
-                    __UI_Controls(__UI_GetID("ShowPercentage")).Disabled = __UI_False
+                    Control(__UI_GetID("ShowPercentage")).Disabled = __UI_False
                 CASE __UI_Type_Label
-                    __UI_Controls(__UI_GetID("WordWrap")).Disabled = __UI_False
+                    Control(__UI_GetID("WordWrap")).Disabled = __UI_False
                 CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar
-                    __UI_Controls(__UI_GetID("CanHaveFocus")).Disabled = __UI_False
+                    Control(__UI_GetID("CanHaveFocus")).Disabled = __UI_False
                 CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar
-                    __UI_Controls(__UI_GetID("Disabled")).Disabled = __UI_False
+                    Control(__UI_GetID("Disabled")).Disabled = __UI_False
                 CASE __UI_Type_Frame, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
-                    __UI_Controls(__UI_GetID("Hidden")).Disabled = __UI_False
+                    Control(__UI_GetID("Hidden")).Disabled = __UI_False
                 CASE __UI_Type_Label
-                    __UI_Controls(__UI_GetID("AlignOptions")).Disabled = __UI_False
+                    Control(__UI_GetID("AlignOptions")).Disabled = __UI_False
             END SELECT
         ELSE
             'Properties relative to the form
-            __UI_Controls(__UI_GetID("CenteredWindow")).Disabled = __UI_False
-            __UI_Controls(__UI_GetID("Resizable")).Disabled = __UI_False
+            Control(__UI_GetID("CenteredWindow")).Disabled = __UI_False
+            Control(__UI_GetID("Resizable")).Disabled = __UI_False
             __UI_ReplaceListBoxItem "PropertiesList", 3, "Icon"
 
             SELECT CASE SelectedProperty
                 CASE 1, 2, 3, 6, 7, 8 'Name, Caption, Width, Height, Font
-                    __UI_Controls(PropertyValueID).Disabled = __UI_False
+                    Control(PropertyValueID).Disabled = __UI_False
                 CASE ELSE
-                    __UI_Controls(PropertyValueID).Disabled = __UI_True
+                    Control(PropertyValueID).Disabled = __UI_True
             END SELECT
         END IF
 
-        IF __UI_Controls(PropertyValueID).Disabled THEN
-            __UI_Texts(PropertyValueID) = ""
-            __UI_Captions(PropertyValueID) = "Property not available"
+        IF Control(PropertyValueID).Disabled THEN
+            Text(PropertyValueID) = ""
+            Caption(PropertyValueID) = "Property not available"
         END IF
 
         'Update the color mixer
         DIM ThisColor AS _UNSIGNED LONG, ThisBackColor AS _UNSIGNED LONG
 
-        SELECT EVERYCASE __UI_Controls(ColorPropertiesListID).Value
+        SELECT EVERYCASE Control(ColorPropertiesListID).Value
             CASE 1, 2 'ForeColor, BackColor
                 ThisColor = PreviewControls(FirstSelected).ForeColor
                 IF ThisColor = 0 THEN ThisColor = PreviewControls(PreviewFormID).ForeColor
@@ -920,40 +911,40 @@ SUB __UI_BeforeUpdateDisplay
                 IF ThisBackColor = 0 THEN ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 2)
             CASE 1, 3, 5
                 IF __UI_Focus <> RedTrackID AND __UI_Focus <> RedTextBoxID THEN
-                    __UI_Controls(RedTrackID).Value = _RED32(ThisColor)
-                    __UI_Texts(RedTextBoxID) = LTRIM$(STR$(__UI_Controls(RedTrackID).Value))
+                    Control(RedTrackID).Value = _RED32(ThisColor)
+                    Text(RedTextBoxID) = LTRIM$(STR$(Control(RedTrackID).Value))
                 END IF
                 IF __UI_Focus <> GreenTrackID AND __UI_Focus <> GreenTextBoxID THEN
-                    __UI_Controls(GreenTrackID).Value = _GREEN32(ThisColor)
-                    __UI_Texts(GreenTextBoxID) = LTRIM$(STR$(__UI_Controls(GreenTrackID).Value))
+                    Control(GreenTrackID).Value = _GREEN32(ThisColor)
+                    Text(GreenTextBoxID) = LTRIM$(STR$(Control(GreenTrackID).Value))
                 END IF
                 IF __UI_Focus <> BlueTrackID AND __UI_Focus <> BlueTextBoxID THEN
-                    __UI_Controls(BlueTrackID).Value = _BLUE32(ThisColor)
-                    __UI_Texts(BlueTextBoxID) = LTRIM$(STR$(__UI_Controls(BlueTrackID).Value))
+                    Control(BlueTrackID).Value = _BLUE32(ThisColor)
+                    Text(BlueTextBoxID) = LTRIM$(STR$(Control(BlueTrackID).Value))
                 END IF
             CASE 2, 4
                 IF __UI_Focus <> RedTrackID AND __UI_Focus <> RedTextBoxID THEN
-                    __UI_Controls(RedTrackID).Value = _RED32(ThisBackColor)
-                    __UI_Texts(RedTextBoxID) = LTRIM$(STR$(__UI_Controls(RedTrackID).Value))
+                    Control(RedTrackID).Value = _RED32(ThisBackColor)
+                    Text(RedTextBoxID) = LTRIM$(STR$(Control(RedTrackID).Value))
                 END IF
                 IF __UI_Focus <> GreenTrackID AND __UI_Focus <> GreenTextBoxID THEN
-                    __UI_Controls(GreenTrackID).Value = _GREEN32(ThisBackColor)
-                    __UI_Texts(GreenTextBoxID) = LTRIM$(STR$(__UI_Controls(GreenTrackID).Value))
+                    Control(GreenTrackID).Value = _GREEN32(ThisBackColor)
+                    Text(GreenTextBoxID) = LTRIM$(STR$(Control(GreenTrackID).Value))
                 END IF
                 IF __UI_Focus <> BlueTrackID AND __UI_Focus <> BlueTextBoxID THEN
-                    __UI_Controls(BlueTrackID).Value = _BLUE32(ThisBackColor)
-                    __UI_Texts(BlueTextBoxID) = LTRIM$(STR$(__UI_Controls(BlueTrackID).Value))
+                    Control(BlueTrackID).Value = _BLUE32(ThisBackColor)
+                    Text(BlueTextBoxID) = LTRIM$(STR$(Control(BlueTrackID).Value))
                 END IF
         END SELECT
 
-        IF __UI_Controls(__UI_GetID("ColorPreview")).HelperCanvas = 0 THEN
-            __UI_Controls(__UI_GetID("ColorPreview")).HelperCanvas = _NEWIMAGE(__UI_Controls(__UI_GetID("ColorPreview")).Width, __UI_Controls(__UI_GetID("ColorPreview")).Height, 32)
+        IF Control(__UI_GetID("ColorPreview")).HelperCanvas = 0 THEN
+            Control(__UI_GetID("ColorPreview")).HelperCanvas = _NEWIMAGE(Control(__UI_GetID("ColorPreview")).Width, Control(__UI_GetID("ColorPreview")).Height, 32)
         END IF
         STATIC PrevPreviewForeColor AS _UNSIGNED LONG, PrevPreviewBackColor AS _UNSIGNED LONG
         IF PrevPreviewForeColor <> ThisColor OR PrevPreviewBackColor <> ThisBackColor THEN
             PrevPreviewForeColor = ThisColor
             PrevPreviewBackColor = ThisBackColor
-            UpdateColorPreview __UI_Controls(ColorPropertiesListID).Value, ThisColor, ThisBackColor
+            UpdateColorPreview Control(ColorPropertiesListID).Value, ThisColor, ThisBackColor
         END IF
 
         MidRead = __UI_False
@@ -985,45 +976,45 @@ SUB __UI_OnLoad
     CommControls = LoadEditorImage("commoncontrols.bmp")
     __UI_ClearColor CommControls, 0, 0
 
-    __UI_Controls(__UI_GetID("AddButton")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddButton")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddLabel")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddLabel")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddTextBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddTextBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddCheckBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddCheckBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddRadioButton")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddRadioButton")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddListBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddListBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddDropdownList")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddDropdownList")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddTrackBar")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddTrackBar")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddProgressBar")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddProgressBar")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddPictureBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddPictureBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    __UI_Controls(__UI_GetID("AddFrame")).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, __UI_Controls(__UI_GetID("AddFrame")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddButton")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddButton")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddLabel")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddLabel")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddTextBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddTextBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddCheckBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddCheckBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddRadioButton")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddRadioButton")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddListBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddListBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddDropdownList")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddDropdownList")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddTrackBar")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddTrackBar")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddProgressBar")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddProgressBar")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddPictureBox")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddPictureBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddFrame")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddFrame")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
 
     PropertyUpdateStatusImage = _LOADIMAGE("InForm\oknowait.bmp", 32)
     __UI_ClearColor PropertyUpdateStatusImage, 0, 0
 
     'Properly loaded helper images assign a file name to the control's text property.
     'Any text will do for internallly stored images:
-    __UI_Texts(__UI_GetID("AddButton")) = "."
-    __UI_Texts(__UI_GetID("AddLabel")) = "."
-    __UI_Texts(__UI_GetID("AddTextBox")) = "."
-    __UI_Texts(__UI_GetID("AddCheckBox")) = "."
-    __UI_Texts(__UI_GetID("AddRadioButton")) = "."
-    __UI_Texts(__UI_GetID("AddListBox")) = "."
-    __UI_Texts(__UI_GetID("AddDropdownList")) = "."
-    __UI_Texts(__UI_GetID("AddTrackBar")) = "."
-    __UI_Texts(__UI_GetID("AddProgressBar")) = "."
-    __UI_Texts(__UI_GetID("AddPictureBox")) = "."
-    __UI_Texts(__UI_GetID("AddFrame")) = "."
+    Text(__UI_GetID("AddButton")) = "."
+    Text(__UI_GetID("AddLabel")) = "."
+    Text(__UI_GetID("AddTextBox")) = "."
+    Text(__UI_GetID("AddCheckBox")) = "."
+    Text(__UI_GetID("AddRadioButton")) = "."
+    Text(__UI_GetID("AddListBox")) = "."
+    Text(__UI_GetID("AddDropdownList")) = "."
+    Text(__UI_GetID("AddTrackBar")) = "."
+    Text(__UI_GetID("AddProgressBar")) = "."
+    Text(__UI_GetID("AddPictureBox")) = "."
+    Text(__UI_GetID("AddFrame")) = "."
 
     _FREEIMAGE CommControls
 
@@ -1039,7 +1030,7 @@ SUB __UI_OnLoad
     PropertyValueID = __UI_GetID("PropertyValue")
     PropertyUpdateStatusID = __UI_GetID("PropertyUpdateStatus")
 
-    __UI_Controls(__UI_GetID("PropertiesList")).Value = 2
+    Control(__UI_GetID("PropertiesList")).Value = 2
 
     PreviewAttached = __UI_True
     AutoNameControls = __UI_True
@@ -1128,73 +1119,73 @@ END SUB
 
 SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
-    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+    SELECT CASE UCASE$(RTRIM$(Control(id).Name))
         CASE "PROPERTYVALUE"
     END SELECT
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
-    SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+    SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "PROPERTYVALUE"
             'Send the preview the new property value
             DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
             STATIC PreviousValue$
 
-            IF PreviousValue$ <> __UI_Texts(PropertyValueID) THEN
-                PreviousValue$ = __UI_Texts(PropertyValueID)
-                TempValue = __UI_Controls(__UI_GetID("PropertiesList")).Value
+            IF PreviousValue$ <> Text(PropertyValueID) THEN
+                PreviousValue$ = Text(PropertyValueID)
+                TempValue = Control(__UI_GetID("PropertiesList")).Value
                 SELECT CASE TempValue
                     CASE 1, 2, 3, 9 'Name, caption, text, tooltips
-                        b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
+                        b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
                     CASE 4, 5, 6, 7, 14 'Top, left, width, height, padding
-                        b$ = MKI$(VAL(__UI_Texts(PropertyValueID)))
+                        b$ = MKI$(VAL(Text(PropertyValueID)))
                         IF TempValue = 14 THEN TempValue = 31
                     CASE 8 'Font
-                        b$ = MKL$(LEN(__UI_Texts(PropertyValueID))) + __UI_Texts(PropertyValueID)
+                        b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
                     CASE 10, 11, 12, 13 'Value, min, max, interval
-                        b$ = _MK$(_FLOAT, VAL(__UI_Texts(PropertyValueID)))
+                        b$ = _MK$(_FLOAT, VAL(Text(PropertyValueID)))
                 END SELECT
                 SendData b$, TempValue
             END IF
         CASE "REDVALUE", "GREENVALUE", "BLUEVALUE"
-            IF VAL(__UI_Texts(id)) > 255 THEN __UI_Texts(id) = "255"
+            IF VAL(Text(id)) > 255 THEN Text(id) = "255"
             DIM TempID AS LONG
-            TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(__UI_Controls(id).Name)), LEN(UCASE$(RTRIM$(__UI_Controls(id).Name))) - 5))
-            __UI_Controls(TempID).Value = VAL(__UI_Texts(id))
+            TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
+            Control(TempID).Value = VAL(Text(id))
             __UI_MouseUp TempID
     END SELECT
 END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
     DIM b$
-    SELECT EVERYCASE UCASE$(RTRIM$(__UI_Controls(id).Name))
+    SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "PROPERTIESLIST"
             _DELAY .1 'Give the screen update routine time to finish
-            IF __UI_Controls(PropertyValueID).Disabled = __UI_False THEN
+            IF Control(PropertyValueID).Disabled = __UI_False THEN
                 __UI_Focus = PropertyValueID
-                IF LEN(__UI_Texts(__UI_Focus)) > 0 THEN
-                    __UI_Controls(__UI_Focus).Cursor = LEN(__UI_Texts(__UI_Focus))
-                    __UI_Controls(__UI_Focus).SelectionStart = 0
-                    __UI_Controls(__UI_Focus).TextIsSelected = __UI_True
+                IF LEN(Text(__UI_Focus)) > 0 THEN
+                    Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                    Control(__UI_Focus).SelectionStart = 0
+                    Control(__UI_Focus).TextIsSelected = __UI_True
                 END IF
             END IF
         CASE "ALIGNOPTIONS"
-            b$ = MKI$(__UI_Controls(__UI_GetID("AlignOptions")).Value - 1)
+            b$ = MKI$(Control(__UI_GetID("AlignOptions")).Value - 1)
             SendData b$, 22
         CASE "BACKSTYLEOPTIONS"
             b$ = MKI$(0)
-            IF __UI_Controls(__UI_GetID("BACKSTYLEOPTIONS")).Value = 2 THEN b$ = MKI$(-1)
+            IF Control(__UI_GetID("BACKSTYLEOPTIONS")).Value = 2 THEN b$ = MKI$(-1)
             SendData b$, 28
         CASE "RED"
-            __UI_Texts(RedTextBoxID) = LTRIM$(STR$(__UI_Controls(RedTrackID).Value))
+            Text(RedTextBoxID) = LTRIM$(STR$(Control(RedTrackID).Value))
         CASE "GREEN"
-            __UI_Texts(GreenTextBoxID) = LTRIM$(STR$(__UI_Controls(GreenTrackID).Value))
+            Text(GreenTextBoxID) = LTRIM$(STR$(Control(GreenTrackID).Value))
         CASE "BLUE"
-            __UI_Texts(BlueTextBoxID) = LTRIM$(STR$(__UI_Controls(BlueTrackID).Value))
+            Text(BlueTextBoxID) = LTRIM$(STR$(Control(BlueTrackID).Value))
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
             DIM NewColor AS _UNSIGNED LONG
-            NewColor = _RGB32(__UI_Controls(RedTrackID).Value, __UI_Controls(GreenTrackID).Value, __UI_Controls(BlueTrackID).Value)
+            NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
             QuickColorPreview NewColor
     END SELECT
 END SUB
@@ -1434,7 +1425,7 @@ SUB LoadPreview
         DO
             b$ = SPACE$(4): GET #BinaryFileNum, , b$
             Dummy = CVL(b$)
-            IF Dummy < 0 OR Dummy > UBOUND(PreviewControls) THEN EXIT DO 'Corrupted exchange file.
+            IF Dummy <= 0 OR Dummy > UBOUND(PreviewControls) THEN EXIT DO 'Corrupted exchange file.
             b$ = SPACE$(2): GET #BinaryFileNum, , b$
             NewType = CVI(b$)
             b$ = SPACE$(2): GET #BinaryFileNum, , b$
@@ -1582,10 +1573,10 @@ END SUB
 
 SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
     DIM PreviewWord$
-    _DEST __UI_Controls(ColorPreviewID).HelperCanvas
-    _FONT __UI_Controls(ColorPreviewID).Font
+    _DEST Control(ColorPreviewID).HelperCanvas
+    _FONT Control(ColorPreviewID).Font
     PreviewWord$ = "Preview"
-    IF __UI_Controls(ColorPropertiesListID).Value = 5 THEN
+    IF Control(ColorPropertiesListID).Value = 5 THEN
         CLS , BackColor
         LINE (20, 20)-STEP(_WIDTH - 41, _HEIGHT - 41), ForeColor, B
     ELSE
@@ -1594,14 +1585,14 @@ SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackCol
         _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(PreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), PreviewWord$
     END IF
     _DEST 0
-    __UI_Controls(ColorPreviewID).PreviousValue = 0 'Force update
+    Control(ColorPreviewID).PreviousValue = 0 'Force update
 END SUB
 
 SUB QuickColorPreview (ThisColor AS _UNSIGNED LONG)
-    _DEST __UI_Controls(ColorPreviewID).HelperCanvas
+    _DEST Control(ColorPreviewID).HelperCanvas
     CLS , ThisColor
     _DEST 0
-    __UI_Controls(ColorPreviewID).PreviousValue = 0 'Force update
+    Control(ColorPreviewID).PreviousValue = 0 'Force update
 END SUB
 
 SUB CheckPreview
@@ -1621,11 +1612,11 @@ SUB CheckPreview
             c& = CloseHandle(hnd&)
             IF b& = 1 AND ExitCode& = 259 THEN
                 'Preview is active.
-                __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
+                Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
             ELSE
                 'Preview was closed.
                 TIMER(__UI_EventsTimer) OFF
-                __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
+                Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
                 __UI_WaitMessage = "Reloading preview window..."
                 OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
                 b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
@@ -1651,7 +1642,7 @@ SUB CheckPreview
         IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
         'Preview was closed.
         TIMER(__UI_EventsTimer) OFF
-        __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
+        Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
         __UI_WaitMessage = "Reloading preview window..."
         OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
         b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
@@ -1672,7 +1663,7 @@ SUB CheckPreview
         TIMER(__UI_EventsTimer) ON
         ELSE
         'Preview is active.
-        __UI_Controls(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
+        Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
         END IF
         END IF
     $END IF
@@ -1799,7 +1790,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                                 PRINT #TextFileNum, a$
                             LOOP
                         CASE __UI_Type_PictureBox, __UI_Type_Button
-                            a$ = "    __UI_LoadImage __UI_Controls(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
+                            a$ = "    __UI_LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
                             PRINT #TextFileNum, a$
                         CASE ELSE
                             a$ = "    __UI_SetText " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
@@ -1810,12 +1801,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     PUT #BinaryFileNum, , PreviewTexts(i)
                 END IF
                 IF PreviewControls(i).TransparentColor > 0 THEN
-                    PRINT #TextFileNum, "    __UI_ClearColor __UI_Controls(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(PreviewControls(i).TransparentColor)) + ", -1"
+                    PRINT #TextFileNum, "    __UI_ClearColor Control(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(PreviewControls(i).TransparentColor)) + ", -1"
                     b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, PreviewControls(i).TransparentColor)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Stretch THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Stretch = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = __UI_True"
                     b$ = MKI$(-4)
                     PUT #BinaryFileNum, , b$
                 END IF
@@ -1836,107 +1827,107 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
                     FontSetup$ = "__UI_Font(" + CHR$(34) + NewFontFile + CHR$(34) + ", " + FontSetup$ + ", " + CHR$(34) + NewFontParameters + CHR$(34) + ")"
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Font = " + FontSetup$
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Font = " + FontSetup$
                 END IF
                 'Colors are saved only if they differ from the theme's defaults
                 IF PreviewControls(i).ForeColor > 0 AND PreviewControls(i).ForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 1) THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).ForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).ForeColor))) + ")"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).ForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).ForeColor))) + ")"
                     b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, PreviewControls(i).ForeColor)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).BackColor > 0 AND PreviewControls(i).BackColor <> __UI_DefaultColor(PreviewControls(i).Type, 2) THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).BackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BackColor))) + ")"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).BackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BackColor))) + ")"
                     b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, PreviewControls(i).BackColor)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).SelectedForeColor > 0 AND PreviewControls(i).SelectedForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 3) THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).SelectedForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedForeColor))) + ")"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).SelectedForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedForeColor))) + ")"
                     b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, PreviewControls(i).SelectedForeColor)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).SelectedBackColor > 0 AND PreviewControls(i).SelectedBackColor <> __UI_DefaultColor(PreviewControls(i).Type, 4) THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).SelectedBackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedBackColor))) + ")"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).SelectedBackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedBackColor))) + ")"
                     b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, PreviewControls(i).SelectedBackColor)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).BorderColor > 0 AND PreviewControls(i).BorderColor <> __UI_DefaultColor(PreviewControls(i).Type, 5) THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).BorderColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BorderColor))) + ")"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).BorderColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BorderColor))) + ")"
                     b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, PreviewControls(i).BorderColor)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).BackStyle = __UI_Transparent THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).BackStyle = __UI_Transparent"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).BackStyle = __UI_Transparent"
                     b$ = MKI$(-11): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).HasBorder THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).HasBorder = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = __UI_True"
                     b$ = MKI$(-12): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Align = __UI_Center THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Align = __UI_Center"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Center"
                     b$ = MKI$(-13) + _MK$(_BYTE, PreviewControls(i).Align): PUT #BinaryFileNum, , b$
                 ELSEIF PreviewControls(i).Align = __UI_Right THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Align = __UI_Right"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Right"
                     b$ = MKI$(-13) + _MK$(_BYTE, PreviewControls(i).Align): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Value <> 0 THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
                     b$ = MKI$(-14) + _MK$(_FLOAT, PreviewControls(i).Value): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Min <> 0 THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
                     b$ = MKI$(-15) + _MK$(_FLOAT, PreviewControls(i).Min): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Max <> 0 THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
                     b$ = MKI$(-16) + _MK$(_FLOAT, PreviewControls(i).Max): PUT #BinaryFileNum, , b$
                 END IF
                 'IF PreviewControls(i).HotKey <> 0 THEN
-                '    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).HotKey = " + LTRIM$(STR$(PreviewControls(i).HotKey))
+                '    PRINT #TextFileNum, "    Control(__UI_NewID).HotKey = " + LTRIM$(STR$(PreviewControls(i).HotKey))
                 '    b$ = MKI$(-17) + MKI$(PreviewControls(i).HotKey): PUT #BinaryFileNum, , b$
                 'END IF
                 'IF PreviewControls(i).HotKeyOffset <> 0 THEN
-                '    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).HotKeyOffset = " + LTRIM$(STR$(PreviewControls(i).HotKeyOffset))
+                '    PRINT #TextFileNum, "    Control(__UI_NewID).HotKeyOffset = " + LTRIM$(STR$(PreviewControls(i).HotKeyOffset))
                 '    b$ = MKI$(-18) + MKI$(PreviewControls(i).HotKeyOffset): PUT #BinaryFileNum, , b$
                 'END IF
                 IF PreviewControls(i).ShowPercentage THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).ShowPercentage = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = __UI_True"
                     b$ = MKI$(-19): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CanHaveFocus THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).CanHaveFocus = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).CanHaveFocus = __UI_True"
                     b$ = MKI$(-20): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Disabled THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Disabled = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Disabled = __UI_True"
                     b$ = MKI$(-21): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Hidden THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Hidden = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Hidden = __UI_True"
                     b$ = MKI$(-22): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CenteredWindow THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).CenteredWindow = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = __UI_True"
                     b$ = MKI$(-23): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).ContextMenuID THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name) + CHR$(34) + ")"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name) + CHR$(34) + ")"
                     b$ = MKI$(-25) + MKI$(LEN(RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name))) + RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Interval THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
                     b$ = MKI$(-26) + _MK$(_FLOAT, PreviewControls(i).Interval): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).WordWrap THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).WordWrap = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).WordWrap = __UI_True"
                     b$ = MKI$(-27): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CanResize AND PreviewControls(i).Type = __UI_Type_Form THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).CanResize = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).CanResize = __UI_True"
                     b$ = MKI$(-29): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Padding > 0 THEN
-                    PRINT #TextFileNum, "    __UI_Controls(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
                     b$ = MKI$(-31) + MKI$(PreviewControls(i).Padding): PUT #BinaryFileNum, , b$
                 END IF
                 PRINT #TextFileNum,
@@ -1979,7 +1970,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 PRINT #TextFileNum,
 
             CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))"
+                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(Control(id).Name))"
                 FOR Dummy = 1 TO UBOUND(PreviewControls)
                     IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
                         PRINT #TextFileNum, "        CASE " + CHR$(34) + UCASE$(RTRIM$(PreviewControls(Dummy).Name)) + CHR$(34)
@@ -1989,7 +1980,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 PRINT #TextFileNum, "    END SELECT"
 
             CASE 7, 8, 11 'Controls that can have focus only
-                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))"
+                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(Control(id).Name))"
                 FOR Dummy = 1 TO UBOUND(PreviewControls)
                     IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
                         PRINT #TextFileNum, "        CASE " + CHR$(34) + UCASE$(RTRIM$(PreviewControls(Dummy).Name)) + CHR$(34)
@@ -1999,7 +1990,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 PRINT #TextFileNum, "    END SELECT"
 
             CASE 12 'Text boxes
-                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))"
+                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(Control(id).Name))"
                 FOR Dummy = 1 TO UBOUND(PreviewControls)
                     IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
                         PRINT #TextFileNum, "        CASE " + CHR$(34) + UCASE$(RTRIM$(PreviewControls(Dummy).Name)) + CHR$(34)
@@ -2009,7 +2000,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 PRINT #TextFileNum, "    END SELECT"
 
             CASE 13 'Dropdown list, List box and Track bar
-                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(__UI_Controls(id).Name))"
+                PRINT #TextFileNum, "    SELECT CASE UCASE$(RTRIM$(Control(id).Name))"
                 FOR Dummy = 1 TO UBOUND(PreviewControls)
                     IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar) THEN
                         PRINT #TextFileNum, "        CASE " + CHR$(34) + UCASE$(RTRIM$(PreviewControls(Dummy).Name)) + CHR$(34)
@@ -2046,12 +2037,12 @@ SUB SaveSelf
     PRINT #1,
     b$ = "UI"
     PUT #2, 1, b$
-    b$ = MKL$(UBOUND(__UI_Controls))
+    b$ = MKL$(UBOUND(Control))
     PUT #2, , b$
-    FOR i = 1 TO UBOUND(__UI_Controls)
-        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 THEN
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 THEN
             a$ = "__UI_NewID = __UI_NewControl("
-            SELECT CASE __UI_Controls(i).Type
+            SELECT CASE Control(i).Type
                 CASE __UI_Type_Form: a$ = a$ + "__UI_Type_Form, "
                 CASE __UI_Type_Frame: a$ = a$ + "__UI_Type_Frame, "
                 CASE __UI_Type_Button: a$ = a$ + "__UI_Type_Button, "
@@ -2068,46 +2059,46 @@ SUB SaveSelf
                 CASE __UI_Type_TrackBar: a$ = a$ + "__UI_Type_TrackBar, "
                 CASE __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, "
             END SELECT
-            a$ = a$ + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ","
-            a$ = a$ + STR$(__UI_Controls(i).Width) + ","
-            a$ = a$ + STR$(__UI_Controls(i).Height) + ","
-            a$ = a$ + STR$(__UI_Controls(i).Left) + ","
-            a$ = a$ + STR$(__UI_Controls(i).Top) + ","
-            IF __UI_Controls(i).ParentID > 0 THEN
-                a$ = a$ + " __UI_GetID(" + CHR$(34) + RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name) + CHR$(34) + "))"
+            a$ = a$ + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ","
+            a$ = a$ + STR$(Control(i).Width) + ","
+            a$ = a$ + STR$(Control(i).Height) + ","
+            a$ = a$ + STR$(Control(i).Left) + ","
+            a$ = a$ + STR$(Control(i).Top) + ","
+            IF Control(i).ParentID > 0 THEN
+                a$ = a$ + " __UI_GetID(" + CHR$(34) + RTRIM$(Control(Control(i).ParentID).Name) + CHR$(34) + "))"
             ELSE
                 a$ = a$ + "0)"
             END IF
             PRINT #1, a$
-            b$ = MKI$(-1) + MKL$(0) + MKI$(__UI_Controls(i).Type) '-1 indicates a new control
-            b$ = b$ + MKI$(LEN(RTRIM$(__UI_Controls(i).Name)))
-            b$ = b$ + RTRIM$(__UI_Controls(i).Name)
-            b$ = b$ + MKI$(__UI_Controls(i).Width) + MKI$(__UI_Controls(i).Height) + MKI$(__UI_Controls(i).Left) + MKI$(__UI_Controls(i).Top) + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name)
+            b$ = MKI$(-1) + MKL$(0) + MKI$(Control(i).Type) '-1 indicates a new control
+            b$ = b$ + MKI$(LEN(RTRIM$(Control(i).Name)))
+            b$ = b$ + RTRIM$(Control(i).Name)
+            b$ = b$ + MKI$(Control(i).Width) + MKI$(Control(i).Height) + MKI$(Control(i).Left) + MKI$(Control(i).Top) + MKI$(LEN(RTRIM$(Control(Control(i).ParentID).Name))) + RTRIM$(Control(Control(i).ParentID).Name)
             PUT #2, , b$
 
-            IF LEN(__UI_Captions(i)) > 0 THEN
-                a$ = "__UI_SetCaption " + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(__UI_Captions(i))
-                b$ = MKI$(-2) + MKL$(LEN(__UI_Captions(i))) '-2 indicates a caption
+            IF LEN(Caption(i)) > 0 THEN
+                a$ = "__UI_SetCaption " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(Caption(i))
+                b$ = MKI$(-2) + MKL$(LEN(Caption(i))) '-2 indicates a caption
                 PUT #2, , b$
-                PUT #2, , __UI_Captions(i)
+                PUT #2, , Caption(i)
                 PRINT #1, a$
             END IF
 
-            IF LEN(__UI_Tips(i)) > 0 THEN
-                a$ = "__UI_SetTip " + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(__UI_Tips(i))
-                b$ = MKI$(-24) + MKL$(LEN(__UI_Tips(i))) '-24 indicates a tip
+            IF LEN(ToolTip(i)) > 0 THEN
+                a$ = "__UI_SetTip " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(ToolTip(i))
+                b$ = MKI$(-24) + MKL$(LEN(ToolTip(i))) '-24 indicates a tip
                 PUT #2, , b$
-                PUT #2, , __UI_Tips(i)
+                PUT #2, , ToolTip(i)
                 PRINT #1, a$
             END IF
 
-            IF LEN(__UI_Texts(i)) > 0 THEN
-                SELECT CASE __UI_Controls(i).Type
+            IF LEN(Text(i)) > 0 THEN
+                SELECT CASE Control(i).Type
                     CASE __UI_Type_ListBox, __UI_Type_DropdownList
                         DIM TempCaption$, TempText$, FindLF&, ThisItem%, ThisItemTop%
                         DIM LastVisibleItem AS INTEGER
 
-                        TempText$ = __UI_Texts(i)
+                        TempText$ = Text(i)
                         ThisItem% = 0
                         DO WHILE LEN(TempText$)
                             ThisItem% = ThisItem% + 1
@@ -2119,60 +2110,60 @@ SUB SaveSelf
                                 TempCaption$ = TempText$
                                 TempText$ = ""
                             END IF
-                            a$ = "__UI_AddListBoxItem " + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ", " + CHR$(34) + TempCaption$ + CHR$(34)
+                            a$ = "__UI_AddListBoxItem " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + CHR$(34) + TempCaption$ + CHR$(34)
                             PRINT #1, a$
                         LOOP
                     CASE __UI_Type_PictureBox, __UI_Type_Button
-                        a$ = "__UI_LoadImage __UI_Controls(__UI_NewID), " + CHR$(34) + __UI_Texts(i) + CHR$(34)
+                        a$ = "__UI_LoadImage Control(__UI_NewID), " + CHR$(34) + Text(i) + CHR$(34)
                         PRINT #1, a$
                     CASE ELSE
-                        a$ = "__UI_SetText " + CHR$(34) + RTRIM$(__UI_Controls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(__UI_Captions(i))
+                        a$ = "__UI_SetText " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(Caption(i))
                         PRINT #1, a$
                 END SELECT
-                b$ = MKI$(-3) + MKL$(LEN(__UI_Texts(i))) '-3 indicates a text
+                b$ = MKI$(-3) + MKL$(LEN(Text(i))) '-3 indicates a text
                 PUT #2, , b$
-                PUT #2, , __UI_Texts(i)
+                PUT #2, , Text(i)
             END IF
-            IF __UI_Controls(i).TransparentColor > 0 THEN
-                PRINT #1, "__UI_ClearColor __UI_Controls(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(__UI_Controls(i).TransparentColor)) + ", -1"
-                b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, __UI_Controls(i).TransparentColor)
+            IF Control(i).TransparentColor > 0 THEN
+                PRINT #1, "__UI_ClearColor Control(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(Control(i).TransparentColor)) + ", -1"
+                b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, Control(i).TransparentColor)
                 PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Stretch THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Stretch = __UI_True"
+            IF Control(i).Stretch THEN
+                PRINT #1, "Control(__UI_NewID).Stretch = __UI_True"
                 b$ = MKI$(-4)
                 PUT #2, , b$
             END IF
             'Inheritable properties won't be saved if they are the same as the parent's
-            IF __UI_Controls(i).Type = __UI_Type_Form THEN
-                IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
+            IF Control(i).Type = __UI_Type_Form THEN
+                IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                     'Internal fonts
                     SaveInternalFont:
-                    FontSetup$ = "__UI_Font(" + CHR$(34) + "VGA Emulated" + CHR$(34) + ", " + CHR$(34) + CHR$(34) + "," + STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max) + ", " + CHR$(34) + CHR$(34) + ")"
-                    PRINT #1, "__UI_Controls(__UI_NewID).Font = " + FontSetup$
-                    FontSetup$ = "**" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max))
+                    FontSetup$ = "__UI_Font(" + CHR$(34) + "VGA Emulated" + CHR$(34) + ", " + CHR$(34) + CHR$(34) + "," + STR$(Control(__UI_GetFontID(Control(i).Font)).Max) + ", " + CHR$(34) + CHR$(34) + ")"
+                    PRINT #1, "Control(__UI_NewID).Font = " + FontSetup$
+                    FontSetup$ = "**" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #2, , b$
                 ELSE
                     SaveExternalFont:
-                    FontSetup$ = "__UI_Font(" + CHR$(34) + __UI_Texts(__UI_GetFontID(__UI_Controls(i).Font)) + CHR$(34) + "," + STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max) + ", " + CHR$(34) + __UI_Captions(__UI_GetFontID(__UI_Controls(i).Font)) + CHR$(34) + ")"
-                    PRINT #1, "__UI_Controls(__UI_NewID).Font = " + FontSetup$
-                    FontSetup$ = RTRIM$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Name) + "\" + __UI_Texts(__UI_GetFontID(__UI_Controls(i).Font)) + "\" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max)) + "\" + __UI_Captions(__UI_GetFontID(__UI_Controls(i).Font))
+                    FontSetup$ = "__UI_Font(" + CHR$(34) + Text(__UI_GetFontID(Control(i).Font)) + CHR$(34) + "," + STR$(Control(__UI_GetFontID(Control(i).Font)).Max) + ", " + CHR$(34) + Caption(__UI_GetFontID(Control(i).Font)) + CHR$(34) + ")"
+                    PRINT #1, "Control(__UI_NewID).Font = " + FontSetup$
+                    FontSetup$ = RTRIM$(Control(__UI_GetFontID(Control(i).Font)).Name) + "\" + Text(__UI_GetFontID(Control(i).Font)) + "\" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max)) + "\" + Caption(__UI_GetFontID(Control(i).Font))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #2, , b$
                 END IF
             ELSE
-                IF __UI_Controls(i).ParentID > 0 THEN
-                    IF __UI_Controls(i).Font > 0 AND __UI_Controls(i).Font <> __UI_Controls(__UI_Controls(i).ParentID).Font THEN
-                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 167 THEN
+                IF Control(i).ParentID > 0 THEN
+                    IF Control(i).Font > 0 AND Control(i).Font <> Control(Control(i).ParentID).Font THEN
+                        IF Control(i).Font = 8 OR Control(i).Font = 167 THEN
                             GOTO SaveInternalFont
                         ELSE
                             GOTO SaveExternalFont
                         END IF
                     END IF
                 ELSE
-                    IF __UI_Controls(i).Font > 0 AND __UI_Controls(i).Font <> __UI_Controls(__UI_FormID).Font THEN
-                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 167 THEN
+                    IF Control(i).Font > 0 AND Control(i).Font <> Control(__UI_FormID).Font THEN
+                        IF Control(i).Font = 8 OR Control(i).Font = 167 THEN
                             GOTO SaveInternalFont
                         ELSE
                             GOTO SaveExternalFont
@@ -2181,96 +2172,96 @@ SUB SaveSelf
                 END IF
             END IF
             'Colors are saved only if they differ from the theme's defaults
-            IF __UI_Controls(i).ForeColor <> __UI_DefaultColor(__UI_Controls(i).Type, 1) THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).ForeColor = _RGB32(" + LTRIM$(STR$(_RED32(__UI_Controls(i).ForeColor))) + ", " + LTRIM$(STR$(_GREEN32(__UI_Controls(i).ForeColor))) + ", " + LTRIM$(STR$(_BLUE32(__UI_Controls(i).ForeColor))) + ")"
-                b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, __UI_Controls(i).ForeColor)
+            IF Control(i).ForeColor <> __UI_DefaultColor(Control(i).Type, 1) THEN
+                PRINT #1, "Control(__UI_NewID).ForeColor = _RGB32(" + LTRIM$(STR$(_RED32(Control(i).ForeColor))) + ", " + LTRIM$(STR$(_GREEN32(Control(i).ForeColor))) + ", " + LTRIM$(STR$(_BLUE32(Control(i).ForeColor))) + ")"
+                b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, Control(i).ForeColor)
                 PUT #2, , b$
             END IF
-            IF __UI_Controls(i).BackColor <> __UI_DefaultColor(__UI_Controls(i).Type, 2) THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).BackColor = _RGB32(" + LTRIM$(STR$(_RED32(__UI_Controls(i).BackColor))) + ", " + LTRIM$(STR$(_GREEN32(__UI_Controls(i).BackColor))) + ", " + LTRIM$(STR$(_BLUE32(__UI_Controls(i).BackColor))) + ")"
-                b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, __UI_Controls(i).BackColor)
+            IF Control(i).BackColor <> __UI_DefaultColor(Control(i).Type, 2) THEN
+                PRINT #1, "Control(__UI_NewID).BackColor = _RGB32(" + LTRIM$(STR$(_RED32(Control(i).BackColor))) + ", " + LTRIM$(STR$(_GREEN32(Control(i).BackColor))) + ", " + LTRIM$(STR$(_BLUE32(Control(i).BackColor))) + ")"
+                b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, Control(i).BackColor)
                 PUT #2, , b$
             END IF
-            IF __UI_Controls(i).SelectedForeColor <> __UI_DefaultColor(__UI_Controls(i).Type, 3) THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).SelectedForeColor = _RGB32(" + LTRIM$(STR$(_RED32(__UI_Controls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_GREEN32(__UI_Controls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_BLUE32(__UI_Controls(i).SelectedForeColor))) + ")"
-                b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, __UI_Controls(i).SelectedForeColor)
+            IF Control(i).SelectedForeColor <> __UI_DefaultColor(Control(i).Type, 3) THEN
+                PRINT #1, "Control(__UI_NewID).SelectedForeColor = _RGB32(" + LTRIM$(STR$(_RED32(Control(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_GREEN32(Control(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_BLUE32(Control(i).SelectedForeColor))) + ")"
+                b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, Control(i).SelectedForeColor)
                 PUT #2, , b$
             END IF
-            IF __UI_Controls(i).SelectedBackColor <> __UI_DefaultColor(__UI_Controls(i).Type, 4) THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).SelectedBackColor = _RGB32(" + LTRIM$(STR$(_RED32(__UI_Controls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_GREEN32(__UI_Controls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_BLUE32(__UI_Controls(i).SelectedBackColor))) + ")"
-                b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, __UI_Controls(i).SelectedBackColor)
+            IF Control(i).SelectedBackColor <> __UI_DefaultColor(Control(i).Type, 4) THEN
+                PRINT #1, "Control(__UI_NewID).SelectedBackColor = _RGB32(" + LTRIM$(STR$(_RED32(Control(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_GREEN32(Control(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_BLUE32(Control(i).SelectedBackColor))) + ")"
+                b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, Control(i).SelectedBackColor)
                 PUT #2, , b$
             END IF
-            IF __UI_Controls(i).BorderColor <> __UI_DefaultColor(__UI_Controls(i).Type, 5) THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).BorderColor = _RGB32(" + LTRIM$(STR$(_RED32(__UI_Controls(i).BorderColor))) + ", " + LTRIM$(STR$(_GREEN32(__UI_Controls(i).BorderColor))) + ", " + LTRIM$(STR$(_BLUE32(__UI_Controls(i).BorderColor))) + ")"
-                b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, __UI_Controls(i).BorderColor)
+            IF Control(i).BorderColor <> __UI_DefaultColor(Control(i).Type, 5) THEN
+                PRINT #1, "Control(__UI_NewID).BorderColor = _RGB32(" + LTRIM$(STR$(_RED32(Control(i).BorderColor))) + ", " + LTRIM$(STR$(_GREEN32(Control(i).BorderColor))) + ", " + LTRIM$(STR$(_BLUE32(Control(i).BorderColor))) + ")"
+                b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, Control(i).BorderColor)
                 PUT #2, , b$
             END IF
-            IF __UI_Controls(i).BackStyle = __UI_Transparent THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).BackStyle = __UI_Transparent"
+            IF Control(i).BackStyle = __UI_Transparent THEN
+                PRINT #1, "Control(__UI_NewID).BackStyle = __UI_Transparent"
                 b$ = MKI$(-11): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).HasBorder THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).HasBorder = __UI_True"
+            IF Control(i).HasBorder THEN
+                PRINT #1, "Control(__UI_NewID).HasBorder = __UI_True"
                 b$ = MKI$(-12): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Align = __UI_Center THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Align = __UI_Center"
-                b$ = MKI$(-13) + _MK$(_BYTE, __UI_Controls(i).Align): PUT #2, , b$
-            ELSEIF __UI_Controls(i).Align = __UI_Right THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Align = __UI_Right"
-                b$ = MKI$(-13) + _MK$(_BYTE, __UI_Controls(i).Align): PUT #2, , b$
+            IF Control(i).Align = __UI_Center THEN
+                PRINT #1, "Control(__UI_NewID).Align = __UI_Center"
+                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #2, , b$
+            ELSEIF Control(i).Align = __UI_Right THEN
+                PRINT #1, "Control(__UI_NewID).Align = __UI_Right"
+                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Value <> 0 THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Value = " + LTRIM$(STR$(__UI_Controls(i).Value))
-                b$ = MKI$(-14) + _MK$(_FLOAT, __UI_Controls(i).Value): PUT #2, , b$
+            IF Control(i).Value <> 0 THEN
+                PRINT #1, "Control(__UI_NewID).Value = " + LTRIM$(STR$(Control(i).Value))
+                b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Min <> 0 THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Min = " + LTRIM$(STR$(__UI_Controls(i).Min))
-                b$ = MKI$(-15) + _MK$(_FLOAT, __UI_Controls(i).Min): PUT #2, , b$
+            IF Control(i).Min <> 0 THEN
+                PRINT #1, "Control(__UI_NewID).Min = " + LTRIM$(STR$(Control(i).Min))
+                b$ = MKI$(-15) + _MK$(_FLOAT, Control(i).Min): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Max <> 0 THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Max = " + LTRIM$(STR$(__UI_Controls(i).Max))
-                b$ = MKI$(-16) + _MK$(_FLOAT, __UI_Controls(i).Max): PUT #2, , b$
+            IF Control(i).Max <> 0 THEN
+                PRINT #1, "Control(__UI_NewID).Max = " + LTRIM$(STR$(Control(i).Max))
+                b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).HotKey <> 0 THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).HotKey = " + LTRIM$(STR$(__UI_Controls(i).HotKey))
-                b$ = MKI$(-17) + MKI$(__UI_Controls(i).HotKey): PUT #2, , b$
+            IF Control(i).HotKey <> 0 THEN
+                PRINT #1, "Control(__UI_NewID).HotKey = " + LTRIM$(STR$(Control(i).HotKey))
+                b$ = MKI$(-17) + MKI$(Control(i).HotKey): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).HotKeyOffset <> 0 THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).HotKeyOffset = " + LTRIM$(STR$(__UI_Controls(i).HotKeyOffset))
-                b$ = MKI$(-18) + MKI$(__UI_Controls(i).HotKeyOffset): PUT #2, , b$
+            IF Control(i).HotKeyOffset <> 0 THEN
+                PRINT #1, "Control(__UI_NewID).HotKeyOffset = " + LTRIM$(STR$(Control(i).HotKeyOffset))
+                b$ = MKI$(-18) + MKI$(Control(i).HotKeyOffset): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).ShowPercentage THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).ShowPercentage = __UI_True"
+            IF Control(i).ShowPercentage THEN
+                PRINT #1, "Control(__UI_NewID).ShowPercentage = __UI_True"
                 b$ = MKI$(-19): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).CanHaveFocus THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).CanHaveFocus = __UI_True"
+            IF Control(i).CanHaveFocus THEN
+                PRINT #1, "Control(__UI_NewID).CanHaveFocus = __UI_True"
                 b$ = MKI$(-20): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Disabled THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Disabled = __UI_True"
+            IF Control(i).Disabled THEN
+                PRINT #1, "Control(__UI_NewID).Disabled = __UI_True"
                 b$ = MKI$(-21): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Hidden THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Hidden = __UI_True"
+            IF Control(i).Hidden THEN
+                PRINT #1, "Control(__UI_NewID).Hidden = __UI_True"
                 b$ = MKI$(-22): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).CenteredWindow THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).CenteredWindow = __UI_True"
+            IF Control(i).CenteredWindow THEN
+                PRINT #1, "Control(__UI_NewID).CenteredWindow = __UI_True"
                 b$ = MKI$(-23): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).ContextMenuID THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name) + CHR$(34) + ")"
-                b$ = MKI$(-25) + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name): PUT #2, , b$
+            IF Control(i).ContextMenuID THEN
+                PRINT #1, "Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + RTRIM$(Control(Control(i).ContextMenuID).Name) + CHR$(34) + ")"
+                b$ = MKI$(-25) + MKI$(LEN(RTRIM$(Control(Control(i).ContextMenuID).Name))) + RTRIM$(Control(Control(i).ContextMenuID).Name): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).Interval THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).Interval = " + LTRIM$(STR$(__UI_Controls(i).Interval))
-                b$ = MKI$(-26) + _MK$(_FLOAT, __UI_Controls(i).Interval): PUT #2, , b$
+            IF Control(i).Interval THEN
+                PRINT #1, "Control(__UI_NewID).Interval = " + LTRIM$(STR$(Control(i).Interval))
+                b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval): PUT #2, , b$
             END IF
-            IF __UI_Controls(i).WordWrap THEN
-                PRINT #1, "__UI_Controls(__UI_NewID).WordWrap = __UI_True"
+            IF Control(i).WordWrap THEN
+                PRINT #1, "Control(__UI_NewID).WordWrap = __UI_True"
                 b$ = MKI$(-27): PUT #2, , b$
             END IF
             PRINT #1,

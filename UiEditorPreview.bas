@@ -1,7 +1,6 @@
 OPTION _EXPLICIT
 
 $EXEICON:'.\InForm\InForm Preview.ico'
-_ICON
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -97,7 +96,7 @@ SUB __UI_BeforeUpdateDisplay
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
 
-    IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
+    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
     SendData b$, OffsetMenuPanelIsON
 
     UiEditorFile = FREEFILE
@@ -114,7 +113,7 @@ SUB __UI_BeforeUpdateDisplay
             b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowTop, b$
             NewWindowTop = CVI(b$)
 
-            IF NewWindowLeft >= 0 AND NewWindowTop >= 0 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
+            IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
                 _SCREENMOVE NewWindowLeft + 610, NewWindowTop
             END IF
         $END IF
@@ -144,30 +143,30 @@ SUB __UI_BeforeUpdateDisplay
         TempValue = CVI(b$)
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewControl, b$
         IF TempValue > 0 THEN
-            IF __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
-                ThisContainer = __UI_Controls(__UI_FirstSelectedID).ParentID
-                TempWidth = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Width
-                TempHeight = __UI_Controls(__UI_Controls(__UI_FirstSelectedID).ParentID).Height
-            ELSEIF __UI_Controls(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-                ThisContainer = __UI_Controls(__UI_FirstSelectedID).ID
-                TempWidth = __UI_Controls(__UI_FirstSelectedID).Width
-                TempHeight = __UI_Controls(__UI_FirstSelectedID).Height
+            IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+                ThisContainer = Control(__UI_FirstSelectedID).ParentID
+                TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
+                TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
+            ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+                ThisContainer = Control(__UI_FirstSelectedID).ID
+                TempWidth = Control(__UI_FirstSelectedID).Width
+                TempHeight = Control(__UI_FirstSelectedID).Height
             ELSE
-                TempWidth = __UI_Controls(__UI_FormID).Width
-                TempHeight = __UI_Controls(__UI_FormID).Height
+                TempWidth = Control(__UI_FormID).Width
+                TempHeight = Control(__UI_FormID).Height
             END IF
             SELECT CASE TempValue
                 CASE __UI_Type_Button
                     TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
                 CASE __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton
                     TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
-                    __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                    __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_TextBox
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                    __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                    __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_ListBox
                     TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
-                    __UI_Controls(TempValue).HasBorder = __UI_True
+                    Control(TempValue).HasBorder = __UI_True
                 CASE __UI_Type_DropdownList
                     TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
                 CASE __UI_Type_TrackBar
@@ -178,32 +177,32 @@ SUB __UI_BeforeUpdateDisplay
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
                 CASE __UI_Type_Frame
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
-                    __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                    __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_MenuBar
                     'Before adding a menu bar item, reset all other menu bar items' alignment
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
-                            __UI_Controls(i).Align = __UI_Left
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_MenuBar THEN
+                            Control(i).Align = __UI_Left
                         END IF
                     NEXT
                     TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, 0)
-                    __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
+                    __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
                     __UI_RefreshMenuBar
-                    __UI_ActivateMenu __UI_Controls(TempValue), __UI_False
+                    __UI_ActivateMenu Control(TempValue), __UI_False
                 CASE __UI_Type_MenuItem
-                    IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
                         TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
-                        __UI_SetCaption __UI_Controls(TempValue).Name, RTRIM$(__UI_Controls(TempValue).Name)
-                        __UI_ActivateMenu __UI_Controls(__UI_ParentMenu), __UI_False
+                        __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                        __UI_ActivateMenu Control(__UI_ParentMenu), __UI_False
                     END IF
             END SELECT
-            IF __UI_ActiveMenu > 0 AND (__UI_Controls(TempValue).Type <> __UI_Type_MenuBar AND __UI_Controls(TempValue).Type <> __UI_Type_MenuItem) THEN
-                __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+            IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
+                __UI_DestroyControl Control(__UI_ActiveMenu)
             END IF
-            FOR i = 1 TO UBOUND(__UI_Controls)
-                __UI_Controls(i).ControlIsSelected = __UI_False
+            FOR i = 1 TO UBOUND(Control)
+                Control(i).ControlIsSelected = __UI_False
             NEXT
-            __UI_Controls(TempValue).ControlIsSelected = __UI_True
+            Control(TempValue).ControlIsSelected = __UI_True
             __UI_TotalSelectedControls = 1
             __UI_FirstSelectedID = TempValue
             __UI_ForceRedraw = __UI_True
@@ -222,7 +221,7 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls = 1 THEN
-                        __UI_Controls(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
+                        Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
                     ELSEIF __UI_TotalSelectedControls = 0 THEN
                         'IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FormID THEN
                         '    DO
@@ -230,23 +229,23 @@ SUB __UI_BeforeUpdateDisplay
                         '        IF __UI_GetID(b$) = 0 THEN EXIT DO
                         '    LOOP
                         'END IF
-                        __UI_Controls(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
+                        Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
                     END IF
                 CASE 2 'Caption
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_SetCaption RTRIM$(__UI_Controls(i).Name), b$
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                __UI_SetCaption RTRIM$(Control(i).Name), b$
                                 IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
-                                IF __UI_Controls(i).Type = __UI_Type_MenuItem THEN
-                                    __UI_ActivateMenu __UI_Controls(__UI_Controls(i).ParentID), __UI_False
+                                IF Control(i).Type = __UI_Type_MenuItem THEN
+                                    __UI_ActivateMenu Control(Control(i).ParentID), __UI_False
                                 END IF
                             END IF
                         NEXT
                     ELSE
-                        __UI_Captions(__UI_FormID) = b$
+                        Caption(__UI_FormID) = b$
                         i = __UI_FormID
                         IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                     END IF
@@ -259,12 +258,12 @@ SUB __UI_BeforeUpdateDisplay
 
                         NewName$ = RTRIM$(b$)
 
-                        IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
+                        IF Control(i).Type = __UI_Type_MenuBar THEN
                             IF LEN(NewName$) > 36 THEN NewName$ = LEFT$(NewName$, 36)
-                        ELSEIF __UI_Controls(i).Type <> __UI_Type_Form AND __UI_Controls(i).Type <> __UI_Type_MenuItem AND __UI_Controls(i).Type <> __UI_Type_ListBox AND __UI_Controls(i).Type <> __UI_Type_TrackBar AND __UI_Controls(i).Type <> __UI_Type_DropdownList THEN
+                        ELSEIF Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_ListBox AND Control(i).Type <> __UI_Type_TrackBar AND Control(i).Type <> __UI_Type_DropdownList THEN
                             IF LEN(NewName$) > 38 THEN NewName$ = LEFT$(NewName$, 38)
                         END IF
-                        SELECT CASE __UI_Controls(i).Type
+                        SELECT CASE Control(i).Type
                             CASE __UI_Type_Button: NewName$ = NewName$ + "BT"
                             CASE __UI_Type_Label: NewName$ = NewName$ + "LB"
                             CASE __UI_Type_CheckBox: NewName$ = NewName$ + "CB"
@@ -273,11 +272,11 @@ SUB __UI_BeforeUpdateDisplay
                             CASE __UI_Type_ProgressBar: NewName$ = NewName$ + "PB"
                             CASE __UI_Type_MenuBar: NewName$ = NewName$ + "Menu"
                             CASE __UI_Type_MenuItem
-                                NewName$ = RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name) + NewName$
+                                NewName$ = RTRIM$(Control(Control(i).ParentID).Name) + NewName$
                             CASE __UI_Type_PictureBox: NewName$ = NewName$ + "PX"
                         END SELECT
 
-                        __UI_Controls(i).Name = AdaptName$(NewName$, i)
+                        Control(i).Name = AdaptName$(NewName$, i)
                     END IF
                     RETURN
 
@@ -287,21 +286,21 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Texts(i) = b$
-                                IF __UI_Controls(i).Type = __UI_Type_Button OR __UI_Controls(i).Type = __UI_Type_MenuItem THEN
-                                    __UI_LoadImage __UI_Controls(i), b$
-                                ELSEIF __UI_Controls(i).Type = __UI_Type_PictureBox THEN
-                                    __UI_LoadImage __UI_Controls(i), b$
-                                    IF LEN(__UI_Texts(i)) > 0 THEN 'Load successful
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Text(i) = b$
+                                IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
+                                    __UI_LoadImage Control(i), b$
+                                ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
+                                    __UI_LoadImage Control(i), b$
+                                    IF LEN(Text(i)) > 0 THEN 'Load successful
                                         'Keep aspect ratio at load
-                                        __UI_Controls(i).Height = (_HEIGHT(__UI_Controls(i).HelperCanvas) / _WIDTH(__UI_Controls(i).HelperCanvas)) * __UI_Controls(i).Width
+                                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                                     END IF
-                                ELSEIF __UI_Controls(i).Type = __UI_Type_ListBox OR __UI_Controls(i).Type = __UI_Type_DropdownList THEN
-                                    __UI_Texts(i) = __UI_ReplaceText(b$, "\n", CHR$(13), __UI_False, TotalReplacements)
-                                    IF __UI_Controls(i).Max < TotalReplacements + 1 THEN __UI_Controls(i).Max = TotalReplacements + 1
-                                    __UI_Controls(i).LastVisibleItem = 0 'Reset it so it's recalculated
+                                ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
+                                    Text(i) = __UI_ReplaceText(b$, "\n", CHR$(13), __UI_False, TotalReplacements)
+                                    IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
+                                    Control(i).LastVisibleItem = 0 'Reset it so it's recalculated
                                 END IF
                             END IF
                         NEXT
@@ -310,26 +309,26 @@ SUB __UI_BeforeUpdateDisplay
                         ExeIcon = IconPreview&(b$)
                         IF ExeIcon < -1 THEN
                             _ICON ExeIcon
-                            __UI_Texts(__UI_FormID) = b$
+                            Text(__UI_FormID) = b$
                         ELSE
                             _ICON
-                            __UI_Texts(__UI_FormID) = ""
+                            Text(__UI_FormID) = ""
                         END IF
                     END IF
                 CASE 4 'Top
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Top = TempValue
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Top = TempValue
                         END IF
                     NEXT
                 CASE 5 'Left
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Left = TempValue
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Left = TempValue
                         END IF
                     NEXT
                 CASE 6 'Width
@@ -337,28 +336,28 @@ SUB __UI_BeforeUpdateDisplay
                     TempValue = CVI(b$)
                     IF TempValue < 1 THEN TempValue = 1
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).Width = TempValue
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).Width = TempValue
                             END IF
                         NEXT
                     ELSE
                         IF TempValue < 20 THEN TempValue = 20
-                        __UI_Controls(__UI_FormID).Width = TempValue
+                        Control(__UI_FormID).Width = TempValue
                     END IF
                 CASE 7 'Height
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF TempValue < 1 THEN TempValue = 1
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).Height = TempValue
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).Height = TempValue
                             END IF
                         NEXT
                     ELSE
                         IF TempValue < 20 THEN TempValue = 20
-                        __UI_Controls(__UI_FormID).Height = TempValue
+                        Control(__UI_FormID).Height = TempValue
                     END IF
                 CASE 8 'Font
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -382,17 +381,17 @@ SUB __UI_BeforeUpdateDisplay
 
                     IF TotalSep = 2 AND NewFontSize > 0 THEN
                         IF __UI_TotalSelectedControls > 0 THEN
-                            FOR i = 1 TO UBOUND(__UI_Controls)
-                                IF __UI_Controls(i).ControlIsSelected THEN
-                                    __UI_Controls(i).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                            FOR i = 1 TO UBOUND(Control)
+                                IF Control(i).ControlIsSelected THEN
+                                    Control(i).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
                                 END IF
                             NEXT
                         ELSE
-                            __UI_Controls(__UI_FormID).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                            Control(__UI_FormID).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
                             DIM MustRedrawMenus AS _BYTE
-                            FOR i = 1 TO UBOUND(__UI_Controls)
-                                IF __UI_Controls(i).Type = __UI_Type_MenuBar OR __UI_Controls(i).Type = __UI_Type_MenuItem OR __UI_Controls(i).Type = __UI_Type_MenuPanel OR __UI_Controls(i).Type = __UI_Type_ContextMenu THEN
-                                    __UI_Controls(i).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
+                            FOR i = 1 TO UBOUND(Control)
+                                IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                    Control(i).Font = __UI_Font(NewFontFile, NewFontSize, NewFontParameters)
                                     MustRedrawMenus = __UI_True
                                 END IF
                             NEXT
@@ -402,88 +401,88 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 9 'Tooltip
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Tips(i) = b$
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            ToolTip(i) = b$
                         END IF
                     NEXT
                 CASE 10 'Value
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Value = _CV(_FLOAT, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Value = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 11 'Min
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Min = _CV(_FLOAT, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Min = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 12 'Max
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Max = _CV(_FLOAT, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Max = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 13 'Interval
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Interval = _CV(_FLOAT, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Interval = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 14 'Stretch
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Stretch = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Stretch = CVI(b$)
                         END IF
                     NEXT
                 CASE 15 'Has border
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).HasBorder = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).HasBorder = CVI(b$)
                         END IF
                     NEXT
                 CASE 16 'Show percentage
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).ShowPercentage = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).ShowPercentage = CVI(b$)
                         END IF
                     NEXT
                 CASE 17 'Word wrap
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).WordWrap = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).WordWrap = CVI(b$)
                         END IF
                     NEXT
                 CASE 18 'Can have focus
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).CanHaveFocus = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).CanHaveFocus = CVI(b$)
                         END IF
                     NEXT
                 CASE 19 'Disabled
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Disabled = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Disabled = CVI(b$)
                         END IF
                     NEXT
                 CASE 20 'Hidden
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Hidden = CVI(b$)
-                            IF __UI_Controls(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = __UI_Controls(i).ParentID THEN
-                                __UI_ActivateMenu __UI_Controls(__UI_Controls(i).ParentID), __UI_False
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Hidden = CVI(b$)
+                            IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = Control(i).ParentID THEN
+                                __UI_ActivateMenu Control(Control(i).ParentID), __UI_False
                             END IF
                         END IF
                     NEXT
@@ -491,16 +490,16 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
-                        __UI_Controls(__UI_FormID).CenteredWindow = TempValue
+                        Control(__UI_FormID).CenteredWindow = TempValue
                     END IF
                 CASE 22 'Alignment
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).Align = CVI(b$)
-                            IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
-                                IF __UI_Controls(i).Align <> __UI_Left THEN __UI_Controls(i).Align = __UI_Right
-                                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Align = CVI(b$)
+                            IF Control(i).Type = __UI_Type_MenuBar THEN
+                                IF Control(i).Align <> __UI_Left THEN Control(i).Align = __UI_Right
+                                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
                                 __UI_RefreshMenuBar
                             END IF
                         END IF
@@ -508,98 +507,98 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 23 'ForeColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     ELSE
-                        __UI_Controls(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
-                                __UI_Controls(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        Control(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar THEN
+                                Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     END IF
                 CASE 24 'BackColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     ELSE
-                        __UI_Controls(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).Type = __UI_Type_MenuBar THEN
-                                __UI_Controls(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                        Control(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar THEN
+                                Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     END IF
                 CASE 25 'SelectedForeColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     ELSE
-                        __UI_Controls(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).Type = __UI_Type_MenuBar OR __UI_Controls(i).Type = __UI_Type_MenuItem OR __UI_Controls(i).Type = __UI_Type_MenuPanel OR __UI_Controls(i).Type = __UI_Type_ContextMenu THEN
-                                __UI_Controls(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        Control(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     END IF
                 CASE 26 'SelectedBackColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     ELSE
-                        __UI_Controls(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).Type = __UI_Type_MenuBar OR __UI_Controls(i).Type = __UI_Type_MenuItem OR __UI_Controls(i).Type = __UI_Type_MenuPanel OR __UI_Controls(i).Type = __UI_Type_ContextMenu THEN
-                                __UI_Controls(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        Control(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     END IF
                 CASE 27 'BorderColor
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).BorderColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).BorderColor = _CV(_UNSIGNED LONG, b$)
                             END IF
                         NEXT
                     ELSE
-                        __UI_Controls(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
+                        Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
                     END IF
                 CASE 28 'BackStyle
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-                    FOR i = 1 TO UBOUND(__UI_Controls)
-                        IF __UI_Controls(i).ControlIsSelected THEN
-                            __UI_Controls(i).BackStyle = CVI(b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BackStyle = CVI(b$)
                         END IF
                     NEXT
                 CASE 29 'CanResize
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
-                        __UI_Controls(__UI_FormID).CanResize = TempValue
+                        Control(__UI_FormID).CanResize = TempValue
                     END IF
                 CASE 31 'Padding
                     b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(__UI_Controls)
-                            IF __UI_Controls(i).ControlIsSelected THEN
-                                __UI_Controls(i).Padding = TempValue
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).Padding = TempValue
                             END IF
                         NEXT
                     END IF
@@ -611,15 +610,15 @@ SUB __UI_BeforeUpdateDisplay
             __UI_ForceRedraw = __UI_True
         END IF
 
-        IF __UI_ActiveMenu > 0 AND LEFT$(__UI_Controls(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
-            __UI_DestroyControl __UI_Controls(__UI_ActiveMenu)
+        IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
+            __UI_DestroyControl Control(__UI_ActiveMenu)
             b$ = MKI$(-2) 'Signal to the editor that the preview can't show the context menu
             PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
 
         b$ = MKL$(__UI_TotalSelectedControls)
         PUT #UiEditorFile, OffsetTotalControlsSelected, b$
-        IF __UI_Controls(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
+        IF Control(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
         b$ = MKL$(__UI_FirstSelectedID)
         PUT #UiEditorFile, OffsetFirstSelectedID, b$
         b$ = MKL$(__UI_FormID)
@@ -683,9 +682,9 @@ SUB LoadPreview
         END IF
         IF LogFileLoad THEN PRINT #LogFileNum, "FOUND INFORM+1"
         __UI_AutoRefresh = __UI_False
-        FOR i = UBOUND(__UI_Controls) TO 1 STEP -1
-            IF LEFT$(__UI_Controls(i).Name, 9) <> "__UI_Text" AND LEFT$(__UI_Controls(i).Name, 16) <> "__UI_PreviewMenu" THEN
-                __UI_DestroyControl __UI_Controls(i)
+        FOR i = UBOUND(Control) TO 1 STEP -1
+            IF LEFT$(Control(i).Name, 9) <> "__UI_Text" AND LEFT$(Control(i).Name, 16) <> "__UI_PreviewMenu" THEN
+                __UI_DestroyControl Control(i)
             END IF
         NEXT
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
@@ -693,13 +692,13 @@ SUB LoadPreview
         b$ = SPACE$(4): GET #BinaryFileNum, , b$
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
 
-        REDIM _PRESERVE __UI_Captions(1 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE Caption(1 TO CVL(b$)) AS STRING
         REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
-        REDIM __UI_Texts(1 TO CVL(b$)) AS STRING
+        REDIM Text(1 TO CVL(b$)) AS STRING
         REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
-        REDIM __UI_Tips(1 TO CVL(b$)) AS STRING
+        REDIM ToolTip(1 TO CVL(b$)) AS STRING
         REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
-        REDIM _PRESERVE __UI_Controls(0 TO CVL(b$)) AS __UI_ControlTYPE
+        REDIM _PRESERVE Control(0 TO CVL(b$)) AS __UI_ControlTYPE
         b$ = SPACE$(2): GET #BinaryFileNum, , b$
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL:" + STR$(CVI(b$))
         IF CVI(b$) <> -1 THEN GOTO LoadError
@@ -744,25 +743,25 @@ SUB LoadPreview
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         b$ = SPACE$(CVL(b$))
                         GET #BinaryFileNum, , b$
-                        __UI_SetCaption RTRIM$(__UI_Controls(TempValue).Name), b$
-                        IF LogFileLoad THEN PRINT #LogFileNum, "CAPTION:" + __UI_Captions(TempValue)
+                        __UI_SetCaption RTRIM$(Control(TempValue).Name), b$
+                        IF LogFileLoad THEN PRINT #LogFileNum, "CAPTION:" + Caption(TempValue)
                     CASE -3 'Text
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         b$ = SPACE$(CVL(b$))
                         GET #BinaryFileNum, , b$
-                        __UI_Texts(TempValue) = b$
-                        IF __UI_Controls(TempValue).Type = __UI_Type_PictureBox OR __UI_Controls(TempValue).Type = __UI_Type_Button THEN
-                            __UI_LoadImage __UI_Controls(TempValue), __UI_Texts(TempValue)
-                        ELSEIF __UI_Controls(TempValue).Type = __UI_Type_Form THEN
+                        Text(TempValue) = b$
+                        IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
+                            __UI_LoadImage Control(TempValue), Text(TempValue)
+                        ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
                             IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
                             ExeIcon = IconPreview&(b$)
                             IF ExeIcon < -1 THEN
                                 _ICON ExeIcon
                             END IF
                         END IF
-                        IF LogFileLoad THEN PRINT #LogFileNum, "TEXT:" + __UI_Texts(TempValue)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "TEXT:" + Text(TempValue)
                     CASE -4 'Stretch
-                        __UI_Controls(TempValue).Stretch = __UI_True
+                        Control(TempValue).Stretch = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "STRETCH"
                     CASE -5 'Font
                         IF LogFileLoad THEN PRINT #LogFileNum, "FONT:";
@@ -781,102 +780,102 @@ SUB LoadPreview
 
                         NewFontSize = VAL(FontSetup$)
 
-                        __UI_Controls(TempValue).Font = __UI_Font(NewFontFile, NewFontSize, NewFontAttributes)
+                        Control(TempValue).Font = __UI_Font(NewFontFile, NewFontSize, NewFontAttributes)
                     CASE -6 'ForeColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        Control(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "FORECOLOR"
                     CASE -7 'BackColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).BackColor = _CV(_UNSIGNED LONG, b$)
+                        Control(TempValue).BackColor = _CV(_UNSIGNED LONG, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "BACKCOLOR"
                     CASE -8 'SelectedForeColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        Control(TempValue).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "SELECTEDFORECOLOR"
                     CASE -9 'SelectedBackColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        Control(TempValue).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "SELECTEDBACKCOLOR"
                     CASE -10 'BorderColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).BorderColor = _CV(_UNSIGNED LONG, b$)
+                        Control(TempValue).BorderColor = _CV(_UNSIGNED LONG, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "BORDERCOLOR"
                     CASE -11
-                        __UI_Controls(TempValue).BackStyle = __UI_Transparent
+                        Control(TempValue).BackStyle = __UI_Transparent
                         IF LogFileLoad THEN PRINT #LogFileNum, "BACKSTYLE:TRANSPARENT"
                     CASE -12
-                        __UI_Controls(TempValue).HasBorder = __UI_True
+                        Control(TempValue).HasBorder = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "HASBORDER"
                     CASE -13
                         b$ = SPACE$(1): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).Align = _CV(_BYTE, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "ALIGN="; __UI_Controls(TempValue).Align
+                        Control(TempValue).Align = _CV(_BYTE, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "ALIGN="; Control(TempValue).Align
                     CASE -14
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).Value = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "VALUE="; __UI_Controls(TempValue).Value
+                        Control(TempValue).Value = _CV(_FLOAT, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "VALUE="; Control(TempValue).Value
                     CASE -15
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).Min = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "MIN="; __UI_Controls(TempValue).Min
+                        Control(TempValue).Min = _CV(_FLOAT, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "MIN="; Control(TempValue).Min
                     CASE -16
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).Max = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "MAX="; __UI_Controls(TempValue).Max
+                        Control(TempValue).Max = _CV(_FLOAT, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "MAX="; Control(TempValue).Max
                     CASE -17
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).HotKey = CVI(b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "HOTKEY="; __UI_Controls(TempValue).HotKey; "("; CHR$(__UI_Controls(TempValue).HotKey); ")"
+                        Control(TempValue).HotKey = CVI(b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "HOTKEY="; Control(TempValue).HotKey; "("; CHR$(Control(TempValue).HotKey); ")"
                     CASE -18
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).HotKeyOffset = CVI(b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "HOTKEYOFFSET="; __UI_Controls(TempValue).HotKeyOffset
+                        Control(TempValue).HotKeyOffset = CVI(b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "HOTKEYOFFSET="; Control(TempValue).HotKeyOffset
                     CASE -19
-                        __UI_Controls(TempValue).ShowPercentage = __UI_True
+                        Control(TempValue).ShowPercentage = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "SHOWPERCENTAGE"
                     CASE -20
-                        __UI_Controls(TempValue).CanHaveFocus = __UI_True
+                        Control(TempValue).CanHaveFocus = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "CANHAVEFOCUS"
                     CASE -21
-                        __UI_Controls(TempValue).Disabled = __UI_True
+                        Control(TempValue).Disabled = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "DISABLED"
                     CASE -22
-                        __UI_Controls(TempValue).Hidden = __UI_True
+                        Control(TempValue).Hidden = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "HIDDEN"
                     CASE -23
-                        __UI_Controls(TempValue).CenteredWindow = __UI_True
+                        Control(TempValue).CenteredWindow = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "CENTEREDWINDOW"
                     CASE -24 'Tips
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         b$ = SPACE$(CVL(b$))
                         GET #BinaryFileNum, , b$
-                        __UI_Tips(TempValue) = b$
-                        IF LogFileLoad THEN PRINT #LogFileNum, "TIP: "; __UI_Tips(TempValue)
+                        ToolTip(TempValue) = b$
+                        IF LogFileLoad THEN PRINT #LogFileNum, "TIP: "; ToolTip(TempValue)
                     CASE -25
                         DIM ContextMenuName AS STRING
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         ContextMenuName = SPACE$(CVI(b$)): GET #BinaryFileNum, , ContextMenuName
-                        __UI_Controls(TempValue).ContextMenuID = __UI_GetID(ContextMenuName)
+                        Control(TempValue).ContextMenuID = __UI_GetID(ContextMenuName)
                         IF LogFileLoad THEN PRINT #LogFileNum, "CONTEXTMENU:"; ContextMenuName
                     CASE -26
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).Interval = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "INTERVAL="; __UI_Controls(TempValue).Interval
+                        Control(TempValue).Interval = _CV(_FLOAT, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "INTERVAL="; Control(TempValue).Interval
                     CASE -27
-                        __UI_Controls(TempValue).WordWrap = __UI_True
+                        Control(TempValue).WordWrap = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "WORDWRAP"
                     CASE -28
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).TransparentColor = _CV(_UNSIGNED LONG, b$)
+                        Control(TempValue).TransparentColor = _CV(_UNSIGNED LONG, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "TRANSPARENTCOLOR"
-                        __UI_ClearColor __UI_Controls(TempValue).HelperCanvas, __UI_Controls(TempValue).TransparentColor, -1
+                        __UI_ClearColor Control(TempValue).HelperCanvas, Control(TempValue).TransparentColor, -1
                     CASE -29
-                        __UI_Controls(TempValue).CanResize = __UI_True
+                        Control(TempValue).CanResize = __UI_True
                         IF LogFileLoad THEN PRINT #LogFileNum, "CANRESIZE"
                     CASE -31
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        __UI_Controls(TempValue).Padding = CVI(b$)
+                        Control(TempValue).Padding = CVI(b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "PADDING" + STR$(CVI(b$))
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
@@ -919,81 +918,81 @@ SUB SavePreview
 
     b$ = "InForm" + CHR$(1)
     PUT #BinFileNum, 1, b$
-    b$ = MKL$(UBOUND(__UI_Controls))
+    b$ = MKL$(UBOUND(Control))
     PUT #BinFileNum, , b$
-    FOR i = 1 TO UBOUND(__UI_Controls)
-        IF __UI_Controls(i).ID > 0 AND __UI_Controls(i).Type <> __UI_Type_MenuPanel AND __UI_Controls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(__UI_Controls(i).Name)) > 0 AND LEFT$(RTRIM$(__UI_Controls(i).Name), 5) <> "__UI_" THEN
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 AND LEFT$(RTRIM$(Control(i).Name), 5) <> "__UI_" THEN
             IF Debug THEN
-                PRINT #TxtFileNum, __UI_Controls(i).ID,
-                PRINT #TxtFileNum, RTRIM$(__UI_Controls(i).Name)
+                PRINT #TxtFileNum, Control(i).ID,
+                PRINT #TxtFileNum, RTRIM$(Control(i).Name)
             END IF
-            b$ = MKI$(-1) + MKL$(i) + MKI$(__UI_Controls(i).Type) '-1 indicates a new control
-            b$ = b$ + MKI$(LEN(RTRIM$(__UI_Controls(i).Name)))
-            b$ = b$ + RTRIM$(__UI_Controls(i).Name)
-            b$ = b$ + MKI$(__UI_Controls(i).Width) + MKI$(__UI_Controls(i).Height) + MKI$(__UI_Controls(i).Left) + MKI$(__UI_Controls(i).Top)
-            IF __UI_Controls(i).ParentID > 0 THEN
-                b$ = b$ + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ParentID).Name)
+            b$ = MKI$(-1) + MKL$(i) + MKI$(Control(i).Type) '-1 indicates a new control
+            b$ = b$ + MKI$(LEN(RTRIM$(Control(i).Name)))
+            b$ = b$ + RTRIM$(Control(i).Name)
+            b$ = b$ + MKI$(Control(i).Width) + MKI$(Control(i).Height) + MKI$(Control(i).Left) + MKI$(Control(i).Top)
+            IF Control(i).ParentID > 0 THEN
+                b$ = b$ + MKI$(LEN(RTRIM$(Control(Control(i).ParentID).Name))) + RTRIM$(Control(Control(i).ParentID).Name)
             ELSE
                 b$ = b$ + MKI$(0)
             END IF
             PUT #BinFileNum, , b$
 
-            IF LEN(__UI_Captions(i)) > 0 THEN
-                IF __UI_Controls(i).HotKeyPosition > 0 THEN
-                    a$ = LEFT$(__UI_Captions(i), __UI_Controls(i).HotKeyPosition - 1) + "&" + MID$(__UI_Captions(i), __UI_Controls(i).HotKeyPosition)
+            IF LEN(Caption(i)) > 0 THEN
+                IF Control(i).HotKeyPosition > 0 THEN
+                    a$ = LEFT$(Caption(i), Control(i).HotKeyPosition - 1) + "&" + MID$(Caption(i), Control(i).HotKeyPosition)
                 ELSE
-                    a$ = __UI_Captions(i)
+                    a$ = Caption(i)
                 END IF
                 b$ = MKI$(-2) + MKL$(LEN(a$)) '-2 indicates a caption
                 PUT #BinFileNum, , b$
                 PUT #BinFileNum, , a$
             END IF
 
-            IF LEN(__UI_Tips(i)) > 0 THEN
-                b$ = MKI$(-24) + MKL$(LEN(__UI_Tips(i))) '-24 indicates a tip
+            IF LEN(ToolTip(i)) > 0 THEN
+                b$ = MKI$(-24) + MKL$(LEN(ToolTip(i))) '-24 indicates a tip
                 PUT #BinFileNum, , b$
-                PUT #BinFileNum, , __UI_Tips(i)
+                PUT #BinFileNum, , ToolTip(i)
             END IF
 
-            IF LEN(__UI_Texts(i)) > 0 THEN
-                b$ = MKI$(-3) + MKL$(LEN(__UI_Texts(i))) '-3 indicates a text
+            IF LEN(Text(i)) > 0 THEN
+                b$ = MKI$(-3) + MKL$(LEN(Text(i))) '-3 indicates a text
                 PUT #BinFileNum, , b$
-                PUT #BinFileNum, , __UI_Texts(i)
+                PUT #BinFileNum, , Text(i)
             END IF
-            IF __UI_Controls(i).TransparentColor > 0 THEN
-                b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, __UI_Controls(i).TransparentColor)
+            IF Control(i).TransparentColor > 0 THEN
+                b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, Control(i).TransparentColor)
                 PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Stretch THEN
+            IF Control(i).Stretch THEN
                 b$ = MKI$(-4)
                 PUT #BinFileNum, , b$
             END IF
             'Inheritable properties won't be saved if they are the same as the parent's
-            IF __UI_Controls(i).Type = __UI_Type_Form THEN
-                IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
+            IF Control(i).Type = __UI_Type_Form THEN
+                IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                     'Internal fonts
                     SaveInternalFont:
-                    FontSetup$ = "**" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max))
+                    FontSetup$ = "**" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 ELSE
                     SaveExternalFont:
-                    FontSetup$ = __UI_Texts(__UI_GetFontID(__UI_Controls(i).Font)) + "*" + __UI_Captions(__UI_GetFontID(__UI_Controls(i).Font)) + "*" + LTRIM$(STR$(__UI_Controls(__UI_GetFontID(__UI_Controls(i).Font)).Max))
+                    FontSetup$ = Text(__UI_GetFontID(Control(i).Font)) + "*" + Caption(__UI_GetFontID(Control(i).Font)) + "*" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 END IF
             ELSE
-                IF __UI_Controls(i).ParentID > 0 THEN
-                    IF __UI_Controls(i).Font > 0 AND __UI_Controls(i).Font <> __UI_Controls(__UI_Controls(i).ParentID).Font THEN
-                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
+                IF Control(i).ParentID > 0 THEN
+                    IF Control(i).Font > 0 AND Control(i).Font <> Control(Control(i).ParentID).Font THEN
+                        IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                             GOTO SaveInternalFont
                         ELSE
                             GOTO SaveExternalFont
                         END IF
                     END IF
                 ELSE
-                    IF __UI_Controls(i).Font > 0 AND __UI_Controls(i).Font <> __UI_Controls(__UI_FormID).Font THEN
-                        IF __UI_Controls(i).Font = 8 OR __UI_Controls(i).Font = 16 THEN
+                    IF Control(i).Font > 0 AND Control(i).Font <> Control(__UI_FormID).Font THEN
+                        IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                             GOTO SaveInternalFont
                         ELSE
                             GOTO SaveExternalFont
@@ -1002,86 +1001,86 @@ SUB SavePreview
                 END IF
             END IF
             'Colors are saved only if they differ from the theme's defaults
-            IF __UI_Controls(i).ForeColor <> __UI_DefaultColor(__UI_Controls(i).Type, 1) THEN
-                b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, __UI_Controls(i).ForeColor)
+            IF Control(i).ForeColor <> __UI_DefaultColor(Control(i).Type, 1) THEN
+                b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, Control(i).ForeColor)
                 PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).BackColor <> __UI_DefaultColor(__UI_Controls(i).Type, 2) THEN
-                b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, __UI_Controls(i).BackColor)
+            IF Control(i).BackColor <> __UI_DefaultColor(Control(i).Type, 2) THEN
+                b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, Control(i).BackColor)
                 PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).SelectedForeColor <> __UI_DefaultColor(__UI_Controls(i).Type, 3) THEN
-                b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, __UI_Controls(i).SelectedForeColor)
+            IF Control(i).SelectedForeColor <> __UI_DefaultColor(Control(i).Type, 3) THEN
+                b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, Control(i).SelectedForeColor)
                 PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).SelectedBackColor <> __UI_DefaultColor(__UI_Controls(i).Type, 4) THEN
-                b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, __UI_Controls(i).SelectedBackColor)
+            IF Control(i).SelectedBackColor <> __UI_DefaultColor(Control(i).Type, 4) THEN
+                b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, Control(i).SelectedBackColor)
                 PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).BorderColor <> __UI_DefaultColor(__UI_Controls(i).Type, 5) THEN
-                b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, __UI_Controls(i).BorderColor)
+            IF Control(i).BorderColor <> __UI_DefaultColor(Control(i).Type, 5) THEN
+                b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, Control(i).BorderColor)
                 PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).BackStyle = __UI_Transparent THEN
+            IF Control(i).BackStyle = __UI_Transparent THEN
                 b$ = MKI$(-11): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).HasBorder THEN
+            IF Control(i).HasBorder THEN
                 b$ = MKI$(-12): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Align = __UI_Center THEN
-                b$ = MKI$(-13) + _MK$(_BYTE, __UI_Controls(i).Align): PUT #BinFileNum, , b$
-            ELSEIF __UI_Controls(i).Align = __UI_Right THEN
-                b$ = MKI$(-13) + _MK$(_BYTE, __UI_Controls(i).Align): PUT #BinFileNum, , b$
+            IF Control(i).Align = __UI_Center THEN
+                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #BinFileNum, , b$
+            ELSEIF Control(i).Align = __UI_Right THEN
+                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Value <> 0 THEN
-                b$ = MKI$(-14) + _MK$(_FLOAT, __UI_Controls(i).Value): PUT #BinFileNum, , b$
+            IF Control(i).Value <> 0 THEN
+                b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Min <> 0 THEN
-                b$ = MKI$(-15) + _MK$(_FLOAT, __UI_Controls(i).Min): PUT #BinFileNum, , b$
+            IF Control(i).Min <> 0 THEN
+                b$ = MKI$(-15) + _MK$(_FLOAT, Control(i).Min): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Max <> 0 THEN
-                b$ = MKI$(-16) + _MK$(_FLOAT, __UI_Controls(i).Max): PUT #BinFileNum, , b$
+            IF Control(i).Max <> 0 THEN
+                b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max): PUT #BinFileNum, , b$
             END IF
-            'IF __UI_Controls(i).HotKey <> 0 THEN
-            '    b$ = MKI$(-17) + MKI$(__UI_Controls(i).HotKey): PUT #BinFileNum, , b$
+            'IF Control(i).HotKey <> 0 THEN
+            '    b$ = MKI$(-17) + MKI$(Control(i).HotKey): PUT #BinFileNum, , b$
             'END IF
-            'IF __UI_Controls(i).HotKeyOffset <> 0 THEN
-            '    b$ = MKI$(-18) + MKI$(__UI_Controls(i).HotKeyOffset): PUT #BinFileNum, , b$
+            'IF Control(i).HotKeyOffset <> 0 THEN
+            '    b$ = MKI$(-18) + MKI$(Control(i).HotKeyOffset): PUT #BinFileNum, , b$
             'END IF
-            IF __UI_Controls(i).ShowPercentage THEN
+            IF Control(i).ShowPercentage THEN
                 b$ = MKI$(-19): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).CanHaveFocus THEN
+            IF Control(i).CanHaveFocus THEN
                 b$ = MKI$(-20): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Disabled THEN
+            IF Control(i).Disabled THEN
                 b$ = MKI$(-21): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).Hidden THEN
+            IF Control(i).Hidden THEN
                 b$ = MKI$(-22): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).CenteredWindow THEN
+            IF Control(i).CenteredWindow THEN
                 b$ = MKI$(-23): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).ContextMenuID THEN
-                IF LEFT$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name, 9) <> "__UI_Text" AND LEFT$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name, 16) <> "__UI_PreviewMenu" THEN
-                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name))) + RTRIM$(__UI_Controls(__UI_Controls(i).ContextMenuID).Name): PUT #BinFileNum, , b$
+            IF Control(i).ContextMenuID THEN
+                IF LEFT$(Control(Control(i).ContextMenuID).Name, 9) <> "__UI_Text" AND LEFT$(Control(Control(i).ContextMenuID).Name, 16) <> "__UI_PreviewMenu" THEN
+                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(Control(Control(i).ContextMenuID).Name))) + RTRIM$(Control(Control(i).ContextMenuID).Name): PUT #BinFileNum, , b$
                 END IF
             END IF
-            IF __UI_Controls(i).Interval THEN
-                b$ = MKI$(-26) + _MK$(_FLOAT, __UI_Controls(i).Interval): PUT #BinFileNum, , b$
+            IF Control(i).Interval THEN
+                b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).WordWrap THEN
+            IF Control(i).WordWrap THEN
                 b$ = MKI$(-27): PUT #BinFileNum, , b$
             END IF
-            IF __UI_Controls(i).CanResize AND __UI_Controls(i).Type = __UI_Type_Form THEN
+            IF Control(i).CanResize AND Control(i).Type = __UI_Type_Form THEN
                 b$ = MKI$(-29): PUT #BinFileNum, , b$
             END IF
-            'IF __UI_Controls(i).HotKey > 0 THEN
-            '    b$ = MKI$(-30) + MKI$(__UI_Controls(i).HotKeyPosition): PUT #BinFileNum, , b$
+            'IF Control(i).HotKey > 0 THEN
+            '    b$ = MKI$(-30) + MKI$(Control(i).HotKeyPosition): PUT #BinFileNum, , b$
             'END IF
-            IF __UI_Controls(i).Padding > 0 THEN
-                b$ = MKI$(-31) + MKI$(__UI_Controls(i).Padding): PUT #BinFileNum, , b$
+            IF Control(i).Padding > 0 THEN
+                b$ = MKI$(-31) + MKI$(Control(i).Padding): PUT #BinFileNum, , b$
             END IF
 
         END IF
