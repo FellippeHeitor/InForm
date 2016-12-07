@@ -335,6 +335,7 @@ SUB __UI_Init
     IF __UI_FormID = 0 THEN SYSTEM
 
     SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+    _DELAY .1
     _SCREENSHOW
 
     _DELAY .1
@@ -375,6 +376,7 @@ SUB __UI_Init
     _DISPLAYORDER _SOFTWARE, _HARDWARE
     _DISPLAY
 
+    __UI_AssignIDs
     __UI_OnLoad
 
     __UI_EventsTimer = _FREETIMER
@@ -1975,6 +1977,7 @@ SUB __UI_EventDispatcher
                                     NEXT
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Left = LeftMost
                                         END IF
                                     NEXT
@@ -1990,6 +1993,7 @@ SUB __UI_EventDispatcher
                                     NEXT
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Left = RightMost - (Control(i).Width - 1)
                                         END IF
                                     NEXT
@@ -2012,6 +2016,7 @@ SUB __UI_EventDispatcher
                                     BottomMost = 0
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             IF Control(i).Top < TopMost THEN TopMost = Control(i).Top
                                             IF Control(i).Top + Control(i).Height - 1 > BottomMost THEN BottomMost = Control(i).Top + Control(i).Height - 1
                                         END IF
@@ -2025,6 +2030,7 @@ SUB __UI_EventDispatcher
                                     TopDifference = TopMost - NewTopMost
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Top = Control(i).Top - TopDifference
                                         END IF
                                     NEXT
@@ -2060,6 +2066,7 @@ SUB __UI_EventDispatcher
                                     LeftDifference = LeftMost - NewLeftMost
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Left = Control(i).Left - LeftDifference
                                         END IF
                                     NEXT
@@ -2086,6 +2093,7 @@ SUB __UI_EventDispatcher
                                     END IF
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Top = NewTopMost - Control(i).Height / 2
                                         END IF
                                     NEXT
@@ -2112,6 +2120,7 @@ SUB __UI_EventDispatcher
                                     END IF
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Left = NewLeftMost - Control(i).Width / 2
                                         END IF
                                     NEXT
@@ -2126,6 +2135,7 @@ SUB __UI_EventDispatcher
                                     NEXT
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Top = TopMost
                                         END IF
                                     NEXT
@@ -2140,6 +2150,7 @@ SUB __UI_EventDispatcher
                                     NEXT
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
+                                            __UI_Click 0 'Force the preview to inform it was edited
                                             Control(i).Top = BottomMost - (Control(i).Height - 1)
                                         END IF
                                     NEXT
@@ -2180,6 +2191,7 @@ SUB __UI_EventDispatcher
                                     BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
                                     FindLefts = Control(SubList(1)).Left - BinSize
                                     FOR i = 1 TO __UI_TotalSelectedControls
+                                        __UI_Click 0 'Force the preview to inform it was edited
                                         FindLefts = FindLefts + BinSize
                                         Control(SubList(i)).Left = FindLefts
                                         FindLefts = FindLefts + Control(SubList(i)).Width
@@ -2232,6 +2244,7 @@ SUB __UI_EventDispatcher
                                     BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
                                     FindTops = Control(SubList(1)).Top - BinSize
                                     FOR i = 1 TO __UI_TotalSelectedControls
+                                        __UI_Click 0 'Force the preview to inform it was edited
                                         FindTops = FindTops + BinSize
                                         Control(SubList(i)).Top = FindTops
                                         FindTops = FindTops + Control(SubList(i)).Height
@@ -2278,6 +2291,7 @@ SUB __UI_EventDispatcher
     'Drag update
     DIM SetNewParent AS _BYTE, LeftOffset AS INTEGER, TopOffset AS INTEGER
     IF __UI_IsDragging AND __UI_DraggingID > 0 THEN
+        __UI_Click 0 'Force the preview to inform it was edited
         IF Control(__UI_DraggingID).Type <> __UI_Type_Frame THEN
             IF Control(__UI_BelowHoveringID).Type = __UI_Type_Frame OR Control(__UI_HoveringID).Type = __UI_Type_Frame THEN
                 IF Control(__UI_HoveringID).Type = __UI_Type_Frame THEN __UI_BelowHoveringID = __UI_HoveringID
@@ -2342,6 +2356,7 @@ SUB __UI_EventDispatcher
         END IF
     END IF
     IF __UI_IsResizing AND __UI_ResizingID > 0 THEN
+        __UI_Click 0 'Force the preview to inform it was edited
         __UI_ForceRedraw = __UI_True
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ControlIsSelected THEN
@@ -2948,6 +2963,7 @@ SUB __UI_EventDispatcher
                                     ELSE
                                         __UI_DeleteSelection
                                     END IF
+                                    __UI_TextChanged __UI_Focus
                                 END IF
                             CASE 13
                                 IF Control(__UI_Focus).Multiline THEN
@@ -2960,6 +2976,7 @@ SUB __UI_EventDispatcher
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                         END IF
                                         Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine + 1
+                                        __UI_TextChanged __UI_Focus
                                     ELSE
                                         's1 = Control(__UI_Focus).SelectionStart
                                         's2 = Control(__UI_Focus).Cursor
@@ -2979,9 +2996,11 @@ SUB __UI_EventDispatcher
                                         ELSEIF Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).Cursor <= LEN(Text(__UI_Focus)) - 1 THEN
                                             Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 2)
                                         END IF
+                                        __UI_TextChanged __UI_Focus
                                     END IF
                                 ELSE
                                     __UI_DeleteSelection
+                                    __UI_TextChanged __UI_Focus
                                 END IF
                             CASE 19200 'Left arrow key
                                 __UI_CheckSelection __UI_Focus
@@ -3100,6 +3119,7 @@ SUB __UI_EventDispatcher
             CASE ASC("V"), ASC("v")
                 IF __UI_CtrlIsDown THEN
                     ControlPaste:
+                    __UI_Click 0 'Force the preview to inform it was edited
                     Clip$ = _CLIPBOARD$
                     IF Clip$ = "InForm" + CHR$(1) THEN
                         DIM PasteID AS LONG, ThisControl AS LONG, FirstToBeSelected AS LONG
@@ -3163,6 +3183,7 @@ SUB __UI_EventDispatcher
                 ControlDelete:
                 FOR i = UBOUND(Control) TO 1 STEP -1
                     IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
                         IF Control(i).Type = __UI_Type_Frame THEN
                             'Remove controls from container before deleting it
                             FOR j = 1 TO UBOUND(Control)
@@ -3194,6 +3215,7 @@ SUB __UI_EventDispatcher
             CASE 19200 'Left arrow key
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Width = Control(i).Width - 1
                         ELSE
@@ -3204,6 +3226,7 @@ SUB __UI_EventDispatcher
             CASE 19712 'Right arrow key
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Width = Control(i).Width + 1
                         ELSE
@@ -3214,6 +3237,7 @@ SUB __UI_EventDispatcher
             CASE 18432 'Up arrow key
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Height = Control(i).Height - 1
                         ELSE
@@ -3224,6 +3248,7 @@ SUB __UI_EventDispatcher
             CASE 20480 'Down arrow key
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Height = Control(i).Height + 1
                         ELSE

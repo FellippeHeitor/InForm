@@ -61,7 +61,7 @@ END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
     DIM b$
-    b$ = MKI$(-1)
+    b$ = MKI$(-3)
     SendData b$, OffsetNewDataFromPreview
 END SUB
 
@@ -75,21 +75,15 @@ SUB __UI_FocusOut (id AS LONG)
 END SUB
 
 SUB __UI_MouseDown (id AS LONG)
-    DIM b$
-    b$ = MKI$(-1)
-    SendData b$, OffsetNewDataFromPreview
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
-    DIM b$
-    b$ = MKI$(-1)
-    SendData b$, OffsetNewDataFromPreview
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
     DIM b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
-    STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER
+    STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
 
     SavePreview
 
@@ -128,8 +122,15 @@ SUB __UI_BeforeUpdateDisplay
             b& = GetExitCodeProcess(hnd&, ExitCode&)
             IF b& = 1 AND ExitCode& = 259 THEN
                 'Editor is active.
+                EditorWasActive = __UI_True
             ELSE
                 'Editor was closed.
+                IF EditorWasActive = __UI_False THEN
+                    'Preview was launched by user
+                    DIM Answer AS LONG
+                    _SCREENHIDE
+                    Answer = __UI_MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
+                END IF
                 SYSTEM
             END IF
             b& = CloseHandle(hnd&)

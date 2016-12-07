@@ -241,6 +241,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "ColorPreview", 159, 115, 10, 51, __UI_GetID("ColorMixer"))
+    Control(__UI_NewID).HasBorder = __UI_True
 
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Red", 198, 40, 191, 17, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).Max = 255
@@ -271,5 +272,9 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BorderColor = _RGB32(0, 0, 255)
     Control(__UI_NewID).HasBorder = __UI_True
     Control(__UI_NewID).CanHaveFocus = __UI_True
+
+END SUB
+
+SUB __UI_AssignIDs
 
 END SUB
