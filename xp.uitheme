@@ -74,7 +74,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         This.PreviousParentID = This.ParentID
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
 
         IF This.Canvas <> 0 THEN
             _FREEIMAGE This.Canvas
@@ -127,7 +127,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF NOT This.Disabled THEN
             TempColor~& = This.ForeColor
         ELSE
-            TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+            TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
         END IF
         Temp& = uprint((IconWidth / 2) + (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2), ((This.Height \ 2) - uheight& \ 2), TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
@@ -157,7 +157,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.ControlState = ControlState
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -181,7 +181,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF NOT This.Disabled THEN
             TempColor~& = This.ForeColor
         ELSE
-            TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+            TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
         'Caption:
@@ -286,7 +286,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -309,7 +309,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         DIM i AS SINGLE
 
         CaptionIndent = 0
-        IF This.HasBorder = __UI_True THEN
+        IF This.HasBorder = True THEN
             CaptionIndent = 5
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
@@ -323,7 +323,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF NOT This.Disabled THEN
             TempColor~& = This.ForeColor
         ELSE
-            TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+            TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
         Temp& = uprint(CaptionIndent, ((This.Height \ 2) - uspacing& \ 2) + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
@@ -364,7 +364,7 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -398,7 +398,7 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF NOT This.Disabled THEN
             TempColor~& = This.ForeColor
         ELSE
-            TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+            TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
         Temp& = uprint(CaptionIndent, ((This.Height \ 2) - uspacing& \ 2) + 1, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
@@ -437,7 +437,7 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -497,7 +497,7 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
             IF NOT This.Disabled THEN
                 TempColor~& = This.ForeColor
             ELSE
-                TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 70)
+                TempColor~& = Darken(Control(__UI_FormID).BackColor, 70)
             END IF
 
             Temp& = __UI_PrintWidth(TempCaption$)
@@ -537,7 +537,7 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
         This.ControlState = TempControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -614,14 +614,14 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         'IF Text(This.ID) <> __UI_TempTexts(This.ID) THEN
         '    __UI_TempTexts(This.ID) = Text(This.ID)
         '    IF This.Multiline THEN
-        '        This.HasHScrollbar = __UI_False
+        '        This.HasHScrollbar = False
         '        DIM TempWidth AS LONG
         '        This.LongestLine = 0
         '        FOR i = 1 TO __UI_CountLines(This.ID)
         '            TempWidth = __UI_PrintWidth(__UI_GetTextBoxLine$(This.ID, i, 0))
         '            IF TempWidth > This.LongestLine THEN This.LongestLine = TempWidth
-        '            IF (This.LongestLine > This.Width AND This.HasVScrollBar = __UI_False) OR (This.LongestLine > This.Width - __UI_ScrollbarWidth AND This.HasVScrollBar = __UI_True) THEN
-        '                This.HasHScrollbar = __UI_True
+        '            IF (This.LongestLine > This.Width AND This.HasVScrollBar = False) OR (This.LongestLine > This.Width - __UI_ScrollbarWidth AND This.HasVScrollBar = True) THEN
+        '                This.HasHScrollbar = True
         '            END IF
         '        NEXT
         '    END IF
@@ -629,7 +629,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.SelectionLength = __UI_SelectionLength
         This.PrevCursor = This.Cursor
         This.PrevVisibleCursor = This.VisibleCursor
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
         This.PrevFirstVisibleLine = This.FirstVisibleLine
         This.PrevCurrentLine = This.CurrentLine
@@ -656,7 +656,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         IF NOT This.Disabled AND LEN(Text(This.ID)) THEN
             COLOR This.ForeColor, This.BackColor
         ELSE
-            COLOR __UI_Darken(Control(__UI_FormID).BackColor, 80), This.BackColor
+            COLOR Darken(Control(__UI_FormID).BackColor, 80), This.BackColor
         END IF
 
         STATIC c AS _UNSIGNED LONG
@@ -682,7 +682,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                     cursorBlink%% = NOT cursorBlink%%
                 ELSEIF TIMER - __UI_LastInputReceived < .1 THEN
                     SetCursor# = TIMER
-                    cursorBlink%% = __UI_True
+                    cursorBlink%% = True
                 END IF
                 IF cursorBlink%% THEN
                     IF This.Cursor > UBOUND(__UI_ThisLineChars) THEN This.Cursor = UBOUND(__UI_ThisLineChars)
@@ -717,7 +717,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                 cursorBlink%% = NOT cursorBlink%%
             ELSEIF TIMER - __UI_LastInputReceived < .1 THEN
                 SetCursor# = TIMER
-                cursorBlink%% = __UI_True
+                cursorBlink%% = True
             END IF
 
             FOR ThisLine = This.FirstVisibleLine TO TotalLines
@@ -761,10 +761,10 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
 
             IF TotalLines > This.Height \ uspacing& THEN
                 This.FieldArea = This.Width / _FONTWIDTH((This.Font)) - 3
-                This.HasVScrollbar = __UI_True
+                This.HasVScrollbar = True
                 __UI_DrawVScrollBar This, ControlState
             ELSE
-                This.HasVScrollbar = __UI_False
+                This.HasVScrollbar = False
             END IF
 
             'IF This.HasHScrollbar THEN
@@ -796,7 +796,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         This.PreviousValue = This.Value
         This.PreviousInputViewStart = This.InputViewStart
         __UI_TempTexts(This.ID) = Text(This.ID)
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -845,7 +845,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                     IF NOT This.Disabled THEN
                         TempColor~& = This.ForeColor
                     ELSE
-                        TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+                        TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
                     END IF
 
                     IF ThisItem% = This.Value THEN
@@ -870,14 +870,14 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             IF This.LastVisibleItem = 0 THEN This.LastVisibleItem = LastVisibleItem
 
             IF This.Max > This.LastVisibleItem THEN
-                This.HasVScrollbar = __UI_True
+                This.HasVScrollbar = True
                 __UI_DrawVScrollBar This, ControlState
             ELSE
-                This.HasVScrollbar = __UI_False
+                This.HasVScrollbar = False
             END IF
         END IF
 
-        IF This.HasBorder = __UI_True THEN
+        IF This.HasBorder = True THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------
@@ -946,10 +946,10 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
     END IF
 
     'Mousedown on the track:
-    IF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 4 AND __UI_DraggingThumb = __UI_False THEN
+    IF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 4 AND __UI_DraggingThumb = False THEN
         'Above the thumb
         _PUTIMAGE (This.Left, This.Top)-STEP(ImageWidth_Button - 1, ThumbTop + ThumbHeight + __UI_ScrollbarButtonHeight - 1), ControlImage_Track, , (0, 3 * ImageHeight_Button - ImageHeight_Button)-STEP(ImageWidth_Button - 1, ImageHeight_Button - 1)
-    ELSEIF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 5 AND __UI_DraggingThumb = __UI_False THEN
+    ELSEIF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 5 AND __UI_DraggingThumb = False THEN
         'Below the thumb
         _PUTIMAGE (This.Left, This.Top + ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Button - 1, This.Height - (This.Top + ThumbTop + __UI_ScrollbarButtonHeight) - 1), ControlImage_Track, , (0, 3 * ImageHeight_Button - ImageHeight_Button)-STEP(ImageWidth_Button - 1, ImageHeight_Button - 1)
     END IF
@@ -972,11 +972,11 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
     END IF
 
     'Draw thumb
-    IF __UI_DraggingThumb = __UI_True THEN
+    IF __UI_DraggingThumb = True THEN
         _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, ThumbHeight - 1), ControlImage_Thumb, , (0, 3 * ImageHeight_Thumb - ImageHeight_Thumb + 2)-STEP(ImageWidth_Thumb - 1, ImageHeight_Thumb - 5)
         _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 3 * ImageHeight_Thumb - ImageHeight_Thumb)-STEP(ImageWidth_Thumb - 1, 1)
         _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight + ThumbHeight - 2)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 3 * ImageHeight_Thumb - 4)-STEP(ImageWidth_Thumb - 1, 3)
-    ELSEIF This.HoveringVScrollbarButton = 3 AND __UI_DraggingThumb = __UI_False THEN
+    ELSEIF This.HoveringVScrollbarButton = 3 AND __UI_DraggingThumb = False THEN
         _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, ThumbHeight - 1), ControlImage_Thumb, , (0, 2 * ImageHeight_Thumb - ImageHeight_Thumb + 2)-STEP(ImageWidth_Thumb - 1, ImageHeight_Thumb - 5)
         _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 2 * ImageHeight_Thumb - ImageHeight_Thumb)-STEP(ImageWidth_Thumb - 1, 1)
         _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight + ThumbHeight - 2)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 2 * ImageHeight_Thumb - 4)-STEP(ImageWidth_Thumb - 1, 3)
@@ -1023,7 +1023,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         This.PreviousValue = This.Value
         This.PreviousInputViewStart = This.InputViewStart
         __UI_TempTexts(This.ID) = Text(This.ID)
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
         IF This.Canvas <> 0 THEN
@@ -1044,7 +1044,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         CaptionIndent = 0
-        IF This.HasBorder = __UI_True THEN
+        IF This.HasBorder = True THEN
             CaptionIndent = 5
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
@@ -1072,7 +1072,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
                     IF NOT This.Disabled THEN
                         TempColor~& = This.ForeColor
                     ELSE
-                        TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+                        TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
                     END IF
 
                     IF __UI_Focus = This.ID THEN
@@ -1099,7 +1099,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
             DropdownState = 3
         ELSEIF (This.ID = __UI_HoveringID OR This.ID = __UI_ParentDropdownList) AND NOT This.Disabled THEN
             DropdownState = 2
-        ELSEIF This.Disabled = __UI_True THEN
+        ELSEIF This.Disabled = True THEN
             DropdownState = 4
         ELSE
             DropdownState = 1
@@ -1147,7 +1147,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
 
     IF This.ChildrenRedrawn OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND Control(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw OR __UI_DesignMode THEN
         'Last time we drew this frame its children had different images
-        This.ChildrenRedrawn = __UI_False
+        This.ChildrenRedrawn = False
         This.PreviousValue = This.Value
         __UI_TempCaptions(This.ID) = Caption(This.ID)
 
@@ -1162,7 +1162,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
 
         _FONT This.Font
 
-        IF This.Hidden = __UI_False THEN
+        IF This.Hidden = False THEN
             IF This.BackStyle = __UI_Opaque THEN
                 CLS , This.BackColor
             ELSE
@@ -1175,7 +1175,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
             IF NOT This.Disabled THEN
                 TempColor~& = This.ForeColor
             ELSE
-                TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+                TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
             END IF
 
             'This.Canvas holds the children controls' images
@@ -1274,7 +1274,7 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         IF This.Disabled THEN
-            TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+            TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
         Temp& = uprint(__UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), TempCaption$, LEN(TempCaption$), TempColor~&, 0)
@@ -1287,7 +1287,7 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF __UI_DesignMode THEN
             IF This.Left + This.Width = __UI_NewMenuBarTextLeft THEN
                 'Last menu bar item. Next is "Add new"
-                TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+                TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
                 _DEST Control(__UI_FormID).Canvas
                 _FONT (This.Font)
                 Temp& = uprint(__UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), "Add new", 7, TempColor~&, 0)
@@ -1346,10 +1346,10 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 TempCaption$ = __UI_TrimAt0$(Caption(i))
 
                 IF RIGHT$(TempCaption$, 1) = "-" THEN
-                    HasSeparator = __UI_True
+                    HasSeparator = True
                     TempCaption$ = LEFT$(TempCaption$, LEN(TempCaption$) - 1)
                 ELSE
-                    HasSeparator = __UI_False
+                    HasSeparator = False
                 END IF
 
                 IF __UI_Focus = i OR (__UI_HoveringID = i AND __UI_Focus = i) THEN
@@ -1362,7 +1362,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 END IF
 
                 IF Control(i).Disabled THEN
-                    TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+                    TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
                     CheckMarkIndex = 3
                 END IF
 
@@ -1374,7 +1374,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                     LINE (Control(i).Left + __UI_MenuItemOffset + Control(i).HotKeyOffset, Control(i).Top + Control(i).Height \ 2 + uheight& \ 2 - 1)-STEP(Temp& - 1, 0), TempColor~&
                 END IF
 
-                IF Control(i).Value = __UI_True THEN
+                IF Control(i).Value = True THEN
                     'Checked menu item
                     _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, Control(i).Top + Control(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
                 ELSE
@@ -1395,7 +1395,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         NEXT
 
         IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN
-            TempColor~& = __UI_Darken(Control(__UI_FormID).BackColor, 80)
+            TempColor~& = Darken(Control(__UI_FormID).BackColor, 80)
             Temp& = uprint(__UI_MenuItemOffset, This.Height - (uheight& + 6), "Add new", 7, TempColor~&, 0)
         END IF
         '---
@@ -1415,7 +1415,7 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     IF This.Stretch <> This.PreviousStretch OR This.PreviousValue <> This.HelperCanvas OR This.ControlState <> ControlState OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.ControlState = ControlState
-        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = __UI_True
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
         This.PreviousValue = This.HelperCanvas
         This.PreviousStretch = This.Stretch
@@ -1441,7 +1441,7 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             _PUTIMAGE (0, 0), This.HelperCanvas, This.Canvas
         END IF
 
-        IF This.HasBorder = __UI_True THEN
+        IF This.HasBorder = True THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------

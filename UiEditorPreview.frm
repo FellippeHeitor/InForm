@@ -8,7 +8,7 @@ SUB __UI_LoadForm
     _RESIZE OFF
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "Form1", 300, 300, 0, 0,0)
-    Control(__UI_NewID).Font = __UI_Font("segoeui.ttf", 12, "")
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf", 12, "")
 END SUB
 
 SUB __UI_AssignIDs

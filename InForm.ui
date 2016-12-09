@@ -214,41 +214,41 @@ CONST __UI_Center = 1
 CONST __UI_Right = 2
 
 'Messagebox constants
-CONST __UI_MsgBox_OkOnly = 0
-CONST __UI_MsgBox_OkCancel = 1
-CONST __UI_MsgBox_AbortRetryIgnore = 2
-CONST __UI_MsgBox_YesNoCancel = 3
-CONST __UI_MsgBox_YesNo = 4
-CONST __UI_MsgBox_RetryCancel = 5
-CONST __UI_MsgBox_CancelTryagainContinue = 6
+CONST MsgBox_OkOnly = 0
+CONST MsgBox_OkCancel = 1
+CONST MsgBox_AbortRetryIgnore = 2
+CONST MsgBox_YesNoCancel = 3
+CONST MsgBox_YesNo = 4
+CONST MsgBox_RetryCancel = 5
+CONST MsgBox_CancelTryagainContinue = 6
 
-CONST __UI_MsgBox_Critical = 16
-CONST __UI_MsgBox_Question = 32
-CONST __UI_MsgBox_Exclamation = 48
-CONST __UI_MsgBox_Information = 64
+CONST MsgBox_Critical = 16
+CONST MsgBox_Question = 32
+CONST MsgBox_Exclamation = 48
+CONST MsgBox_Information = 64
 
-CONST __UI_MsgBox_DefaultButton1 = 0
-CONST __UI_MsgBox_DefaultButton2 = 256
-CONST __UI_MsgBox_DefaultButton3 = 512
-CONST __UI_MsgBox_Defaultbutton4 = 768
+CONST MsgBox_DefaultButton1 = 0
+CONST MsgBox_DefaultButton2 = 256
+CONST MsgBox_DefaultButton3 = 512
+CONST MsgBox_Defaultbutton4 = 768
 
-CONST __UI_MsgBox_AppModal = 0
-CONST __UI_MsgBox_SystemModal = 4096
-CONST __UI_MsgBox_SetForeground = 65536
+CONST MsgBox_AppModal = 0
+CONST MsgBox_SystemModal = 4096
+CONST MsgBox_SetForeground = 65536
 
-CONST __UI_MsgBox_Ok = 1
-CONST __UI_MsgBox_Cancel = 2
-CONST __UI_MsgBox_Abort = 3
-CONST __UI_MsgBox_Retry = 4
-CONST __UI_MsgBox_Ignore = 5
-CONST __UI_MsgBox_Yes = 6
-CONST __UI_MsgBox_No = 7
-CONST __UI_MsgBox_Tryagain = 10
-CONST __UI_MsgBox_Continue = 11
+CONST MsgBox_Ok = 1
+CONST MsgBox_Cancel = 2
+CONST MsgBox_Abort = 3
+CONST MsgBox_Retry = 4
+CONST MsgBox_Ignore = 5
+CONST MsgBox_Yes = 6
+CONST MsgBox_No = 7
+CONST MsgBox_Tryagain = 10
+CONST MsgBox_Continue = 11
 
 'Global constants
-CONST __UI_True = -1
-CONST __UI_False = 0
+CONST True = -1
+CONST False = 0
 
 ON ERROR GOTO __UI_ErrorHandler
 
@@ -281,49 +281,49 @@ SUB __UI_InternalMenus
     'Internal "design mode" context menu. -------------------------------------------
     DIM __UI_NewID AS LONG
     __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_PreviewMenu", 0, 0, 0, 0, 0)
-    Control(__UI_NewID).Font = __UI_Font("segoeui.ttf",12,"")
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf",12,"")
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignLeft", "Align &Left"
+    SetCaption "__UI_PreviewMenuAlignLeft", "Align &Left"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignRight", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignRight", "Align &Right"
+    SetCaption "__UI_PreviewMenuAlignRight", "Align &Right"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignTops", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignTops", "Align T&op"
+    SetCaption "__UI_PreviewMenuAlignTops", "Align T&op"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignBottoms", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignBottoms", "Align &Bottom-"
+    SetCaption "__UI_PreviewMenuAlignBottoms", "Align &Bottom-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCentersV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignCentersV", "Align cent&ers Vertically"
+    SetCaption "__UI_PreviewMenuAlignCentersV", "Align cent&ers Vertically"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCentersH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignCentersH", "Ali&gn centers Horizontally"
+    SetCaption "__UI_PreviewMenuAlignCentersH", "Ali&gn centers Horizontally"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCenterV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignCenterV", "Center &Vertically"
+    SetCaption "__UI_PreviewMenuAlignCenterV", "Center &Vertically"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCenterH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuAlignCenterH", "Center &Horizontally-"
+    SetCaption "__UI_PreviewMenuAlignCenterH", "Center &Horizontally-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDistributeV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuDistributeV", "Distribute Ver&tically"
+    SetCaption "__UI_PreviewMenuDistributeV", "Distribute Ver&tically"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDistributeH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuDistributeH", "Distribute Hori&zontally-"
+    SetCaption "__UI_PreviewMenuDistributeH", "Distribute Hori&zontally-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuCopy", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuCopy", "&Copy"
+    SetCaption "__UI_PreviewMenuCopy", "&Copy"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuPaste", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuPaste", "&Paste"
+    SetCaption "__UI_PreviewMenuPaste", "&Paste"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDelete", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuDelete", "&Delete-"
+    SetCaption "__UI_PreviewMenuDelete", "&Delete-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSelect", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    __UI_SetCaption "__UI_PreviewMenuSelect", "Select &All"
+    SetCaption "__UI_PreviewMenuSelect", "Select &All"
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -342,7 +342,7 @@ SUB __UI_Init
     _ICON
     IF Control(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
 
-    IF Control(__UI_FormID).Font = 0 THEN Control(__UI_FormID).Font = __UI_Font("", 8, "")
+    IF Control(__UI_FormID).Font = 0 THEN Control(__UI_FormID).Font = SetFont("", 8, "")
 
     IF Caption(__UI_FormID) = "" THEN Caption(__UI_FormID) = RTRIM$(Control(__UI_FormID).Name)
 
@@ -358,19 +358,19 @@ SUB __UI_Init
         NEXT
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuCut", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        __UI_SetCaption "__UI_TextMenuCut", "Cu&t"
+        SetCaption "__UI_TextMenuCut", "Cu&t"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuCopy", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        __UI_SetCaption "__UI_TextMenuCopy", "&Copy"
+        SetCaption "__UI_TextMenuCopy", "&Copy"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuPaste", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        __UI_SetCaption "__UI_TextMenuPaste", "&Paste"
+        SetCaption "__UI_TextMenuPaste", "&Paste"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuDelete", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        __UI_SetCaption "__UI_TextMenuDelete", "&Delete-"
+        SetCaption "__UI_TextMenuDelete", "&Delete-"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuSelect", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        __UI_SetCaption "__UI_TextMenuSelect", "Select &all"
+        SetCaption "__UI_TextMenuSelect", "Select &all"
     END IF
 
     _DISPLAYORDER _SOFTWARE, _HARDWARE
@@ -386,8 +386,8 @@ SUB __UI_Init
     TIMER(__UI_EventsTimer) ON
     TIMER(__UI_RefreshTimer) ON
 
-    __UI_AutoRefresh = __UI_True
-    __UI_Loaded = __UI_True
+    __UI_AutoRefresh = True
+    __UI_Loaded = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -398,10 +398,10 @@ SUB __UI_ProcessInput
     DIM ContainerOffsetTop AS INTEGER, ContainerOffsetLeft AS INTEGER
     STATIC __UI_CurrentResizeStatus AS _BYTE, __UI_CurrentBackColor AS _UNSIGNED LONG
 
-    __UI_HasInput = __UI_False
+    __UI_HasInput = False
 
     __UI_ExitTriggered = _EXIT
-    IF __UI_ExitTriggered AND 1 THEN __UI_ExitTriggered = __UI_True: __UI_HasInput = __UI_True
+    IF __UI_ExitTriggered AND 1 THEN __UI_ExitTriggered = True: __UI_HasInput = True
 
     IF _SCREENX = -32000 AND _SCREENY = -32000 THEN
         'Window was minimized
@@ -410,9 +410,9 @@ SUB __UI_ProcessInput
 
     'Mouse input (optimization kindly provided by Luke Ceddia):
     __UI_MouseWheel = 0
-    IF __UI_MouseIsDown THEN __UI_HasInput = __UI_True
+    IF __UI_MouseIsDown THEN __UI_HasInput = True
     IF _MOUSEINPUT THEN
-        __UI_HasInput = __UI_True
+        __UI_HasInput = True
         __UI_MouseWheel = __UI_MouseWheel + _MOUSEWHEEL
         IF _MOUSEBUTTON(1) = __UI_MouseButton1 AND _MOUSEBUTTON(2) = __UI_MouseButton2 THEN
             DO WHILE _MOUSEINPUT
@@ -433,7 +433,7 @@ SUB __UI_ProcessInput
         DIM TempHover AS LONG
         __UI_BelowHoveringID = 0
         FOR i = 1 TO UBOUND(Control)
-            IF Control(i).ID AND Control(i).Type <> __UI_Type_MenuItem AND ((Control(i).Hidden = __UI_False AND __UI_DesignMode = __UI_False) OR (__UI_DesignMode = __UI_True)) THEN
+            IF Control(i).ID AND Control(i).Type <> __UI_Type_MenuItem AND ((Control(i).Hidden = False AND __UI_DesignMode = False) OR (__UI_DesignMode = True)) THEN
                 Control(i).HoveringVScrollbarButton = 0
                 IF Control(i).ParentID > 0 THEN
                     ContainerOffsetTop = Control(Control(i).ParentID).Top
@@ -444,13 +444,13 @@ SUB __UI_ProcessInput
                         IF __UI_MouseLeft >= ContainerOffsetLeft + Control(i).Left AND __UI_MouseLeft <= ContainerOffsetLeft + Control(i).Left + Control(i).Width - 1 AND __UI_MouseTop >= ContainerOffsetTop + Control(i).Top AND __UI_MouseTop <= ContainerOffsetTop + Control(i).Top + Control(i).Height - 1 THEN
                             __UI_BelowHoveringID = TempHover
                             TempHover = Control(i).ID
-                            IF Control(i).HasVScrollbar AND __UI_IsDragging = __UI_False THEN
+                            IF Control(i).HasVScrollbar AND __UI_IsDragging = False THEN
                                 IF __UI_MouseLeft >= ContainerOffsetLeft + Control(i).Left + Control(i).Width - __UI_ScrollbarWidth THEN
-                                    IF __UI_MouseTop <= Control(i).Top + ContainerOffsetTop + __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = __UI_False THEN
+                                    IF __UI_MouseTop <= Control(i).Top + ContainerOffsetTop + __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = False THEN
                                         'Hovering "up" button
                                         Control(i).HoveringVScrollbarButton = 1
                                         Control(i).PreviousInputViewStart = 0
-                                    ELSEIF __UI_MouseTop >= Control(i).Top + ContainerOffsetTop + Control(i).Height - __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = __UI_False THEN
+                                    ELSEIF __UI_MouseTop >= Control(i).Top + ContainerOffsetTop + Control(i).Height - __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = False THEN
                                         'Hovering "down" button
                                         Control(i).HoveringVScrollbarButton = 2
                                         Control(i).PreviousInputViewStart = 0
@@ -481,13 +481,13 @@ SUB __UI_ProcessInput
                         __UI_BelowHoveringID = TempHover
                         TempHover = Control(i).ID
 
-                        IF Control(i).HasVScrollbar AND __UI_IsDragging = __UI_False THEN
+                        IF Control(i).HasVScrollbar AND __UI_IsDragging = False THEN
                             IF __UI_MouseLeft >= ContainerOffsetLeft + Control(i).Left + Control(i).Width - __UI_ScrollbarWidth THEN
-                                IF __UI_MouseTop <= Control(i).Top + ContainerOffsetTop + __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = __UI_False THEN
+                                IF __UI_MouseTop <= Control(i).Top + ContainerOffsetTop + __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = False THEN
                                     'Hovering "up" button
                                     Control(i).HoveringVScrollbarButton = 1
                                     Control(i).PreviousInputViewStart = 0
-                                ELSEIF __UI_MouseTop >= Control(i).Top + ContainerOffsetTop + Control(i).Height - __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = __UI_False THEN
+                                ELSEIF __UI_MouseTop >= Control(i).Top + ContainerOffsetTop + Control(i).Height - __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = False THEN
                                     'Hovering "down" button
                                     Control(i).HoveringVScrollbarButton = 2
                                     Control(i).PreviousInputViewStart = 0
@@ -519,7 +519,7 @@ SUB __UI_ProcessInput
                 'For an active menu, we'll detect individual menu items being hovered
                 _FONT Control(TempHover).Font
                 FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ParentID = __UI_ParentMenu AND Control(i).Hidden = __UI_False THEN
+                    IF Control(i).ParentID = __UI_ParentMenu AND Control(i).Hidden = False THEN
                         IF __UI_MouseTop >= Control(__UI_ActiveMenu).Top + Control(i).Top AND __UI_MouseTop <= Control(__UI_ActiveMenu).Top + Control(i).Top + Control(i).Height - 1 THEN
                             TempHover = Control(i).ID
                             __UI_Focus = Control(i).ID
@@ -540,7 +540,7 @@ SUB __UI_ProcessInput
         END IF
 
         'Design mode specific hover:
-        IF __UI_DesignMode AND __UI_IsResizing = __UI_False AND __UI_IsDragging = __UI_False THEN
+        IF __UI_DesignMode AND __UI_IsResizing = False AND __UI_IsDragging = False THEN
             __UI_ResizeHandleHover = 0
             IF Control(__UI_HoveringID).ControlIsSelected AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem THEN
                 IF __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width - 8 AND __UI_MouseTop >= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 - 4 AND __UI_MouseTop <= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 + 4 THEN
@@ -567,10 +567,10 @@ SUB __UI_ProcessInput
             IF __UI_ActiveMenu = 0 THEN
                 __UI_Focus = __UI_HoveringID
             END IF
-        ELSEIF Control(__UI_Focus).Type = __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenuIsContextMenu = __UI_False AND __UI_DesignMode = __UI_False THEN
+        ELSEIF Control(__UI_Focus).Type = __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenuIsContextMenu = False AND __UI_DesignMode = False THEN
             IF __UI_ParentMenu <> __UI_HoveringID AND NOT Control(__UI_HoveringID).Disabled THEN
-                __UI_ActivateMenu Control(__UI_HoveringID), __UI_False
-                __UI_ForceRedraw = __UI_True
+                __UI_ActivateMenu Control(__UI_HoveringID), False
+                __UI_ForceRedraw = True
             ELSEIF Control(__UI_HoveringID).Disabled THEN
                 __UI_DestroyControl Control(__UI_ActiveMenu)
                 __UI_Focus = __UI_HoveringID
@@ -613,7 +613,7 @@ SUB __UI_ProcessInput
 
     'Keyboard input:
     __UI_KeyHit = _KEYHIT
-    IF __UI_KeyHit THEN __UI_HasInput = __UI_True
+    IF __UI_KeyHit THEN __UI_HasInput = True
 
     'Adjust the Resize Status of this form based on its CanResize property:
     IF Control(__UI_FormID).CanResize <> __UI_CurrentResizeStatus THEN
@@ -630,7 +630,7 @@ SUB __UI_ProcessInput
     DIM CheckResize AS _BYTE
     CheckResize = _RESIZE
     IF (CheckResize AND Control(__UI_FormID).CanResize) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
-        __UI_AutoRefresh = __UI_False
+        __UI_AutoRefresh = False
         _DELAY .1
         IF CheckResize THEN
             Control(__UI_FormID).Width = _RESIZEWIDTH
@@ -646,25 +646,25 @@ SUB __UI_ProcessInput
         _DEST Control(__UI_FormID).Canvas
         COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
         CLS
-        IF __UI_HasMenuBar = __UI_True THEN
+        IF __UI_HasMenuBar = True THEN
             'Add menubar div to main form's canvas
             _FONT Control(__UI_FormID).Font
-            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), __UI_Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), __UI_Darken(Control(__UI_FormID).BackColor, 120)
+            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
             __UI_RefreshMenuBar
         END IF
         _DEST 0
 
         IF LEN(__UI_CurrentTitle) THEN _TITLE __UI_CurrentTitle
-        __UI_AutoRefresh = __UI_True
-        __UI_HasInput = __UI_True
+        __UI_AutoRefresh = True
+        __UI_HasInput = True
     END IF
 
     'Update main window title if needed
     IF __UI_CurrentTitle <> Caption(__UI_FormID) THEN
         __UI_CurrentTitle = Caption(__UI_FormID)
         _TITLE __UI_CurrentTitle
-        __UI_HasInput = __UI_True
+        __UI_HasInput = True
     END IF
 
     __UI_LastInputReceived = TIMER
@@ -678,7 +678,7 @@ SUB __UI_UpdateDisplay
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
     DIM ControlState AS _BYTE '1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled;
 
-    IF __UI_AutoRefresh = __UI_False THEN EXIT SUB
+    IF __UI_AutoRefresh = False THEN EXIT SUB
 
     __UI_BeforeUpdateDisplay
 
@@ -724,7 +724,7 @@ SUB __UI_UpdateDisplay
         ELSE
             IF NOT GridDrawn THEN
                 'Draw grid onto main window's canvas
-                GridDrawn = __UI_True
+                GridDrawn = True
                 'Free the hardware bg image:
                 _FREEIMAGE Control(__UI_FormID).Canvas
                 'Create a new software one:
@@ -747,7 +747,7 @@ SUB __UI_UpdateDisplay
 
     IF (GridDrawn AND NOT __UI_IsDragging) OR (GridDrawn AND Control(__UI_DraggingID).ParentID > 0) OR __UI_ForceRedraw THEN
         'Restore main window hardware bg
-        GridDrawn = __UI_False
+        GridDrawn = False
         'Free the hardware bg image:
         _FREEIMAGE Control(__UI_FormID).Canvas
         'Create a new software one:
@@ -758,8 +758,8 @@ SUB __UI_UpdateDisplay
         CLS
         IF __UI_HasMenuBar THEN
             _FONT Control(__UI_FormID).Font
-            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), __UI_Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), __UI_Darken(Control(__UI_FormID).BackColor, 120)
+            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
         END IF
         _DEST 0
     END IF
@@ -857,9 +857,9 @@ SUB __UI_UpdateDisplay
         END IF
 
         IF Control(i).ControlIsSelected THEN
-            IF OverlayReset = __UI_False THEN
+            IF OverlayReset = False THEN
                 'Reset the helper canvas of the main form
-                OverlayReset = __UI_True
+                OverlayReset = True
                 IF Control(__UI_FormID).HelperCanvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).HelperCanvas
                 Control(__UI_FormID).HelperCanvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
                 _DEST Control(__UI_FormID).HelperCanvas
@@ -867,7 +867,7 @@ SUB __UI_UpdateDisplay
             ELSE
                 _DEST Control(__UI_FormID).HelperCanvas
             END IF
-            OverlayisVisible = __UI_True
+            OverlayisVisible = True
 
             IF Control(i).Type = __UI_Type_MenuItem THEN
                 TempParentID = Control(i).ParentID
@@ -920,10 +920,10 @@ SUB __UI_UpdateDisplay
             DIM CheckChildControls AS LONG, NoMoreChildren AS _BYTE, ThisParent AS LONG
 
             ThisParent = Control(i).ParentID
-            NoMoreChildren = __UI_True
+            NoMoreChildren = True
             FOR CheckChildControls = i + 1 TO UBOUND(Control)
                 IF Control(CheckChildControls).ParentID = ThisParent THEN
-                    NoMoreChildren = __UI_False
+                    NoMoreChildren = False
                     EXIT FOR
                 END IF
             NEXT
@@ -943,9 +943,9 @@ SUB __UI_UpdateDisplay
     NEXT
 
     IF __UI_DesignMode AND __UI_SelectionRectangle THEN
-        IF OverlayReset = __UI_False THEN
+        IF OverlayReset = False THEN
             'Reset the helper canvas of the main form
-            OverlayReset = __UI_True
+            OverlayReset = True
             IF Control(__UI_FormID).HelperCanvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).HelperCanvas
             Control(__UI_FormID).HelperCanvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
             _DEST Control(__UI_FormID).HelperCanvas
@@ -953,7 +953,7 @@ SUB __UI_UpdateDisplay
         ELSE
             _DEST Control(__UI_FormID).HelperCanvas
         END IF
-        OverlayisVisible = __UI_True
+        OverlayisVisible = True
 
         'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGBA32(39, 144, 244, 100), BF
         'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGB32(39, 188, 244), B
@@ -1054,7 +1054,7 @@ SUB __UI_UpdateDisplay
         _PUTIMAGE (_WIDTH \ 2 - TipPanelWidth \ 2, 0), DragTip
     END IF
 
-    __UI_ForceRedraw = __UI_False
+    __UI_ForceRedraw = False
 
     STATIC WaitMessageSetup AS _BYTE, PrevWaitMessage AS STRING
     DIM NoInputMessage$
@@ -1067,9 +1067,9 @@ SUB __UI_UpdateDisplay
             __UI_WaitMessageHandle = _NEWIMAGE(_WIDTH(0), _HEIGHT(0), 32)
         END IF
 
-        IF WaitMessageSetup = __UI_False OR PrevWaitMessage <> __UI_WaitMessage THEN
+        IF WaitMessageSetup = False OR PrevWaitMessage <> __UI_WaitMessage THEN
             PrevWaitMessage = __UI_WaitMessage
-            WaitMessageSetup = __UI_True
+            WaitMessageSetup = True
             PrevDest = _DEST
             _DEST __UI_WaitMessageHandle
             LINE (0, 0)-STEP(_WIDTH, _HEIGHT), _RGBA32(0, 0, 0, 170), BF
@@ -1081,7 +1081,7 @@ SUB __UI_UpdateDisplay
             COLOR _RGB32(255, 255, 255)
             __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2, _HEIGHT \ 2 - _FONTWIDTH, NoInputMessage$
             IF LEN(__UI_WaitMessage) > 0 THEN
-                __UI_WaitMessage = "(" + __UI_WaitMessage + ")"
+                IF LEFT$(__UI_WaitMessage, 1) <> "(" THEN __UI_WaitMessage = "(" + __UI_WaitMessage + ")"
                 COLOR _RGB32(0, 0, 0)
                 __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2 + 1, _HEIGHT \ 2 + 4, __UI_WaitMessage
                 COLOR _RGB32(255, 255, 255)
@@ -1098,8 +1098,8 @@ SUB __UI_UpdateDisplay
 END SUB
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_Darken~& (WhichColor~&, ByHowMuch%)
-    __UI_Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
+FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
+    Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
 END FUNCTION
 
 SUB __UI_EventDispatcher
@@ -1138,13 +1138,13 @@ SUB __UI_EventDispatcher
     $IF WIN THEN
         'Alt+F4 - Windows
         IF ((_KEYDOWN(100308) OR _KEYDOWN(100307)) AND __UI_KeyHit = -15872) OR __UI_ExitTriggered THEN
-            __UI_UnloadSignal = __UI_True
+            __UI_UnloadSignal = True
             __UI_BeforeUnload
             IF __UI_UnloadSignal THEN SYSTEM
         END IF
     $ELSE
         IF __UI_ExitTriggered THEN
-        __UI_UnloadSignal = __UI_True
+        __UI_UnloadSignal = True
         __UI_BeforeUnload
         IF __UI_UnloadSignal THEN SYSTEM
         END IF
@@ -1168,9 +1168,9 @@ SUB __UI_EventDispatcher
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND LastMouseLeft <> __UI_MouseLeft THEN
             LastMouseLeft = __UI_MouseLeft
             IF __UI_ActiveMenu > 0 AND __UI_ParentMenu <> Control(__UI_HoveringID).ID AND __UI_ParentMenu > 0 THEN
-                IF __UI_ActiveMenuIsContextMenu = __UI_False AND __UI_DesignMode = __UI_False THEN
-                    __UI_ActivateMenu Control(__UI_HoveringID), __UI_False
-                    __UI_ForceRedraw = __UI_True
+                IF __UI_ActiveMenuIsContextMenu = False AND __UI_DesignMode = False THEN
+                    __UI_ActivateMenu Control(__UI_HoveringID), False
+                    __UI_ForceRedraw = True
                 END IF
             END IF
         END IF
@@ -1228,13 +1228,13 @@ SUB __UI_EventDispatcher
 
     'FocusIn, FocusOut
     DIM __UI_FocusSearch AS LONG
-    IF __UI_KeyHit = 9 AND __UI_IsDragging = __UI_False THEN 'TAB
+    IF __UI_KeyHit = 9 AND __UI_IsDragging = False THEN 'TAB
         IF __UI_DesignMode THEN
 
             __UI_FocusSearch = __UI_FirstSelectedID
 
             FOR i = 1 TO UBOUND(Control)
-                Control(i).ControlIsSelected = __UI_False
+                Control(i).ControlIsSelected = False
             NEXT
 
             DO
@@ -1245,7 +1245,7 @@ SUB __UI_EventDispatcher
                 END IF
                 IF __UI_FocusSearch = __UI_FirstSelectedID THEN
                     'Full circle. No controls can be selected at the moment
-                    Control(__UI_FocusSearch).ControlIsSelected = __UI_True
+                    Control(__UI_FocusSearch).ControlIsSelected = True
                     EXIT DO
                 END IF
 
@@ -1253,20 +1253,20 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_FocusSearch).Type <> __UI_Type_MenuItem THEN
                         __UI_TotalSelectedControls = 1
                         __UI_FirstSelectedID = __UI_FocusSearch
-                        Control(__UI_FocusSearch).ControlIsSelected = __UI_True
+                        Control(__UI_FocusSearch).ControlIsSelected = True
                         EXIT DO
                     ELSE
                         IF __UI_ParentMenu = Control(__UI_FocusSearch).ParentID THEN
                             __UI_TotalSelectedControls = 1
                             __UI_FirstSelectedID = __UI_FocusSearch
-                            Control(__UI_FocusSearch).ControlIsSelected = __UI_True
+                            Control(__UI_FocusSearch).ControlIsSelected = True
                             EXIT DO
                         END IF
                     END IF
                 END IF
             LOOP
         ELSE
-            __UI_KeyboardFocus = __UI_True
+            __UI_KeyboardFocus = True
             __UI_FocusSearch = __UI_Focus
             DO
                 IF _KEYDOWN(100304) OR _KEYDOWN(100303) THEN
@@ -1290,7 +1290,7 @@ SUB __UI_EventDispatcher
     END IF
 
     'Any visible dropdown lists/menus will be destroyed when focus is lost
-    IF __UI_DesignMode = __UI_False THEN
+    IF __UI_DesignMode = False THEN
         IF __UI_ActiveDropdownList > 0 AND ((__UI_Focus <> __UI_ActiveDropdownList AND __UI_Focus <> __UI_ParentDropdownList) OR __UI_KeyHit = 27) THEN
             __UI_Focus = __UI_ParentDropdownList
             __UI_DestroyControl Control(__UI_ActiveDropdownList)
@@ -1298,7 +1298,7 @@ SUB __UI_EventDispatcher
         ELSEIF __UI_ActiveMenu > 0 AND (__UI_Focus <> __UI_ActiveMenu AND __UI_Focus <> __UI_ParentMenu) THEN
             IF Control(__UI_Focus).Type <> __UI_Type_MenuItem THEN
                 __UI_DestroyControl Control(__UI_ActiveMenu)
-                __UI_ForceRedraw = __UI_True
+                __UI_ForceRedraw = True
             END IF
         END IF
     END IF
@@ -1337,8 +1337,8 @@ SUB __UI_EventDispatcher
     'MouseDown, MouseUp, BeginDrag
     IF __UI_MouseButton2 THEN
         'Second mouse button is first pressed
-        IF __UI_Mouse2IsDown = __UI_False THEN
-            __UI_Mouse2IsDown = __UI_True
+        IF __UI_Mouse2IsDown = False THEN
+            __UI_Mouse2IsDown = True
             __UI_Mouse2DownOnID = __UI_HoveringID
         ELSE
             'Second mouse button is still pressed
@@ -1346,137 +1346,138 @@ SUB __UI_EventDispatcher
     ELSE
         'Second mousebutton is released
         IF __UI_Mouse2IsDown THEN
-            __UI_Mouse2IsDown = __UI_False
+            __UI_Mouse2IsDown = False
             __UI_Mouse2DownOnID = 0
             'Click (second mouse button)
             IF __UI_DesignMode THEN
                 DIM RightClickSelect AS _BYTE
-                RightClickSelect = __UI_True
+                RightClickSelect = True
                 GOSUB DesignModeClickToSelect
+                RightClickSelect = False
                 IF __UI_TotalSelectedControls = 0 THEN
-                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = __UI_True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
+                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = True
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
-                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = True
                     IF Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
-                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_False
-                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_False
+                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
+                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
                     ELSE
-                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_True
-                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_True
+                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
+                        Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
                     END IF
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = __UI_False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
-                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_True
-                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = __UI_False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                 ELSE
-                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_False
-                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = __UI_False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                 END IF
 
                 IF _CLIPBOARD$ = "InForm" + CHR$(1) THEN
-                    Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = __UI_False
+                    Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = False
                 ELSE
-                    Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = __UI_True
+                    Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = True
                 END IF
 
                 IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
-                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = __UI_True
+                    Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                 END IF
 
-                IF __UI_HoveringID > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN __UI_ActivateMenu Control(__UI_GetID("__UI_PreviewMenu")), __UI_False
-                __UI_CantShowContextMenu = __UI_False
+                IF __UI_HoveringID > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN __UI_ActivateMenu Control(__UI_GetID("__UI_PreviewMenu")), False
+                __UI_CantShowContextMenu = False
 
                 IF __UI_ActiveMenu > 0 THEN
                     IF Control(__UI_ActiveMenu).Height > Control(__UI_FormID).Height OR Control(__UI_ActiveMenu).Width > Control(__UI_FormID).Width THEN
-                        __UI_CantShowContextMenu = __UI_True
+                        __UI_CantShowContextMenu = True
                     END IF
                 END IF
-            ELSEIF Control(__UI_HoveringID).ContextMenuID > 0 AND Control(__UI_HoveringID).Disabled = __UI_False THEN
+            ELSEIF Control(__UI_HoveringID).ContextMenuID > 0 AND Control(__UI_HoveringID).Disabled = False THEN
                 __UI_Focus = __UI_HoveringID
                 __UI_PreviousFocus = __UI_Focus
 
                 'Internal text field menu:
                 IF Control(__UI_HoveringID).ContextMenuID = __UI_GetID("__UI_TextFieldMenu") THEN
                     IF Control(__UI_HoveringID).TextIsSelected THEN
-                        Control(__UI_GetID("__UI_TextMenuCut")).Disabled = __UI_False
-                        Control(__UI_GetID("__UI_TextMenuCopy")).Disabled = __UI_False
-                        Control(__UI_GetID("__UI_TextMenuDelete")).Disabled = __UI_False
+                        Control(__UI_GetID("__UI_TextMenuCut")).Disabled = False
+                        Control(__UI_GetID("__UI_TextMenuCopy")).Disabled = False
+                        Control(__UI_GetID("__UI_TextMenuDelete")).Disabled = False
                     ELSE
-                        Control(__UI_GetID("__UI_TextMenuCut")).Disabled = __UI_True
-                        Control(__UI_GetID("__UI_TextMenuCopy")).Disabled = __UI_True
-                        Control(__UI_GetID("__UI_TextMenuDelete")).Disabled = __UI_True
+                        Control(__UI_GetID("__UI_TextMenuCut")).Disabled = True
+                        Control(__UI_GetID("__UI_TextMenuCopy")).Disabled = True
+                        Control(__UI_GetID("__UI_TextMenuDelete")).Disabled = True
                     END IF
 
                     IF LEN(_CLIPBOARD$) > 0 THEN
-                        Control(__UI_GetID("__UI_TextMenuPaste")).Disabled = __UI_False
+                        Control(__UI_GetID("__UI_TextMenuPaste")).Disabled = False
                     ELSE
-                        Control(__UI_GetID("__UI_TextMenuPaste")).Disabled = __UI_True
+                        Control(__UI_GetID("__UI_TextMenuPaste")).Disabled = True
                     END IF
                 END IF
-                __UI_ActivateMenu Control(Control(__UI_HoveringID).ContextMenuID), __UI_False
+                __UI_ActivateMenu Control(Control(__UI_HoveringID).ContextMenuID), False
             END IF
         END IF
     END IF
 
     IF __UI_MouseButton1 THEN
         'Mouse button is first pressed
-        IF __UI_MouseIsDown = __UI_False THEN
+        IF __UI_MouseIsDown = False THEN
             __UI_MouseDownTop = __UI_MouseTop
             __UI_MouseDownLeft = __UI_MouseLeft
             IF __UI_DesignMode THEN
                 IF LEFT$(Control(__UI_HoveringID).Name, 5) = "__UI_" THEN GOTO ProcessClick
                 DesignModeClickToSelect:
-                IF RightClickSelect AND Control(__UI_HoveringID).Type = __UI_Type_MenuPanel THEN RETURN
+                IF RightClickSelect AND (Control(__UI_HoveringID).Type = __UI_Type_MenuPanel OR LEFT$(Control(__UI_HoveringID).Name, 5) = "__UI_") THEN RETURN
                 IF __UI_ActiveMenu > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
                     IF Control(__UI_Focus).Type <> __UI_Type_MenuItem THEN
                         __UI_DestroyControl Control(__UI_ActiveMenu)
-                        __UI_ForceRedraw = __UI_True
+                        __UI_ForceRedraw = True
                     END IF
                 END IF
 
                 IF _KEYDOWN(100304) OR _KEYDOWN(100303) THEN
                     IF Control(__UI_HoveringID).Type <> __UI_Type_Frame AND Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar THEN
-                        IF Control(__UI_HoveringID).ControlIsSelected = __UI_False AND Control(__UI_HoveringID).ParentID = Control(__UI_FirstSelectedID).ParentID AND Control(__UI_FirstSelectedID).Type <> __UI_Type_Frame THEN
-                            Control(__UI_HoveringID).ControlIsSelected = __UI_True
+                        IF Control(__UI_HoveringID).ControlIsSelected = False AND Control(__UI_HoveringID).ParentID = Control(__UI_FirstSelectedID).ParentID AND Control(__UI_FirstSelectedID).Type <> __UI_Type_Frame THEN
+                            Control(__UI_HoveringID).ControlIsSelected = True
                             __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
                         END IF
                     END IF
@@ -1484,43 +1485,43 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_HoveringID).Type = __UI_Type_MenuPanel AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
                         DIM TempValue AS LONG
                         TempValue = __UI_NewControl(__UI_Type_MenuItem, "", 0, 0, 0, 0, __UI_ParentMenu)
-                        __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
-                        __UI_ActivateMenu Control(__UI_ParentMenu), __UI_False
+                        SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                        __UI_ActivateMenu Control(__UI_ParentMenu), False
                         FOR i = 1 TO UBOUND(Control)
-                            Control(i).ControlIsSelected = __UI_False
+                            Control(i).ControlIsSelected = False
                         NEXT
-                        Control(TempValue).ControlIsSelected = __UI_True
+                        Control(TempValue).ControlIsSelected = True
                         __UI_TotalSelectedControls = 1
                         __UI_FirstSelectedID = TempValue
                     ELSEIF Control(__UI_HoveringID).Type = __UI_Type_Form AND __UI_MouseTop <= (uspacing& + 5) THEN
                         IF __UI_HasMenuBar THEN
                             TempValue = __UI_NewControl(__UI_Type_MenuBar, "", 0, 0, 0, 0, 0)
-                            __UI_SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                            SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
                             FOR i = 1 TO UBOUND(Control)
-                                Control(i).ControlIsSelected = __UI_False
+                                Control(i).ControlIsSelected = False
                             NEXT
-                            Control(TempValue).ControlIsSelected = __UI_True
+                            Control(TempValue).ControlIsSelected = True
                             __UI_RefreshMenuBar
                             __UI_PrevMouseLeft = -1: __UI_PrevMouseTop = -1
                             __UI_TotalSelectedControls = 1
                             __UI_FirstSelectedID = TempValue
-                            __UI_ActivateMenu Control(TempValue), __UI_False
+                            __UI_ActivateMenu Control(TempValue), False
                             __UI_HoveringID = TempValue
                         END IF
                     ELSE
-                        IF Control(__UI_HoveringID).ControlIsSelected = __UI_False THEN
+                        IF Control(__UI_HoveringID).ControlIsSelected = False THEN
                             FOR i = 1 TO UBOUND(Control)
-                                Control(i).ControlIsSelected = __UI_False
+                                Control(i).ControlIsSelected = False
                             NEXT
                             __UI_TotalSelectedControls = 0
                             __UI_FirstSelectedID = 0
                             IF Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
-                                Control(__UI_HoveringID).ControlIsSelected = __UI_True
+                                Control(__UI_HoveringID).ControlIsSelected = True
                                 __UI_TotalSelectedControls = 1
                                 __UI_FirstSelectedID = __UI_HoveringID
                                 IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
-                                    __UI_ActivateMenu Control(__UI_HoveringID), __UI_False
-                                    __UI_JustOpenedMenu = __UI_True
+                                    __UI_ActivateMenu Control(__UI_HoveringID), False
+                                    __UI_JustOpenedMenu = True
                                 END IF
                             END IF
                         ELSE
@@ -1544,8 +1545,8 @@ SUB __UI_EventDispatcher
                 IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenu > 0 AND __UI_HoveringID = __UI_ParentMenu THEN
                     __UI_Focus = __UI_PreviousFocus
                 ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenu = 0 THEN
-                    __UI_ActivateMenu Control(__UI_HoveringID), __UI_False
-                    __UI_JustOpenedMenu = __UI_True
+                    __UI_ActivateMenu Control(__UI_HoveringID), False
+                    __UI_JustOpenedMenu = True
                 ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuItem THEN
                     'Do nothing until mouseup (click)
                 ELSE
@@ -1553,15 +1554,15 @@ SUB __UI_EventDispatcher
                     __UI_Focus = 0
                 END IF
             END IF
-            __UI_MouseIsDown = __UI_True
+            __UI_MouseIsDown = True
             __UI_MouseDownOnID = __UI_HoveringID
 
             IF __UI_DesignMode AND __UI_MouseDownOnID = __UI_FormID THEN
-                __UI_SelectionRectangle = __UI_True
+                __UI_SelectionRectangle = True
                 __UI_SelectionRectangleTop = __UI_MouseTop
                 __UI_SelectionRectangleLeft = __UI_MouseLeft
             ELSE
-                __UI_SelectionRectangle = __UI_False
+                __UI_SelectionRectangle = False
             END IF
 
             IF NOT __UI_DesignMode THEN
@@ -1571,7 +1572,7 @@ SUB __UI_EventDispatcher
                         __UI_MouseDownOnScrollbar = TIMER
                     ELSEIF Control(__UI_HoveringID).HoveringVScrollbarButton = 3 THEN
                         IF NOT __UI_DraggingThumb THEN
-                            __UI_DraggingThumb = __UI_True
+                            __UI_DraggingThumb = True
                             __UI_ThumbDragTop = __UI_MouseTop
                             __UI_DraggingThumbOnID = __UI_HoveringID
                         END IF
@@ -1583,10 +1584,10 @@ SUB __UI_EventDispatcher
                                 'Single-line textbox contents are selected when first focused.
                                 Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                 Control(__UI_Focus).SelectionStart = 0
-                                Control(__UI_Focus).TextIsSelected = __UI_True
+                                Control(__UI_Focus).TextIsSelected = True
                             END IF
                         ELSE
-                            Control(__UI_Focus).TextIsSelected = __UI_False
+                            Control(__UI_Focus).TextIsSelected = False
                             __UI_SelectedText = ""
                             __UI_SelectionLength = 0
                             IF Control(__UI_Focus).Multiline AND Control(__UI_Focus).HoveringVScrollbarButton = 0 THEN
@@ -1614,7 +1615,7 @@ SUB __UI_EventDispatcher
                                 IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = ThisLineStart + ThisLineLen - 1
                                 Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
                             ELSE
-                                Control(__UI_Focus).TextIsSelected = __UI_False
+                                Control(__UI_Focus).TextIsSelected = False
                                 __UI_SelectedText = ""
                                 __UI_SelectionLength = 0
                                 'Single-line textbox click
@@ -1629,7 +1630,7 @@ SUB __UI_EventDispatcher
                                 IF i < 0 THEN i = Control(__UI_Focus).Cursor = 0
                                 Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
                             END IF
-                            __UI_IsSelectingText = __UI_True
+                            __UI_IsSelectingText = True
                             __UI_IsSelectingTextOnID = __UI_Focus
                         END IF
                     END IF
@@ -1638,7 +1639,7 @@ SUB __UI_EventDispatcher
                         __UI_MouseDownOnScrollbar = TIMER
                     ELSEIF Control(__UI_HoveringID).HoveringVScrollbarButton = 3 THEN
                         IF NOT __UI_DraggingThumb THEN
-                            __UI_DraggingThumb = __UI_True
+                            __UI_DraggingThumb = True
                             __UI_ThumbDragTop = __UI_MouseTop
                             __UI_DraggingThumbOnID = __UI_HoveringID
                         END IF
@@ -1651,21 +1652,21 @@ SUB __UI_EventDispatcher
             'Mouse button is still pressed
             IF __UI_DesignMode THEN
                 IF __UI_ResizeHandleHover = 0 AND (TIMER - __UI_LastMouseDownEvent > .3 OR (__UI_MouseTop <> __UI_MouseDownTop OR __UI_MouseLeft <> __UI_MouseDownLeft)) THEN
-                    IF __UI_IsDragging = __UI_False AND __UI_SelectionRectangle = __UI_False THEN
-                        __UI_IsDragging = __UI_True
+                    IF __UI_IsDragging = False AND __UI_SelectionRectangle = False THEN
+                        __UI_IsDragging = True
                         __UI_DraggingID = __UI_HoveringID
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_Frame THEN
                                 __UI_DraggingID = i
                                 FOR i = 1 TO UBOUND(Control)
-                                    IF i <> __UI_DraggingID THEN Control(i).ControlIsSelected = __UI_False
+                                    IF i <> __UI_DraggingID THEN Control(i).ControlIsSelected = False
                                 NEXT
                                 EXIT FOR
                             END IF
                         NEXT
                         IF Control(__UI_FirstSelectedID).Type = __UI_Type_MenuBar OR Control(__UI_FirstSelectedID).Type = __UI_Type_MenuItem THEN
                             __UI_DraggingID = 0
-                            __UI_IsDragging = __UI_False
+                            __UI_IsDragging = False
                             __UI_MouseDownOnID = 0
                         ELSE
                             __UI_MouseDownOnID = 0
@@ -1674,8 +1675,8 @@ SUB __UI_EventDispatcher
                         END IF
                     END IF
                 ELSE
-                    IF __UI_IsResizing = __UI_False AND __UI_SelectionRectangle = __UI_False AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
-                        __UI_IsResizing = __UI_True
+                    IF __UI_IsResizing = False AND __UI_SelectionRectangle = False AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
+                        __UI_IsResizing = True
                         __UI_ResizingID = __UI_HoveringID
                         __UI_MouseDownOnID = 0
                         __UI_DragY = __UI_MouseTop
@@ -1701,7 +1702,7 @@ SUB __UI_EventDispatcher
                     IF __UI_MouseLeft < Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left THEN Control(__UI_Focus).Cursor = 0
 
                     IF Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart THEN
-                        Control(__UI_IsSelectingTextOnID).TextIsSelected = __UI_True
+                        Control(__UI_IsSelectingTextOnID).TextIsSelected = True
                     END IF
                 ELSE
                     'Multi-line textbox click
@@ -1725,7 +1726,7 @@ SUB __UI_EventDispatcher
                     IF i > __UI_LastRenderedCharCount THEN Control(__UI_IsSelectingTextOnID).Cursor = ThisLineStart + ThisLineLen - 1
 
                     IF Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart THEN
-                        Control(__UI_IsSelectingTextOnID).TextIsSelected = __UI_True
+                        Control(__UI_IsSelectingTextOnID).TextIsSelected = True
                     END IF
                 END IF
             END IF
@@ -1806,8 +1807,8 @@ SUB __UI_EventDispatcher
         'Mouse button is released
         IF __UI_MouseIsDown THEN
             IF __UI_IsDragging THEN
-                __UI_IsDragging = __UI_False
-                __UI_ForceRedraw = __UI_True
+                __UI_IsDragging = False
+                __UI_ForceRedraw = True
                 'Snap the previously dragged control to the grid (if Ctrl is down):
                 IF Control(__UI_DraggingID).ParentID > 0 AND Control(__UI_DraggingID).Type <> __UI_Type_MenuItem THEN
                     __UI_PreviewTop = __UI_PreviewTop - Control(Control(__UI_DraggingID).ParentID).Top
@@ -1818,17 +1819,17 @@ SUB __UI_EventDispatcher
                 __UI_DraggingID = 0
             END IF
             IF __UI_IsResizing THEN
-                __UI_IsResizing = __UI_False
+                __UI_IsResizing = False
                 __UI_ResizingID = 0
                 'FOR i = 1 TO UBOUND(Control)
                 '    IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
                 '        Control(i).FieldArea = Control(i).Width / _FONTWIDTH((Control(i).Font)) - 1
-                '        __UI_ForceRedraw = __UI_True
+                '        __UI_ForceRedraw = True
                 '    END IF
                 'NEXT
             END IF
             IF __UI_DraggingThumb THEN
-                __UI_DraggingThumb = __UI_False
+                __UI_DraggingThumb = False
                 __UI_DraggingThumbOnID = 0
             END IF
 
@@ -1844,7 +1845,7 @@ SUB __UI_EventDispatcher
                 IF NOT Control(__UI_HoveringID).Disabled THEN
                     SELECT CASE Control(__UI_HoveringID).Type
                         CASE __UI_Type_RadioButton
-                            __UI_SetRadioButtonValue __UI_HoveringID
+                            SetRadioButtonValue __UI_HoveringID
                         CASE __UI_Type_CheckBox
                             Control(__UI_HoveringID).Value = NOT Control(__UI_HoveringID).Value
                         CASE __UI_Type_TextBox
@@ -1874,7 +1875,7 @@ SUB __UI_EventDispatcher
                                     '        IF LEN(Text(__UI_HoveringID)) > 0 THEN
                                     '            Control(__UI_HoveringID).Cursor = LEN(Text(__UI_HoveringID))
                                     '            Control(__UI_HoveringID).SelectionStart = 0
-                                    '            Control(__UI_HoveringID).TextIsSelected = __UI_True
+                                    '            Control(__UI_HoveringID).TextIsSelected = True
                                     '        END IF
                                     '    ELSE
                                     '        Control(__UI_HoveringID).Cursor = TempNewCursor
@@ -1930,10 +1931,10 @@ SUB __UI_EventDispatcher
                         CASE __UI_Type_MenuItem
                             __UI_Focus = __UI_PreviousFocus
                             __UI_DestroyControl Control(__UI_ActiveMenu)
-                            __UI_ForceRedraw = __UI_True
+                            __UI_ForceRedraw = True
                     END SELECT
                     __UI_LastMouseClick = TIMER
-                    __UI_JustOpenedMenu = __UI_False
+                    __UI_JustOpenedMenu = False
                     __UI_MouseDownOnID = 0
 
                     ProcessClick:
@@ -1956,7 +1957,7 @@ SUB __UI_EventDispatcher
                                 IF LEN(__UI_SelectedText) > 0 THEN _CLIPBOARD$ = __UI_SelectedText
                             CASE "__UI_TEXTMENUPASTE"
                                 DIM ContextMenuPaste AS _BYTE
-                                ContextMenuPaste = __UI_True
+                                ContextMenuPaste = True
                                 GOSUB PasteIntoTextBox
                             CASE "__UI_TEXTMENUDELETE"
                                 __UI_DeleteSelection
@@ -1964,7 +1965,7 @@ SUB __UI_EventDispatcher
                                 IF LEN(Text(__UI_Focus)) > 0 THEN
                                     Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                     Control(__UI_Focus).SelectionStart = 0
-                                    Control(__UI_Focus).TextIsSelected = __UI_True
+                                    Control(__UI_Focus).TextIsSelected = True
                                 END IF
                             CASE "__UI_PREVIEWMENUALIGNLEFT"
                                 IF __UI_TotalSelectedControls > 1 THEN
@@ -2162,7 +2163,7 @@ SUB __UI_EventDispatcher
                                 DIM FindLefts AS INTEGER, NextControlToDistribute AS LONG
                                 DIM TotalSpace AS INTEGER, BinSize AS INTEGER
 
-                                __UI_AutoRefresh = __UI_False
+                                __UI_AutoRefresh = False
                                 FOR FindLefts = 0 TO Control(__UI_FormID).Width - 1
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected AND Control(i).Left = FindLefts THEN
@@ -2207,15 +2208,15 @@ SUB __UI_EventDispatcher
                                     'NEXT
                                 END IF
 
-                                __UI_AutoRefresh = __UI_True
-                                __UI_ForceRedraw = __UI_True
+                                __UI_AutoRefresh = True
+                                __UI_ForceRedraw = True
                             CASE "__UI_PREVIEWMENUDISTRIBUTEV"
                                 'Build a sublist containing the selected controls in the order they
                                 'are currently placed vertically:
                                 REDIM SubList(1 TO __UI_TotalSelectedControls) AS LONG
                                 DIM FindTops AS INTEGER
 
-                                __UI_AutoRefresh = __UI_False
+                                __UI_AutoRefresh = False
                                 FOR FindTops = 0 TO Control(__UI_FormID).Height - 1
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected AND Control(i).Top = FindTops THEN
@@ -2260,8 +2261,8 @@ SUB __UI_EventDispatcher
                                     'NEXT
                                 END IF
 
-                                __UI_AutoRefresh = __UI_True
-                                __UI_ForceRedraw = __UI_True
+                                __UI_AutoRefresh = True
+                                __UI_ForceRedraw = True
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
                             CASE "__UI_PREVIEWMENUDELETE": GOTO ControlDelete
@@ -2275,16 +2276,16 @@ SUB __UI_EventDispatcher
                     IF __UI_ActiveMenu > 0 THEN
                         __UI_DestroyControl Control(__UI_ActiveMenu)
                         __UI_Focus = __UI_PreviousFocus
-                        __UI_ForceRedraw = __UI_True
+                        __UI_ForceRedraw = True
                     END IF
                 END IF
             END IF
-            __UI_IsSelectingText = __UI_False
+            __UI_IsSelectingText = False
             __UI_IsSelectingTextOnID = 0
-            __UI_MouseIsDown = __UI_False
+            __UI_MouseIsDown = False
             __UI_MouseDownOnID = 0
             __UI_PreviousMouseDownOnID = 0
-            __UI_SelectionRectangle = __UI_False
+            __UI_SelectionRectangle = False
         END IF
     END IF
 
@@ -2296,7 +2297,7 @@ SUB __UI_EventDispatcher
             IF Control(__UI_BelowHoveringID).Type = __UI_Type_Frame OR Control(__UI_HoveringID).Type = __UI_Type_Frame THEN
                 IF Control(__UI_HoveringID).Type = __UI_Type_Frame THEN __UI_BelowHoveringID = __UI_HoveringID
                 IF Control(__UI_FirstSelectedID).ParentID <> __UI_BelowHoveringID THEN
-                    SetNewParent = __UI_True
+                    SetNewParent = True
                     LeftOffset = Control(__UI_BelowHoveringID).Left
                     TopOffset = Control(__UI_BelowHoveringID).Top
                 END IF
@@ -2305,7 +2306,7 @@ SUB __UI_EventDispatcher
                     LeftOffset = Control(Control(__UI_FirstSelectedID).ParentID).Left
                     TopOffset = Control(Control(__UI_FirstSelectedID).ParentID).Top
                     __UI_BelowHoveringID = 0
-                    SetNewParent = __UI_True
+                    SetNewParent = True
                 END IF
             END IF
         END IF
@@ -2317,11 +2318,11 @@ SUB __UI_EventDispatcher
                     '(Ctrl enables snapping):
                     IF ((Control(i).Top + (__UI_MouseTop - __UI_DragY))) MOD 10 = 0 THEN _
                         Control(i).Top = (Control(i).Top + (__UI_MouseTop - __UI_DragY)): _
-                        SnappedY = __UI_True
+                        SnappedY = True
 
                     IF ((Control(i).Left + (__UI_MouseLeft - __UI_DragX))) MOD 10 = 0 THEN _
                         Control(i).Left = (Control(i).Left + (__UI_MouseLeft - __UI_DragX)): _
-                        SnappedX = __UI_True
+                        SnappedX = True
                 ELSE
                     Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                     Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
@@ -2357,7 +2358,7 @@ SUB __UI_EventDispatcher
     END IF
     IF __UI_IsResizing AND __UI_ResizingID > 0 THEN
         __UI_Click 0 'Force the preview to inform it was edited
-        __UI_ForceRedraw = __UI_True
+        __UI_ForceRedraw = True
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ControlIsSelected THEN
                 'Right
@@ -2409,7 +2410,7 @@ SUB __UI_EventDispatcher
         __UI_DragY = __UI_MouseTop
         __UI_DragX = __UI_MouseLeft
     END IF
-    IF __UI_DraggingThumb = __UI_True THEN
+    IF __UI_DraggingThumb = True THEN
         IF Control(__UI_DraggingThumbOnID).Type = __UI_Type_ListBox THEN
             IF __UI_MouseTop >= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight AND __UI_MouseTop <= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
                 'Dragging in the track area
@@ -2448,7 +2449,7 @@ SUB __UI_EventDispatcher
         'Check for mouse going through objects, not encompassing corners:
         __UI_TotalSelectedControls = 0
         FOR i = 1 TO UBOUND(Control)
-            Control(i).ControlIsSelected = __UI_False
+            Control(i).ControlIsSelected = False
             IF Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).ParentID = 0 THEN
                 IF tmx >= Control(i).Left AND tmx <= Control(i).Left + Control(i).Width - 1 AND tmy >= Control(i).Top AND tmy <= Control(i).Top + Control(i).Height - 1 THEN Control(i).ControlIsSelected = -1
                 IF tsmx >= Control(i).Left AND tsmx <= Control(i).Left + Control(i).Width - 1 AND tsmy >= Control(i).Top AND tsmy <= Control(i).Top + Control(i).Height - 1 THEN Control(i).ControlIsSelected = -1
@@ -2478,28 +2479,28 @@ SUB __UI_EventDispatcher
 
     'Keyboard handler
     'Modifiers (Ctrl, Alt, Shift):
-    IF __UI_KeyHit = 100303 OR __UI_KeyHit = 100304 THEN __UI_ShiftIsDown = __UI_True
-    IF __UI_KeyHit = -100303 OR __UI_KeyHit = -100304 THEN __UI_ShiftIsDown = __UI_False
-    IF __UI_KeyHit = 100305 OR __UI_KeyHit = 100306 THEN __UI_CtrlIsDown = __UI_True
-    IF __UI_KeyHit = -100305 OR __UI_KeyHit = -100306 THEN __UI_CtrlIsDown = __UI_False
-    IF __UI_KeyHit = 100307 OR __UI_KeyHit = 100308 THEN __UI_AltIsDown = __UI_True
-    IF __UI_KeyHit = -100307 OR __UI_KeyHit = -100308 THEN __UI_AltIsDown = __UI_False
+    IF __UI_KeyHit = 100303 OR __UI_KeyHit = 100304 THEN __UI_ShiftIsDown = True
+    IF __UI_KeyHit = -100303 OR __UI_KeyHit = -100304 THEN __UI_ShiftIsDown = False
+    IF __UI_KeyHit = 100305 OR __UI_KeyHit = 100306 THEN __UI_CtrlIsDown = True
+    IF __UI_KeyHit = -100305 OR __UI_KeyHit = -100306 THEN __UI_CtrlIsDown = False
+    IF __UI_KeyHit = 100307 OR __UI_KeyHit = 100308 THEN __UI_AltIsDown = True
+    IF __UI_KeyHit = -100307 OR __UI_KeyHit = -100308 THEN __UI_AltIsDown = False
 
     'Alt:
     IF NOT __UI_DesignMode THEN
         IF __UI_AltIsDown AND Control(__UI_Focus).Type = __UI_Type_MenuBar THEN
             __UI_Focus = __UI_PreviousFocus
-            __UI_AltIsDown = __UI_False
+            __UI_AltIsDown = False
         ELSEIF __UI_AltIsDown AND __UI_ActiveMenu > 0 THEN
             __UI_Focus = __UI_PreviousFocus
             __UI_DestroyControl Control(__UI_ActiveMenu)
-            __UI_ForceRedraw = __UI_True
+            __UI_ForceRedraw = True
             __UI_KeyHit = 0
-            __UI_AltIsDown = __UI_False
+            __UI_AltIsDown = False
         ELSEIF __UI_AltIsDown THEN
             IF NOT __UI_ShowHotKeys THEN
-                __UI_ShowHotKeys = __UI_True
-                __UI_ForceRedraw = __UI_True 'Trigger a global redraw
+                __UI_ShowHotKeys = True
+                __UI_ForceRedraw = True 'Trigger a global redraw
             END IF
 
             SELECT CASE __UI_KeyHit
@@ -2520,7 +2521,7 @@ SUB __UI_EventDispatcher
                                         __UI_Click Control(i).ID
                                     CASE __UI_Type_RadioButton
                                         IF Control(i).CanHaveFocus THEN __UI_Focus = Control(i).ID
-                                        __UI_SetRadioButtonValue Control(i).ID
+                                        SetRadioButtonValue Control(i).ID
                                         __UI_Click Control(i).ID
                                     CASE __UI_Type_CheckBox
                                         IF Control(i).CanHaveFocus THEN __UI_Focus = Control(i).ID
@@ -2545,11 +2546,11 @@ SUB __UI_EventDispatcher
                                     CASE __UI_Type_MenuBar
                                         IF __UI_ActiveMenu = 0 THEN
                                             __UI_PreviousFocus = __UI_Focus
-                                            __UI_ActivateMenu Control(i), __UI_True
-                                            __UI_ForceRedraw = __UI_True
+                                            __UI_ActivateMenu Control(i), True
+                                            __UI_ForceRedraw = True
                                             Control(__UI_ActiveMenu).Value = __UI_Focus
                                             __UI_KeyHit = 0
-                                            __UI_AltIsDown = __UI_False
+                                            __UI_AltIsDown = False
                                         END IF
                                 END SELECT
                                 EXIT FOR
@@ -2560,8 +2561,8 @@ SUB __UI_EventDispatcher
             END SELECT
         ELSE
             IF __UI_ShowHotKeys THEN
-                __UI_ShowHotKeys = __UI_False
-                __UI_ForceRedraw = __UI_True 'Trigger a global redraw
+                __UI_ShowHotKeys = False
+                __UI_ForceRedraw = True 'Trigger a global redraw
 
                 IF LEN(__UI_AltCombo$) THEN
                     'Numeric keypresses with alt pressed are converted into the proper ASCII character
@@ -2587,25 +2588,25 @@ SUB __UI_EventDispatcher
     IF __UI_DesignMode THEN
         IF __UI_KeyHit = 27 THEN
             FOR i = 1 TO UBOUND(Control)
-                Control(i).ControlIsSelected = __UI_False
+                Control(i).ControlIsSelected = False
             NEXT
             __UI_TotalSelectedControls = 0
             __UI_FirstSelectedID = 0
         END IF
     END IF
 
-    IF __UI_Focus > 0 AND __UI_KeyHit <> 0 AND __UI_DesignMode = __UI_False THEN
+    IF __UI_Focus > 0 AND __UI_KeyHit <> 0 AND __UI_DesignMode = False THEN
         __UI_KeyPress __UI_Focus
-        __UI_KeyboardFocus = __UI_True
+        __UI_KeyboardFocus = True
 
         'Enter activates the selected/default button, if any
-        IF __UI_IsDragging = __UI_False AND __UI_KeyHit = -13 AND NOT Control(__UI_Focus).Disabled THEN
+        IF __UI_IsDragging = False AND __UI_KeyHit = -13 AND NOT Control(__UI_Focus).Disabled THEN
             IF Control(__UI_Focus).Type = __UI_Type_Button OR Control(__UI_Focus).Type = __UI_Type_MenuItem THEN
                 i = __UI_Focus
                 IF Control(__UI_Focus).Type = __UI_Type_MenuItem THEN
                     __UI_Focus = __UI_PreviousFocus
                     __UI_DestroyControl Control(__UI_ActiveMenu)
-                    __UI_ForceRedraw = __UI_True
+                    __UI_ForceRedraw = True
                     __UI_KeyHit = 0
                 END IF
                 __UI_HoveringID = i
@@ -2616,7 +2617,7 @@ SUB __UI_EventDispatcher
                 __UI_DestroyControl Control(__UI_ActiveDropdownList)
                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
             ELSEIF Control(__UI_Focus).Type = __UI_Type_MenuBar THEN
-                __UI_ActivateMenu Control(__UI_Focus), __UI_True
+                __UI_ActivateMenu Control(__UI_Focus), True
             ELSEIF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline THEN
                 'Do nothing. Enter will add a new line to a multiline textbox (below).
             ELSEIF __UI_Focus <> __UI_DefaultButtonID AND __UI_DefaultButtonID > 0 THEN
@@ -2651,9 +2652,9 @@ SUB __UI_EventDispatcher
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuBar THEN
                                     IF __UI_ActiveMenu = 0 THEN
-                                        __UI_ActivateMenu Control(i), __UI_True
+                                        __UI_ActivateMenu Control(i), True
                                         Control(__UI_ActiveMenu).Value = __UI_Focus
-                                        __UI_ForceRedraw = __UI_True
+                                        __UI_ForceRedraw = True
                                         __UI_KeyHit = 0
                                     END IF
                                     EXIT FOR
@@ -2667,7 +2668,7 @@ SUB __UI_EventDispatcher
                         CASE 19712 'Right
                             __UI_Focus = __UI_NextMenuBarControl(__UI_Focus)
                         CASE 18432, 20480 'Up, down
-                            __UI_ActivateMenu Control(__UI_Focus), __UI_True
+                            __UI_ActivateMenu Control(__UI_Focus), True
                             __UI_KeyHit = 0
                     END SELECT
                 CASE __UI_Type_MenuPanel, __UI_Type_MenuItem
@@ -2680,7 +2681,7 @@ SUB __UI_EventDispatcher
                                 IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu THEN
                                     __UI_Focus = __UI_PreviousFocus
                                     __UI_DestroyControl Control(__UI_ActiveMenu)
-                                    __UI_ForceRedraw = __UI_True
+                                    __UI_ForceRedraw = True
                                     __UI_KeyHit = 0
                                     IF LEFT$(Control(i).Name, 5) = "__UI_" THEN
                                         __UI_HoveringID = i
@@ -2700,15 +2701,15 @@ SUB __UI_EventDispatcher
                             __UI_DestroyControl Control(__UI_ActiveMenu)
                             __UI_KeyHit = 0
                         CASE 19200 'Left
-                            IF __UI_ActiveMenuIsContextMenu = __UI_False THEN
-                                __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_ParentMenu)), __UI_True
-                                __UI_ForceRedraw = __UI_True
+                            IF __UI_ActiveMenuIsContextMenu = False THEN
+                                __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_ParentMenu)), True
+                                __UI_ForceRedraw = True
                             END IF
                             __UI_KeyHit = 0
                         CASE 19712 'Right
-                            IF __UI_ActiveMenuIsContextMenu = __UI_False THEN
-                                __UI_ActivateMenu Control(__UI_NextMenuBarControl(__UI_ParentMenu)), __UI_True
-                                __UI_ForceRedraw = __UI_True
+                            IF __UI_ActiveMenuIsContextMenu = False THEN
+                                __UI_ActivateMenu Control(__UI_NextMenuBarControl(__UI_ParentMenu)), True
+                                __UI_ForceRedraw = True
                             END IF
                             __UI_KeyHit = 0
                         CASE 18432 'Up
@@ -2722,24 +2723,24 @@ SUB __UI_EventDispatcher
                     SELECT CASE __UI_KeyHit
                         CASE 32
                             'Emulate mouse down/click
-                            IF __UI_IsDragging = __UI_False AND NOT Control(__UI_Focus).Disabled THEN
+                            IF __UI_IsDragging = False AND NOT Control(__UI_Focus).Disabled THEN
                                 'Space bar down on a button
-                                IF __UI_KeyIsDown = __UI_False AND __UI_KeyDownOnID = 0 THEN
+                                IF __UI_KeyIsDown = False AND __UI_KeyDownOnID = 0 THEN
                                     __UI_KeyDownOnID = __UI_Focus
-                                    __UI_KeyIsDown = __UI_True
+                                    __UI_KeyIsDown = True
                                 END IF
                             END IF
                         CASE -32
-                            IF __UI_IsDragging = __UI_False AND NOT Control(__UI_Focus).Disabled THEN
+                            IF __UI_IsDragging = False AND NOT Control(__UI_Focus).Disabled THEN
                                 'Space bar released and a button has focus
                                 IF __UI_KeyIsDown AND __UI_Focus = __UI_KeyDownOnID THEN
                                     IF Control(__UI_KeyDownOnID).Type = __UI_Type_RadioButton THEN
-                                        __UI_SetRadioButtonValue __UI_KeyDownOnID
+                                        SetRadioButtonValue __UI_KeyDownOnID
                                     ELSEIF Control(__UI_KeyDownOnID).Type = __UI_Type_CheckBox THEN
                                         Control(__UI_KeyDownOnID).Value = NOT Control(__UI_KeyDownOnID).Value
                                     END IF
                                     __UI_KeyDownOnID = 0
-                                    __UI_KeyIsDown = __UI_False
+                                    __UI_KeyIsDown = False
                                     __UI_Click __UI_Focus
                                 END IF
                             END IF
@@ -2762,7 +2763,7 @@ SUB __UI_EventDispatcher
                                         __UI_FocusOut __UI_Focus
                                         __UI_Focus = __UI_FocusSearch
                                         __UI_FocusIn __UI_Focus
-                                        IF Control(__UI_FocusSearch).Type = __UI_Type_RadioButton THEN __UI_SetRadioButtonValue __UI_Focus
+                                        IF Control(__UI_FocusSearch).Type = __UI_Type_RadioButton THEN SetRadioButtonValue __UI_Focus
                                         EXIT DO
                                     END IF
                                 LOOP
@@ -2837,7 +2838,7 @@ SUB __UI_EventDispatcher
                                     IF __UI_CtrlIsDown THEN
                                         PasteIntoTextBox:
                                         IF Control(__UI_Focus).Multiline THEN
-                                            Clip$ = __UI_ReplaceText(_CLIPBOARD$, CHR$(13) + CHR$(10), CHR$(10), __UI_False, 0)
+                                            Clip$ = Replace(_CLIPBOARD$, CHR$(13) + CHR$(10), CHR$(10), False, 0)
                                             IF LEN(Clip$) > 0 THEN
                                                 IF NOT Control(__UI_Focus).TextIsSelected THEN
                                                     IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
@@ -2853,13 +2854,13 @@ SUB __UI_EventDispatcher
                                                     'IF s1 > s2 THEN SWAP s1, s2
                                                     'Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
                                                     'Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
-                                                    'Control(__UI_Focus).TextIsSelected = __UI_False
+                                                    'Control(__UI_Focus).TextIsSelected = False
                                                     '__UI_SelectedText = ""
                                                     '__UI_SelectionLength = 0
                                                 END IF
                                             END IF
                                             IF ContextMenuPaste THEN
-                                                ContextMenuPaste = __UI_False
+                                                ContextMenuPaste = False
                                                 RETURN
                                             END IF
                                             __UI_KeyHit = 0
@@ -2884,13 +2885,13 @@ SUB __UI_EventDispatcher
                                                     IF s1 > s2 THEN SWAP s1, s2
                                                     Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
                                                     Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
-                                                    Control(__UI_Focus).TextIsSelected = __UI_False
+                                                    Control(__UI_Focus).TextIsSelected = False
                                                     __UI_SelectedText = ""
                                                     __UI_SelectionLength = 0
                                                 END IF
                                             END IF
                                             IF ContextMenuPaste THEN
-                                                ContextMenuPaste = __UI_False
+                                                ContextMenuPaste = False
                                                 RETURN
                                             END IF
                                             __UI_KeyHit = 0
@@ -2913,7 +2914,7 @@ SUB __UI_EventDispatcher
                                     IF __UI_CtrlIsDown THEN
                                         Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                         Control(__UI_Focus).SelectionStart = 0
-                                        Control(__UI_Focus).TextIsSelected = __UI_True
+                                        Control(__UI_Focus).TextIsSelected = True
                                         __UI_KeyHit = 0
                                     END IF
                                 END IF
@@ -2932,7 +2933,7 @@ SUB __UI_EventDispatcher
                                         s2 = Control(__UI_Focus).Cursor
                                         IF s1 > s2 THEN SWAP s1, s2
                                         Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), s2 + 1)
-                                        Control(__UI_Focus).TextIsSelected = __UI_False
+                                        Control(__UI_Focus).TextIsSelected = False
                                         __UI_SelectedText = ""
                                         __UI_SelectionLength = 0
                                         Control(__UI_Focus).Cursor = s1 + 1
@@ -2982,7 +2983,7 @@ SUB __UI_EventDispatcher
                                         's2 = Control(__UI_Focus).Cursor
                                         'IF s1 > s2 THEN SWAP s1, s2
                                         'Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), s2 + 1)
-                                        'Control(__UI_Focus).TextIsSelected = __UI_False
+                                        'Control(__UI_Focus).TextIsSelected = False
                                         '__UI_SelectedText = ""
                                         '__UI_SelectionLength = 0
                                         'Control(__UI_Focus).Cursor = s1 + 1
@@ -3079,12 +3080,12 @@ SUB __UI_EventDispatcher
                         SelectAllInFrame:
                         DIM ThisContainer AS LONG
                         ThisContainer =  Control(__UI_FirstSelectedID).ID
-                        Control(__UI_FirstSelectedID).ControlIsSelected = __UI_False
+                        Control(__UI_FirstSelectedID).ControlIsSelected = False
                         __UI_TotalSelectedControls = 0
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
                                 IF Control(i).ID > 0 AND Control(i).ParentID = ThisContainer THEN
-                                    Control(i).ControlIsSelected = __UI_True
+                                    Control(i).ControlIsSelected = True
                                     __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
                                     IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = Control(i).ID
                                 END IF
@@ -3095,7 +3096,7 @@ SUB __UI_EventDispatcher
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
                                 IF Control(i).ID > 0 AND Control(i).ParentID = 0 THEN
-                                    Control(i).ControlIsSelected = __UI_True
+                                    Control(i).ControlIsSelected = True
                                     __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
                                     IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = Control(i).ID
                                 END IF
@@ -3111,7 +3112,7 @@ SUB __UI_EventDispatcher
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
                             ControlClipboard$ = ControlClipboard$ + MKL$(i)
-                            CopyDone = __UI_True
+                            CopyDone = True
                         END IF
                     NEXT
                     IF CopyDone THEN _CLIPBOARD$ = "InForm" + CHR$(1)
@@ -3136,10 +3137,10 @@ SUB __UI_EventDispatcher
                         END IF
 
                         FOR i = 1 TO UBOUND(Control)
-                            Control(i).ControlIsSelected = __UI_False
+                            Control(i).ControlIsSelected = False
                         NEXT
 
-                        __UI_AutoRefresh = __UI_False
+                        __UI_AutoRefresh = False
                         _DELAY .1
                         Clip$ = MID$(ControlClipboard$, 5)
                         FOR i = 1 TO j
@@ -3168,15 +3169,15 @@ SUB __UI_EventDispatcher
                                     Control(PasteID).Top = Control(PasteID).Top + 20
                                     Control(PasteID).Left = Control(PasteID).Left + 20
                                 END IF
-                                Control(PasteID).ControlIsSelected = __UI_True
+                                Control(PasteID).ControlIsSelected = True
 
                                 IF i = 1 THEN FirstToBeSelected = PasteID
                             END IF
                         NEXT
                         __UI_TotalSelectedControls = j
                         __UI_FirstSelectedID =  FirstToBeSelected
-                        __UI_ForceRedraw = __UI_True
-                        __UI_AutoRefresh = __UI_True
+                        __UI_ForceRedraw = True
+                        __UI_AutoRefresh = True
                     END IF
                 END IF
             CASE 21248 'Delete
@@ -3196,7 +3197,7 @@ SUB __UI_EventDispatcher
                         END IF
                         IF Control(i).Type = __UI_Type_MenuBar THEN
                             DIM MustRefreshMenuBar AS _BYTE
-                            MustRefreshMenuBar = __UI_True
+                            MustRefreshMenuBar = True
                             FOR j = 1 TO UBOUND(Control)
                                 IF Control(j).ParentID = i THEN
                                     __UI_DestroyControl Control(j)
@@ -3208,7 +3209,7 @@ SUB __UI_EventDispatcher
                         END IF
                         __UI_DestroyControl Control(i)
                         IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
-                        __UI_ForceRedraw = __UI_True
+                        __UI_ForceRedraw = True
                         __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
                     END IF
                 NEXT
@@ -3257,10 +3258,10 @@ SUB __UI_EventDispatcher
                     END IF
                 NEXT
         END SELECT
-        IF __UI_ActiveMenu > 0 THEN __UI_ActivateMenu Control(__UI_ParentMenu), __UI_False
+        IF __UI_ActiveMenu > 0 THEN __UI_ActivateMenu Control(__UI_ParentMenu), False
     ELSEIF __UI_KeyHit <> 0 THEN 'No control has focus
         'Enter activates the default button, if any
-        IF __UI_IsDragging = __UI_False AND __UI_KeyHit = -13 AND __UI_DefaultButtonID > 0 THEN
+        IF __UI_IsDragging = False AND __UI_KeyHit = -13 AND __UI_DefaultButtonID > 0 THEN
             'Enter released and there is a default button
             __UI_Click __UI_DefaultButtonID
         END IF
@@ -3296,14 +3297,14 @@ FUNCTION __UI_GetFontID (FontHandle&)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_Font& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAttributes AS STRING)
+FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAttributes AS STRING)
     DIM NextSlot AS LONG, i AS LONG, Temp$, NewFontAttributes AS STRING
 
     'If the passed font is already loaded, we'll just return its handle
     FOR NextSlot = 1 TO UBOUND(Control)
         IF Control(NextSlot).Type = __UI_Type_Font THEN
             IF UCASE$(Text(NextSlot)) = UCASE$(NewFontFile) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
-                __UI_Font& = Control(NextSlot).Value
+                SetFont& = Control(NextSlot).Value
                 EXIT FUNCTION
             END IF
         END IF
@@ -3375,13 +3376,13 @@ FUNCTION __UI_Font& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontA
         Text(NextSlot) = NewFontFile
         Caption(NextSlot) = UCASE$(NewFontAttributes)
 
-        __UI_Font& = Control(NextSlot).Value
+        SetFont& = Control(NextSlot).Value
 
         'If loading the requested font fails, we default to _FONT 8
         IF Control(NextSlot).Value <= 0 THEN
             __UI_DestroyControl Control(NextSlot)
             Control(NextSlot).Value = 8
-            __UI_Font& = 8
+            SetFont& = 8
         END IF
     END IF
 END FUNCTION
@@ -3427,13 +3428,12 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             NextSlot = NextSlot + 1
             EXIT FOR
         ELSE
-            IF NextSlot = 1 THEN EXIT FOR
+            IF NextSlot = 1 THEN NextSlot = UBOUND(Control) + 1: EXIT FOR
         END IF
     NEXT
 
-    IF NextSlot = 0 THEN
+    IF NextSlot = UBOUND(Control) + 1 THEN
         'No empty slots. We must increase Control() and its helper arrays
-        NextSlot = UBOUND(Control) + 1
         REDIM _PRESERVE Control(0 TO NextSlot + 99) AS __UI_ControlTYPE
         REDIM _PRESERVE Caption(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempCaptions(1 TO NextSlot + 99) AS STRING
@@ -3460,7 +3460,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         Control(NextSlot).Font = Control(ParentID).Font
     END IF
 
-    IF Control(NextSlot).Font = 0 THEN Control(NextSlot).Font = __UI_Font("", 8, "")
+    IF Control(NextSlot).Font = 0 THEN Control(NextSlot).Font = SetFont("", 8, "")
 
     Control(NextSlot).Width = NewWidth
     Control(NextSlot).Height = NewHeight
@@ -3489,8 +3489,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             _FREEIMAGE TempCanvas
         END IF
 
-        IF __UI_HasMenuBar = __UI_False THEN
-            __UI_HasMenuBar = __UI_True
+        IF __UI_HasMenuBar = False THEN
+            __UI_HasMenuBar = True
             'Add menubar div to main form's canvas
             IF Control(__UI_FormID).Canvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).Canvas
             Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
@@ -3498,14 +3498,14 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
             CLS
             _FONT Control(__UI_FormID).Font
-            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), __UI_Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), __UI_Darken(Control(__UI_FormID).BackColor, 120)
+            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
             _DEST 0
         END IF
     END IF
 
     IF ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
-        Control(NextSlot).CanHaveFocus = __UI_True
+        Control(NextSlot).CanHaveFocus = True
     END IF
 
     IF ControlType = __UI_Type_Frame THEN
@@ -3545,12 +3545,12 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     END IF
 
     IF (ControlType = __UI_Type_PictureBox AND __UI_DesignMode) OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Frame OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
-        Control(NextSlot).HasBorder = __UI_True
+        Control(NextSlot).HasBorder = True
     END IF
 
     IF ControlType = __UI_Type_PictureBox THEN
         Control(NextSlot).HelperCanvas = _NEWIMAGE(NewWIdth, NewHeight, 32)
-        Control(NextSlot).Stretch = __UI_True
+        Control(NextSlot).Stretch = True
     END IF
 
     __UI_NewControl = NextSlot
@@ -3560,7 +3560,7 @@ END FUNCTION
 SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     DIM i AS LONG
 
-    __UI_AutoRefresh = __UI_False
+    __UI_AutoRefresh = False
 
     IF This.ID > 0 THEN
         Caption(This.ID) = ""
@@ -3612,14 +3612,14 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     IF This.Canvas <> 0 THEN _FREEIMAGE This.Canvas: This.Canvas = 0
     IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas: This.HelperCanvas = 0
     This.TransparentColor = 0
-    This.Stretch = __UI_False
-    This.PreviousStretch = __UI_False
+    This.Stretch = False
+    This.PreviousStretch = False
     This.BackColor = 0
     This.ForeColor = 0
     This.SelectedForeColor = 0
     This.SelectedBackColor = 0
     This.BackStyle = 0
-    This.HasBorder = __UI_False
+    This.HasBorder = False
     This.Padding = 0
     This.Align = 0
     This.BorderColor = 0
@@ -3636,17 +3636,17 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     This.HotKey = 0
     This.HotKeyOffset = 0
     This.HotKeyPosition = 0
-    This.ShowPercentage = __UI_False
+    This.ShowPercentage = False
     This.InputViewStart = 0
     This.PreviousInputViewStart = 0
     This.LastVisibleItem = 0
-    This.HasVScrollbar = __UI_False
+    This.HasVScrollbar = False
     This.VScrollbarButton2Top = 0
     This.HoveringVScrollbarButton = 0
     This.ThumbHeight = 0
     This.ThumbTop = 0
     This.VScrollbarRatio = 0
-    'This.HasHScrollbar = __UI_False
+    'This.HasHScrollbar = False
     'This.HScrollbarButton2Left = 0
     'This.HoveringHScrollbarButton = 0
     'This.LongestLine = 0
@@ -3657,34 +3657,34 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     This.PrevCursor = 0
     This.FieldArea = 0
     This.PreviousFieldArea = 0
-    This.TextIsSelected = __UI_False
-    This.Multiline = __UI_False
+    This.TextIsSelected = False
+    This.Multiline = False
     This.FirstVisibleLine = 0
     This.PrevFirstVisibleLine = 0
     This.CurrentLine = 0
     This.PrevCurrentLine = 0
     This.VisibleCursor = 0
     This.PrevVisibleCursor = 0
-    This.ControlIsSelected = __UI_False
+    This.ControlIsSelected = False
     This.SelectionLength = 0
     This.SelectionStart = 0
-    This.WordWrap = __UI_False
+    This.WordWrap = False
     This.CanResize = 0
-    This.CanHaveFocus = __UI_False
-    This.Disabled = __UI_False
-    This.Hidden = __UI_False
-    This.CenteredWindow = __UI_False
+    This.CanHaveFocus = False
+    This.Disabled = False
+    This.Hidden = False
+    This.CenteredWindow = False
     This.ControlState = 0
-    This.ChildrenRedrawn = __UI_False
+    This.ChildrenRedrawn = False
     This.FocusState = 0
 
     __UI_HasMenuBar = (__UI_FirstMenuBarControl > 0)
 
-    __UI_AutoRefresh = __UI_True
+    __UI_AutoRefresh = True
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_SetCaption (Control$, TempCaption$)
+SUB SetCaption (Control$, TempCaption$)
     DIM i AS LONG, FindSep%, ThisID AS LONG, NewCaption$, UsedList$, TempKey AS _UNSIGNED _BYTE
     DIM PrevFont AS LONG, TempCanvas AS LONG, PrevDest AS LONG
 
@@ -3737,27 +3737,7 @@ SUB __UI_SetCaption (Control$, TempCaption$)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_SetText (Control$, NewText$)
-    DIM ThisID AS LONG
-
-    ThisID = __UI_GetID(Control$)
-    IF ThisID = 0 THEN EXIT SUB
-
-    Text(ThisID) = NewText$
-END SUB
-
-'---------------------------------------------------------------------------------
-SUB __UI_SetTip (Control$, NewTip$)
-    DIM ThisID AS LONG
-
-    ThisID = __UI_GetID(Control$)
-    IF ThisID = 0 THEN EXIT SUB
-
-    ToolTip(ThisID) = NewTip$
-END SUB
-
-'---------------------------------------------------------------------------------
-SUB __UI_LoadImage (This AS __UI_ControlTYPE, File$)
+SUB LoadImage (This AS __UI_ControlTYPE, File$)
     DIM PrevDest AS LONG, ErrorMessage$
     STATIC NotFoundImage AS LONG
 
@@ -3900,16 +3880,16 @@ FUNCTION __UI_SpecialCharsToCHR$ (Text$)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-SUB __UI_SetRadioButtonValue (id)
+SUB SetRadioButtonValue (id)
     'Radio buttons will change value of others in the same group
     DIM i AS LONG
 
     FOR i = 1 TO UBOUND(Control)
         IF Control(i).Type = __UI_Type_RadioButton AND Control(i).ParentID = Control(id).ParentID THEN
-            Control(i).Value = __UI_False
+            Control(i).Value = False
         END IF
     NEXT
-    Control(id).Value = __UI_True
+    Control(id).Value = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -3917,11 +3897,11 @@ SUB __UI_CheckSelection (id)
     IF NOT Control(id).Multiline THEN
         IF __UI_ShiftIsDown THEN
             IF NOT Control(id).TextIsSelected THEN
-                Control(id).TextIsSelected = __UI_True
+                Control(id).TextIsSelected = True
                 Control(id).SelectionStart = Control(id).Cursor
             END IF
         ELSE
-            Control(id).TextIsSelected = __UI_False
+            Control(id).TextIsSelected = False
             __UI_SelectedText = ""
             __UI_SelectionLength = 0
         END IF
@@ -3937,7 +3917,7 @@ SUB __UI_DeleteSelection
         s2 = Control(__UI_Focus).Cursor
         IF s1 > s2 THEN SWAP s1, s2
         Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + MID$(Text(__UI_Focus), s2 + 1)
-        Control(__UI_Focus).TextIsSelected = __UI_False
+        Control(__UI_Focus).TextIsSelected = False
         __UI_SelectedText = ""
         __UI_SelectionLength = 0
         Control(__UI_Focus).Cursor = s1
@@ -3964,7 +3944,7 @@ SUB __UI_CursorAdjustments
 END SUB
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_ReplaceText$ (TempText$, SubString$, NewString$, CaseSensitive AS _BYTE, TotalReplacements AS LONG)
+FUNCTION Replace$ (TempText$, SubString$, NewString$, CaseSensitive AS _BYTE, TotalReplacements AS LONG)
     DIM FindSubString AS LONG, Text$
 
     IF LEN(TempText$) = 0 THEN EXIT SUB
@@ -3982,7 +3962,7 @@ FUNCTION __UI_ReplaceText$ (TempText$, SubString$, NewString$, CaseSensitive AS 
         TotalReplacements = TotalReplacements + 1
     LOOP
 
-    __UI_ReplaceText$ = Text$
+    Replace$ = Text$
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -4063,11 +4043,11 @@ FUNCTION __UI_GetTextBoxLine$ (id AS LONG, LineNumber AS LONG, StartPosition AS 
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-SUB __UI_AddListBoxItem (WhichListBox$, Item$)
+SUB AddItem (WhichListBox AS LONG, Item$)
     DIM ThisID AS LONG
 
-    ThisID = __UI_GetID(WhichListBox$)
-    IF Control(ThisID).Type <> __UI_Type_ListBox AND Control(ThisID).Type <> __UI_Type_DropdownList THEN ERROR 5: EXIT SUB
+    ThisID = WhichListBox
+    IF Control(ThisID).Type <> __UI_Type_ListBox AND Control(ThisID).Type <> __UI_Type_DropdownList THEN EXIT SUB
 
     Text(ThisID) = Text(ThisID) + Item$ + CHR$(13)
     Control(ThisID).Max = Control(ThisID).Max + 1
@@ -4075,11 +4055,11 @@ SUB __UI_AddListBoxItem (WhichListBox$, Item$)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_RemoveListBoxItem (WhichListBox$, ItemToRemove AS INTEGER)
+SUB RemoveItem (WhichListBox AS LONG, ItemToRemove AS INTEGER)
     DIM This AS __UI_ControlTYPE, TempText$, ThisItem%, FindLF&, TempCaption$
 
-    This = Control(__UI_GetID(WhichListBox$))
-    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN ERROR 5: EXIT SUB
+    This = Control(WhichListBox)
+    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN EXIT SUB
 
     IF ItemToRemove > This.Max THEN ERROR 6: EXIT SUB
 
@@ -4113,11 +4093,11 @@ SUB __UI_RemoveListBoxItem (WhichListBox$, ItemToRemove AS INTEGER)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_ReplaceListBoxItem (WhichListBox$, ItemToReplace AS INTEGER, NewText$)
+SUB ReplaceItem (WhichListBox AS LONG, ItemToReplace AS INTEGER, NewText$)
     DIM This AS __UI_ControlTYPE, TempText$, ThisItem%, FindLF&, TempCaption$
 
-    This = Control(__UI_GetID(WhichListBox$))
-    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN ERROR 5: EXIT SUB
+    This = Control(WhichListBox)
+    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN EXIT SUB
 
     IF ItemToReplace > This.Max THEN ERROR 6: EXIT SUB
 
@@ -4145,7 +4125,7 @@ SUB __UI_ReplaceListBoxItem (WhichListBox$, ItemToReplace AS INTEGER, NewText$)
 END SUB
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_GetListBoxItem$ (id AS LONG, Item AS LONG)
+FUNCTION GetItem$ (id AS LONG, Item AS LONG)
     DIM This AS __UI_ControlTYPE, ThisItem AS LONG, FindLF AS LONG, LastLF AS LONG
 
     This = Control(id)
@@ -4153,10 +4133,10 @@ FUNCTION __UI_GetListBoxItem$ (id AS LONG, Item AS LONG)
     FindLF = INSTR(Text(id), CHR$(13))
     IF Item = 1 THEN
         IF FindLF = 0 THEN
-            __UI_GetListBoxItem$ = Text(id)
+            GetItem$ = Text(id)
             EXIT FUNCTION
         ELSE
-            __UI_GetListBoxItem$ = LEFT$(Text(id), FindLF - 1)
+            GetItem$ = LEFT$(Text(id), FindLF - 1)
             EXIT FUNCTION
         END IF
     END IF
@@ -4169,12 +4149,12 @@ FUNCTION __UI_GetListBoxItem$ (id AS LONG, Item AS LONG)
         FindLF = INSTR(LastLF + 1, Text(id), CHR$(13))
         IF FindLF > 0 THEN
             IF ThisItem = Item THEN
-                __UI_GetListBoxItem$ = MID$(Text(id), LastLF + 1, FindLF - LastLF - 1)
+                GetItem$ = MID$(Text(id), LastLF + 1, FindLF - LastLF - 1)
                 EXIT FUNCTION
             END IF
         ELSE
             IF ThisItem = Item THEN
-                __UI_GetListBoxItem$ = MID$(Text(id), LastLF + 1)
+                GetItem$ = MID$(Text(id), LastLF + 1)
             END IF
             EXIT FUNCTION
         END IF
@@ -4230,7 +4210,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_PrintString(Left AS INTEGER, Top AS INTEGER, Text$)
     REDIM __UI_ThisLineChars(LEN(Text$)) AS LONG
-    uprint_extra Left, Top, _OFFSET(Text$), LEN(Text$), __UI_True, __UI_True, __UI_LastRenderedLineWidth, _OFFSET(__UI_ThisLineChars()), __UI_LastRenderedCharCount, _DEFAULTCOLOR, 0
+    uprint_extra Left, Top, _OFFSET(Text$), LEN(Text$), True, True, __UI_LastRenderedLineWidth, _OFFSET(__UI_ThisLineChars()), __UI_LastRenderedCharCount, _DEFAULTCOLOR, 0
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -4345,18 +4325,18 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_MessageBox& (Message$, Title$, Setup AS LONG)
+FUNCTION MessageBox& (Message$, Title$, Setup AS LONG)
     _DELAY .1 'So the interface can redraw before the messagebox kicks in
 
     IF Title$ = "" THEN Title$ = __UI_CurrentTitle
 
     $IF WIN THEN
-        __UI_MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), Setup)
+        MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), Setup + MsgBox_SystemModal + MsgBox_SetForeground)
     $ELSE
         IF (Setup AND 4) THEN
-        __UI_MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 4)
+        MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 4)
         ELSE
-        __UI_MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 0)
+        MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 0)
         END IF
     $END IF
 END FUNCTION
@@ -4388,9 +4368,9 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         Control(__UI_ActiveDropdownList).SelectedForeColor = This.SelectedForeColor
         Control(__UI_ActiveDropdownList).SelectedBackColor = This.SelectedBackColor
         Control(__UI_ActiveDropdownList).Font = This.Font
-        Control(__UI_ActiveDropdownList).HasBorder = __UI_True
+        Control(__UI_ActiveDropdownList).HasBorder = True
         Control(__UI_ActiveDropdownList).BorderColor = _RGB32(0, 0, 0)
-        Control(__UI_ActiveDropdownList).CanHaveFocus = __UI_True
+        Control(__UI_ActiveDropdownList).CanHaveFocus = True
         Control(__UI_ActiveDropdownList).InputViewStart = 1
         Control(__UI_ActiveDropdownList).LastVisibleItem = MaxVisible
         __UI_Focus = __UI_ActiveDropdownList
@@ -4420,11 +4400,11 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         IF This.Type = __UI_Type_MenuBar THEN
             Control(__UI_ActiveMenu).Left = This.Left
             Control(__UI_ActiveMenu).Top = uspacing& + 3
-            __UI_ActiveMenuIsContextMenu = __UI_False
+            __UI_ActiveMenuIsContextMenu = False
         ELSEIF This.Type = __UI_Type_ContextMenu THEN
             Control(__UI_ActiveMenu).Left = __UI_MouseLeft
             Control(__UI_ActiveMenu).Top = __UI_MouseTop
-            __UI_ActiveMenuIsContextMenu = __UI_True
+            __UI_ActiveMenuIsContextMenu = True
         END IF
 
         'Calculate panel's width and position the menu items

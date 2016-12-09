@@ -37,6 +37,27 @@ REDIM SHARED PreviewParentIDS(0) AS STRING
 DIM SHARED FontList.Names AS STRING
 REDIM SHARED FontList.FileNames(0) AS STRING
 
+$IF WIN THEN
+    CONST PathSep$ = "\"
+$ELSE
+    CONST PathSep$ = "/"
+$END IF
+
+DIM SHARED CurrentPath$
+DIM SHARED DialogBG AS LONG
+DIM SHARED OpenDialog AS LONG
+DIM SHARED OpenFrame AS LONG
+DIM SHARED FileNameLB AS LONG
+DIM SHARED FileNameTextBox AS LONG
+DIM SHARED PathLB AS LONG
+DIM SHARED FilesLB AS LONG
+DIM SHARED FileList AS LONG
+DIM SHARED PathsLB AS LONG
+DIM SHARED DirList AS LONG
+DIM SHARED OpenBT AS LONG
+DIM SHARED CancelBT AS LONG
+DIM SHARED ShowOnlyFrmbinFilesCB AS LONG
+
 CheckPreviewTimer = _FREETIMER
 ON TIMER(CheckPreviewTimer, .003) CheckPreview
 
@@ -124,6 +145,7 @@ $END IF
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
+    STATIC LastClick#, LastClickedID AS LONG
 
     SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "ALIGNMENUALIGNLEFT": Dummy = 201
@@ -151,14 +173,14 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(__UI_Type_MenuBar)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = __UI_True
+            Edited = True
         CASE "INSERTMENUMENUITEM"
             UiEditorFile = FREEFILE
             OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuItem)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = __UI_True
+            Edited = True
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
@@ -181,7 +203,7 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(Dummy)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = __UI_True
+            Edited = True
         CASE "STRETCH"
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
@@ -224,9 +246,9 @@ SUB __UI_Click (id AS LONG)
                 END IF
             NEXT
             IF LEN(Temp$) THEN
-                Answer = __UI_MessageBox(Temp$, "Loaded fonts", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+                Answer = MessageBox(Temp$, "Loaded fonts", MsgBox_OkOnly + MsgBox_Information)
             ELSE
-                Answer = __UI_MessageBox("There are no fonts loaded.", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
+                Answer = MessageBox("There are no fonts loaded.", "", MsgBox_OkOnly + MsgBox_Critical)
             END IF
         CASE "FILEMENULOAD"
             DIM a$, i AS LONG, __UI_EOF AS _BYTE
@@ -234,10 +256,10 @@ SUB __UI_Click (id AS LONG)
             DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
             DIM NewParentID AS STRING, FloatValue AS _FLOAT
 
-            CONST LogFileLoad = __UI_False
+            CONST LogFileLoad = False
 
             IF _FILEEXISTS("form.frmbin") = 0 THEN
-                Answer = __UI_MessageBox("File form.frmbin not found.", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
+                Answer = MessageBox("File form.frmbin not found.", "", MsgBox_OkOnly + MsgBox_Critical)
             ELSE
                 OPEN "form.frmbin" FOR BINARY AS #1
                 IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #2
@@ -247,7 +269,7 @@ SUB __UI_Click (id AS LONG)
                     EXIT SUB
                 END IF
                 IF LogFileLoad THEN PRINT #2, "FOUND INFORM+1"
-                __UI_AutoRefresh = __UI_False
+                __UI_AutoRefresh = False
                 FOR i = 1 TO UBOUND(Control)
                     __UI_DestroyControl Control(i)
                 NEXT
@@ -314,11 +336,11 @@ SUB __UI_Click (id AS LONG)
                                 GET #1, , b$
                                 Text(Dummy) = b$
                                 IF Control(Dummy).Type = __UI_Type_PictureBox OR Control(Dummy).Type = __UI_Type_Button THEN
-                                    __UI_LoadImage Control(Dummy), Text(Dummy)
+                                    LoadImage Control(Dummy), Text(Dummy)
                                 END IF
                                 IF LogFileLoad THEN PRINT #2, "TEXT:" + Text(Dummy)
                             CASE -4 'Stretch
-                                Control(Dummy).Stretch = __UI_True
+                                Control(Dummy).Stretch = True
                                 IF LogFileLoad THEN PRINT #2, "STRETCH"
                             CASE -5 'Font
                                 IF LogFileLoad THEN PRINT #2, "FONT:";
@@ -337,7 +359,7 @@ SUB __UI_Click (id AS LONG)
 
                                 NewFontAttributes = FontSetup$
 
-                                Control(Dummy).Font = __UI_Font(NewFontFile, NewFontSize, NewFontAttributes)
+                                Control(Dummy).Font = SetFont(NewFontFile, NewFontSize, NewFontAttributes)
                             CASE -6 'ForeColor
                                 b$ = SPACE$(4): GET #1, , b$
                                 Control(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
@@ -362,7 +384,7 @@ SUB __UI_Click (id AS LONG)
                                 Control(Dummy).BackStyle = __UI_Transparent
                                 IF LogFileLoad THEN PRINT #2, "BACKSTYLE:TRANSPARENT"
                             CASE -12
-                                Control(Dummy).HasBorder = __UI_True
+                                Control(Dummy).HasBorder = True
                                 IF LogFileLoad THEN PRINT #2, "HASBORDER"
                             CASE -13
                                 b$ = SPACE$(1): GET #1, , b$
@@ -389,19 +411,19 @@ SUB __UI_Click (id AS LONG)
                                 Control(Dummy).HotKeyOffset = CVI(b$)
                                 IF LogFileLoad THEN PRINT #2, "HOTKEYOFFSET="; Control(Dummy).HotKeyOffset
                             CASE -19
-                                Control(Dummy).ShowPercentage = __UI_True
+                                Control(Dummy).ShowPercentage = True
                                 IF LogFileLoad THEN PRINT #2, "SHOWPERCENTAGE"
                             CASE -20
-                                Control(Dummy).CanHaveFocus = __UI_True
+                                Control(Dummy).CanHaveFocus = True
                                 IF LogFileLoad THEN PRINT #2, "CANHAVEFOCUS"
                             CASE -21
-                                Control(Dummy).Disabled = __UI_True
+                                Control(Dummy).Disabled = True
                                 IF LogFileLoad THEN PRINT #2, "DISABLED"
                             CASE -22
-                                Control(Dummy).Hidden = __UI_True
+                                Control(Dummy).Hidden = True
                                 IF LogFileLoad THEN PRINT #2, "HIDDEN"
                             CASE -23
-                                Control(Dummy).CenteredWindow = __UI_True
+                                Control(Dummy).CenteredWindow = True
                                 IF LogFileLoad THEN PRINT #2, "CENTEREDWINDOW"
                             CASE -24 'Tips
                                 b$ = SPACE$(4): GET #1, , b$
@@ -420,7 +442,7 @@ SUB __UI_Click (id AS LONG)
                                 Control(Dummy).Interval = _CV(_FLOAT, b$)
                                 IF LogFileLoad THEN PRINT #2, "INTERVAL="; Control(Dummy).Interval
                             CASE -27
-                                Control(Dummy).WordWrap = __UI_True
+                                Control(Dummy).WordWrap = True
                                 IF LogFileLoad THEN PRINT #2, "WORDWRAP"
                             CASE -28
                                 b$ = SPACE$(4): GET #1, , b$
@@ -428,14 +450,14 @@ SUB __UI_Click (id AS LONG)
                                 IF LogFileLoad THEN PRINT #2, "TRANSPARENTCOLOR"
                                 __UI_ClearColor Control(Dummy).HelperCanvas, Control(Dummy).TransparentColor, -1
                             CASE -29
-                                Control(Dummy).CanResize = __UI_True
+                                Control(Dummy).CanResize = True
                                 IF LogFileLoad THEN PRINT #2, "CANRESIZE"
                             CASE -1 'new control
                                 IF LogFileLoad THEN PRINT #2, "READ NEW CONTROL:-1"
                                 EXIT DO
                             CASE -1024
                                 IF LogFileLoad THEN PRINT #2, "READ END OF FILE:-1024"
-                                __UI_EOF = __UI_True
+                                __UI_EOF = True
                                 EXIT DO
                             CASE ELSE
                                 IF LogFileLoad THEN PRINT #2, "UNKNOWN DATA="; CVI(b$)
@@ -445,32 +467,169 @@ SUB __UI_Click (id AS LONG)
                 LOOP UNTIL __UI_EOF
                 CLOSE #1
                 IF LogFileLoad THEN CLOSE #2
-                __UI_AutoRefresh = __UI_True
+                __UI_AutoRefresh = True
                 EXIT SUB
 
                 LoadError:
-                __UI_AutoRefresh = __UI_True
-                Answer = __UI_MessageBox("File form.frmbin is not valid.", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
+                __UI_AutoRefresh = True
+                Answer = MessageBox("File form.frmbin is not valid.", "", MsgBox_OkOnly + MsgBox_Critical)
                 CLOSE #1
             END IF
         CASE "FILEMENUNEW"
+            IF Edited THEN
+                Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                IF Answer = MsgBox_Cancel THEN
+                    EXIT SUB
+                ELSEIF Answer = MsgBox_Yes THEN
+                    SaveForm False
+                END IF
+            END IF
+
+            'Kill the preview (send PID = 0)
+            UiEditorFile = FREEFILE
+            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = MKL$(0)
+            PUT #UiEditorFile, OffsetEditorPID, b$
+            CLOSE #UiEditorFile
+            _DELAY .1
+
+            KILL "UiEditorPreview.frmbin"
+            KILL "UiEditor.dat"
+
+            $IF WIN THEN
+                SHELL _DONTWAIT "UiEditorPreview.exe"
+            $ELSE
+                SHELL _DONTWAIT "./UiEditorPreview"
+            $END IF
+
+            UiEditorFile = FREEFILE
+            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = MKL$(__UI_GetPID)
+            PUT #UiEditorFile, OffsetEditorPID, b$
+            CLOSE #UiEditorFile
+
+            __UI_ForceRedraw = True
         CASE "FILEMENUSAVE"
-            SaveForm __UI_True
+            SaveForm True
         CASE "HELPMENUABOUT"
-            Answer = __UI_MessageBox("InForm Designer" + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+            Answer = MessageBox("InForm Designer" + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
         CASE "HELPMENUHELP"
-            Answer = __UI_MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+            Answer = MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", MsgBox_OkOnly + MsgBox_Information)
         CASE "FILEMENUEXIT"
             IF Edited THEN
-                Answer = __UI_MessageBox("Save the current form before leaving?", "", __UI_MsgBox_YesNoCancel + __UI_MsgBox_Question)
-                IF Answer = __UI_MsgBox_Cancel THEN
+                Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
-                ELSEIF Answer = __UI_MsgBox_Yes THEN
-                    SaveForm __UI_False
+                ELSEIF Answer = MsgBox_Yes THEN
+                    SaveForm False
                 END IF
             END IF
             SYSTEM
+        CASE "FILEMENUOPEN"
+            IF Edited THEN
+                Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                IF Answer = MsgBox_Cancel THEN
+                    EXIT SUB
+                ELSEIF Answer = MsgBox_Yes THEN
+                    SaveForm False
+                END IF
+            END IF
+
+            'Hide the preview
+            SendSignal -2
+
+            'Refresh the file list control's contents
+            DIM TotalFiles%
+            CurrentPath$ = _CWD$
+            Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
+            Control(FileList).Max = TotalFiles%
+            Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+
+            Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
+            Control(OpenFrame).Left = 68: Control(OpenFrame).Top = 70
+
+            __UI_ForceRedraw = True
+        CASE "CANCELBT"
+            Text(FileNameTextBox) = ""
+            Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
+            Control(OpenFrame).Left = -500: Control(OpenFrame).Top = -600
+
+            'Show the preview
+            SendSignal -3
+
+            __UI_ForceRedraw = True
+        CASE "OPENBT"
+            OpenFile:
+            DIM FileToOpen$, FreeFileNum AS INTEGER
+            FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
+            IF _FILEEXISTS(FileToOpen$) THEN
+                'Kill the preview (send PID = 0)
+                UiEditorFile = FREEFILE
+                OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+                b$ = MKL$(0)
+                PUT #UiEditorFile, OffsetEditorPID, b$
+                CLOSE #UiEditorFile
+                _DELAY .1
+
+                KILL "UiEditorPreview.frmbin"
+                KILL "UiEditor.dat"
+                FreeFileNum = FREEFILE
+                OPEN FileToOpen$ FOR BINARY AS #FreeFileNum
+                b$ = SPACE$(LOF(FreeFileNum))
+                GET #FreeFileNum, 1, b$
+                CLOSE #FreeFileNum
+
+                OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FreeFileNum
+                PUT #FreeFileNum, 1, b$
+                CLOSE #FreeFileNum
+
+                $IF WIN THEN
+                    SHELL _DONTWAIT "UiEditorPreview.exe"
+                $ELSE
+                    SHELL _DONTWAIT "./UiEditorPreview"
+                $END IF
+
+                UiEditorFile = FREEFILE
+                OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+                b$ = MKL$(__UI_GetPID)
+                PUT #UiEditorFile, OffsetEditorPID, b$
+                CLOSE #UiEditorFile
+
+                Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
+                Control(OpenFrame).Left = -500: Control(OpenFrame).Top = -600
+            ELSE
+                Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
+            END IF
+        CASE "FILELIST"
+            Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
+            IF Control(FileList).HoveringVScrollbarButton = 0 AND LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
+                GOTO OpenFile
+            END IF
+        CASE "DIRLIST"
+            Text(FileNameTextBox) = GetItem(DirList, Control(DirList).Value)
+            IF LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
+                CurrentPath$ = idezchangepath(CurrentPath$, Text(FileNameTextBox))
+                Caption(PathLB) = "Path: " + CurrentPath$
+                Text(DirList) = idezpathlist$(CurrentPath$, TotalFiles%)
+                Control(DirList).Max = TotalFiles%
+                Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
+                GOTO ReloadList
+            END IF
+        CASE "SHOWONLYFRMBINFILESCB"
+            ReloadList:
+            IF Control(ShowOnlyFrmbinFilesCB).Value THEN
+                Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
+                Control(FileList).Max = TotalFiles%
+                Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+            ELSE
+                Text(FileList) = idezfilelist$(CurrentPath$, 1, TotalFiles%)
+                Control(FileList).Max = TotalFiles%
+                Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+            END IF
     END SELECT
+
+    LastClickedID = id
+    LastClick# = TIMER
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
@@ -506,7 +665,7 @@ SUB __UI_BeforeUpdateDisplay
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
 
     IF NOT MidRead THEN
-        MidRead = __UI_True
+        MidRead = True
         UiEditorFile = FREEFILE
         OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
 
@@ -529,18 +688,19 @@ SUB __UI_BeforeUpdateDisplay
         b$ = MKI$(AutoNameControls)
         PUT #UiEditorFile, OffsetAutoName, b$
 
-        'Controls in the editor lose focus when the preview is manipulated
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
-            IF CVI(b$) = -1 THEN Edited = __UI_True
+            'Controls in the editor lose focus when the preview is manipulated
+            IF CVI(b$) = -1 THEN Edited = True
+            IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
             IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
             b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         ELSEIF CVI(b$) = -2 THEN
             'User attempted to right-click a control but the preview
             'form is smaller than the menu panel. In such case the "Align"
             'menu is shown in the editor.
-            __UI_ActivateMenu Control(__UI_GetID("AlignMenu")), __UI_False
-            __UI_ForceRedraw = __UI_True
+            __UI_ActivateMenu Control(__UI_GetID("AlignMenu")), False
+            __UI_ForceRedraw = True
             b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
 
@@ -552,13 +712,14 @@ SUB __UI_BeforeUpdateDisplay
         FirstSelected = CVL(b$)
         IF PrevFirstSelected <> FirstSelected THEN
             PrevFirstSelected = FirstSelected
-            __UI_ForceRedraw = __UI_True
+            __UI_ForceRedraw = True
         END IF
         b$ = SPACE$(2): GET #UiEditorFile, OffsetMenuPanelIsON, b$
         PreviewHasMenuActive = CVI(b$)
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
-            Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
+            Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin"
+            SetCaption "FileMenuSave", "&Save '" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin'"
         END IF
 
         IF Edited THEN
@@ -568,75 +729,75 @@ SUB __UI_BeforeUpdateDisplay
         SelectedProperty = Control(__UI_GetID("PropertiesList")).Value
 
         IF PreviewHasMenuActive THEN
-            Control(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_False
+            Control(__UI_GetID("InsertMenuMenuItem")).Disabled = False
         ELSE
-            Control(__UI_GetID("InsertMenuMenuItem")).Disabled = __UI_True
+            Control(__UI_GetID("InsertMenuMenuItem")).Disabled = True
         END IF
 
         IF TotalSelected = 0 THEN
-            __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
+            SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
             FirstSelected = PreviewFormID
 
-            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = True
+            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = True
+            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = True
+            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = True
 
         ELSEIF TotalSelected = 1 THEN
             IF FirstSelected > 0 AND FirstSelected <= UBOUND(PreviewControls) THEN
-                __UI_SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(FirstSelected).Name)
+                SetCaption "PropertiesFrame", "Control properties: " + RTRIM$(PreviewControls(FirstSelected).Name)
 
-                Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_True
-                Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_True
-                Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_True
-                Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = True
+                Control(__UI_GetID("AlignMenuAlignRight")).Disabled = True
+                Control(__UI_GetID("AlignMenuAlignTops")).Disabled = True
+                Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = True
                 IF PreviewControls(FirstSelected).Type <> __UI_Type_MenuBar AND PreviewControls(FirstSelected).Type <> __UI_Type_MenuItem THEN
-                    Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
-                    Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
+                    Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = False
+                    Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = False
                 ELSE
-                    Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_True
-                    Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_True
+                    Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = True
+                    Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = True
                 END IF
-                Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_True
-                Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_True
-                Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
-                Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+                Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = True
+                Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = True
+                Control(__UI_GetID("AlignMenuDistributeV")).Disabled = True
+                Control(__UI_GetID("AlignMenuDistributeH")).Disabled = True
 
             END IF
 
         ELSEIF TotalSelected = 2 THEN
-            __UI_SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
+            SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
 
-            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_True
-            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_True
+            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = False
+            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = True
+            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = True
 
         ELSE
-            __UI_SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
+            SetCaption "PropertiesFrame", "Control properties: (multiple selection)"
 
-            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = __UI_False
-            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = __UI_False
+            Control(__UI_GetID("AlignMenuAlignLeft")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignRight")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignTops")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignBottoms")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCenterV")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCenterH")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCentersV")).Disabled = False
+            Control(__UI_GetID("AlignMenuAlignCentersH")).Disabled = False
+            Control(__UI_GetID("AlignMenuDistributeV")).Disabled = False
+            Control(__UI_GetID("AlignMenuDistributeH")).Disabled = False
 
         END IF
 
@@ -650,7 +811,7 @@ SUB __UI_BeforeUpdateDisplay
                     Text(PropertyValueID) = __UI_TrimAt0$(PreviewCaptions(FirstSelected))
                 CASE 3 'Text
                     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                        Text(PropertyValueID) = __UI_ReplaceText(PreviewTexts(FirstSelected), CHR$(13), "\n", __UI_False, 0)
+                        Text(PropertyValueID) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
                     ELSE
                         Text(PropertyValueID) = PreviewTexts(FirstSelected)
                     END IF
@@ -681,61 +842,61 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 14 'Padding
                     Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
             END SELECT
-            Control(PropertyUpdateStatusID).Hidden = __UI_True
+            Control(PropertyUpdateStatusID).Hidden = True
         ELSE
             __UI_CursorAdjustments
             DIM PropertyAccept AS _BYTE
             SELECT CASE SelectedProperty
                 CASE 1 'Name
-                    IF LCASE$(Text(PropertyValueID)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = __UI_True
+                    IF LCASE$(Text(PropertyValueID)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = True
                 CASE 2 'Caption
-                    IF Text(PropertyValueID) = PreviewCaptions(FirstSelected) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = PreviewCaptions(FirstSelected) THEN PropertyAccept = True
                 CASE 3 'Text
                     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                        IF __UI_ReplaceText(Text(PropertyValueID), "\n", CHR$(13), __UI_False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
+                        IF Replace(Text(PropertyValueID), "\n", CHR$(13), False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = True
                     ELSE
-                        IF Text(PropertyValueID) = PreviewTexts(FirstSelected) THEN PropertyAccept = __UI_True
+                        IF Text(PropertyValueID) = PreviewTexts(FirstSelected) THEN PropertyAccept = True
                     END IF
                 CASE 4 'Top
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN PropertyAccept = True
                 CASE 5 'Left
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN PropertyAccept = True
                 CASE 6 'Width
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN PropertyAccept = True
                 CASE 7 'Height
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = True
                 CASE 8 'Font
                     IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                        IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = __UI_True
+                        IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = True
                     ELSE
-                        IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = __UI_True
+                        IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = True
                     END IF
                 CASE 9 'Tooltip
-                    IF Text(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = True
                 CASE 10 'Value
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = True
                 CASE 11 'Min
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN PropertyAccept = True
                 CASE 12 'Max
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN PropertyAccept = True
                 CASE 13 'Interval
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN PropertyAccept = True
                 CASE 14 'Padding
-                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = __UI_True
+                    IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = True
             END SELECT
-            Control(PropertyUpdateStatusID).Hidden = __UI_False
+            Control(PropertyUpdateStatusID).Hidden = False
             _DEST Control(PropertyUpdateStatusID).HelperCanvas
             CLS , _RGBA32(0, 0, 0, 0)
             IF PropertyAccept AND LEN(RTRIM$(Text(PropertyValueID))) > 0 THEN
                 _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
-                __UI_SetTip "PropertyUpdateStatus", "The property value entered was accepted"
+                ToolTip(__UI_GetID("PropertyUpdateStatus")) = "The property value entered was accepted"
             ELSEIF LEN(RTRIM$(Text(PropertyValueID))) > 0 THEN
                 IF TIMER - LastKeyPress > .5 THEN
                     _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
-                    __UI_SetTip "PropertyUpdateStatus", "Property value not accepted"
+                    ToolTip(__UI_GetID("PropertyUpdateStatus")) = "Property value not accepted"
                 ELSE
                     _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 32)-STEP(15, 15)
-                    __UI_SetTip "PropertyUpdateStatus", ""
+                    ToolTip(__UI_GetID("PropertyUpdateStatus")) = ""
                 END IF
             END IF
             _DEST 0
@@ -760,24 +921,24 @@ SUB __UI_BeforeUpdateDisplay
         Control(__UI_GetID("Resizable")).Value = PreviewControls(FirstSelected).CanResize
 
         'Disable properties that don't apply
-        Control(__UI_GetID("Stretch")).Disabled = __UI_True
-        Control(__UI_GetID("HasBorder")).Disabled = __UI_True
-        Control(__UI_GetID("ShowPercentage")).Disabled = __UI_True
-        Control(__UI_GetID("WordWrap")).Disabled = __UI_True
-        Control(__UI_GetID("CanHaveFocus")).Disabled = __UI_True
-        Control(__UI_GetID("Disabled")).Disabled = __UI_True
-        Control(__UI_GetID("Hidden")).Disabled = __UI_True
-        Control(__UI_GetID("CenteredWindow")).Disabled = __UI_True
-        Control(__UI_GetID("AlignOptions")).Disabled = __UI_True
-        Control(BackStyleListID).Disabled = __UI_True
-        __UI_ReplaceListBoxItem "PropertiesList", 3, "Text"
-        Control(__UI_GetID("Resizable")).Disabled = __UI_True
+        Control(__UI_GetID("Stretch")).Disabled = True
+        Control(__UI_GetID("HasBorder")).Disabled = True
+        Control(__UI_GetID("ShowPercentage")).Disabled = True
+        Control(__UI_GetID("WordWrap")).Disabled = True
+        Control(__UI_GetID("CanHaveFocus")).Disabled = True
+        Control(__UI_GetID("Disabled")).Disabled = True
+        Control(__UI_GetID("Hidden")).Disabled = True
+        Control(__UI_GetID("CenteredWindow")).Disabled = True
+        Control(__UI_GetID("AlignOptions")).Disabled = True
+        Control(BackStyleListID).Disabled = True
+        ReplaceItem __UI_GetID("PropertiesList"), 3, "Text"
+        Control(__UI_GetID("Resizable")).Disabled = True
         Caption(PropertyValueID) = ""
         IF TotalSelected > 0 THEN
             SELECT EVERYCASE PreviewControls(FirstSelected).Type
                 CASE __UI_Type_MenuBar, __UI_Type_MenuItem
-                    Control(__UI_GetID("Disabled")).Disabled = __UI_False
-                    Control(__UI_GetID("Hidden")).Disabled = __UI_False
+                    Control(__UI_GetID("Disabled")).Disabled = False
+                    Control(__UI_GetID("Hidden")).Disabled = False
                 CASE __UI_Type_MenuBar
                     'Check if this is the last menu bar item so that Align options can be enabled
                     FOR i = UBOUND(PreviewControls) TO 1 STEP -1
@@ -786,106 +947,107 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                     IF i = FirstSelected THEN
-                        Control(__UI_GetID("AlignOptions")).Disabled = __UI_False
+                        Control(__UI_GetID("AlignOptions")).Disabled = False
                     END IF
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 9
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_MenuItem
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 3, 9, 10
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_PictureBox
-                    __UI_ReplaceListBoxItem "PropertiesList", 3, "Image file"
-                    Control(__UI_GetID("Stretch")).Disabled = __UI_False
-                    Control(BackStyleListID).Disabled = __UI_False
+                    ReplaceItem __UI_GetID("PropertiesList"), 3, "Image file"
+                    Control(__UI_GetID("Stretch")).Disabled = False
+                    Control(BackStyleListID).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 3, 4, 5, 6, 7, 9
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_Frame, __UI_Type_Label
-                    Control(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 14
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_TextBox
-                    Control(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = False
                 CASE __UI_Type_Button, __UI_Type_MenuItem
-                    __UI_ReplaceListBoxItem "PropertiesList", 3, "Image file"
+                    ReplaceItem __UI_GetID("PropertiesList"), 3, "Image file"
                 CASE __UI_Type_Button, __UI_Type_TextBox
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 3, 4, 5, 6, 7, 8, 9
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                    Control(BackStyleListID).Disabled = __UI_False
+                    Control(BackStyleListID).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 10
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_ProgressBar
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_TrackBar
                     SELECT CASE SelectedProperty
                         CASE 1, 4, 5, 6, 7, 9, 10, 11, 12, 13
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                    Control(BackStyleListID).Disabled = __UI_False
+                    ReplaceItem __UI_GetID("PropertiesList"), 3, "List items"
+                    Control(BackStyleListID).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 3, 4, 5, 6, 7, 8, 9, 10, 12
-                            Control(PropertyValueID).Disabled = __UI_False
+                            Control(PropertyValueID).Disabled = False
                         CASE ELSE
-                            Control(PropertyValueID).Disabled = __UI_True
+                            Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
-                    Control(__UI_GetID("HasBorder")).Disabled = __UI_False
+                    Control(__UI_GetID("HasBorder")).Disabled = False
                 CASE __UI_Type_ProgressBar
-                    Control(__UI_GetID("ShowPercentage")).Disabled = __UI_False
+                    Control(__UI_GetID("ShowPercentage")).Disabled = False
                 CASE __UI_Type_Label
-                    Control(__UI_GetID("WordWrap")).Disabled = __UI_False
+                    Control(__UI_GetID("WordWrap")).Disabled = False
                 CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar
-                    Control(__UI_GetID("CanHaveFocus")).Disabled = __UI_False
+                    Control(__UI_GetID("CanHaveFocus")).Disabled = False
                 CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar
-                    Control(__UI_GetID("Disabled")).Disabled = __UI_False
+                    Control(__UI_GetID("Disabled")).Disabled = False
                 CASE __UI_Type_Frame, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
-                    Control(__UI_GetID("Hidden")).Disabled = __UI_False
+                    Control(__UI_GetID("Hidden")).Disabled = False
                 CASE __UI_Type_Label
-                    Control(__UI_GetID("AlignOptions")).Disabled = __UI_False
+                    Control(__UI_GetID("AlignOptions")).Disabled = False
             END SELECT
         ELSE
             'Properties relative to the form
-            Control(__UI_GetID("CenteredWindow")).Disabled = __UI_False
-            Control(__UI_GetID("Resizable")).Disabled = __UI_False
-            __UI_ReplaceListBoxItem "PropertiesList", 3, "Icon"
+            Control(__UI_GetID("CenteredWindow")).Disabled = False
+            Control(__UI_GetID("Resizable")).Disabled = False
+            ReplaceItem __UI_GetID("PropertiesList"), 3, "Icon"
 
             SELECT CASE SelectedProperty
                 CASE 1, 2, 3, 6, 7, 8 'Name, Caption, Width, Height, Font
-                    Control(PropertyValueID).Disabled = __UI_False
+                    Control(PropertyValueID).Disabled = False
                 CASE ELSE
-                    Control(PropertyValueID).Disabled = __UI_True
+                    Control(PropertyValueID).Disabled = True
             END SELECT
         END IF
 
@@ -957,7 +1119,7 @@ SUB __UI_BeforeUpdateDisplay
             UpdateColorPreview Control(ColorPropertiesListID).Value, ThisColor, ThisBackColor
         END IF
 
-        MidRead = __UI_False
+        MidRead = False
         CLOSE #UiEditorFile
     END IF
 
@@ -966,11 +1128,11 @@ END SUB
 SUB __UI_BeforeUnload
     DIM Answer AS _BYTE
     IF Edited THEN
-        Answer = __UI_MessageBox("Save the current form before leaving?", "", __UI_MsgBox_YesNoCancel + __UI_MsgBox_Question)
-        IF Answer = __UI_MsgBox_Cancel THEN
-            __UI_UnloadSignal = __UI_False
-        ELSEIF Answer = __UI_MsgBox_Yes THEN
-            SaveForm __UI_False
+        Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
+        IF Answer = MsgBox_Cancel THEN
+            __UI_UnloadSignal = False
+        ELSEIF Answer = MsgBox_Yes THEN
+            SaveForm False
         END IF
     END IF
 END SUB
@@ -1030,7 +1192,7 @@ SUB __UI_OnLoad
 
     _FREEIMAGE CommControls
 
-    __UI_ForceRedraw = __UI_True
+    __UI_ForceRedraw = True
 
     'Read controls' IDs to avoid repeated calls to __UI_GetID later on
     RedTrackID = __UI_GetID("Red"): RedTextBoxID = __UI_GetID("RedValue")
@@ -1044,8 +1206,8 @@ SUB __UI_OnLoad
 
     Control(__UI_GetID("PropertiesList")).Value = 2
 
-    PreviewAttached = __UI_True
-    AutoNameControls = __UI_True
+    PreviewAttached = True
+    AutoNameControls = True
 
     IF _FILEEXISTS("UiEditorPreview.frmbin") THEN KILL "UiEditorPreview.frmbin"
 
@@ -1113,11 +1275,26 @@ SUB __UI_OnLoad
     PUT #UiEditorFile, OffsetEditorPID, b$
     CLOSE #UiEditorFile
 
+    'Fill "open dialog" listboxes:
+    '-------------------------------------------------
+    DIM TotalFiles%
+    CurrentPath$ = _CWD$
+    Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
+    Control(FileList).Max = TotalFiles%
+    Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+
+    Text(DirList) = idezpathlist$(CurrentPath$, TotalFiles%)
+    Control(DirList).Max = TotalFiles%
+    Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
+
+    Caption(PathLB) = "Path: " + CurrentPath$
+    '-------------------------------------------------
+
     TIMER(CheckPreviewTimer) ON
 
     EXIT SUB
     UiEditorPreviewNotFound:
-    i = __UI_MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", __UI_MsgBox_OkOnly + __UI_MsgBox_Critical)
+    i = MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", MsgBox_OkOnly + MsgBox_Critical)
     SYSTEM
 
     ShowMessage:
@@ -1173,12 +1350,12 @@ SUB __UI_ValueChanged (id AS LONG)
     SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "PROPERTIESLIST"
             _DELAY .1 'Give the screen update routine time to finish
-            IF Control(PropertyValueID).Disabled = __UI_False THEN
+            IF Control(PropertyValueID).Disabled = False THEN
                 __UI_Focus = PropertyValueID
                 IF LEN(Text(__UI_Focus)) > 0 THEN
                     Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                     Control(__UI_Focus).SelectionStart = 0
-                    Control(__UI_Focus).TextIsSelected = __UI_True
+                    Control(__UI_Focus).TextIsSelected = True
                 END IF
             END IF
         CASE "ALIGNOPTIONS"
@@ -1481,7 +1658,7 @@ SUB LoadPreview
                         GET #BinaryFileNum, , b$
                         PreviewTexts(Dummy) = b$
                     CASE -4 'Stretch
-                        PreviewControls(Dummy).Stretch = __UI_True
+                        PreviewControls(Dummy).Stretch = True
                     CASE -5 'Font
                         DIM FontSetup$, FindSep AS INTEGER
                         DIM NewFontName AS STRING, NewFontFile AS STRING
@@ -1507,7 +1684,7 @@ SUB LoadPreview
                     CASE -11
                         PreviewControls(Dummy).BackStyle = __UI_Transparent
                     CASE -12
-                        PreviewControls(Dummy).HasBorder = __UI_True
+                        PreviewControls(Dummy).HasBorder = True
                     CASE -13
                         b$ = SPACE$(1): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Align = _CV(_BYTE, b$)
@@ -1527,15 +1704,15 @@ SUB LoadPreview
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).HotKeyOffset = CVI(b$)
                     CASE -19
-                        PreviewControls(Dummy).ShowPercentage = __UI_True
+                        PreviewControls(Dummy).ShowPercentage = True
                     CASE -20
-                        PreviewControls(Dummy).CanHaveFocus = __UI_True
+                        PreviewControls(Dummy).CanHaveFocus = True
                     CASE -21
-                        PreviewControls(Dummy).Disabled = __UI_True
+                        PreviewControls(Dummy).Disabled = True
                     CASE -22
-                        PreviewControls(Dummy).Hidden = __UI_True
+                        PreviewControls(Dummy).Hidden = True
                     CASE -23
-                        PreviewControls(Dummy).CenteredWindow = __UI_True
+                        PreviewControls(Dummy).CenteredWindow = True
                     CASE -24 'Tips
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         b$ = SPACE$(CVL(b$))
@@ -1545,9 +1722,9 @@ SUB LoadPreview
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Interval = _CV(_FLOAT, b$)
                     CASE -27
-                        PreviewControls(Dummy).WordWrap = __UI_True
+                        PreviewControls(Dummy).WordWrap = True
                     CASE -29
-                        PreviewControls(Dummy).CanResize = __UI_True
+                        PreviewControls(Dummy).CanResize = True
                     CASE -30
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).HotKeyPosition = CVI(b$)
@@ -1557,7 +1734,7 @@ SUB LoadPreview
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
-                        __UI_EOF = __UI_True
+                        __UI_EOF = True
                         EXIT DO
                     CASE ELSE
                         EXIT DO
@@ -1581,7 +1758,16 @@ SUB SendData (b$, Property AS INTEGER)
     b$ = MKI$(Property): PUT #FileNum, OffsetPropertyChanged, b$
     b$ = MKI$(-1): PUT #FileNum, OffsetNewDataFromEditor, b$
     CLOSE #FileNum
-    Edited = __UI_True
+    Edited = True
+END SUB
+
+SUB SendSignal (Value AS INTEGER)
+    DIM FileNum AS INTEGER, b$
+    FileNum = FREEFILE
+    OPEN "UiEditor.dat" FOR BINARY AS #FileNum
+
+    b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromEditor, b$
+    CLOSE #FileNum
 END SUB
 
 SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
@@ -1612,6 +1798,8 @@ SUB CheckPreview
     'Check if the preview window is still alive
     DIM b$, UiEditorFile AS INTEGER
 
+    IF Control(OpenFrame).Hidden = False THEN EXIT SUB
+
     UiEditorFile = FREEFILE
     OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
     b$ = SPACE$(4): GET #UiEditorFile, OffsetPreviewPID, b$
@@ -1625,11 +1813,11 @@ SUB CheckPreview
             c& = CloseHandle(hnd&)
             IF b& = 1 AND ExitCode& = 259 THEN
                 'Preview is active.
-                Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
+                Control(__UI_GetID("ViewMenuPreview")).Disabled = True
             ELSE
                 'Preview was closed.
                 TIMER(__UI_EventsTimer) OFF
-                Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
+                Control(__UI_GetID("ViewMenuPreview")).Disabled = False
                 __UI_WaitMessage = "Reloading preview window..."
                 OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
                 b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
@@ -1655,7 +1843,7 @@ SUB CheckPreview
         IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
         'Preview was closed.
         TIMER(__UI_EventsTimer) OFF
-        Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_False
+        Control(__UI_GetID("ViewMenuPreview")).Disabled = False
         __UI_WaitMessage = "Reloading preview window..."
         OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
         b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
@@ -1676,7 +1864,7 @@ SUB CheckPreview
         TIMER(__UI_EventsTimer) ON
         ELSE
         'Preview is active.
-        Control(__UI_GetID("ViewMenuPreview")).Disabled = __UI_True
+        Control(__UI_GetID("ViewMenuPreview")).Disabled = True
         END IF
         END IF
     $END IF
@@ -1690,8 +1878,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
 
     BaseOutputFileName = RTRIM$(PreviewControls(PreviewFormID).Name)
     IF _FILEEXISTS(BaseOutputFileName + ".bas") OR _FILEEXISTS(BaseOutputFileName + ".frmbin") OR _FILEEXISTS(BaseOutputFileName + ".bas") THEN
-        Answer = __UI_MessageBox("Some files will be overwritten. Proceed?", "", __UI_MsgBox_YesNo + __UI_MsgBox_Question)
-        IF Answer = __UI_MsgBox_No THEN EXIT SUB
+        Answer = MessageBox("Some files will be overwritten. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
+        IF Answer = MsgBox_No THEN EXIT SUB
     END IF
     TextFileNum = FREEFILE
     OPEN BaseOutputFileName + ".frm" FOR OUTPUT AS #TextFileNum
@@ -1767,7 +1955,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     'ELSE
                     '    a$ = PreviewCaptions(i)
                     'END IF
-                    a$ = "    __UI_SetCaption " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
+                    a$ = "    SetCaption " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
                     b$ = MKI$(-2) + MKL$(LEN(PreviewCaptions(i))) '-2 indicates a caption
                     PUT #BinaryFileNum, , b$
                     PUT #BinaryFileNum, , PreviewCaptions(i)
@@ -1775,7 +1963,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 END IF
 
                 IF LEN(PreviewTips(i)) > 0 THEN
-                    a$ = "    __UI_SetTip " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(PreviewTips(i))
+                    a$ = "    ToolTip(__UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ")) = " + __UI_SpecialCharsToCHR$(PreviewTips(i))
                     b$ = MKI$(-24) + MKL$(LEN(PreviewTips(i))) '-24 indicates a tip
                     PUT #BinaryFileNum, , b$
                     PUT #BinaryFileNum, , PreviewTips(i)
@@ -1800,14 +1988,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                                     TempCaption$ = TempText$
                                     TempText$ = ""
                                 END IF
-                                a$ = "    __UI_AddListBoxItem " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + CHR$(34) + TempCaption$ + CHR$(34)
+                                a$ = "    AddItem __UI_NewID, " + CHR$(34) + TempCaption$ + CHR$(34)
                                 PRINT #TextFileNum, a$
                             LOOP
                         CASE __UI_Type_PictureBox, __UI_Type_Button
-                            a$ = "    __UI_LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
+                            a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
                             PRINT #TextFileNum, a$
                         CASE ELSE
-                            a$ = "    __UI_SetText " + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
+                            a$ = "    Text(__UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ")) = " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
                             PRINT #TextFileNum, a$
                     END SELECT
                     b$ = MKI$(-3) + MKL$(LEN(PreviewTexts(i))) '-3 indicates a text
@@ -1820,7 +2008,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Stretch THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = True"
                     b$ = MKI$(-4)
                     PUT #BinaryFileNum, , b$
                 END IF
@@ -1840,7 +2028,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     NewFontParameters = LEFT$(FontSetup$, FindSep - 1)
                     FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
-                    FontSetup$ = "__UI_Font(" + CHR$(34) + NewFontFile + CHR$(34) + ", " + FontSetup$ + ", " + CHR$(34) + NewFontParameters + CHR$(34) + ")"
+                    FontSetup$ = "SetFont(" + CHR$(34) + NewFontFile + CHR$(34) + ", " + FontSetup$ + ", " + CHR$(34) + NewFontParameters + CHR$(34) + ")"
                     PRINT #TextFileNum, "    Control(__UI_NewID).Font = " + FontSetup$
                 END IF
                 'Colors are saved only if they differ from the theme's defaults
@@ -1874,7 +2062,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     b$ = MKI$(-11): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).HasBorder THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = True"
                     b$ = MKI$(-12): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Align = __UI_Center THEN
@@ -1905,23 +2093,23 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 '    b$ = MKI$(-18) + MKI$(PreviewControls(i).HotKeyOffset): PUT #BinaryFileNum, , b$
                 'END IF
                 IF PreviewControls(i).ShowPercentage THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = True"
                     b$ = MKI$(-19): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CanHaveFocus THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).CanHaveFocus = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).CanHaveFocus = True"
                     b$ = MKI$(-20): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Disabled THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Disabled = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Disabled = True"
                     b$ = MKI$(-21): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Hidden THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Hidden = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Hidden = True"
                     b$ = MKI$(-22): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CenteredWindow THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = True"
                     b$ = MKI$(-23): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).ContextMenuID THEN
@@ -1933,11 +2121,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     b$ = MKI$(-26) + _MK$(_FLOAT, PreviewControls(i).Interval): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).WordWrap THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).WordWrap = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).WordWrap = True"
                     b$ = MKI$(-27): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CanResize AND PreviewControls(i).Type = __UI_Type_Form THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).CanResize = __UI_True"
+                    PRINT #TextFileNum, "    Control(__UI_NewID).CanResize = True"
                     b$ = MKI$(-29): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Padding > 0 THEN
@@ -2045,16 +2233,30 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
     NEXT
     CLOSE #TextFileNum
     IF ExitToQB64 THEN
-        Answer = __UI_MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin" + CHR$(10) + CHR$(10) + "Exit to QB64?", "", __UI_MsgBox_YesNo + __UI_MsgBox_Question)
-        IF Answer = __UI_MsgBox_No THEN EXIT SUB
+        b$ = "Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin"
         $IF WIN THEN
-            SHELL _DONTWAIT "qb64.exe " + BaseOutputFileName + ".bas"
+            IF _FILEEXISTS("qb64.exe") THEN
+                b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
+            ELSE
+                b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
+            END IF
         $ELSE
-            SHELL _DONTWAIT "./qb64 " + BaseOutputFileName + ".bas"
+            IF _FILEEXISTS("qb64") THEN
+            b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
+            ELSE
+            b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
+            END IF
+        $END IF
+        Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
+        IF Answer = MsgBox_No THEN Edited = False: EXIT SUB
+        $IF WIN THEN
+            IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + BaseOutputFileName + ".bas"
+        $ELSE
+            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + BaseOutputFileName + ".bas"
         $END IF
         SYSTEM
     ELSE
-        Answer = __UI_MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin", "", __UI_MsgBox_OkOnly + __UI_MsgBox_Information)
+        Answer = MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin", "", MsgBox_OkOnly + MsgBox_Information)
     END IF
 END SUB
 
@@ -2108,7 +2310,7 @@ SUB SaveSelf
             PUT #2, , b$
 
             IF LEN(Caption(i)) > 0 THEN
-                a$ = "__UI_SetCaption " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(Caption(i))
+                a$ = "SetCaption " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(Caption(i))
                 b$ = MKI$(-2) + MKL$(LEN(Caption(i))) '-2 indicates a caption
                 PUT #2, , b$
                 PUT #2, , Caption(i)
@@ -2116,7 +2318,7 @@ SUB SaveSelf
             END IF
 
             IF LEN(ToolTip(i)) > 0 THEN
-                a$ = "__UI_SetTip " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(ToolTip(i))
+                a$ = "ToolTip(__UI_GetID(" + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ")) = " + __UI_SpecialCharsToCHR$(ToolTip(i))
                 b$ = MKI$(-24) + MKL$(LEN(ToolTip(i))) '-24 indicates a tip
                 PUT #2, , b$
                 PUT #2, , ToolTip(i)
@@ -2141,14 +2343,14 @@ SUB SaveSelf
                                 TempCaption$ = TempText$
                                 TempText$ = ""
                             END IF
-                            a$ = "__UI_AddListBoxItem " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + CHR$(34) + TempCaption$ + CHR$(34)
+                            a$ = "AddItem __UI_GetID(" + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + "), " + CHR$(34) + TempCaption$ + CHR$(34)
                             PRINT #1, a$
                         LOOP
                     CASE __UI_Type_PictureBox, __UI_Type_Button
-                        a$ = "__UI_LoadImage Control(__UI_NewID), " + CHR$(34) + Text(i) + CHR$(34)
+                        a$ = "LoadImage Control(__UI_NewID), " + CHR$(34) + Text(i) + CHR$(34)
                         PRINT #1, a$
                     CASE ELSE
-                        a$ = "__UI_SetText " + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ", " + __UI_SpecialCharsToCHR$(Caption(i))
+                        a$ = "Text(__UI_GetID(" + CHR$(34) + RTRIM$(Control(i).Name) + CHR$(34) + ")) = " + __UI_SpecialCharsToCHR$(Caption(i))
                         PRINT #1, a$
                 END SELECT
                 b$ = MKI$(-3) + MKL$(LEN(Text(i))) '-3 indicates a text
@@ -2161,7 +2363,7 @@ SUB SaveSelf
                 PUT #2, , b$
             END IF
             IF Control(i).Stretch THEN
-                PRINT #1, "Control(__UI_NewID).Stretch = __UI_True"
+                PRINT #1, "Control(__UI_NewID).Stretch = True"
                 b$ = MKI$(-4)
                 PUT #2, , b$
             END IF
@@ -2170,14 +2372,14 @@ SUB SaveSelf
                 IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                     'Internal fonts
                     SaveInternalFont:
-                    FontSetup$ = "__UI_Font(" + CHR$(34) + "VGA Emulated" + CHR$(34) + ", " + CHR$(34) + CHR$(34) + "," + STR$(Control(__UI_GetFontID(Control(i).Font)).Max) + ", " + CHR$(34) + CHR$(34) + ")"
+                    FontSetup$ = "SetFont(" + CHR$(34) + "VGA Emulated" + CHR$(34) + ", " + CHR$(34) + CHR$(34) + "," + STR$(Control(__UI_GetFontID(Control(i).Font)).Max) + ", " + CHR$(34) + CHR$(34) + ")"
                     PRINT #1, "Control(__UI_NewID).Font = " + FontSetup$
                     FontSetup$ = "**" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #2, , b$
                 ELSE
                     SaveExternalFont:
-                    FontSetup$ = "__UI_Font(" + CHR$(34) + Text(__UI_GetFontID(Control(i).Font)) + CHR$(34) + "," + STR$(Control(__UI_GetFontID(Control(i).Font)).Max) + ", " + CHR$(34) + Caption(__UI_GetFontID(Control(i).Font)) + CHR$(34) + ")"
+                    FontSetup$ = "SetFont(" + CHR$(34) + Text(__UI_GetFontID(Control(i).Font)) + CHR$(34) + "," + STR$(Control(__UI_GetFontID(Control(i).Font)).Max) + ", " + CHR$(34) + Caption(__UI_GetFontID(Control(i).Font)) + CHR$(34) + ")"
                     PRINT #1, "Control(__UI_NewID).Font = " + FontSetup$
                     FontSetup$ = RTRIM$(Control(__UI_GetFontID(Control(i).Font)).Name) + "\" + Text(__UI_GetFontID(Control(i).Font)) + "\" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max)) + "\" + Caption(__UI_GetFontID(Control(i).Font))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
@@ -2233,7 +2435,7 @@ SUB SaveSelf
                 b$ = MKI$(-11): PUT #2, , b$
             END IF
             IF Control(i).HasBorder THEN
-                PRINT #1, "Control(__UI_NewID).HasBorder = __UI_True"
+                PRINT #1, "Control(__UI_NewID).HasBorder = True"
                 b$ = MKI$(-12): PUT #2, , b$
             END IF
             IF Control(i).Align = __UI_Center THEN
@@ -2264,23 +2466,23 @@ SUB SaveSelf
                 b$ = MKI$(-18) + MKI$(Control(i).HotKeyOffset): PUT #2, , b$
             END IF
             IF Control(i).ShowPercentage THEN
-                PRINT #1, "Control(__UI_NewID).ShowPercentage = __UI_True"
+                PRINT #1, "Control(__UI_NewID).ShowPercentage = True"
                 b$ = MKI$(-19): PUT #2, , b$
             END IF
             IF Control(i).CanHaveFocus THEN
-                PRINT #1, "Control(__UI_NewID).CanHaveFocus = __UI_True"
+                PRINT #1, "Control(__UI_NewID).CanHaveFocus = True"
                 b$ = MKI$(-20): PUT #2, , b$
             END IF
             IF Control(i).Disabled THEN
-                PRINT #1, "Control(__UI_NewID).Disabled = __UI_True"
+                PRINT #1, "Control(__UI_NewID).Disabled = True"
                 b$ = MKI$(-21): PUT #2, , b$
             END IF
             IF Control(i).Hidden THEN
-                PRINT #1, "Control(__UI_NewID).Hidden = __UI_True"
+                PRINT #1, "Control(__UI_NewID).Hidden = True"
                 b$ = MKI$(-22): PUT #2, , b$
             END IF
             IF Control(i).CenteredWindow THEN
-                PRINT #1, "Control(__UI_NewID).CenteredWindow = __UI_True"
+                PRINT #1, "Control(__UI_NewID).CenteredWindow = True"
                 b$ = MKI$(-23): PUT #2, , b$
             END IF
             IF Control(i).ContextMenuID THEN
@@ -2292,7 +2494,7 @@ SUB SaveSelf
                 b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval): PUT #2, , b$
             END IF
             IF Control(i).WordWrap THEN
-                PRINT #1, "Control(__UI_NewID).WordWrap = __UI_True"
+                PRINT #1, "Control(__UI_NewID).WordWrap = True"
                 b$ = MKI$(-27): PUT #2, , b$
             END IF
             PRINT #1,
@@ -2323,7 +2525,7 @@ END SUB
 
 '        l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
 '        IF l THEN
-'            __UI_AddListBoxItem "FontList", "Access to fonts failed."
+'            AddItem __UI_GetID("FontList"), "Access to fonts failed."
 '            EXIT SUB
 '        ELSE
 '            dwIndex = 0
@@ -2333,12 +2535,12 @@ END SUB
 '                l = RegEnumValueA(hKey, dwIndex, _OFFSET(Value), _OFFSET(numTchars), 0, _OFFSET(dwType), _OFFSET(bData), _OFFSET(numBytes))
 '                IF l THEN
 '                    IF l <> ERROR_NO_MORE_ITEMS THEN
-'                        __UI_AddListBoxItem "FontList", "Access to fonts failed."
+'                        AddItem __UI_GetID("FontList"), "Access to fonts failed."
 '                    END IF
 '                    EXIT DO
 '                ELSE
 '                    IF UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".TTF" THEN
-'                        __UI_AddListBoxItem "FontList", LEFT$(Value, numTchars) + " = " + formatData(dwType, numBytes, bData)
+'                        AddItem __UI_GetID("FontList"), LEFT$(Value, numTchars) + " = " + formatData(dwType, numBytes, bData)
 '                    END IF
 '                END IF
 '                dwIndex = dwIndex + 1
@@ -2407,3 +2609,183 @@ END SUB
 '        END SELECT
 '    END FUNCTION
 '$END IF
+
+'FUNCTION idezfilelist$ and idezpathlist$ (and helper functions) were
+'adapted from ide_methods.bas (QB64):
+FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.bas, method1=*.*
+    DIM sep AS STRING * 1, filelist$, a$
+    sep = CHR$(13)
+
+    TotalFound = 0
+    $IF WIN THEN
+        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+        IF method = 0 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.frmbin >opendlgfiles.dat"
+        IF method = 1 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.* >opendlgfiles.dat"
+        filelist$ = ""
+        OPEN "opendlgfiles.dat" FOR INPUT AS #150
+        DO UNTIL EOF(150)
+            LINE INPUT #150, a$
+            IF LEN(a$) THEN 'skip blank entries
+                IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
+                TotalFound = TotalFound + 1
+            END IF
+        LOOP
+        CLOSE #150
+        KILL "opendlgfiles.dat"
+        idezfilelist$ = filelist$
+        EXIT FUNCTION
+    $ELSE
+        filelist$ = ""
+        FOR i = 1 TO 2 - method
+        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+        IF method = 0 THEN
+        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.frmbin" + CHR$(34) + " >opendlgfiles.dat"
+        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.FRMBIN" + CHR$(34) + " >opendlgfiles.dat"
+        END IF
+        IF method = 1 THEN
+        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
+        END IF
+        OPEN "opendlgfiles.dat" FOR INPUT AS #150
+        DO UNTIL EOF(150)
+        LINE INPUT #150, a$
+        IF LEN(a$) = 0 THEN EXIT DO
+        FOR x = LEN(a$) TO 1 STEP -1
+        a2$ = MID$(a$, x, 1)
+        IF a2$ = "/" THEN
+        a$ = RIGHT$(a$, LEN(a$) - x)
+        EXIT FOR
+        END IF
+        NEXT
+        IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
+        TotalFound = TotalFound + 1
+        LOOP
+        CLOSE #150
+        NEXT
+        KILL "opendlgfiles.dat"
+        idezfilelist$ = filelist$
+        EXIT FUNCTION
+    $END IF
+END FUNCTION
+
+FUNCTION idezpathlist$ (path$, TotalFound%)
+    DIM sep AS STRING * 1, a$, pathlist$, c AS INTEGER, x AS INTEGER, b$
+    DIM i AS INTEGER
+    sep = CHR$(13)
+
+    TotalFound% = 0
+    $IF WIN THEN
+        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+        a$ = "": IF RIGHT$(path$, 1) = ":" THEN a$ = "\" 'use a \ after a drive letter
+        SHELL _HIDE "dir /b /ON /AD " + QuotedFilename$(path$ + a$) + " >opendlgfiles.dat"
+        pathlist$ = ""
+        OPEN "opendlgfiles.dat" FOR INPUT AS #150
+        DO UNTIL EOF(150)
+            LINE INPUT #150, a$
+            IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
+            TotalFound% = TotalFound% + 1
+        LOOP
+        CLOSE #150
+        KILL "opendlgfiles.dat"
+        'count instances of / or \
+        c = 0
+        FOR x = 1 TO LEN(path$)
+            b$ = MID$(path$, x, 1)
+            IF b$ = PathSep$ THEN c = c + 1
+        NEXT
+        IF c >= 1 THEN
+            IF LEN(pathlist$) THEN pathlist$ = ".." + sep + pathlist$ ELSE pathlist$ = ".."
+            TotalFound% = TotalFound% + 1
+        END IF
+        'add drive paths
+        FOR i = 0 TO 25
+            IF LEN(pathlist$) THEN pathlist$ = pathlist$ + sep
+            pathlist$ = pathlist$ + CHR$(65 + i) + ":"
+            TotalFound% = TotalFound% + 1
+        NEXT
+        idezpathlist$ = pathlist$
+        EXIT FUNCTION
+    $ELSE
+        pathlist$ = ""
+        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+        SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -mindepth 1 -type d >opendlgfiles.dat"
+        OPEN "opendlgfiles.dat" FOR INPUT AS #150
+        DO UNTIL EOF(150)
+        LINE INPUT #150, a$
+        IF LEN(a$) = 0 THEN EXIT DO
+        FOR x = LEN(a$) TO 1 STEP -1
+        a2$ = MID$(a$, x, 1)
+        IF a2$ = "/" THEN
+        a$ = RIGHT$(a$, LEN(a$) - x)
+        EXIT FOR
+        END IF
+        NEXT
+        IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
+        TotalFound% = TotalFound% + 1
+        LOOP
+        CLOSE #150
+        KILL "opendlgfiles.dat"
+
+        IF path$ <> "/" THEN
+        a$ = ".."
+
+        IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = a$ + sep + pathlist$
+        TotalFound% = TotalFound% + 1
+        END IF
+
+        idezpathlist$ = pathlist$
+        EXIT FUNCTION
+    $END IF
+END FUNCTION
+
+FUNCTION idezchangepath$ (path$, newpath$)
+    DIM x AS INTEGER, a$
+
+    idezchangepath$ = path$ 'default (for unsuccessful cases)
+
+    $IF WIN THEN
+        'go back a path
+        IF newpath$ = ".." THEN
+            FOR x = LEN(path$) TO 1 STEP -1
+                a$ = MID$(path$, x, 1)
+                IF a$ = "\" THEN
+                    idezchangepath$ = LEFT$(path$, x - 1)
+                    EXIT FOR
+                END IF
+            NEXT
+            EXIT FUNCTION
+        END IF
+        'change drive
+        IF LEN(newpath$) = 2 AND RIGHT$(newpath$, 1) = ":" THEN
+            idezchangepath$ = newpath$
+            EXIT FUNCTION
+        END IF
+        idezchangepath$ = path$ + "\" + newpath$
+        EXIT FUNCTION
+    $ELSE
+        'go back a path
+        IF newpath$ = ".." THEN
+        FOR x = LEN(path$) TO 1 STEP -1
+        a$ = MID$(path$, x, 1)
+        IF a$ = "/" THEN
+        idezchangepath$ = LEFT$(path$, x - 1)
+        IF x = 1 THEN idezchangepath$ = "/" 'root path cannot be ""
+        EXIT FOR
+        END IF
+        NEXT
+        EXIT FUNCTION
+        END IF
+        IF path$ = "/" THEN idezchangepath$ = "/" + newpath$ ELSE idezchangepath$ = path$ + "/" + newpath$
+        EXIT FUNCTION
+    $END IF
+
+END FUNCTION
+
+FUNCTION QuotedFilename$ (f$)
+    $IF WIN THEN
+        QuotedFilename$ = CHR$(34) + f$ + CHR$(34)
+    $ELSE
+        QuotedFilename$ = "'" + f$ + "'"
+    $END IF
+END FUNCTION
+
+
