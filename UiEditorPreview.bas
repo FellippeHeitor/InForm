@@ -323,7 +323,10 @@ SUB __UI_BeforeUpdateDisplay
                             Text(__UI_FormID) = b$
                         ELSE
                             _ICON
-                            Text(__UI_FormID) = ""
+                            IF _FILEEXISTS(b$) THEN
+                                SendSignal -4
+                                Text(__UI_FormID) = b$
+                            END IF
                         END IF
                     END IF
                 CASE 4 'Top
@@ -1108,6 +1111,15 @@ SUB SendData (b$, Offset AS LONG)
     OPEN "UiEditor.dat" FOR BINARY AS #FileNum
 
     PUT #FileNum, Offset, b$
+    CLOSE #FileNum
+END SUB
+
+SUB SendSignal (Value AS INTEGER)
+    DIM FileNum AS INTEGER, b$
+    FileNum = FREEFILE
+    OPEN "UiEditor.dat" FOR BINARY AS #FileNum
+
+    b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromPreview, b$
     CLOSE #FileNum
 END SUB
 

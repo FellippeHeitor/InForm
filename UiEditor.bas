@@ -661,7 +661,7 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM b$, PreviewChanged AS _BYTE, SelectedProperty AS INTEGER, UiEditorFile AS INTEGER
-    DIM PreviewHasMenuActive AS INTEGER, i AS LONG
+    DIM PreviewHasMenuActive AS INTEGER, i AS LONG, Answer AS _BYTE
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
 
     IF NOT MidRead THEN
@@ -701,6 +701,10 @@ SUB __UI_BeforeUpdateDisplay
             'menu is shown in the editor.
             __UI_ActivateMenu Control(__UI_GetID("AlignMenu")), False
             __UI_ForceRedraw = True
+            b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        ELSEIF CVI(b$) = -4 THEN
+            'User attempted to load an icon file that couldn't be previewed
+            Answer = MessageBox("Icon couldn't be previewed. Make sure it's a valid icon file.", "", MsgBox_OkOnly + MsgBox_Exclamation)
             b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
 
