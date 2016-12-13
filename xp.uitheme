@@ -133,7 +133,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Hot key:
         IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-            LINE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) + 1)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+            LINE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + uheight& \ 2))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
         'Focus outline:
@@ -192,13 +192,20 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             TempCaption$ = __UI_TrimAt0$(__UI_WordWrap(Caption(This.ID), This.Width - ((CaptionIndent + This.Padding) * 2), TotalLines))
             DO WHILE LEN(TempCaption$)
                 ThisLine% = ThisLine% + 1
-                IF TotalLines < This.Height \ uspacing& THEN
-                    'Center vertically if less lines than fits the box
-                    TextTop% = (This.Height \ 2) - ((TotalLines * uspacing& - uspacing&) \ 2) - uspacing& \ 2 + (((ThisLine%) * uspacing& - uspacing&) + 2)
-                ELSE
-                    'Snap to top of the label's boundaries
-                    'if there are more lines than meet the eye
+
+                IF This.VAlign = __UI_Top THEN
                     TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing& + 2
+                ELSEIF This.VAlign = __UI_Middle THEN
+                    IF TotalLines < This.Height \ uspacing& THEN
+                        'Center vertically if less lines than fits the box
+                        TextTop% = (This.Height \ 2) - ((TotalLines * uspacing& - uspacing&) \ 2) - uspacing& \ 2 + (((ThisLine%) * uspacing& - uspacing&) + 2)
+                    ELSE
+                        'Snap to top of the label's boundaries
+                        'if there are more lines than meet the eye
+                        TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing& + 2
+                    END IF
+                ELSEIF This.VAlign = __UI_Bottom THEN
+                    TextTop% = This.Height - CaptionIndent - (TotalLines * uspacing&) + (ThisLine% * uspacing& - uspacing& + 2)
                 END IF
 
                 FindSep& = INSTR(TempCaption$, CHR$(1)) 'Search for soft breaks
@@ -236,7 +243,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + uspacing& + 2)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + uheight&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
             TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
@@ -1215,7 +1222,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
                 'Hot key:
                 IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
                     Temp& = __UI_PrintWidth(CHR$(This.HotKey))
-                    LINE (CaptionLeft + Temp& + This.HotKeyOffset, 0 + uspacing&)-STEP(Temp& - 1, 0), This.ForeColor
+                    LINE (CaptionLeft + Temp& + This.HotKeyOffset, uheight&)-STEP(Temp& - 1, 0), This.ForeColor
                 END IF
             END IF
         END IF

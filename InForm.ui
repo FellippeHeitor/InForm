@@ -56,6 +56,7 @@ TYPE __UI_ControlTYPE
     HasBorder AS _BYTE
     Padding AS INTEGER
     Align AS _BYTE
+    VAlign AS _BYTE
     BorderColor AS _UNSIGNED LONG
     Value AS _FLOAT
     PreviousValue AS _FLOAT
@@ -212,6 +213,9 @@ CONST __UI_Transparent = -1
 CONST __UI_Left = 0
 CONST __UI_Center = 1
 CONST __UI_Right = 2
+CONST __UI_Top = 0
+CONST __UI_Middle = 1
+CONST __UI_Bottom = 2
 
 'Messagebox constants
 CONST MsgBox_OkOnly = 0
@@ -955,9 +959,9 @@ SUB __UI_UpdateDisplay
         END IF
         OverlayisVisible = True
 
-        'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGBA32(39, 144, 244, 100), BF
-        'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGB32(39, 188, 244), B
-        LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), Control(__UI_FormID).SelectedBackColor, B, 255
+        LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGBA32(0, 177, 255, 150), BF
+        LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGB32(39, 188, 244), B
+        'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), Control(__UI_FormID).SelectedBackColor, B, 255
         _DEST 0
     END IF
 
@@ -1627,7 +1631,7 @@ SUB __UI_EventDispatcher
                                 NEXT
 
                                 IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                IF i < 0 THEN i = Control(__UI_Focus).Cursor = 0
+                                IF __UI_MouseLeft < (Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left) THEN i = Control(__UI_Focus).Cursor = 0
                                 Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
                             END IF
                             __UI_IsSelectingText = True
@@ -2188,25 +2192,14 @@ SUB __UI_EventDispatcher
                                     TotalSpace = TotalSpace - Control(SubList(i)).Width
                                 NEXT
 
-                                IF TotalSpace > 0 THEN
-                                    BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
-                                    FindLefts = Control(SubList(1)).Left - BinSize
-                                    FOR i = 1 TO __UI_TotalSelectedControls
-                                        __UI_Click 0 'Force the preview to inform it was edited
-                                        FindLefts = FindLefts + BinSize
-                                        Control(SubList(i)).Left = FindLefts
-                                        FindLefts = FindLefts + Control(SubList(i)).Width
-                                    NEXT
-                                ELSE
-                                    'TotalSpace = (Control(SubList(__UI_TotalSelectedControls)).Left + (Control(SubList(__UI_TotalSelectedControls)).Width - 1)) - Control(SubList(1)).Left
-                                    'BinSize = TotalSpace \ __UI_TotalSelectedControls
-                                    'FindLefts = Control(SubList(1)).Left
-
-                                    'FOR i = 1 TO __UI_TotalSelectedControls
-                                    '    Control(SubList(i)).Left = FindLefts + ((BinSize \ 2) - (Control(SubList(i)).Width \ 2))
-                                    '    FindLefts = FindLefts + BinSize
-                                    'NEXT
-                                END IF
+                                BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
+                                FindLefts = Control(SubList(1)).Left - BinSize
+                                FOR i = 1 TO __UI_TotalSelectedControls
+                                    __UI_Click 0 'Force the preview to inform it was edited
+                                    FindLefts = FindLefts + BinSize
+                                    Control(SubList(i)).Left = FindLefts
+                                    FindLefts = FindLefts + Control(SubList(i)).Width
+                                NEXT
 
                                 __UI_AutoRefresh = True
                                 __UI_ForceRedraw = True
@@ -2241,25 +2234,14 @@ SUB __UI_EventDispatcher
                                     TotalSpace = TotalSpace - Control(SubList(i)).Height
                                 NEXT
 
-                                IF TotalSpace > 0 THEN
-                                    BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
-                                    FindTops = Control(SubList(1)).Top - BinSize
-                                    FOR i = 1 TO __UI_TotalSelectedControls
-                                        __UI_Click 0 'Force the preview to inform it was edited
-                                        FindTops = FindTops + BinSize
-                                        Control(SubList(i)).Top = FindTops
-                                        FindTops = FindTops + Control(SubList(i)).Height
-                                    NEXT
-                                ELSE
-                                    'TotalSpace = (Control(SubList(__UI_TotalSelectedControls)).Top + Control(SubList(__UI_TotalSelectedControls)).Height) - Control(SubList(1)).Top
-                                    'BinSize = TotalSpace \ __UI_TotalSelectedControls
-                                    'FindTops = Control(SubList(1)).Top
-
-                                    'FOR i = 1 TO __UI_TotalSelectedControls
-                                    '    Control(SubList(i)).Top = FindTops + ((BinSize \ 2) - (Control(SubList(i)).Height \ 2))
-                                    '    FindTops = FindTops + BinSize
-                                    'NEXT
-                                END IF
+                                BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
+                                FindTops = Control(SubList(1)).Top - BinSize
+                                FOR i = 1 TO __UI_TotalSelectedControls
+                                    __UI_Click 0 'Force the preview to inform it was edited
+                                    FindTops = FindTops + BinSize
+                                    Control(SubList(i)).Top = FindTops
+                                    FindTops = FindTops + Control(SubList(i)).Height
+                                NEXT
 
                                 __UI_AutoRefresh = True
                                 __UI_ForceRedraw = True
@@ -4088,6 +4070,22 @@ SUB RemoveItem (WhichListBox AS LONG, ItemToRemove AS INTEGER)
     ELSEIF This.Value > ItemToRemove THEN
         This.Value = This.Value - 1
     END IF
+
+    Control(This.ID) = This
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB ResetList (WhichListBox AS LONG)
+    DIM This AS __UI_ControlTYPE
+
+    This = Control(WhichListBox)
+    IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN EXIT SUB
+
+    Text(This.ID) = ""
+
+    This.Max = 0
+    This.LastVisibleItem = 0 'Reset this var so it'll be recalculated
+    This.Value = 0
 
     Control(This.ID) = This
 END SUB

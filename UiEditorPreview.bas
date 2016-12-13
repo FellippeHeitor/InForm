@@ -20,6 +20,7 @@ CONST OffsetPropertyValue = 37
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
+DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -85,10 +86,12 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
-    DIM b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
+    DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
 
     SavePreview
+
+    IF UndoPointer = 0 THEN SaveUndoImage
 
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
@@ -247,6 +250,10 @@ SUB __UI_BeforeUpdateDisplay
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
+                                IF Control(i).Type = __UI_Type_Label AND Control(i).WordWrap = True THEN
+                                    DIM TotalReplacements AS LONG
+                                    b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
+                                END IF
                                 SetCaption RTRIM$(Control(i).Name), b$
                                 IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                 IF Control(i).Type = __UI_Type_MenuItem THEN
@@ -292,7 +299,6 @@ SUB __UI_BeforeUpdateDisplay
 
                     SkipAutoName:
                 CASE 3 'Text
-                    DIM TotalReplacements AS LONG
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls > 0 THEN
@@ -616,10 +622,43 @@ SUB __UI_BeforeUpdateDisplay
                             END IF
                         NEXT
                     END IF
+                CASE 32 'Vertical Alignment
+                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).VAlign = CVI(b$)
+                        END IF
+                    NEXT
                 CASE 201 TO 210
                     'Alignment commands
                     __UI_DesignModeAlignCommand = TempValue
                     __UI_HasInput = True
+                CASE 211, 212 'Z-Ordering -> Move up/down
+                    DIM tID1 AS LONG, tID2 AS LONG
+                    a$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, a$
+                    b$ = SPACE$(4): GET #UiEditorFile, , b$
+                    tID1 = Control(CVL(a$)).ID
+                    tID2 = Control(CVL(b$)).ID
+                    SWAP Control(CVL(b$)), Control(CVL(a$))
+                    SWAP Caption(CVL(b$)), Caption(CVL(a$))
+                    SWAP Text(CVL(b$)), Text(CVL(a$))
+                    SWAP ToolTip(CVL(b$)), ToolTip(CVL(a$))
+                    Control(CVL(a$)).ID = tID1
+                    Control(CVL(b$)).ID = tID2
+                    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                        __UI_ActivateMenu Control(__UI_ParentMenu), False
+                    END IF
+                CASE 213
+                    'Select control
+                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+
+                    'Desselect all first:
+                    FOR i = 1 TO UBOUND(Control)
+                        Control(i).ControlIsSelected = False
+                    NEXT
+
+                    IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
+
             END SELECT
             __UI_ForceRedraw = True
         END IF
@@ -627,6 +666,9 @@ SUB __UI_BeforeUpdateDisplay
         IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
             __UI_DestroyControl Control(__UI_ActiveMenu)
             b$ = MKI$(-2) 'Signal to the editor that the preview can't show the context menu
+            PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        ELSEIF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
+            b$ = MKI$(-5) 'Signal to the editor that a context menu is successfully shown
             PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         END IF
 
@@ -891,6 +933,10 @@ SUB LoadPreview
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         Control(TempValue).Padding = CVI(b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "PADDING" + STR$(CVI(b$))
+                    CASE -32
+                        b$ = SPACE$(1): GET #BinaryFileNum, , b$
+                        Control(TempValue).VAlign = _CV(_BYTE, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "VALIGN="; Control(TempValue).VAlign
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
@@ -1046,6 +1092,11 @@ SUB SavePreview
                 b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #BinFileNum, , b$
             ELSEIF Control(i).Align = __UI_Right THEN
                 b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #BinFileNum, , b$
+            END IF
+            IF Control(i).VAlign = __UI_Middle THEN
+                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign): PUT #BinFileNum, , b$
+            ELSEIF Control(i).VAlign = __UI_Bottom THEN
+                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign): PUT #BinFileNum, , b$
             END IF
             IF Control(i).Value <> 0 THEN
                 b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value): PUT #BinFileNum, , b$
@@ -1344,3 +1395,24 @@ FUNCTION IS_KEYWORD (Text$)
     NEXT i
 END FUNCTION
 
+SUB SaveUndoImage
+    DIM BinFileNum AS INTEGER, b$
+
+    UndoPointer = UndoPointer + 1
+    IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
+
+    BinFileNum = FREEFILE
+    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    b$ = SPACE$(LOF(BinFileNum))
+    GET #BinFileNum, 1, b$
+    CLOSE #BinFileNum
+
+    BinFileNum = FREEFILE
+    OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+    b$ = MKI$(UndoPointer): PUT #1, 1, b$
+    b$ = MKI$(TotalUndoImages): PUT #1, 3, b$
+END SUB
+
+SUB RestoreUndoImage (index AS INTEGER)
+    IF UndoPointer = 1 THEN EXIT SUB
+END SUB

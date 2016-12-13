@@ -10,7 +10,7 @@ DIM SHARED PreviewFormID AS LONG, ColorPreviewID AS LONG
 DIM SHARED BackStyleListID AS LONG, PropertyUpdateStatusID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
-DIM SHARED UiEditorTitle$, Edited AS _BYTE
+DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -33,6 +33,7 @@ REDIM SHARED PreviewTips(0) AS STRING
 REDIM SHARED PreviewFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
+REDIM SHARED zOrderIDs(0) AS LONG
 
 DIM SHARED FontList.Names AS STRING
 REDIM SHARED FontList.FileNames(0) AS STRING
@@ -57,6 +58,8 @@ DIM SHARED DirList AS LONG
 DIM SHARED OpenBT AS LONG
 DIM SHARED CancelBT AS LONG
 DIM SHARED ShowOnlyFrmbinFilesCB AS LONG
+DIM SHARED ZOrdering AS LONG, CloseZOrderingBT AS LONG
+DIM SHARED UpBT AS LONG, DownBT AS LONG, ControlList AS LONG
 
 CheckPreviewTimer = _FREETIMER
 ON TIMER(CheckPreviewTimer, .003) CheckPreview
@@ -525,6 +528,52 @@ SUB __UI_Click (id AS LONG)
                 END IF
             END IF
             SYSTEM
+        CASE "EDITMENUZORDERING"
+            'Fill the list:
+            DIM j AS LONG
+            STATIC Moving AS _BYTE
+            REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
+            ReloadZList:
+            ResetList ControlList
+            FOR i = 1 TO UBOUND(PreviewControls)
+                SELECT CASE PreviewControls(i).Type
+                    CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15
+                        j = j + 1
+                        zOrderIDs(j) = i
+                        AddItem ControlList, __UI_Type(PreviewControls(i).Type).Name + RTRIM$(PreviewControls(i).Name)
+                END SELECT
+            NEXT
+            IF Moving THEN RETURN
+            Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
+            Control(ZOrdering).Left = 68: Control(ZOrdering).Top = 70
+            ZOrderingDialogOpen = True
+        CASE "CLOSEZORDERINGBT"
+            Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
+            Control(ZOrdering).Left = -500: Control(ZOrdering).Top = -600
+            ZOrderingDialogOpen = True
+        CASE "UPBT"
+            DIM PrevListValue AS LONG
+            PrevListValue = Control(ControlList).Value
+            b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
+            SendData b$, 211
+            _DELAY .1
+            LoadPreview
+            Moving = True: GOSUB ReloadZList
+            Moving = False
+            Control(ControlList).Value = PrevListValue - 1
+            __UI_Focus = ControlList
+            __UI_ValueChanged ControlList
+        CASE "DOWNBT"
+            PrevListValue = Control(ControlList).Value
+            b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
+            SendData b$, 212
+            _DELAY .1
+            LoadPreview
+            Moving = True: GOSUB ReloadZList
+            Moving = False
+            Control(ControlList).Value = PrevListValue + 1
+            __UI_Focus = ControlList
+            __UI_ValueChanged ControlList
         CASE "FILEMENUOPEN"
             IF Edited THEN
                 Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
@@ -661,7 +710,7 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM b$, PreviewChanged AS _BYTE, SelectedProperty AS INTEGER, UiEditorFile AS INTEGER
-    DIM PreviewHasMenuActive AS INTEGER, i AS LONG, Answer AS _BYTE
+    DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
 
     IF NOT MidRead THEN
@@ -694,19 +743,24 @@ SUB __UI_BeforeUpdateDisplay
             IF CVI(b$) = -1 THEN Edited = True
             IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
             IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
-            b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+            __UI_ForceRedraw = True
         ELSEIF CVI(b$) = -2 THEN
             'User attempted to right-click a control but the preview
             'form is smaller than the menu panel. In such case the "Align"
             'menu is shown in the editor.
+            IF ZOrderingDialogOpen THEN __UI_Click CloseZOrderingBT
             __UI_ActivateMenu Control(__UI_GetID("AlignMenu")), False
             __UI_ForceRedraw = True
-            b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
         ELSEIF CVI(b$) = -4 THEN
             'User attempted to load an icon file that couldn't be previewed
             Answer = MessageBox("Icon couldn't be previewed. Make sure it's a valid icon file.", "", MsgBox_OkOnly + MsgBox_Exclamation)
-            b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        ELSEIF CVI(b$) = -5 THEN
+            'Context menu was successfully shown on the preview
+            IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+            __UI_Focus = 0
+            __UI_ForceRedraw = True
         END IF
+        b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 
         b$ = SPACE$(4): GET #UiEditorFile, OffsetTotalControlsSelected, b$
         TotalSelected = CVL(b$)
@@ -731,6 +785,19 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         SelectedProperty = Control(__UI_GetID("PropertiesList")).Value
+
+        'Make ZOrdering menu enabled/disabled according to control list
+        Control(__UI_GetID("EditMenuZOrdering")).Disabled = True
+        FOR i = 1 TO UBOUND(PreviewControls)
+            SELECT CASE PreviewControls(i).Type
+                CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15
+                    j = j + 1
+                    IF j > 1 THEN
+                        Control(__UI_GetID("EditMenuZOrdering")).Disabled = False
+                        EXIT FOR
+                    END IF
+            END SELECT
+        NEXT
 
         IF PreviewHasMenuActive THEN
             Control(__UI_GetID("InsertMenuMenuItem")).Disabled = False
@@ -917,6 +984,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(__UI_GetID("Hidden")).Value = PreviewControls(FirstSelected).Hidden
         Control(__UI_GetID("CenteredWindow")).Value = PreviewControls(FirstSelected).CenteredWindow
         Control(__UI_GetID("AlignOptions")).Value = PreviewControls(FirstSelected).Align + 1
+        Control(__UI_GetID("VAlignOptions")).Value = PreviewControls(FirstSelected).VAlign + 1
         IF PreviewControls(FirstSelected).BackStyle THEN
             Control(__UI_GetID("BackStyleOptions")).Value = 2
         ELSE
@@ -934,6 +1002,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(__UI_GetID("Hidden")).Disabled = True
         Control(__UI_GetID("CenteredWindow")).Disabled = True
         Control(__UI_GetID("AlignOptions")).Disabled = True
+        Control(__UI_GetID("VAlignOptions")).Disabled = True
         Control(BackStyleListID).Disabled = True
         ReplaceItem __UI_GetID("PropertiesList"), 3, "Text"
         Control(__UI_GetID("Resizable")).Disabled = True
@@ -1040,6 +1109,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(__UI_GetID("Hidden")).Disabled = False
                 CASE __UI_Type_Label
                     Control(__UI_GetID("AlignOptions")).Disabled = False
+                    Control(__UI_GetID("VAlignOptions")).Disabled = False
             END SELECT
         ELSE
             'Properties relative to the form
@@ -1365,6 +1435,9 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE "ALIGNOPTIONS"
             b$ = MKI$(Control(__UI_GetID("AlignOptions")).Value - 1)
             SendData b$, 22
+        CASE "VALIGNOPTIONS"
+            b$ = MKI$(Control(__UI_GetID("VAlignOptions")).Value - 1)
+            SendData b$, 32
         CASE "BACKSTYLEOPTIONS"
             b$ = MKI$(0)
             IF Control(__UI_GetID("BACKSTYLEOPTIONS")).Value = 2 THEN b$ = MKI$(-1)
@@ -1380,6 +1453,23 @@ SUB __UI_ValueChanged (id AS LONG)
             DIM NewColor AS _UNSIGNED LONG
             NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
             QuickColorPreview NewColor
+        CASE "CONTROLLIST"
+            Control(UpBT).Disabled = False
+            Control(DownBT).Disabled = False
+            IF Control(ControlList).Value = 1 THEN
+                Control(UpBT).Disabled = True
+            ELSEIF Control(ControlList).Value = 0 THEN
+                Control(UpBT).Disabled = True
+                Control(DownBT).Disabled = True
+            ELSEIF Control(ControlList).Value = Control(ControlList).Max THEN
+                Control(DownBT).Disabled = True
+            END IF
+            IF Control(ControlList).Value > 0 THEN
+                b$ = MKL$(zOrderIDs(Control(ControlList).Value))
+            ELSE
+                b$ = MKL$(0)
+            END IF
+            SendData b$, 213
     END SELECT
 END SUB
 
@@ -1735,6 +1825,9 @@ SUB LoadPreview
                     CASE -31
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Padding = CVI(b$)
+                    CASE -32
+                        b$ = SPACE$(1): GET #BinaryFileNum, , b$
+                        PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -2075,6 +2168,13 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 ELSEIF PreviewControls(i).Align = __UI_Right THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Right"
                     b$ = MKI$(-13) + _MK$(_BYTE, PreviewControls(i).Align): PUT #BinaryFileNum, , b$
+                END IF
+                IF PreviewControls(i).VAlign = __UI_Middle THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Middle"
+                    b$ = MKI$(-32) + _MK$(_BYTE, PreviewControls(i).VAlign): PUT #BinaryFileNum, , b$
+                ELSEIF PreviewControls(i).VAlign = __UI_Bottom THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Bottom"
+                    b$ = MKI$(-32) + _MK$(_BYTE, PreviewControls(i).VAlign): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Value <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))

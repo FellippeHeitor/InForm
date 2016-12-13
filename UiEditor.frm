@@ -12,6 +12,9 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 44, 18, 8, 0, 0)
     SetCaption "FileMenu", "&File"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "EditMenu", 44, 18, 52, 0, 0)
+    SetCaption "EditMenu", "&Edit"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 44, 18, 52, 0, 0)
     SetCaption "ViewMenu", "&View"
 
@@ -19,7 +22,7 @@ SUB __UI_LoadForm
     SetCaption "InsertMenu", "&Insert"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "AlignMenu", 0, 0, 0, 0, 0)
-    SetCaption "AlignMenu", "Align"
+    SetCaption "AlignMenu", "&Align"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "OptionsMenu", 44, 18, 52, 0, 0)
     SetCaption "OptionsMenu", "&Options"
@@ -52,6 +55,15 @@ SUB __UI_LoadForm
     
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     SetCaption "FileMenuExit", "E&xit"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuUndo", 56, 18, 0, 40, __UI_GetID("EditMenu"))
+    SetCaption "EditMenuUndo", "&Undo"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuRedo", 56, 18, 0, 40, __UI_GetID("EditMenu"))
+    SetCaption "EditMenuRedo", "&Redo-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuZOrdering", 56, 18, 0, 40, __UI_GetID("EditMenu"))
+    SetCaption "EditMenuZOrdering", "&Z-Ordering"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreviewDetach", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
     SetCaption "ViewMenuPreviewDetach", "&Keep preview window attached"
@@ -172,73 +184,85 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).BackStyle = __UI_Transparent
     
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 150, 17, 22, 59, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 150, 17, 22, 55, __UI_GetID("PropertiesFrame"))
     SetCaption "Stretch", "Stretch"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "HasBorder", 150, 17, 22, 79, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "HasBorder", 150, 17, 22, 75, __UI_GetID("PropertiesFrame"))
     SetCaption "HasBorder", "Has border"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowPercentage", 149, 17, 22, 99, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowPercentage", 149, 17, 22, 95, __UI_GetID("PropertiesFrame"))
     SetCaption "ShowPercentage", "Show percentage"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "WordWrap", 150, 17, 22, 119, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "WordWrap", 115, 17, 182, 55, __UI_GetID("PropertiesFrame"))
     SetCaption "WordWrap", "Word wrap"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CanHaveFocus", 150, 17, 182, 59, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CanHaveFocus", 117, 17, 182, 75, __UI_GetID("PropertiesFrame"))
     SetCaption "CanHaveFocus", "Can have focus"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Disabled", 150, 17, 182, 79, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Disabled", 105, 17, 182, 95, __UI_GetID("PropertiesFrame"))
     SetCaption "Disabled", "Disabled"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Hidden", 150, 17, 182, 99, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Hidden", 110, 17, 329, 55, __UI_GetID("PropertiesFrame"))
     SetCaption "Hidden", "Hidden"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CenteredWindow", 150, 17, 182, 119, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CenteredWindow", 116, 17, 329, 75, __UI_GetID("PropertiesFrame"))
     SetCaption "CenteredWindow", "Centered window"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Resizable", 102, 17, 339, 59, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Resizable", 102, 17, 329, 95, __UI_GetID("PropertiesFrame"))
     SetCaption "Resizable", "Resizable"
     Control(__UI_NewID).CanHaveFocus = True
     
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label1", 83, 20, 24, 151, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label1", 63, 20, 24, 127, __UI_GetID("PropertiesFrame"))
     SetCaption "Label1", "Text align:"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "AlignOptions", 104, 20, 109, 151, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "AlignOptions", 102, 20, 102, 127, __UI_GetID("PropertiesFrame"))
     SetCaption "AlignOptions", "Left"
-    AddItem __UI_GetID("AlignOptions"), "Left"
-    AddItem __UI_GetID("AlignOptions"), "Center"
-    AddItem __UI_GetID("AlignOptions"), "Right"
+    AddItem __UI_NewID, "Left"
+    AddItem __UI_NewID, "Center"
+    AddItem __UI_NewID, "Right"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 1
     Control(__UI_NewID).Max = 3
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label2", 83, 20, 225, 151, __UI_GetID("PropertiesFrame"))
-    SetCaption "Label2", "Back style:"
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "VerticalAlignLB", 79, 20, 24, 155, __UI_GetID("PropertiesFrame"))
+    SetCaption "VerticalAlignLB", "Vertical align:"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "BackStyleOptions", 134, 20, 311, 151, __UI_GetID("PropertiesFrame"))
-    SetCaption "BackStyleOptions", "Left"
-    AddItem __UI_GetID("BackStyleOptions"), "Opaque"
-    AddItem __UI_GetID("BackStyleOptions"), "Transparent"
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "VAlignOptions", 102, 20, 102, 155, __UI_GetID("PropertiesFrame"))
+    AddItem __UI_NewID, "Top"
+    AddItem __UI_NewID, "Middle"
+    AddItem __UI_NewID, "Bottom"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 1
+    Control(__UI_NewID).Max = 3
+    Control(__UI_NewID).CanHaveFocus = True
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label2", 63, 20, 220, 127, __UI_GetID("PropertiesFrame"))
+    SetCaption "Label2", "Back style:"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "BackStyleOptions", 102, 20, 285, 127, __UI_GetID("PropertiesFrame"))
+    SetCaption "BackStyleOptions", "Left"
+    AddItem __UI_NewID, "Opaque"
+    AddItem __UI_NewID, "Transparent"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).Value = 2
     Control(__UI_NewID).Max = 2
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))
-    AddItem __UI_GetID("ColorPropertiesList"), "ForeColor"
-    AddItem __UI_GetID("ColorPropertiesList"), "BackColor"
-    AddItem __UI_GetID("ColorPropertiesList"), "SelectedForeColor"
-    AddItem __UI_GetID("ColorPropertiesList"), "SelectedBackColor"
-    AddItem __UI_GetID("ColorPropertiesList"), "BorderColor"
+    AddItem __UI_NewID, "ForeColor"
+    AddItem __UI_NewID, "BackColor"
+    AddItem __UI_NewID, "SelectedForeColor"
+    AddItem __UI_NewID, "SelectedBackColor"
+    AddItem __UI_NewID, "BorderColor"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 1
     Control(__UI_NewID).Max = 5
@@ -281,12 +305,12 @@ SUB __UI_LoadForm
     'Open dialog:
     '----------------------------------
     __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "DialogBG", 598, 430, -600, -500, 0)
-    Control(__UI_NewID).BackColor = _RGB32(200, 200, 200)
+    Control(__UI_NewID).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 105)
     
     __UI_NewID = __UI_NewControl(__UI_Type_Frame, "OpenFrame", 463, 289, -600, -500, 0)
     SetCaption "OpenFrame", "Open"
     Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).BackColor = _RGB32(200, 200, 200)
+    Control(__UI_NewID).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 105)
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "FileNameLB", 73, 23, 15, 16, __UI_GetID("OpenFrame"))
     SetCaption "FileNameLB", "File &name:"
@@ -329,6 +353,32 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Value = -1
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).BackStyle = __UI_Transparent
+    
+    '----------------------------------
+    'Z-Ordering dialog:
+    '----------------------------------
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ZOrdering", 463, 289, -600, -500, 0)
+    SetCaption "ZOrdering", "Z-Ordering"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 105)
+
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 379, 222, 25, 24, __UI_GetID("ZOrdering"))
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).Font = SetFont("cour.ttf", 12, "monospace")
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "UpBT", 40, 42, 413, 84, __UI_GetID("ZOrdering"))
+    SetCaption "UpBT", "^"
+    Control(__UI_NewID).Disabled = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "DownBT", 40, 42, 413, 146, __UI_GetID("ZOrdering"))
+    SetCaption "DownBT", "v"
+    Control(__UI_NewID).Disabled = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CloseZOrderingBT", 80, 23, 192, 255, __UI_GetID("ZOrdering"))
+    SetCaption "CloseZOrderingBT", "&Close"
+    Control(__UI_NewID).CanHaveFocus = True
+
 END SUB
 
 SUB __UI_AssignIDs
@@ -344,4 +394,9 @@ SUB __UI_AssignIDs
     OpenBT = __UI_GetID("OpenBT")
     CancelBT = __UI_GetID("CancelBT")
     ShowOnlyFrmbinFilesCB = __UI_GetID("ShowOnlyFrmbinFilesCB")
+    CloseZOrderingBT = __UI_GetID("CloseZOrderingBT")
+    ZOrdering = __UI_GetID("ZOrdering")
+    UpBT = __UI_GetID("UpBT")
+    DownBT = __UI_GetID("DownBT")
+    ControlList = __UI_GetID("ControlList")
 END SUB
