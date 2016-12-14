@@ -1951,6 +1951,7 @@ SUB __UI_EventDispatcher
                         END IF
 
                         ProcessHotkey:
+                        IF UCASE$(LEFT$(Control(__UI_HoveringID).Name, 16)) = "__UI_PREVIEWMENU" THEN __UI_KeyPress 216
                         SELECT CASE UCASE$(RTRIM$(Control(__UI_HoveringID).Name))
                             CASE "__UI_TEXTMENUCUT"
                                 IF LEN(__UI_SelectedText) > 0 THEN
@@ -3055,6 +3056,14 @@ SUB __UI_EventDispatcher
         IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN GOTO HandleDesignMenu
 
         SELECT CASE  __UI_Keyhit
+            CASE ASC("Z"), ASC("z")
+                IF __UI_CtrlIsDown THEN
+                    __UI_KeyPress 214
+                END IF
+            CASE ASC("Y"), ASC("y")
+                IF __UI_CtrlIsDown THEN
+                    __UI_KeyPress 215
+                END IF
             CASE ASC("A"), ASC("a")
                 IF __UI_CtrlIsDown THEN
                     ControlSelect:

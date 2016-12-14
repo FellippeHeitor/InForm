@@ -60,6 +60,7 @@ DIM SHARED CancelBT AS LONG
 DIM SHARED ShowOnlyFrmbinFilesCB AS LONG
 DIM SHARED ZOrdering AS LONG, CloseZOrderingBT AS LONG
 DIM SHARED UpBT AS LONG, DownBT AS LONG, ControlList AS LONG
+DIM SHARED EditMenuUndo AS LONG, EditMenuRedo AS LONG
 
 CheckPreviewTimer = _FREETIMER
 ON TIMER(CheckPreviewTimer, .003) CheckPreview
@@ -488,29 +489,7 @@ SUB __UI_Click (id AS LONG)
                 END IF
             END IF
 
-            'Kill the preview (send PID = 0)
-            UiEditorFile = FREEFILE
-            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
-            b$ = MKL$(0)
-            PUT #UiEditorFile, OffsetEditorPID, b$
-            CLOSE #UiEditorFile
-            _DELAY .1
-
-            KILL "UiEditorPreview.frmbin"
-            KILL "UiEditor.dat"
-
-            $IF WIN THEN
-                SHELL _DONTWAIT "UiEditorPreview.exe"
-            $ELSE
-                SHELL _DONTWAIT "./UiEditorPreview"
-            $END IF
-
-            UiEditorFile = FREEFILE
-            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
-            b$ = MKL$(__UI_GetPID)
-            PUT #UiEditorFile, OffsetEditorPID, b$
-            CLOSE #UiEditorFile
-
+            SendSignal -5
             __UI_ForceRedraw = True
         CASE "FILEMENUSAVE"
             SaveForm True
@@ -612,37 +591,14 @@ SUB __UI_Click (id AS LONG)
             DIM FileToOpen$, FreeFileNum AS INTEGER
             FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
             IF _FILEEXISTS(FileToOpen$) THEN
-                'Kill the preview (send PID = 0)
-                UiEditorFile = FREEFILE
-                OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
-                b$ = MKL$(0)
-                PUT #UiEditorFile, OffsetEditorPID, b$
-                CLOSE #UiEditorFile
-                _DELAY .1
-
-                KILL "UiEditorPreview.frmbin"
-                KILL "UiEditor.dat"
                 FreeFileNum = FREEFILE
-                OPEN FileToOpen$ FOR BINARY AS #FreeFileNum
-                b$ = SPACE$(LOF(FreeFileNum))
-                GET #FreeFileNum, 1, b$
+                OPEN "UiEditor.dat" FOR BINARY AS #FreeFileNum
+                'Send the data first, then the signal
+                b$ = MKI$(LEN(FileToOpen$)) + FileToOpen$
+                PUT #FreeFileNum, OffsetPropertyValue, b$
                 CLOSE #FreeFileNum
 
-                OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FreeFileNum
-                PUT #FreeFileNum, 1, b$
-                CLOSE #FreeFileNum
-
-                $IF WIN THEN
-                    SHELL _DONTWAIT "UiEditorPreview.exe"
-                $ELSE
-                    SHELL _DONTWAIT "./UiEditorPreview"
-                $END IF
-
-                UiEditorFile = FREEFILE
-                OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
-                b$ = MKL$(__UI_GetPID)
-                PUT #UiEditorFile, OffsetEditorPID, b$
-                CLOSE #UiEditorFile
+                SendSignal -4
 
                 Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
                 Control(OpenFrame).Left = -500: Control(OpenFrame).Top = -600
@@ -675,6 +631,12 @@ SUB __UI_Click (id AS LONG)
                 Control(FileList).Max = TotalFiles%
                 Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
             END IF
+        CASE "EDITMENUUNDO"
+            b$ = MKI$(0)
+            SendData b$, 214
+        CASE "EDITMENUREDO"
+            b$ = MKI$(0)
+            SendData b$, 215
     END SELECT
 
     LastClickedID = id
@@ -785,6 +747,29 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         SelectedProperty = Control(__UI_GetID("PropertiesList")).Value
+
+        'Ctrl+Z? Ctrl+Y?
+        Control(EditMenuUndo).Disabled = True
+        Control(EditMenuRedo).Disabled = True
+        DIM BinFileNum AS INTEGER, UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
+        BinFileNum = FREEFILE
+        OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+        IF LOF(BinFileNum) > 0 THEN
+            b$ = SPACE$(2): GET #BinFileNum, 1, b$: UndoPointer = CVI(b$)
+            b$ = SPACE$(2): GET #BinFileNum, 3, b$: TotalUndoImages = CVI(b$)
+        END IF
+        IF UndoPointer > 1 THEN Control(EditMenuUndo).Disabled = False
+        IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
+        _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+        CLOSE #BinFileNum
+
+        IF (__UI_KeyHit = -ASC("z") OR __UI_KeyHit = -ASC("Z")) AND __UI_CtrlIsDown THEN
+            b$ = MKI$(0)
+            SendData b$, 214
+        ELSEIF (__UI_KeyHit = -ASC("y") OR __UI_KeyHit = -ASC("Y")) AND __UI_CtrlIsDown THEN
+            b$ = MKI$(0)
+            SendData b$, 215
+        END IF
 
         'Make ZOrdering menu enabled/disabled according to control list
         Control(__UI_GetID("EditMenuZOrdering")).Disabled = True
@@ -1284,6 +1269,7 @@ SUB __UI_OnLoad
     AutoNameControls = True
 
     IF _FILEEXISTS("UiEditorPreview.frmbin") THEN KILL "UiEditorPreview.frmbin"
+    IF _FILEEXISTS("UiEditorUndo.dat") THEN KILL "UiEditorUndo.dat"
 
     DIM FileToOpen$, FreeFileNum AS INTEGER
     IF _FILEEXISTS(COMMAND$) THEN
@@ -1382,9 +1368,6 @@ END SUB
 
 SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
-    SELECT CASE UCASE$(RTRIM$(Control(id).Name))
-        CASE "PROPERTYVALUE"
-    END SELECT
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)

@@ -88,6 +88,7 @@ SUB __UI_BeforeUpdateDisplay
     DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
     DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
+    STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
 
     SavePreview
 
@@ -144,12 +145,31 @@ SUB __UI_BeforeUpdateDisplay
             IF PROCESS_CLOSED(UiEditorPID, 0) THEN SYSTEM
         $END IF
 
+        IF __UI_IsDragging THEN
+            WasDragging = True
+        ELSE
+            IF WasDragging THEN
+                WasDragging = False
+                SaveUndoImage
+            END IF
+        END IF
+
+        IF __UI_IsResizing THEN
+            WasResizing = True
+        ELSE
+            IF WasResizing THEN
+                WasResizing = False
+                SaveUndoImage
+            END IF
+        END IF
+
         'New control:
         DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewControl, b$
         TempValue = CVI(b$)
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewControl, b$
         IF TempValue > 0 THEN
+            SaveUndoImage
             IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
                 ThisContainer = Control(__UI_FirstSelectedID).ParentID
                 TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
@@ -224,11 +244,44 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF TempValue = -3 THEN
             'Show the preview
             _SCREENSHOW
+        ELSEIF TempValue = -4 THEN
+            'Load an existing file
+            b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+            b$ = SPACE$(CVI(b$)): GET #UiEditorFile, , b$
+            DIM FileToLoad AS INTEGER
+            FileToLoad = FREEFILE
+            OPEN b$ FOR BINARY AS #FileToLoad
+            a$ = SPACE$(LOF(FileToLoad))
+            GET #FileToLoad, 1, a$
+            CLOSE #FileToLoad
+
+            FileToLoad = FREEFILE
+            OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+            PUT #FileToLoad, 1, a$
+            CLOSE #FileToLoad
+
+            LoadPreview
+            UndoPointer = 0
+            TotalUndoImages = 0
+            _SCREENSHOW
+        ELSEIF TempValue = -5 THEN
+            'Create a new form
+            FileToLoad = FREEFILE
+            OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+            a$ = STRING$(LOF(FileToLoad), 32)
+            PUT #FileToLoad, 1, a$
+            CLOSE #FileToLoad
+
+            LoadPreview
+            UndoPointer = 0
+            TotalUndoImages = 0
+            _SCREENSHOW
         ELSEIF TempValue = -1 THEN
             DIM FloatValue AS _FLOAT
             'Editor sent property value
             b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyChanged, b$
             TempValue = CVI(b$)
+            IF TempValue <> 213 AND TempValue <> 214 AND TempValue <> 215 THEN SaveUndoImage 'Select, undo, redo signals
             SELECT CASE TempValue
                 CASE 1 'Name
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -658,7 +711,12 @@ SUB __UI_BeforeUpdateDisplay
                     NEXT
 
                     IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
-
+                CASE 214
+                    'Undo
+                    RestoreUndoImage
+                CASE 215
+                    'Redo
+                    RestoreRedoImage
             END SELECT
             __UI_ForceRedraw = True
         END IF
@@ -686,13 +744,7 @@ SUB __UI_BeforeUpdateDisplay
 END SUB
 
 SUB __UI_BeforeUnload
-    'DIM Answer AS _BYTE
-    'Answer = MessageBox("Leaving UI", "Copy current form data to clipboard?", MsgBox_YesNoCancel + MsgBox_Question)
-    'IF Answer = MsgBox_Cancel THEN
-    '    __UI_UnloadSignal = False
-    'ELSEIF Answer = MsgBox_Yes THEN
-    '    Answer = MessageBox("Leaving UI", "Not yet implemented", MsgBox_OkOnly + MsgBox_Information)
-    'END IF
+
 END SUB
 
 SUB __UI_BeforeInit
@@ -705,6 +757,14 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
+    SELECT CASE id
+        CASE 214
+            RestoreUndoImage
+        CASE 215
+            RestoreRedoImage
+        CASE 216
+            SaveUndoImage
+    END SELECT
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
@@ -1396,23 +1456,100 @@ FUNCTION IS_KEYWORD (Text$)
 END FUNCTION
 
 SUB SaveUndoImage
-    DIM BinFileNum AS INTEGER, b$
-
-    UndoPointer = UndoPointer + 1
-    IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
+    DIM BinFileNum AS INTEGER, b$, a$, i AS INTEGER
+    STATIC LastForm$
 
     BinFileNum = FREEFILE
     OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
-    b$ = SPACE$(LOF(BinFileNum))
-    GET #BinFileNum, 1, b$
+    a$ = SPACE$(LOF(BinFileNum))
+    GET #BinFileNum, 1, a$
     CLOSE #BinFileNum
+
+    IF LastForm$ = a$ THEN EXIT SUB 'Identical states don't get saved consecutively
+
+    UndoPointer = UndoPointer + 1
+    IF UndoPointer < TotalUndoImages THEN TotalUndoImages = UndoPointer
+    IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
+    _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+    LastForm$ = a$
 
     BinFileNum = FREEFILE
     OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
-    b$ = MKI$(UndoPointer): PUT #1, 1, b$
-    b$ = MKI$(TotalUndoImages): PUT #1, 3, b$
+    b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
+    b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
+
+    FOR i = 1 TO UndoPointer - 1
+        b$ = SPACE$(4): GET #BinFileNum, , b$
+        SEEK #BinFileNum, SEEK(BinFileNum) + CVL(b$)
+    NEXT
+
+    b$ = MKL$(LEN(a$))
+    PUT #BinFileNum, , b$
+    PUT #BinFileNum, , a$
+    CLOSE #BinFileNum
 END SUB
 
-SUB RestoreUndoImage (index AS INTEGER)
-    IF UndoPointer = 1 THEN EXIT SUB
+SUB RestoreUndoImage
+    DIM i AS INTEGER, b$, a$, BinFileNum AS INTEGER
+
+    IF UndoPointer < 2 THEN EXIT SUB
+
+    IF UndoPointer = TotalUndoImages THEN SaveUndoImage
+
+    UndoPointer = UndoPointer - 1
+    _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+    BinFileNum = FREEFILE
+    OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+    b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
+    b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
+
+    FOR i = 1 TO UndoPointer - 1
+        b$ = SPACE$(4): GET #BinFileNum, , b$
+        SEEK #BinFileNum, SEEK(BinFileNum) + CVL(b$)
+    NEXT
+
+    b$ = SPACE$(4)
+    GET #BinFileNum, , b$
+    a$ = SPACE$(CVL(b$))
+    GET #BinFileNum, , a$
+    CLOSE #BinFileNum
+
+    BinFileNum = FREEFILE
+    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    PUT #BinFileNum, 1, a$
+    CLOSE #BinFileNum
+
+    LoadPreview
 END SUB
+
+SUB RestoreRedoImage
+    DIM i AS INTEGER, b$, a$, BinFileNum AS INTEGER
+
+    IF UndoPointer >= TotalUndoImages THEN EXIT SUB
+
+    UndoPointer = UndoPointer + 1
+    _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+    BinFileNum = FREEFILE
+    OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+    b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
+    b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
+
+    FOR i = 1 TO UndoPointer - 1
+        b$ = SPACE$(4): GET #BinFileNum, , b$
+        SEEK #BinFileNum, SEEK(BinFileNum) + CVL(b$)
+    NEXT
+
+    b$ = SPACE$(4)
+    GET #BinFileNum, , b$
+    a$ = SPACE$(CVL(b$))
+    GET #BinFileNum, , a$
+    CLOSE #BinFileNum
+
+    BinFileNum = FREEFILE
+    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    PUT #BinFileNum, 1, a$
+    CLOSE #BinFileNum
+
+    LoadPreview
+END SUB
+

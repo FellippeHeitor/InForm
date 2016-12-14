@@ -399,4 +399,6 @@ SUB __UI_AssignIDs
     UpBT = __UI_GetID("UpBT")
     DownBT = __UI_GetID("DownBT")
     ControlList = __UI_GetID("ControlList")
+    EditMenuUndo = __UI_GetID("EditMenuUndo")
+    EditMenuRedo = __UI_GetID("EditMenuRedo")
 END SUB
