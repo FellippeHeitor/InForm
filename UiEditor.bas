@@ -490,7 +490,6 @@ SUB __UI_Click (id AS LONG)
             END IF
 
             SendSignal -5
-            __UI_ForceRedraw = True
         CASE "FILEMENUSAVE"
             SaveForm True
         CASE "HELPMENUABOUT"
@@ -758,7 +757,7 @@ SUB __UI_BeforeUpdateDisplay
             b$ = SPACE$(2): GET #BinFileNum, 1, b$: UndoPointer = CVI(b$)
             b$ = SPACE$(2): GET #BinFileNum, 3, b$: TotalUndoImages = CVI(b$)
         END IF
-        IF UndoPointer > 1 THEN Control(EditMenuUndo).Disabled = False
+        IF UndoPointer > 2 THEN Control(EditMenuUndo).Disabled = False
         IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
         _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
         CLOSE #BinFileNum
@@ -1620,12 +1619,8 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION LoadEditorImage& (FileName$)
-    'Contains portions of Dav's BIN2BAS
-    'http://www.qbasicnews.com/dav/qb64.php
-
-    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
     DIM MemoryBlock AS _MEM, TempImage AS LONG, NextSlot AS LONG
-    DIM NewWidth AS INTEGER, NewHeight AS INTEGER
+    DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
 
     A$ = EditorImageData$(FileName$)
     IF LEN(A$) = 0 THEN EXIT FUNCTION
@@ -1633,6 +1628,24 @@ FUNCTION LoadEditorImage& (FileName$)
     NewWidth = CVI(LEFT$(A$, 2))
     NewHeight = CVI(MID$(A$, 3, 2))
     A$ = MID$(A$, 5)
+
+    BASFILE$ = Unpack$(A$)
+
+    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
+    MemoryBlock = _MEMIMAGE(TempImage)
+
+    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
+    _MEMFREE MemoryBlock
+
+    LoadEditorImage& = TempImage
+END FUNCTION
+
+FUNCTION Unpack$ (PackedData$)
+    'Adapted from Dav's BIN2BAS
+    'http://www.qbasicnews.com/dav/qb64.php
+    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
+
+    A$ = PackedData$
 
     FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
         IF INSTR(1, B$, "%") THEN
@@ -1644,15 +1657,8 @@ FUNCTION LoadEditorImage& (FileName$)
             NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
             X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
     NEXT: btemp$ = btemp$ + X$: NEXT
-    BASFILE$ = btemp$
 
-    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
-    MemoryBlock = _MEMIMAGE(TempImage)
-
-    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
-    _MEMFREE MemoryBlock
-
-    LoadEditorImage& = TempImage
+    Unpack$ = btemp$
 END FUNCTION
 
 SUB LoadPreview

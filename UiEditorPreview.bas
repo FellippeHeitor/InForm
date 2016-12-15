@@ -25,6 +25,8 @@ DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
 
+CONST EmptyForm$ = "9iVA_9GK1P<000`oo30000@00D006mVL]53;1`B000000000noO100006mVL]5cnoo00cEfI_EFMYi2MdIV:Z4S<%0`?"
+
 DIM i AS LONG
 DIM SHARED AlphaNumeric(255)
 FOR i = 48 TO 57: AlphaNumeric(i) = -1: NEXT
@@ -92,7 +94,7 @@ SUB __UI_BeforeUpdateDisplay
 
     SavePreview
 
-    IF UndoPointer = 0 THEN SaveUndoImage
+    IF TotalUndoImages = 0 THEN SaveUndoImage
 
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
@@ -265,17 +267,17 @@ SUB __UI_BeforeUpdateDisplay
             TotalUndoImages = 0
             _SCREENSHOW
         ELSEIF TempValue = -5 THEN
-            'Create a new form
+            'Reset request (new form)
+            a$ = Unpack$(EmptyForm$)
+
             FileToLoad = FREEFILE
             OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
-            a$ = STRING$(LOF(FileToLoad), 32)
             PUT #FileToLoad, 1, a$
             CLOSE #FileToLoad
 
             LoadPreview
             UndoPointer = 0
             TotalUndoImages = 0
-            _SCREENSHOW
         ELSEIF TempValue = -1 THEN
             DIM FloatValue AS _FLOAT
             'Editor sent property value
@@ -772,6 +774,27 @@ END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
 END SUB
+
+FUNCTION Unpack$ (PackedData$)
+    'Adapted from Dav's BIN2BAS
+    'http://www.qbasicnews.com/dav/qb64.php
+    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
+
+    A$ = PackedData$
+
+    FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
+        IF INSTR(1, B$, "%") THEN
+            FOR C% = 1 TO LEN(B$): F$ = MID$(B$, C%, 1)
+                IF F$ <> "%" THEN C$ = C$ + F$
+            NEXT: B$ = C$
+            END IF: FOR t% = LEN(B$) TO 1 STEP -1
+            B& = B& * 64 + ASC(MID$(B$, t%)) - 48
+            NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
+            X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
+    NEXT: btemp$ = btemp$ + X$: NEXT
+
+    Unpack$ = btemp$
+END FUNCTION
 
 SUB LoadPreview
     DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
@@ -1465,7 +1488,7 @@ SUB SaveUndoImage
     GET #BinFileNum, 1, a$
     CLOSE #BinFileNum
 
-    IF LastForm$ = a$ THEN EXIT SUB 'Identical states don't get saved consecutively
+    IF LastForm$ = a$ AND UndoPointer > 1 THEN EXIT SUB 'Identical states don't get saved consecutively
 
     UndoPointer = UndoPointer + 1
     IF UndoPointer < TotalUndoImages THEN TotalUndoImages = UndoPointer
@@ -1492,9 +1515,7 @@ END SUB
 SUB RestoreUndoImage
     DIM i AS INTEGER, b$, a$, BinFileNum AS INTEGER
 
-    IF UndoPointer < 2 THEN EXIT SUB
-
-    IF UndoPointer = TotalUndoImages THEN SaveUndoImage
+    IF UndoPointer <= 2 THEN EXIT SUB
 
     UndoPointer = UndoPointer - 1
     _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
