@@ -7,7 +7,11 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditorForm", 598, 430, 0, 0, 0)
     SetCaption "UiEditorForm", UiEditorTitle$
-    Control(__UI_NewID).Font = SetFont("segoeui.ttf", 12, "")
+    $IF WIN THEN
+        Control(__UI_NewID).Font = SetFont("segoeui.ttf", 12, "")
+    $ELSE
+        Control(__UI_NewID).Font = SetFont("InForm\NotoMono-Regular.ttf", 12, "")
+    $END IF
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 44, 18, 8, 0, 0)
     SetCaption "FileMenu", "&File"

@@ -1,16 +1,9 @@
-http://www.iconarchive.com/show/matrilineare-icons-by-sora-meliae/Apps-dconf-editor-icon.html
-"Apps dconf editor Icon"
-Artist: sora-meliae
-Iconset: Matrilineare Icons (126 icons)
-License: GNU General Public License
-Commercial usage: Allowed
-
-http://www.iconarchive.com/show/modern-xp-icons-by-dtafalonso/ModernXP-69-Window-icon.html
-"ModernXP 69 Window Icon"
-Artist: dtafalonso
-Iconset: Modern XP Icons (76 icons)
-License: CC Attribution-Noncommercial-No Derivate 4.0
-Commercial usage: Not allowed
+http://www.iconarchive.com/show/flatastic-11-icons-by-custom-icon-design/Application-icon.html
+"Application Icon"
+Artist: Custom Icon Design (Available for custom work)
+Iconset: Flatastic 11 Icons (60 icons)
+License: Free for non-commercial use.
+Commercial usage: Buy commercial license here: http://www.customicondesign.com/free-icons/flatastic-icon-set/flatastic-part-11
 
 http://www.iconarchive.com/show/onebit-icons-by-icojam/ok-icon.html
 "Ok Icon"
@@ -24,4 +17,4 @@ http://www.iconarchive.com/show/sleek-xp-basic-icons-by-hopstarter/Delete-icon.h
 Artist: Hopstarter (Available for custom work)
 Iconset: Sleek XP Basic Icons (50 icons)
 License: CC Attribution-Noncommercial-No Derivate 4.0
-Commercial usage: Allowed (Author Arrangement required -> Visit artist website for details).
+Commercial usage: Allowed
