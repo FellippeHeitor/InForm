@@ -677,9 +677,23 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
 
         IF NOT This.Multiline THEN
             'Single line textbox
+            DIM ThisTempText$
+            ThisTempText$ = __UI_TrimAt0$(Text(This.ID))
+
+            IF LEN(ThisTempText$) > 0 AND This.PasswordField = True THEN
+                IF This.Font <> 8 AND This.Font <> 16 THEN
+                    ThisTempText$ = ""
+                    FOR i = 1 TO LEN(Text(This.ID))
+                        ThisTempText$ = ThisTempText$ + CHR$(226) + CHR$(151) + CHR$(143) 'UTF-8 e2978f
+                    NEXT
+                ELSE
+                    ThisTempText$ = STRING$(LEN(ThisTempText$), 7)
+                END IF
+            END IF
+
             IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu = This.ContextMenuID)) AND NOT This.Disabled THEN
                 IF LEN(Text(This.ID)) THEN
-                    __UI_PrintString CaptionIndent - This.InputViewStart, ((This.Height \ 2) - uspacing& \ 2), __UI_TrimAt0$(Text(This.ID))
+                    __UI_PrintString CaptionIndent - This.InputViewStart, ((This.Height \ 2) - uspacing& \ 2), ThisTempText$
                 ELSE
                     __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
                 END IF
@@ -702,7 +716,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                 END IF
             ELSE
                 IF LEN(Text(This.ID)) THEN
-                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), __UI_TrimAt0$(Text(This.ID))
+                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), ThisTempText$
                 ELSE
                     __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
                 END IF

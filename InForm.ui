@@ -85,6 +85,7 @@ TYPE __UI_ControlTYPE
     'ThumbLeft AS INTEGER
     'HScrollbarRatio AS SINGLE
     Cursor AS LONG
+    PasswordField AS _BYTE
     PrevCursor AS LONG
     FieldArea AS LONG
     PreviousFieldArea AS LONG
