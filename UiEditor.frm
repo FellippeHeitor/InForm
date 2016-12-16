@@ -51,7 +51,6 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption "FileMenuSave", "&Save form-"
     ToolTip(__UI_NewID) = "File name is automatically taken from your form's name property"
-    LoadImage Control(__UI_NewID), "InForm\disk.png"
     
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     SetCaption "FileMenuExit", "E&xit"
