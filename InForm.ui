@@ -3498,6 +3498,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         END IF
     END IF
 
+    IF ControlType = __UI_Type_Label THEN Control(NextSlot).VAlign = __UI_Middle
+
     IF ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
         Control(NextSlot).CanHaveFocus = True
     END IF
