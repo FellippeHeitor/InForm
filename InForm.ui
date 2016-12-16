@@ -3334,8 +3334,8 @@ FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAtt
     IF NewFontFile = "" THEN
         'Internal emulated fonts
         IF NewFontSize <> 8 AND NewFontSize <> 16 THEN
-            Control(NextSlot).Value = 8
-            Control(NextSlot).Max = 8
+            Control(NextSlot).Value = 16
+            Control(NextSlot).Max = 16
         ELSE
             Control(NextSlot).Value = NewFontSize
             Control(NextSlot).Max = NewFontSize
@@ -3371,11 +3371,11 @@ FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAtt
 
         SetFont& = Control(NextSlot).Value
 
-        'If loading the requested font fails, we default to _FONT 8
+        'If loading the requested font fails, we default to _FONT 16
         IF Control(NextSlot).Value <= 0 THEN
             __UI_DestroyControl Control(NextSlot)
-            Control(NextSlot).Value = 8
-            SetFont& = 8
+            Control(NextSlot).Value = 16
+            SetFont& = 16
         END IF
     END IF
 END FUNCTION
@@ -3454,7 +3454,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         Control(NextSlot).Font = Control(ParentID).Font
     END IF
 
-    IF Control(NextSlot).Font = 0 THEN Control(NextSlot).Font = SetFont("", 8, "")
+    IF Control(NextSlot).Font = 0 THEN Control(NextSlot).Font = SetFont("", 16, "")
 
     Control(NextSlot).Width = NewWidth
     Control(NextSlot).Height = NewHeight
