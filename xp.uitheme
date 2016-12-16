@@ -186,7 +186,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Caption:
         DIM CaptionLeft AS INTEGER, FindLF&, FindSep&, ThisLine%
-        DIM CaptionLeftFirstLine AS INTEGER, TextTop%
+        DIM CaptionLeftFirstLine AS INTEGER, CaptionTopFirstLine AS INTEGER, TextTop%
         DIM TotalLines AS INTEGER
         IF This.WordWrap THEN
             TempCaption$ = __UI_TrimAt0$(__UI_WordWrap(Caption(This.ID), This.Width - ((CaptionIndent + This.Padding) * 2), TotalLines))
@@ -194,18 +194,18 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 ThisLine% = ThisLine% + 1
 
                 IF This.VAlign = __UI_Top THEN
-                    TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing& + 2
+                    TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing&
                 ELSEIF This.VAlign = __UI_Middle THEN
                     IF TotalLines < This.Height \ uspacing& THEN
                         'Center vertically if less lines than fits the box
-                        TextTop% = (This.Height \ 2) - ((TotalLines * uspacing& - uspacing&) \ 2) - uspacing& \ 2 + (((ThisLine%) * uspacing& - uspacing&) + 2)
+                        TextTop% = (This.Height \ 2) - ((TotalLines * uspacing& - uspacing&) \ 2) - uspacing& \ 2 + (((ThisLine%) * uspacing& - uspacing&))
                     ELSE
                         'Snap to top of the label's boundaries
                         'if there are more lines than meet the eye
-                        TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing& + 2
+                        TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing&
                     END IF
                 ELSEIF This.VAlign = __UI_Bottom THEN
-                    TextTop% = This.Height - CaptionIndent - (TotalLines * uspacing&) + (ThisLine% * uspacing& - uspacing& + 2)
+                    TextTop% = This.Height - CaptionIndent - (TotalLines * uspacing&) + (ThisLine% * uspacing& - uspacing&)
                 END IF
 
                 FindSep& = INSTR(TempCaption$, CHR$(1)) 'Search for soft breaks
@@ -220,10 +220,6 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                     ELSE
                         TempLine$ = TempCaption$
                         TempCaption$ = ""
-                        IF ThisLine% = 1 THEN
-                            'Wordwrap was requested, but the caption didn't require it
-                            TextTop% = ((This.Height \ 2) - uspacing& \ 2)
-                        END IF
                     END IF
                 END IF
 
@@ -238,12 +234,12 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
                 Temp& = uprint(CaptionLeft, TextTop%, TempLine$, LEN(TempLine$), TempColor~&, 0)
 
-                IF ThisLine% = 1 THEN CaptionLeftFirstLine = CaptionLeft
+                IF ThisLine% = 1 THEN CaptionLeftFirstLine = CaptionLeft: CaptionTopFirstLine = TextTop%
             LOOP
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionIndent + uheight&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionTopFirstLine + uheight&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
             TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
@@ -256,12 +252,20 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                     CaptionLeft = This.Width - __UI_PrintWidth&(TempCaption$) - (CaptionIndent + This.Padding)
             END SELECT
 
+            IF This.VAlign = __UI_Top THEN
+                TextTop% = CaptionIndent
+            ELSEIF This.VAlign = __UI_Middle THEN
+                TextTop% = (This.Height \ 2) - uspacing& \ 2
+            ELSEIF This.VAlign = __UI_Bottom THEN
+                TextTop% = This.Height - CaptionIndent - uspacing&
+            END IF
+
             CaptionLeftFirstLine = CaptionLeft
-            Temp& = uprint(CaptionLeft, (This.Height \ 2) - uspacing& \ 2, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
+            Temp& = uprint(CaptionLeft, TextTop%, TempCaption$, LEN(TempCaption$), TempColor~&, 0)
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, ((This.Height \ 2) + (uspacing& \ 2)))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, (TextTop% + (uspacing& \ 2)))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         END IF
 

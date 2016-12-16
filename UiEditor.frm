@@ -118,7 +118,7 @@ SUB __UI_LoadForm
     ToolTip(__UI_GetID("OptionsMenuAutoName")) = "Automatically set control names based on caption and type"
     
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
-    SetCaption "HelpMenuHelp", "&What's all this?"
+    SetCaption "HelpMenuHelp", "&What's all this?-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuAbout", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     SetCaption "HelpMenuAbout", "&About..."

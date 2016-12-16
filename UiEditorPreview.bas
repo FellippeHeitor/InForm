@@ -20,7 +20,7 @@ CONST OffsetPropertyValue = 37
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
-DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
+DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -93,8 +93,6 @@ SUB __UI_BeforeUpdateDisplay
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
 
     SavePreview
-
-    IF TotalUndoImages = 0 THEN SaveUndoImage
 
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
@@ -700,8 +698,18 @@ SUB __UI_BeforeUpdateDisplay
                     SWAP ToolTip(CVL(b$)), ToolTip(CVL(a$))
                     Control(CVL(a$)).ID = tID1
                     Control(CVL(b$)).ID = tID2
+
+                    'Restore ParentIDs based on ParentName
+                    FOR i = 1 TO UBOUND(Control)
+                        Control(i).ParentID = __UI_GetID(Control(i).ParentName)
+                    NEXT
+
                     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
-                        __UI_ActivateMenu Control(__UI_ParentMenu), False
+                        IF Control(CVL(a$)).Type = __UI_Type_MenuItem OR Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
+                            __UI_ActivateMenu Control(__UI_ParentMenu), False
+                        ELSE
+                            __UI_DestroyControl Control(__UI_ActiveMenu)
+                        END IF
                     END IF
                 CASE 213
                     'Select control
@@ -1488,12 +1496,12 @@ SUB SaveUndoImage
     GET #BinFileNum, 1, a$
     CLOSE #BinFileNum
 
-    IF LastForm$ = a$ AND UndoPointer > 1 THEN EXIT SUB 'Identical states don't get saved consecutively
+    IF LastForm$ = a$ AND UndoPointer > 1 AND TotalUndoImages > 1 THEN EXIT SUB 'Identical states don't get saved consecutively
 
     UndoPointer = UndoPointer + 1
     IF UndoPointer < TotalUndoImages THEN TotalUndoImages = UndoPointer
     IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
-    _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+
     LastForm$ = a$
 
     BinFileNum = FREEFILE
@@ -1515,10 +1523,10 @@ END SUB
 SUB RestoreUndoImage
     DIM i AS INTEGER, b$, a$, BinFileNum AS INTEGER
 
-    IF UndoPointer <= 2 THEN EXIT SUB
+    IF UndoPointer < 2 THEN EXIT SUB
 
     UndoPointer = UndoPointer - 1
-    _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+
     BinFileNum = FREEFILE
     OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
     b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
@@ -1549,7 +1557,7 @@ SUB RestoreRedoImage
     IF UndoPointer >= TotalUndoImages THEN EXIT SUB
 
     UndoPointer = UndoPointer + 1
-    _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
+
     BinFileNum = FREEFILE
     OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
     b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$

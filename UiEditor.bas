@@ -528,7 +528,7 @@ SUB __UI_Click (id AS LONG)
         CASE "CLOSEZORDERINGBT"
             Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
             Control(ZOrdering).Left = -500: Control(ZOrdering).Top = -600
-            ZOrderingDialogOpen = True
+            ZOrderingDialogOpen = False
         CASE "UPBT"
             DIM PrevListValue AS LONG
             PrevListValue = Control(ControlList).Value
@@ -732,13 +732,19 @@ SUB __UI_BeforeUpdateDisplay
         IF PrevFirstSelected <> FirstSelected THEN
             PrevFirstSelected = FirstSelected
             __UI_ForceRedraw = True
+
+            IF ZOrderingDialogOpen AND FirstSelected <> PreviewFormID THEN
+                FOR j = 1 TO UBOUND(zOrderIDs)
+                    IF zOrderIDs(j) = FirstSelected THEN Control(ControlList).Value = j: __UI_ValueChanged ControlList: EXIT FOR
+                NEXT
+            END IF
         END IF
         b$ = SPACE$(2): GET #UiEditorFile, OffsetMenuPanelIsON, b$
         PreviewHasMenuActive = CVI(b$)
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
             Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin"
-            SetCaption "FileMenuSave", "&Save '" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin'"
+            SetCaption "FileMenuSave", "&Save '" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin'-"
         END IF
 
         IF Edited THEN
@@ -757,10 +763,9 @@ SUB __UI_BeforeUpdateDisplay
             b$ = SPACE$(2): GET #BinFileNum, 1, b$: UndoPointer = CVI(b$)
             b$ = SPACE$(2): GET #BinFileNum, 3, b$: TotalUndoImages = CVI(b$)
         END IF
+        CLOSE #BinFileNum
         IF UndoPointer > 2 THEN Control(EditMenuUndo).Disabled = False
         IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
-        _TITLE STR$(UndoPointer) + STR$(TotalUndoImages)
-        CLOSE #BinFileNum
 
         IF (__UI_KeyHit = -ASC("z") OR __UI_KeyHit = -ASC("Z")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)

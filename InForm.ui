@@ -38,6 +38,7 @@ TYPE __UI_ControlTYPE
     ContextMenuID AS LONG
     Type AS INTEGER
     Name AS STRING * 40
+    ParentName AS STRING * 40
     Top AS INTEGER
     Left AS INTEGER
     Width AS INTEGER
@@ -714,40 +715,40 @@ SUB __UI_UpdateDisplay
 
     _DEST 0
 
-    IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID THEN
-        'Draw the alignment grid
-        DIM GridX AS INTEGER, GridY AS INTEGER
+    'IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID THEN
+    '    'Draw the alignment grid
+    '    DIM GridX AS INTEGER, GridY AS INTEGER
 
-        IF Control(__UI_DraggingID).ParentID > 0 AND Control(__UI_DraggingID).Type <> __UI_Type_MenuItem THEN
-            _DEST Control(Control(__UI_DraggingID).ParentID).Canvas
-            FOR GridX = 0 TO Control(Control(__UI_DraggingID).ParentID).Width STEP 10
-                FOR GridY = 0 TO Control(Control(__UI_DraggingID).ParentID).Height STEP 10
-                    PSET (GridX, GridY), Control(Control(__UI_DraggingID).ParentID).ForeColor
-                NEXT
-            NEXT
-        ELSE
-            IF NOT GridDrawn THEN
-                'Draw grid onto main window's canvas
-                GridDrawn = True
-                'Free the hardware bg image:
-                _FREEIMAGE Control(__UI_FormID).Canvas
-                'Create a new software one:
-                Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-                'Draw on it:
-                _DEST Control(__UI_FormID).Canvas
-                COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
-                CLS
-                FOR GridX = 0 TO Control(__UI_FormID).Width STEP 10
-                    FOR GridY = 0 TO Control(__UI_FormID).Height STEP 10
-                        PSET (GridX, GridY), Control(__UI_FormID).ForeColor
-                    NEXT
-                NEXT
-                'Make it a hardware version of itself:
-                _DEST 0
-            END IF
-        END IF
-        _DEST 0
-    END IF
+    '    IF Control(__UI_DraggingID).ParentID > 0 AND Control(__UI_DraggingID).Type <> __UI_Type_MenuItem THEN
+    '        _DEST Control(Control(__UI_DraggingID).ParentID).Canvas
+    '        FOR GridX = 0 TO Control(Control(__UI_DraggingID).ParentID).Width STEP 10
+    '            FOR GridY = 0 TO Control(Control(__UI_DraggingID).ParentID).Height STEP 10
+    '                PSET (GridX, GridY), Control(Control(__UI_DraggingID).ParentID).ForeColor
+    '            NEXT
+    '        NEXT
+    '    ELSE
+    '        IF NOT GridDrawn THEN
+    '            'Draw grid onto main window's canvas
+    '            GridDrawn = True
+    '            'Free the hardware bg image:
+    '            _FREEIMAGE Control(__UI_FormID).Canvas
+    '            'Create a new software one:
+    '            Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+    '            'Draw on it:
+    '            _DEST Control(__UI_FormID).Canvas
+    '            COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
+    '            CLS
+    '            FOR GridX = 0 TO Control(__UI_FormID).Width STEP 10
+    '                FOR GridY = 0 TO Control(__UI_FormID).Height STEP 10
+    '                    PSET (GridX, GridY), Control(__UI_FormID).ForeColor
+    '                NEXT
+    '            NEXT
+    '            'Make it a hardware version of itself:
+    '            _DEST 0
+    '        END IF
+    '    END IF
+    '    _DEST 0
+    'END IF
 
     IF (GridDrawn AND NOT __UI_IsDragging) OR (GridDrawn AND Control(__UI_DraggingID).ParentID > 0) OR __UI_ForceRedraw THEN
         'Restore main window hardware bg
@@ -1032,31 +1033,31 @@ SUB __UI_UpdateDisplay
         _PUTIMAGE (__UI_ActiveTipLeft, __UI_ActiveTipTop), ActiveTipPanel
     END IF
 
-    IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID AND __UI_TotalSelectedControls = 1 THEN
-        STATIC DragTip AS LONG, TipPanelWidth AS INTEGER
+    'IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID AND __UI_TotalSelectedControls = 1 THEN
+    '    STATIC DragTip AS LONG, TipPanelWidth AS INTEGER
 
-        IF DragTip = 0 THEN
-            _FONT Control(__UI_FormID).Font
+    '    IF DragTip = 0 THEN
+    '        _FONT Control(__UI_FormID).Font
 
-            TempCaption$ = "Hold Ctrl to snap to the grid"
+    '        TempCaption$ = "Hold Ctrl to snap to the grid"
 
-            TipPanelWidth = __UI_PrintWidth(TempCaption$) + 10
-            PanelHeight = uspacing& + 5 + 5
+    '        TipPanelWidth = __UI_PrintWidth(TempCaption$) + 10
+    '        PanelHeight = uspacing& + 5 + 5
 
-            DragTip = _NEWIMAGE(TipPanelWidth, PanelHeight, 32)
-            _DEST DragTip
-            _FONT Control(__UI_FormID).Font
-            __UI_ShadowBox 0, 0, TipPanelWidth - 6, PanelHeight - 6, __UI_DefaultColor(__UI_Type_Form, 6), 40, 5
-            COLOR __UI_DefaultColor(__UI_Type_Form, 1)
+    '        DragTip = _NEWIMAGE(TipPanelWidth, PanelHeight, 32)
+    '        _DEST DragTip
+    '        _FONT Control(__UI_FormID).Font
+    '        __UI_ShadowBox 0, 0, TipPanelWidth - 6, PanelHeight - 6, __UI_DefaultColor(__UI_Type_Form, 6), 40, 5
+    '        COLOR __UI_DefaultColor(__UI_Type_Form, 1)
 
-            __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - uspacing& \ 2 - 1.75, TempCaption$
+    '        __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - uspacing& \ 2 - 1.75, TempCaption$
 
-            LINE (0, 0)-(_WIDTH - 6, _HEIGHT - 6), __UI_DefaultColor(__UI_Type_Form, 5), B
-            __UI_MakeHardwareImage DragTip
-        END IF
-        _DEST 0
-        _PUTIMAGE (_WIDTH \ 2 - TipPanelWidth \ 2, 0), DragTip
-    END IF
+    '        LINE (0, 0)-(_WIDTH - 6, _HEIGHT - 6), __UI_DefaultColor(__UI_Type_Form, 5), B
+    '        __UI_MakeHardwareImage DragTip
+    '    END IF
+    '    _DEST 0
+    '    _PUTIMAGE (_WIDTH \ 2 - TipPanelWidth \ 2, 0), DragTip
+    'END IF
 
     __UI_ForceRedraw = False
 
@@ -2297,21 +2298,22 @@ SUB __UI_EventDispatcher
         DIM SnappedX AS _BYTE, SnappedY AS _BYTE
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ControlIsSelected THEN
-                IF _KEYDOWN(100305) OR _KEYDOWN(100306) AND __UI_TotalSelectedControls = 1 THEN
-                    '(Ctrl enables snapping):
-                    IF ((Control(i).Top + (__UI_MouseTop - __UI_DragY))) MOD 10 = 0 THEN _
-                        Control(i).Top = (Control(i).Top + (__UI_MouseTop - __UI_DragY)): _
-                        SnappedY = True
+                'IF _KEYDOWN(100305) OR _KEYDOWN(100306) AND __UI_TotalSelectedControls = 1 THEN
+                '    '(Ctrl enables snapping):
+                '    IF ((Control(i).Top + (__UI_MouseTop - __UI_DragY))) MOD 10 = 0 THEN _
+                '        Control(i).Top = (Control(i).Top + (__UI_MouseTop - __UI_DragY)): _
+                '        SnappedY = True
 
-                    IF ((Control(i).Left + (__UI_MouseLeft - __UI_DragX))) MOD 10 = 0 THEN _
-                        Control(i).Left = (Control(i).Left + (__UI_MouseLeft - __UI_DragX)): _
-                        SnappedX = True
-                ELSE
+                '    IF ((Control(i).Left + (__UI_MouseLeft - __UI_DragX))) MOD 10 = 0 THEN _
+                '        Control(i).Left = (Control(i).Left + (__UI_MouseLeft - __UI_DragX)): _
+                '        SnappedX = True
+                'ELSE
                     Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                     Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
-                END IF
+                'END IF
                 IF SetNewParent THEN
                     Control(i).ParentID = __UI_BelowHoveringID
+                    Control(i).ParentName = Control(__UI_BelowHoveringID).Name
                     IF __UI_BelowHoveringID = 0 THEN
                         Control(i).Top = Control(i).Top + TopOffset
                         Control(i).Left = Control(i).Left + LeftOffset
@@ -2323,13 +2325,13 @@ SUB __UI_EventDispatcher
             END IF
         NEXT
 
-        IF _KEYDOWN(100305) OR _KEYDOWN(100306) AND __UI_TotalSelectedControls = 1 THEN
-            IF SnappedY THEN __UI_DragY = __UI_MouseTop
-            IF SnappedX THEN __UI_DragX = __UI_MouseLeft
-        ELSE
+        'IF _KEYDOWN(100305) OR _KEYDOWN(100306) AND __UI_TotalSelectedControls = 1 THEN
+        '    IF SnappedY THEN __UI_DragY = __UI_MouseTop
+        '    IF SnappedX THEN __UI_DragX = __UI_MouseLeft
+        'ELSE
             __UI_DragY = __UI_MouseTop
             __UI_DragX = __UI_MouseLeft
-        END IF
+        'END IF
 
         __UI_PreviewTop = Control(__UI_DraggingID).Top
         __UI_PreviewLeft = Control(__UI_DraggingID).Left
@@ -3443,6 +3445,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     IF ControlType = __UI_Type_Form THEN __UI_FormID = NextSlot
 
     Control(NextSlot).ParentID = ParentID
+    Control(NextSlot).ParentName = Control(ParentID).Name
     IF (ControlType <> __UI_Type_Form AND ParentID = 0) THEN
         'Inherit main form's font
         Control(NextSlot).Font = Control(__UI_FormID).Font
