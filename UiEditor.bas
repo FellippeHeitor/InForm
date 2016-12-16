@@ -481,7 +481,11 @@ SUB __UI_Click (id AS LONG)
             END IF
         CASE "FILEMENUNEW"
             IF Edited THEN
-                Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                $IF WIN THEN
+                    Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                $ELSE
+                    Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                $END IF
                 IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
                 ELSEIF Answer = MsgBox_Yes THEN
@@ -498,7 +502,11 @@ SUB __UI_Click (id AS LONG)
             Answer = MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", MsgBox_OkOnly + MsgBox_Information)
         CASE "FILEMENUEXIT"
             IF Edited THEN
-                Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                $IF WIN THEN
+                    Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                $ELSE
+                    Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNo + MsgBox_Question)
+                $END IF
                 IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
                 ELSEIF Answer = MsgBox_Yes THEN
@@ -554,7 +562,11 @@ SUB __UI_Click (id AS LONG)
             __UI_ValueChanged ControlList
         CASE "FILEMENUOPEN"
             IF Edited THEN
-                Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                $IF WIN THEN
+                    Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                $ELSE
+                    Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                $END IF
                 IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
                 ELSEIF Answer = MsgBox_Yes THEN
@@ -1191,7 +1203,11 @@ END SUB
 SUB __UI_BeforeUnload
     DIM Answer AS _BYTE
     IF Edited THEN
-        Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
+        $IF WIN THEN
+            Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
+        $ELSE
+            Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNo + MsgBox_Question)
+        $END IF
         IF Answer = MsgBox_Cancel THEN
             __UI_UnloadSignal = False
         ELSEIF Answer = MsgBox_Yes THEN
@@ -2734,6 +2750,7 @@ FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.bas, me
         EXIT FUNCTION
     $ELSE
         filelist$ = ""
+        DIM i AS INTEGER, x AS INTEGER, a2$
         FOR i = 1 TO 2 - method
         OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
         IF method = 0 THEN
@@ -2804,6 +2821,7 @@ FUNCTION idezpathlist$ (path$, TotalFound%)
         EXIT FUNCTION
     $ELSE
         pathlist$ = ""
+        DIM a2$
         OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
         SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -mindepth 1 -type d >opendlgfiles.dat"
         OPEN "opendlgfiles.dat" FOR INPUT AS #150
@@ -2885,5 +2903,3 @@ FUNCTION QuotedFilename$ (f$)
         QuotedFilename$ = "'" + f$ + "'"
     $END IF
 END FUNCTION
-
-
