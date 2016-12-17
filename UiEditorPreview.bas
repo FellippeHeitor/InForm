@@ -60,7 +60,7 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-    DIM b$
+     DIM b$
     b$ = MKI$(-1)
     SendData b$, OffsetNewDataFromPreview
 END SUB
@@ -303,7 +303,7 @@ SUB __UI_BeforeUpdateDisplay
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
-                                IF Control(i).Type = __UI_Type_Label AND Control(i).WordWrap = True THEN
+                                IF Control(i).Type = __UI_Type_Label THEN
                                     DIM TotalReplacements AS LONG
                                     b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                                 END IF
@@ -476,7 +476,7 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
-                            ToolTip(i) = b$
+                            ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
                         END IF
                     NEXT
                 CASE 10 'Value

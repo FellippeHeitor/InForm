@@ -1530,6 +1530,7 @@ SUB __UI_EventDispatcher
                                     __UI_JustOpenedMenu = True
                                 END IF
                             END IF
+                            IF Control(__UI_HoveringID).Type = __UI_Type_Form THEN __UI_Click 0 'Force the preview to inform it was manipulated
                         ELSE
                             IF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame AND (TIMER - __UI_LastMouseDownEvent < .5 AND (__UI_MouseTop = __UI_MouseDownTop AND __UI_MouseLeft = __UI_MouseDownLeft)) THEN
                                 'Select all controls inside a frame
@@ -3955,8 +3956,16 @@ FUNCTION Replace$ (TempText$, SubString$, NewString$, CaseSensitive AS _BYTE, To
             FindSubString = INSTR(FindSubString + 1, UCASE$(Text$), UCASE$(SubString$))
         END IF
         IF FindSubString = 0 THEN EXIT DO
-        Text$ = LEFT$(Text$, FindSubString - 1) + NewString$ + MID$(Text$, FindSubString + LEN(SubString$))
-        TotalReplacements = TotalReplacements + 1
+        IF LEFT$(SubString$, 1) = "\" THEN 'Escape sequence
+            'Replace the Substring if it's not preceeded by another backslash
+            IF MID$(Text$, FindSubstring - 1, 1) <> "\" THEN
+                Text$ = LEFT$(Text$, FindSubString - 1) + NewString$ + MID$(Text$, FindSubString + LEN(SubString$))
+                TotalReplacements = TotalReplacements + 1
+            END IF
+        ELSE
+            Text$ = LEFT$(Text$, FindSubString - 1) + NewString$ + MID$(Text$, FindSubString + LEN(SubString$))
+            TotalReplacements = TotalReplacements + 1
+        END IF
     LOOP
 
     Replace$ = Text$
@@ -4330,9 +4339,30 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
         __UI_WordWrapHistoryResults(NextSlot) = Temp$
         __UI_WordWrapHistory(NextSlot).TotalLines = Lines
     ELSE
+        'Count line breaks
         Lines = 1
-        __UI_WordWrap$ = TempCaption$
-        __UI_WordWrapHistoryResults(NextSlot) = TempCaption$
+        Temp$ = TempCaption$
+        FindSep = INSTR(TempCaption$, CHR$(10))
+        IF FindSep > 0 THEN
+            Temp$ = ""
+            Lines = 0
+            DO WHILE LEN(TempCaption$)
+                FindSep = INSTR(TempCaption$, CHR$(10))
+                IF FindSep > 0 THEN
+                    Lines = Lines + 1
+                    IF LEN(Temp$) > 0 THEN Temp$ = Temp$ + CHR$(1)
+                    Temp$ = Temp$ + LEFT$(TempCaption$, FindSep - 1)
+                    TempCaption$ = MID$(TempCaption$, FindSep + 1)
+                ELSE
+                    Lines = Lines + 1
+                    Temp$ = Temp$ + CHR$(1) + TempCaption$
+                    EXIT DO
+                END IF
+            LOOP
+        END IF
+
+        __UI_WordWrap$ = Temp$
+        __UI_WordWrapHistoryResults(NextSlot) = Temp$
         __UI_WordWrapHistory(NextSlot).TotalLines = Lines
     END IF
 END FUNCTION

@@ -885,7 +885,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 1 'Name
                     Text(PropertyValueID) = RTRIM$(PreviewControls(FirstSelected).Name)
                 CASE 2 'Caption
-                    Text(PropertyValueID) = __UI_TrimAt0$(PreviewCaptions(FirstSelected))
+                    Text(PropertyValueID) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
                 CASE 3 'Text
                     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
                         Text(PropertyValueID) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
@@ -907,7 +907,7 @@ SUB __UI_BeforeUpdateDisplay
                         Text(PropertyValueID) = PreviewFonts(PreviewFormID)
                     END IF
                 CASE 9 'Tooltip
-                    Text(PropertyValueID) = PreviewTips(FirstSelected)
+                    Text(PropertyValueID) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
                 CASE 10 'Value
                     Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
                 CASE 11 'Min
@@ -927,7 +927,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 1 'Name
                     IF LCASE$(Text(PropertyValueID)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = True
                 CASE 2 'Caption
-                    IF Text(PropertyValueID) = PreviewCaptions(FirstSelected) THEN PropertyAccept = True
+                    IF Replace(Text(PropertyValueID), "\n", CHR$(10), False, 0) = PreviewCaptions(FirstSelected) THEN PropertyAccept = True
                 CASE 3 'Text
                     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
                         IF Replace(Text(PropertyValueID), "\n", CHR$(13), False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = True
@@ -949,7 +949,7 @@ SUB __UI_BeforeUpdateDisplay
                         IF LCASE$(Text(PropertyValueID)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = True
                     END IF
                 CASE 9 'Tooltip
-                    IF Text(PropertyValueID) = PreviewTips(FirstSelected) THEN PropertyAccept = True
+                    IF Replace(Text(PropertyValueID), "\n", CHR$(10), False, 0) = PreviewTips(FirstSelected) THEN PropertyAccept = True
                 CASE 10 'Value
                     IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = True
                 CASE 11 'Min
