@@ -1,7 +1,5 @@
 OPTION _EXPLICIT
 
-'$EXEICON:'.\InForm\InForm Preview.ico'
-
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
 CONST OffsetWindowLeft = 9
@@ -54,9 +52,9 @@ $ELSE
     END DECLARE
 $END IF
 
-'$include:'InForm.ui'
+'$include:'..\InForm.ui'
+'$include:'..\xp.uitheme'
 '$include:'UiEditorPreview.frm'
-'$include:'xp.uitheme'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)

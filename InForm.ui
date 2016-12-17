@@ -1207,11 +1207,6 @@ SUB __UI_EventDispatcher
                 __UI_LastMouseIconSet = 6
                 _MOUSESHOW "topleft_bottomright"
             END IF
-        'ELSEIF Control(__UI_HoveringID).CanDrag THEN
-        '    IF __UI_LastMouseIconSet <> 1 THEN
-        '        __UI_LastMouseIconSet = 1
-        '        _MOUSESHOW "link"
-        '    END IF
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_TextBox AND NOT __UI_DesignMode THEN
             IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left +Control(__UI_HoveringID).Width - __UI_ScrollbarWidth - 1 THEN
                 IF __UI_LastMouseIconSet <> 0 THEN
