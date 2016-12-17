@@ -254,231 +254,6 @@ SUB __UI_Click (id AS LONG)
             ELSE
                 Answer = MessageBox("There are no fonts loaded.", "", MsgBox_OkOnly + MsgBox_Critical)
             END IF
-        CASE "FILEMENULOAD"
-            DIM a$, i AS LONG, __UI_EOF AS _BYTE
-            DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
-            DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
-            DIM NewParentID AS STRING, FloatValue AS _FLOAT
-
-            CONST LogFileLoad = False
-
-            IF _FILEEXISTS("form.frmbin") = 0 THEN
-                Answer = MessageBox("File form.frmbin not found.", "", MsgBox_OkOnly + MsgBox_Critical)
-            ELSE
-                OPEN "form.frmbin" FOR BINARY AS #1
-                IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #2
-                b$ = SPACE$(7): GET #1, 1, b$
-                IF b$ <> "InForm" + CHR$(1) THEN
-                    GOTO LoadError
-                    EXIT SUB
-                END IF
-                IF LogFileLoad THEN PRINT #2, "FOUND INFORM+1"
-                __UI_AutoRefresh = False
-                FOR i = 1 TO UBOUND(Control)
-                    __UI_DestroyControl Control(i)
-                NEXT
-                IF LogFileLoad THEN PRINT #2, "DESTROYED CONTROLS"
-
-                b$ = SPACE$(4): GET #1, , b$
-                IF LogFileLoad THEN PRINT #2, "READ NEW ARRAYS:" + STR$(CVI(b$))
-
-                REDIM Caption(1 TO CVL(b$)) AS STRING
-                REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
-                REDIM Text(1 TO CVL(b$)) AS STRING
-                REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
-                REDIM ToolTip(1 TO CVL(b$)) AS STRING
-                REDIM Control(0 TO CVL(b$)) AS __UI_ControlTYPE
-                b$ = SPACE$(2): GET #1, , b$
-                IF LogFileLoad THEN PRINT #2, "READ NEW CONTROL:" + STR$(CVI(b$))
-                IF CVI(b$) <> -1 THEN GOTO LoadError
-                DO
-                    b$ = SPACE$(2): GET #1, , b$
-                    NewType = CVI(b$)
-                    IF LogFileLoad THEN PRINT #2, "TYPE:" + STR$(CVI(b$))
-                    b$ = SPACE$(2): GET #1, , b$
-                    b$ = SPACE$(CVI(b$)): GET #1, , b$
-                    NewName = b$
-                    IF LogFileLoad THEN PRINT #2, "NAME:" + NewName
-                    b$ = SPACE$(2): GET #1, , b$
-                    NewWidth = CVI(b$)
-                    IF LogFileLoad THEN PRINT #2, "WIDTH:" + STR$(CVI(b$))
-                    b$ = SPACE$(2): GET #1, , b$
-                    NewHeight = CVI(b$)
-                    IF LogFileLoad THEN PRINT #2, "HEIGHT:" + STR$(CVI(b$))
-                    b$ = SPACE$(2): GET #1, , b$
-                    NewLeft = CVI(b$)
-                    IF LogFileLoad THEN PRINT #2, "LEFT:" + STR$(CVI(b$))
-                    b$ = SPACE$(2): GET #1, , b$
-                    NewTop = CVI(b$)
-                    IF LogFileLoad THEN PRINT #2, "TOP:" + STR$(CVI(b$))
-                    b$ = SPACE$(2): GET #1, , b$
-                    NewParentID = SPACE$(CVI(b$)): GET #1, , NewParentID
-                    IF LogFileLoad THEN PRINT #2, "PARENT:" + NewParentID
-
-                    IF NewType = __UI_Type_Form THEN
-                        DIM OldScreen&
-                        OldScreen& = _DEST
-                        SCREEN _NEWIMAGE(NewWidth, NewHeight, 32)
-                        _FREEIMAGE OldScreen&
-                    END IF
-
-                    Dummy = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
-
-                    DO 'read properties
-                        b$ = SPACE$(2): GET #1, , b$
-                        IF LogFileLoad THEN PRINT #2, "PROPERTY:" + STR$(CVI(b$)) + " :";
-                        SELECT CASE CVI(b$)
-                            CASE -2 'Caption
-                                b$ = SPACE$(4): GET #1, , b$
-                                b$ = SPACE$(CVL(b$))
-                                GET #1, , b$
-                                Caption(Dummy) = b$
-                                IF LogFileLoad THEN PRINT #2, "CAPTION:" + Caption(Dummy)
-                            CASE -3 'Text
-                                b$ = SPACE$(4): GET #1, , b$
-                                b$ = SPACE$(CVL(b$))
-                                GET #1, , b$
-                                Text(Dummy) = b$
-                                IF Control(Dummy).Type = __UI_Type_PictureBox OR Control(Dummy).Type = __UI_Type_Button THEN
-                                    LoadImage Control(Dummy), Text(Dummy)
-                                END IF
-                                IF LogFileLoad THEN PRINT #2, "TEXT:" + Text(Dummy)
-                            CASE -4 'Stretch
-                                Control(Dummy).Stretch = True
-                                IF LogFileLoad THEN PRINT #2, "STRETCH"
-                            CASE -5 'Font
-                                IF LogFileLoad THEN PRINT #2, "FONT:";
-                                DIM FontSetup$, FindSep AS INTEGER
-                                DIM NewFontFile AS STRING
-                                DIM NewFontSize AS INTEGER, NewFontAttributes AS STRING
-                                b$ = SPACE$(2): GET #1, , b$
-                                FontSetup$ = SPACE$(CVI(b$)): GET #1, , FontSetup$
-                                IF LogFileLoad THEN PRINT #2, FontSetup$
-
-                                FindSep = INSTR(FontSetup$, "*")
-                                NewFontFile = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
-
-                                FindSep = INSTR(FontSetup$, "*")
-                                NewFontSize = VAL(LEFT$(FontSetup$, FindSep - 1)): FontSetup$ = MID$(FontSetup$, FindSep + 1)
-
-                                NewFontAttributes = FontSetup$
-
-                                Control(Dummy).Font = SetFont(NewFontFile, NewFontSize, NewFontAttributes)
-                            CASE -6 'ForeColor
-                                b$ = SPACE$(4): GET #1, , b$
-                                Control(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
-                                IF LogFileLoad THEN PRINT #2, "FORECOLOR"
-                            CASE -7 'BackColor
-                                b$ = SPACE$(4): GET #1, , b$
-                                Control(Dummy).BackColor = _CV(_UNSIGNED LONG, b$)
-                                IF LogFileLoad THEN PRINT #2, "BACKCOLOR"
-                            CASE -8 'SelectedForeColor
-                                b$ = SPACE$(4): GET #1, , b$
-                                Control(Dummy).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                                IF LogFileLoad THEN PRINT #2, "SELECTEDFORECOLOR"
-                            CASE -9 'SelectedBackColor
-                                b$ = SPACE$(4): GET #1, , b$
-                                Control(Dummy).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                                IF LogFileLoad THEN PRINT #2, "SELECTEDBACKCOLOR"
-                            CASE -10 'BorderColor
-                                b$ = SPACE$(4): GET #1, , b$
-                                Control(Dummy).BorderColor = _CV(_UNSIGNED LONG, b$)
-                                IF LogFileLoad THEN PRINT #2, "BORDERCOLOR"
-                            CASE -11
-                                Control(Dummy).BackStyle = __UI_Transparent
-                                IF LogFileLoad THEN PRINT #2, "BACKSTYLE:TRANSPARENT"
-                            CASE -12
-                                Control(Dummy).HasBorder = True
-                                IF LogFileLoad THEN PRINT #2, "HASBORDER"
-                            CASE -13
-                                b$ = SPACE$(1): GET #1, , b$
-                                Control(Dummy).Align = _CV(_BYTE, b$)
-                                IF LogFileLoad THEN PRINT #2, "ALIGN="; Control(Dummy).Align
-                            CASE -14
-                                b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                Control(Dummy).Value = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "VALUE="; Control(Dummy).Value
-                            CASE -15
-                                b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                Control(Dummy).Min = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "MIN="; Control(Dummy).Min
-                            CASE -16
-                                b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                Control(Dummy).Max = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "MAX="; Control(Dummy).Max
-                            CASE -17
-                                b$ = SPACE$(2): GET #1, , b$
-                                Control(Dummy).HotKey = CVI(b$)
-                                IF LogFileLoad THEN PRINT #2, "HOTKEY="; Control(Dummy).HotKey; "("; CHR$(Control(Dummy).HotKey); ")"
-                            CASE -18
-                                b$ = SPACE$(2): GET #1, , b$
-                                Control(Dummy).HotKeyOffset = CVI(b$)
-                                IF LogFileLoad THEN PRINT #2, "HOTKEYOFFSET="; Control(Dummy).HotKeyOffset
-                            CASE -19
-                                Control(Dummy).ShowPercentage = True
-                                IF LogFileLoad THEN PRINT #2, "SHOWPERCENTAGE"
-                            CASE -20
-                                Control(Dummy).CanHaveFocus = True
-                                IF LogFileLoad THEN PRINT #2, "CANHAVEFOCUS"
-                            CASE -21
-                                Control(Dummy).Disabled = True
-                                IF LogFileLoad THEN PRINT #2, "DISABLED"
-                            CASE -22
-                                Control(Dummy).Hidden = True
-                                IF LogFileLoad THEN PRINT #2, "HIDDEN"
-                            CASE -23
-                                Control(Dummy).CenteredWindow = True
-                                IF LogFileLoad THEN PRINT #2, "CENTEREDWINDOW"
-                            CASE -24 'Tips
-                                b$ = SPACE$(4): GET #1, , b$
-                                b$ = SPACE$(CVL(b$))
-                                GET #1, , b$
-                                ToolTip(Dummy) = b$
-                                IF LogFileLoad THEN PRINT #2, "TIP: "; ToolTip(Dummy)
-                            CASE -25
-                                DIM ContextMenuName AS STRING
-                                b$ = SPACE$(2): GET #1, , b$
-                                ContextMenuName = SPACE$(CVI(b$)): GET #1, , ContextMenuName
-                                Control(Dummy).ContextMenuID = __UI_GetID(ContextMenuName)
-                                IF LogFileLoad THEN PRINT #2, "CONTEXTMENU:"; ContextMenuName
-                            CASE -26
-                                b$ = SPACE$(LEN(FloatValue)): GET #1, , b$
-                                Control(Dummy).Interval = _CV(_FLOAT, b$)
-                                IF LogFileLoad THEN PRINT #2, "INTERVAL="; Control(Dummy).Interval
-                            CASE -27
-                                Control(Dummy).WordWrap = True
-                                IF LogFileLoad THEN PRINT #2, "WORDWRAP"
-                            CASE -28
-                                b$ = SPACE$(4): GET #1, , b$
-                                Control(Dummy).TransparentColor = _CV(_UNSIGNED LONG, b$)
-                                IF LogFileLoad THEN PRINT #2, "TRANSPARENTCOLOR"
-                                __UI_ClearColor Control(Dummy).HelperCanvas, Control(Dummy).TransparentColor, -1
-                            CASE -29
-                                Control(Dummy).CanResize = True
-                                IF LogFileLoad THEN PRINT #2, "CANRESIZE"
-                            CASE -1 'new control
-                                IF LogFileLoad THEN PRINT #2, "READ NEW CONTROL:-1"
-                                EXIT DO
-                            CASE -1024
-                                IF LogFileLoad THEN PRINT #2, "READ END OF FILE:-1024"
-                                __UI_EOF = True
-                                EXIT DO
-                            CASE ELSE
-                                IF LogFileLoad THEN PRINT #2, "UNKNOWN DATA="; CVI(b$)
-                                EXIT DO
-                        END SELECT
-                    LOOP
-                LOOP UNTIL __UI_EOF
-                CLOSE #1
-                IF LogFileLoad THEN CLOSE #2
-                __UI_AutoRefresh = True
-                EXIT SUB
-
-                LoadError:
-                __UI_AutoRefresh = True
-                Answer = MessageBox("File form.frmbin is not valid.", "", MsgBox_OkOnly + MsgBox_Critical)
-                CLOSE #1
-            END IF
         CASE "FILEMENUNEW"
             IF Edited THEN
                 $IF WIN THEN
@@ -516,7 +291,7 @@ SUB __UI_Click (id AS LONG)
             SYSTEM
         CASE "EDITMENUZORDERING"
             'Fill the list:
-            DIM j AS LONG
+            DIM j AS LONG, i AS LONG
             STATIC Moving AS _BYTE
             REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
             ReloadZList:
@@ -784,10 +559,10 @@ SUB __UI_BeforeUpdateDisplay
         IF UndoPointer > 2 THEN Control(EditMenuUndo).Disabled = False
         IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
 
-        IF (__UI_KeyHit = -ASC("z") OR __UI_KeyHit = -ASC("Z")) AND __UI_CtrlIsDown THEN
+        IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 214
-        ELSEIF (__UI_KeyHit = -ASC("y") OR __UI_KeyHit = -ASC("Y")) AND __UI_CtrlIsDown THEN
+        ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 215
         END IF
@@ -5751,14 +5526,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
                     b$ = MKI$(-16) + _MK$(_FLOAT, PreviewControls(i).Max): PUT #BinaryFileNum, , b$
                 END IF
-                'IF PreviewControls(i).HotKey <> 0 THEN
-                '    PRINT #TextFileNum, "    Control(__UI_NewID).HotKey = " + LTRIM$(STR$(PreviewControls(i).HotKey))
-                '    b$ = MKI$(-17) + MKI$(PreviewControls(i).HotKey): PUT #BinaryFileNum, , b$
-                'END IF
-                'IF PreviewControls(i).HotKeyOffset <> 0 THEN
-                '    PRINT #TextFileNum, "    Control(__UI_NewID).HotKeyOffset = " + LTRIM$(STR$(PreviewControls(i).HotKeyOffset))
-                '    b$ = MKI$(-18) + MKI$(PreviewControls(i).HotKeyOffset): PUT #BinaryFileNum, , b$
-                'END IF
                 IF PreviewControls(i).ShowPercentage THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = True"
                     b$ = MKI$(-19): PUT #BinaryFileNum, , b$

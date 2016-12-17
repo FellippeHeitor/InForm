@@ -60,7 +60,7 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-     DIM b$
+    DIM b$
     b$ = MKI$(-1)
     SendData b$, OffsetNewDataFromPreview
 END SUB
@@ -185,6 +185,7 @@ SUB __UI_BeforeUpdateDisplay
             SELECT CASE TempValue
                 CASE __UI_Type_Button
                     TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
+                    SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton
                     TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
                     SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)

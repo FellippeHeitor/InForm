@@ -105,8 +105,6 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 IconWidth = _WIDTH(This.HelperCanvas) * (IconHeight / _HEIGHT(This.HelperCanvas))
                 _PUTIMAGE (This.Width \ 2 - ((IconWidth \ 2)), This.Height / 2 - ((This.Height - 4) / 2) + 1)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
             END IF
-        ELSE
-            IF TempCaption$ = "" THEN TempCaption$ = __UI_TrimAt0$(RTRIM$(This.Name))
         END IF
 
         'Top and bottom edges
