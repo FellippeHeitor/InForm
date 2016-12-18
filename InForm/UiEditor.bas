@@ -1106,12 +1106,12 @@ SUB __UI_OnLoad
 
     $IF WIN THEN
         IF _FILEEXISTS("UiEditorPreview.exe") = 0 THEN
-            IF _FILEEXISTS(".\InForm\source\UiEditorPreview.bas") = 0 THEN
+            IF _FILEEXISTS(".\InForm\UiEditorPreview.bas") = 0 THEN
                 GOTO UiEditorPreviewNotFound
             ELSE
                 b$ = "Compiling Preview component..."
                 GOSUB ShowMessage
-                SHELL "qb64.exe -x .\InForm\source\UiEditorPreview.bas -o .\UiEditorPreview.exe"
+                SHELL "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\UiEditorPreview.exe"
                 IF _FILEEXISTS("UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
@@ -1120,12 +1120,12 @@ SUB __UI_OnLoad
         SHELL _DONTWAIT "UiEditorPreview.exe"
     $ELSE
         IF _FILEEXISTS("UiEditorPreview") = 0 THEN
-        IF _FILEEXISTS("UiEditorPreview.bas") = 0 THEN
+        IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
         GOTO UiEditorPreviewNotFound
         ELSE
         b$ = "Compiling Preview component..."
         GOSUB ShowMessage
-        SHELL "./qb64 -x UiEditorPreview.bas"
+        SHELL "./qb64 -x ./InForm/UiEditorPreview.bas -o ./UiEditorPreview"
         IF _FILEEXISTS("UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
