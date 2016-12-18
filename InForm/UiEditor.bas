@@ -1,6 +1,6 @@
 OPTION _EXPLICIT
 
-$EXEICON:'.\..\resources\InForm.ico'
+$EXEICON:'.\resources\InForm.ico'
 
 DIM SHARED RedTrackID AS LONG, GreenTrackID AS LONG, BlueTrackID AS LONG
 DIM SHARED RedTextBoxID AS LONG, GreenTextBoxID AS LONG, BlueTextBoxID AS LONG
@@ -144,8 +144,8 @@ $ELSE
     END DECLARE
 $END IF
 
-'$include:'..\InForm.ui'
-'$include:'..\xp.uitheme'
+'$include:'InForm.ui'
+'$include:'xp.uitheme'
 '$include:'UiEditor.frm'
 
 'Event procedures: ---------------------------------------------------------------

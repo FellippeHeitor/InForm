@@ -52,8 +52,8 @@ $ELSE
     END DECLARE
 $END IF
 
-'$include:'..\InForm.ui'
-'$include:'..\xp.uitheme'
+'$include:'InForm.ui'
+'$include:'xp.uitheme'
 '$include:'UiEditorPreview.frm'
 
 'Event procedures: ---------------------------------------------------------------
