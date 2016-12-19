@@ -1,6 +1,8 @@
 # InForm
 A GUI engine and WYSIWYG interface designer for QB64
 
+Wiki: https://github.com/FellippeHeitor/InForm/wiki
+
 ## Event-driven QB64 programs
 InForm's main goal is to generate event-driven QB64 applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
 
