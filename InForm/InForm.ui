@@ -1594,7 +1594,7 @@ SUB __UI_EventDispatcher
                             __UI_SelectionLength = 0
                             IF Control(__UI_Focus).Multiline AND Control(__UI_Focus).HoveringVScrollbarButton = 0 THEN
                                 PositionCursorMultilineTB:
-                                'Multi-line textbox click
+                                'Multi-line textbox click (position cursor)
                                 'Calculate which line was clicked
                                 DIM ThisLine$, ThisLineLen AS LONG, ThisLineStart AS LONG
 
@@ -1604,6 +1604,8 @@ SUB __UI_EventDispatcher
                                 IF Control(__UI_Focus).CurrentLine = 0 THEN Control(__UI_Focus).CurrentLine = 1
                                 ThisLine$ = __UI_GetTextBoxLine(__UI_Focus, Control(__UI_Focus).CurrentLine, ThisLineStart)
                                 ThisLineLen = LEN(ThisLine$)
+
+                                'Print the text offscreen just to fill the right variables
                                 __UI_PrintString _WIDTH + 10, _HEIGHT + 10, ThisLine$
 
                                 'New cursor position:
@@ -1617,9 +1619,14 @@ SUB __UI_EventDispatcher
                                 IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = ThisLineStart + ThisLineLen - 1
                                 Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
                             ELSE
+                                'Position cursor in single-line textbox:
                                 Control(__UI_Focus).TextIsSelected = False
                                 __UI_SelectedText = ""
                                 __UI_SelectionLength = 0
+
+                                'Print the text offscreen just to fill the right variables
+                                __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+
                                 'Single-line textbox click
                                 FOR i = 1 TO __UI_LastRenderedCharCount
                                     IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
@@ -1629,7 +1636,6 @@ SUB __UI_EventDispatcher
                                 NEXT
 
                                 IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                IF __UI_MouseLeft < (Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left) THEN i = Control(__UI_Focus).Cursor = 0
                                 Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
                             END IF
                             __UI_IsSelectingText = True
@@ -1693,18 +1699,27 @@ SUB __UI_EventDispatcher
                 _FONT (Control(__UI_IsSelectingTextOnID).Font)
                 IF NOT Control(__UI_IsSelectingTextOnID).Multiline THEN
                     'Single line selection
-                    FOR i = 1 TO __UI_LastRenderedCharCount
-                        IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
-                            Control(__UI_Focus).Cursor = i - 1
-                            EXIT FOR
-                        END IF
-                    NEXT
 
-                    IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                    IF __UI_MouseLeft < Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left THEN Control(__UI_Focus).Cursor = 0
+                    'Print the text offscreen just to fill the right variables
+                    __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+
+                    IF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left AND __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
+                        FOR i = 1 TO __UI_LastRenderedCharCount
+                            IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
+                                Control(__UI_Focus).Cursor = i - 1
+                                EXIT FOR
+                            END IF
+                        NEXT
+                    ELSEIF __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left THEN
+                        Control(__UI_Focus).Cursor = 0
+                    ELSEIF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
+                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                    END IF
 
                     IF Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart THEN
                         Control(__UI_IsSelectingTextOnID).TextIsSelected = True
+                    ELSE
+                        Control(__UI_IsSelectingTextOnID).TextIsSelected = False
                     END IF
                 ELSE
                     'Multi-line textbox click
