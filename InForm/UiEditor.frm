@@ -179,7 +179,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Max = 14
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "PropertyValue", 250, 23, 200, 20, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "PropertyValue", 225, 23, 200, 20, __UI_GetID("PropertiesFrame"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 

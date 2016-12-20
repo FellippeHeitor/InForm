@@ -703,10 +703,8 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                 IF TIMER - SetCursor# > .3 THEN
                     SetCursor# = TIMER
                     cursorBlink%% = NOT cursorBlink%%
-                ELSEIF TIMER - __UI_LastInputReceived < .1 THEN
-                    SetCursor# = TIMER
-                    cursorBlink%% = True
                 END IF
+
                 IF cursorBlink%% THEN
                     IF This.Cursor > UBOUND(__UI_ThisLineChars) THEN This.Cursor = UBOUND(__UI_ThisLineChars)
                     This.VisibleCursor = CaptionIndent + __UI_ThisLineChars(This.Cursor) - This.InputViewStart
@@ -738,9 +736,6 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             IF TIMER - SetCursor# > .3 THEN
                 SetCursor# = TIMER
                 cursorBlink%% = NOT cursorBlink%%
-            ELSEIF TIMER - __UI_LastInputReceived < .1 THEN
-                SetCursor# = TIMER
-                cursorBlink%% = True
             END IF
 
             FOR ThisLine = This.FirstVisibleLine TO TotalLines

@@ -658,6 +658,8 @@ SUB __UI_BeforeUpdateDisplay
         IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
 
         IF __UI_Focus <> PropertyValueID THEN
+            Control(PropertyValueID).Width = 250
+
             SELECT CASE SelectedProperty
                 CASE 1 'Name
                     Text(PropertyValueID) = RTRIM$(PreviewControls(FirstSelected).Name)
@@ -738,6 +740,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 14 'Padding
                     IF Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = True
             END SELECT
+            Control(PropertyValueID).Width = 225
             Control(PropertyUpdateStatusID).Hidden = False
             _DEST Control(PropertyUpdateStatusID).HelperCanvas
             CLS , _RGBA32(0, 0, 0, 0)
