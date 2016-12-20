@@ -11,6 +11,7 @@ DIM SHARED BackStyleListID AS LONG, PropertyUpdateStatusID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
+DIM SHARED OpenDialogOpen AS _BYTE
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -365,13 +366,14 @@ SUB __UI_Click (id AS LONG)
 
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
             Control(OpenFrame).Left = 68: Control(OpenFrame).Top = 70
+            OpenDialogOpen = True
             __UI_Focus = FileNameTextBox
             __UI_ForceRedraw = True
         CASE "CANCELBT"
             Text(FileNameTextBox) = ""
             Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
             Control(OpenFrame).Left = -500: Control(OpenFrame).Top = -600
-
+            OpenDialogOpen = False
             'Show the preview
             SendSignal -3
 
@@ -393,7 +395,7 @@ SUB __UI_Click (id AS LONG)
 
                 Control(DialogBG).Left = -500: Control(DialogBG).Top = -600
                 Control(OpenFrame).Left = -500: Control(OpenFrame).Top = -600
-
+                OpenDialogOpen = False
                 __UI_Focus = 0
             ELSE
                 Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
@@ -1187,11 +1189,13 @@ SUB __UI_TextChanged (id AS LONG)
         CASE "PROPERTYVALUE"
             'Send the preview the new property value
             DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
-            STATIC PreviousValue$
+            STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
 
-            IF PreviousValue$ <> Text(PropertyValueID) THEN
+            TempValue = Control(__UI_GetID("PropertiesList")).Value
+            IF PreviousValue$ <> Text(PropertyValueID) OR PreviousControl <> FirstSelected OR PreviousProperty <> TempValue THEN
                 PreviousValue$ = Text(PropertyValueID)
-                TempValue = Control(__UI_GetID("PropertiesList")).Value
+                PreviousControl = FirstSelected
+                PreviousProperty = TempValue
                 SELECT CASE TempValue
                     CASE 1, 2, 3, 9 'Name, caption, text, tooltips
                         b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
@@ -5238,7 +5242,7 @@ SUB CheckPreview
     'Check if the preview window is still alive
     DIM b$, UiEditorFile AS INTEGER
 
-    IF Control(OpenFrame).Hidden = False THEN EXIT SUB
+    IF OpenDialogOpen THEN EXIT SUB
 
     UiEditorFile = FREEFILE
     OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
