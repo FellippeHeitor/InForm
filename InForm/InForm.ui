@@ -1589,9 +1589,13 @@ SUB __UI_EventDispatcher
                                 Control(__UI_Focus).TextIsSelected = True
                             END IF
                         ELSE
+                            STATIC WholeWordSelection AS _BYTE, WholeWordCursor AS LONG, WholeWordSelStart AS LONG
                             Control(__UI_Focus).TextIsSelected = False
                             __UI_SelectedText = ""
                             __UI_SelectionLength = 0
+                            WholeWordSelection = False
+                            WholeWordCursor = 0
+                            WholeWordSelStart = 0
                             IF Control(__UI_Focus).Multiline AND Control(__UI_Focus).HoveringVScrollbarButton = 0 THEN
                                 PositionCursorMultilineTB:
                                 'Multi-line textbox click (position cursor)
@@ -1620,23 +1624,75 @@ SUB __UI_EventDispatcher
                                 Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
                             ELSE
                                 'Position cursor in single-line textbox:
-                                Control(__UI_Focus).TextIsSelected = False
-                                __UI_SelectedText = ""
-                                __UI_SelectionLength = 0
+                                STATIC LastCursorReposition#, LastCursorID AS LONG, LastCursor AS LONG
+                                STATIC JustSelectedAWord#, ContinuedSelection AS _BYTE
 
-                                'Print the text offscreen just to fill the right variables
-                                __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+                                IF TIMER - LastCursorReposition# < .3 AND LastCursorID = __UI_Focus AND i <= __UI_LastRenderedCharCount AND LastCursor = Control(__UI_Focus).Cursor THEN
+                                    'Double click on this textbox, same position.
+                                    'Attempt to select this "word", with "word" being
+                                    'any block of characters separated by a space, comma, or similar.
+                                    CONST SEP$ = " ,.?!;:()=+-*/"
 
-                                'Single-line textbox click
-                                FOR i = 1 TO __UI_LastRenderedCharCount
-                                    IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
-                                        Control(__UI_Focus).Cursor = i - 1
-                                        EXIT FOR
+                                    IF INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0 THEN
+                                        RepositionCursorWholeWord:
+                                        DO
+                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                            IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
+                                        LOOP WHILE INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+
+                                        IF ContinuedSelection THEN RETURN
+
+                                        RepositionSelStartWholeWord:
+                                        DO
+                                            Control(__UI_Focus).SelectionStart = Control(__UI_Focus).SelectionStart + 1
+                                            IF Control(__UI_Focus).SelectionStart = LEN(Text(__UI_Focus)) THEN EXIT DO
+                                        LOOP WHILE INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).SelectionStart + 1, 1)) = 0
+
+                                        DO
+                                            'Select extra spaces to the right until another character is found,
+                                            'for easy "whole word" replacement/deletion
+                                            IF Control(__UI_Focus).SelectionStart = LEN(Text(__UI_Focus)) THEN EXIT DO
+                                            IF MID$(Text(__UI_Focus), Control(__UI_Focus).SelectionStart + 1, 1) = " " THEN
+                                                Control(__UI_Focus).SelectionStart = Control(__UI_Focus).SelectionStart + 1
+                                            ELSE
+                                                EXIT DO
+                                            END IF
+                                        LOOP
+
+                                        IF ContinuedSelection THEN RETURN
+
+                                        Control(__UI_Focus).TextIsSelected = True
+                                        JustSelectedAWord# = TIMER
+                                        WholeWordSelection = True
+                                        WholeWordCursor = Control(__UI_Focus).Cursor
+                                        WholeWordSelStart = Control(__UI_Focus).SelectionStart
                                     END IF
-                                NEXT
+                                ELSE
+                                    IF TIMER - JustSelectedAWord# > .3 THEN
+                                        Control(__UI_Focus).TextIsSelected = False
+                                        __UI_SelectedText = ""
+                                        __UI_SelectionLength = 0
 
-                                IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
+                                        'Print the text offscreen just to fill the right variables
+                                        __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+
+                                        'Single-line textbox click
+                                        FOR i = 1 TO __UI_LastRenderedCharCount
+                                            IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
+                                                Control(__UI_Focus).Cursor = i - 1
+                                                EXIT FOR
+                                            END IF
+                                        NEXT
+
+                                        IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                        Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
+                                    END IF
+                                END IF
+
+                                LastCursorReposition# = TIMER
+                                LastCursorID = __UI_Focus
+                                LastCursor = Control(__UI_Focus).Cursor
                             END IF
                             __UI_IsSelectingText = True
                             __UI_IsSelectingTextOnID = __UI_Focus
@@ -1698,28 +1754,52 @@ SUB __UI_EventDispatcher
             IF __UI_IsSelectingText THEN
                 _FONT (Control(__UI_IsSelectingTextOnID).Font)
                 IF NOT Control(__UI_IsSelectingTextOnID).Multiline THEN
-                    'Single line selection
-
                     'Print the text offscreen just to fill the right variables
                     __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+                    IF NOT WholeWordSelection THEN
+                        'Single line selection, char by char
 
-                    IF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left AND __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
-                        FOR i = 1 TO __UI_LastRenderedCharCount
-                            IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
-                                Control(__UI_Focus).Cursor = i - 1
-                                EXIT FOR
-                            END IF
-                        NEXT
-                    ELSEIF __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left THEN
-                        Control(__UI_Focus).Cursor = 0
-                    ELSEIF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
-                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                    END IF
+                        IF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left AND __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
+                            FOR i = 1 TO __UI_LastRenderedCharCount
+                                IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
+                                    Control(__UI_Focus).Cursor = i - 1
+                                    EXIT FOR
+                                END IF
+                            NEXT
+                        ELSEIF __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left THEN
+                            Control(__UI_Focus).Cursor = 0
+                        ELSEIF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
+                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                        END IF
 
-                    IF Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart THEN
-                        Control(__UI_IsSelectingTextOnID).TextIsSelected = True
+                        IF Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart THEN
+                            Control(__UI_IsSelectingTextOnID).TextIsSelected = True
+                        ELSE
+                            Control(__UI_IsSelectingTextOnID).TextIsSelected = False
+                        END IF
                     ELSE
-                        Control(__UI_IsSelectingTextOnID).TextIsSelected = False
+                        'Single line selection, word by word
+                        DIM TempCursor AS LONG
+
+                        IF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left AND __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
+                            FOR i = 1 TO __UI_LastRenderedCharCount
+                                IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).InputViewStart) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) + Control(__UI_Focus).InputViewStart <= __UI_ThisLineChars(i) THEN
+                                    TempCursor = i - 1
+                                    EXIT FOR
+                                END IF
+                            NEXT
+                        ELSEIF __UI_MouseLeft < Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left THEN
+                            TempCursor = 0
+                        ELSEIF __UI_MouseLeft > Control(__UI_Focus).Left + Control(Control(__UI_Focus).ParentID).Left + Control(__UI_Focus).Width THEN
+                            TempCursor = LEN(Text(__UI_Focus))
+                        END IF
+
+                        ContinuedSelection = True
+                        IF TempCursor < WholeWordCursor THEN Control(__UI_Focus).Cursor = TempCursor: GOSUB RepositionCursorWholeWord
+                        IF TempCursor > WholeWordSelStart THEN Control(__UI_Focus).SelectionStart = TempCursor: GOSUB RepositionSelStartWholeWord
+                        IF TempCursor > WholeWordCursor AND TempCursor < WholeWordSelStart THEN Control(__UI_Focus).Cursor = WholeWordCursor: Control(__UI_Focus).SelectionStart = WholeWordSelStart
+
+                        ContinuedSelection = False
                     END IF
                 ELSE
                     'Multi-line textbox click
