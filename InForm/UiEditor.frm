@@ -199,6 +199,10 @@ SUB __UI_LoadForm
     SetCaption "ShowPercentage", "Show percentage"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "PasswordMaskCB", 149, 17, 22, 115, __UI_GetID("PropertiesFrame"))
+    SetCaption "PasswordMaskCB", "Password mask"
+    Control(__UI_NewID).CanHaveFocus = True
+    
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "WordWrap", 115, 17, 182, 55, __UI_GetID("PropertiesFrame"))
     SetCaption "WordWrap", "Word wrap"
     Control(__UI_NewID).CanHaveFocus = True
@@ -209,6 +213,10 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Disabled", 105, 17, 182, 95, __UI_GetID("PropertiesFrame"))
     SetCaption "Disabled", "Disabled"
+    Control(__UI_NewID).CanHaveFocus = True
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Transparent", 105, 17, 182, 115, __UI_GetID("PropertiesFrame"))
+    SetCaption "Transparent", "Transparent"
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Hidden", 110, 17, 329, 55, __UI_GetID("PropertiesFrame"))
@@ -223,10 +231,10 @@ SUB __UI_LoadForm
     SetCaption "Resizable", "Resizable"
     Control(__UI_NewID).CanHaveFocus = True
     
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label1", 63, 20, 24, 127, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label1", 63, 20, 24, 151, __UI_GetID("PropertiesFrame"))
     SetCaption "Label1", "Text align:"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "AlignOptions", 102, 20, 102, 127, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "AlignOptions", 102, 20, 102, 151, __UI_GetID("PropertiesFrame"))
     SetCaption "AlignOptions", "Left"
     AddItem __UI_NewID, "Left"
     AddItem __UI_NewID, "Center"
@@ -236,28 +244,16 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Max = 3
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "VerticalAlignLB", 79, 20, 24, 155, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "VerticalAlignLB", 79, 20, 241, 151, __UI_GetID("PropertiesFrame"))
     SetCaption "VerticalAlignLB", "Vertical align:"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "VAlignOptions", 102, 20, 102, 155, __UI_GetID("PropertiesFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "VAlignOptions", 102, 20, 320, 151, __UI_GetID("PropertiesFrame"))
     AddItem __UI_NewID, "Top"
     AddItem __UI_NewID, "Middle"
     AddItem __UI_NewID, "Bottom"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 1
     Control(__UI_NewID).Max = 3
-    Control(__UI_NewID).CanHaveFocus = True
-    
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "Label2", 63, 20, 220, 127, __UI_GetID("PropertiesFrame"))
-    SetCaption "Label2", "Back style:"
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "BackStyleOptions", 102, 20, 285, 127, __UI_GetID("PropertiesFrame"))
-    SetCaption "BackStyleOptions", "Left"
-    AddItem __UI_NewID, "Opaque"
-    AddItem __UI_NewID, "Transparent"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 2
-    Control(__UI_NewID).Max = 2
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))

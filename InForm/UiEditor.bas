@@ -7,7 +7,7 @@ DIM SHARED RedTextBoxID AS LONG, GreenTextBoxID AS LONG, BlueTextBoxID AS LONG
 DIM SHARED ColorPropertiesListID AS LONG, PropertyValueID AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, ColorPreviewID AS LONG
-DIM SHARED BackStyleListID AS LONG, PropertyUpdateStatusID AS LONG
+DIM SHARED PropertyUpdateStatusID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
@@ -217,6 +217,9 @@ SUB __UI_Click (id AS LONG)
         CASE "HASBORDER"
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
+        CASE "TRANSPARENT"
+            b$ = MKI$(Control(__UI_GetID("TRANSPARENT")).Value)
+            SendData b$, 28
         CASE "SHOWPERCENTAGE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
@@ -238,6 +241,9 @@ SUB __UI_Click (id AS LONG)
         CASE "RESIZABLE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
+        CASE "PASSWORDMASKCB"
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 33
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
                 SHELL _DONTWAIT "UiEditorPreview.exe"
@@ -771,13 +777,10 @@ SUB __UI_BeforeUpdateDisplay
         Control(__UI_GetID("Disabled")).Value = PreviewControls(FirstSelected).Disabled
         Control(__UI_GetID("Hidden")).Value = PreviewControls(FirstSelected).Hidden
         Control(__UI_GetID("CenteredWindow")).Value = PreviewControls(FirstSelected).CenteredWindow
+        Control(__UI_GetID("PasswordMaskCB")).Value = PreviewControls(FirstSelected).PasswordField
         Control(__UI_GetID("AlignOptions")).Value = PreviewControls(FirstSelected).Align + 1
         Control(__UI_GetID("VAlignOptions")).Value = PreviewControls(FirstSelected).VAlign + 1
-        IF PreviewControls(FirstSelected).BackStyle THEN
-            Control(__UI_GetID("BackStyleOptions")).Value = 2
-        ELSE
-            Control(__UI_GetID("BackStyleOptions")).Value = 1
-        END IF
+        Control(__UI_GetID("Transparent")).Value = PreviewControls(FirstSelected).BackStyle
         Control(__UI_GetID("Resizable")).Value = PreviewControls(FirstSelected).CanResize
 
         'Disable properties that don't apply
@@ -789,9 +792,10 @@ SUB __UI_BeforeUpdateDisplay
         Control(__UI_GetID("Disabled")).Disabled = True
         Control(__UI_GetID("Hidden")).Disabled = True
         Control(__UI_GetID("CenteredWindow")).Disabled = True
+        Control(__UI_GetID("PasswordMaskCB")).Disabled = True
         Control(__UI_GetID("AlignOptions")).Disabled = True
         Control(__UI_GetID("VAlignOptions")).Disabled = True
-        Control(BackStyleListID).Disabled = True
+        Control(__UI_GetID("Transparent")).Disabled = True
         ReplaceItem __UI_GetID("PropertiesList"), 3, "Text"
         Control(__UI_GetID("Resizable")).Disabled = True
         Caption(PropertyValueID) = ""
@@ -826,7 +830,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_PictureBox
                     ReplaceItem __UI_GetID("PropertiesList"), 3, "Image file"
                     Control(__UI_GetID("Stretch")).Disabled = False
-                    Control(BackStyleListID).Disabled = False
+                    Control(__UI_GetID("Transparent")).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 3, 4, 5, 6, 7, 9
                             Control(PropertyValueID).Disabled = False
@@ -834,7 +838,7 @@ SUB __UI_BeforeUpdateDisplay
                             Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_Frame, __UI_Type_Label
-                    Control(BackStyleListID).Disabled = False
+                    Control(__UI_GetID("Transparent")).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 14
                             Control(PropertyValueID).Disabled = False
@@ -842,7 +846,8 @@ SUB __UI_BeforeUpdateDisplay
                             Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_TextBox
-                    Control(BackStyleListID).Disabled = False
+                    Control(__UI_GetID("Transparent")).Disabled = False
+                    Control(__UI_GetID("PasswordMaskCB")).Disabled = False
                 CASE __UI_Type_Button, __UI_Type_MenuItem
                     ReplaceItem __UI_GetID("PropertiesList"), 3, "Image file"
                 CASE __UI_Type_Button, __UI_Type_TextBox
@@ -853,7 +858,7 @@ SUB __UI_BeforeUpdateDisplay
                             Control(PropertyValueID).Disabled = True
                     END SELECT
                 CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                    Control(BackStyleListID).Disabled = False
+                    Control(__UI_GetID("Transparent")).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 4, 5, 6, 7, 8, 9, 10
                             Control(PropertyValueID).Disabled = False
@@ -876,7 +881,7 @@ SUB __UI_BeforeUpdateDisplay
                     END SELECT
                 CASE __UI_Type_ListBox, __UI_Type_DropdownList
                     ReplaceItem __UI_GetID("PropertiesList"), 3, "List items"
-                    Control(BackStyleListID).Disabled = False
+                    Control(__UI_GetID("Transparent")).Disabled = False
                     SELECT CASE SelectedProperty
                         CASE 1, 3, 4, 5, 6, 7, 8, 9, 10, 12
                             Control(PropertyValueID).Disabled = False
@@ -1068,7 +1073,6 @@ SUB __UI_OnLoad
     GreenTrackID = __UI_GetID("Green"): GreenTextBoxID = __UI_GetID("GreenValue")
     BlueTrackID = __UI_GetID("Blue"): BlueTextBoxID = __UI_GetID("BlueValue")
     ColorPropertiesListID = __UI_GetID("ColorPropertiesList")
-    BackStyleListID = __UI_GetID("BackStyleOptions")
     ColorPreviewID = __UI_GetID("ColorPreview")
     PropertyValueID = __UI_GetID("PropertyValue")
     PropertyUpdateStatusID = __UI_GetID("PropertyUpdateStatus")
@@ -1237,10 +1241,6 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE "VALIGNOPTIONS"
             b$ = MKI$(Control(__UI_GetID("VAlignOptions")).Value - 1)
             SendData b$, 32
-        CASE "BACKSTYLEOPTIONS"
-            b$ = MKI$(0)
-            IF Control(__UI_GetID("BACKSTYLEOPTIONS")).Value = 2 THEN b$ = MKI$(-1)
-            SendData b$, 28
         CASE "RED"
             Text(RedTextBoxID) = LTRIM$(STR$(Control(RedTrackID).Value))
         CASE "GREEN"
@@ -5175,6 +5175,8 @@ SUB LoadPreview
                     CASE -32
                         b$ = SPACE$(1): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
+                    CASE -33
+                        PreviewControls(Dummy).PasswordField = True
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -5439,7 +5441,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                             a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
                             PRINT #TextFileNum, a$
                         CASE ELSE
-                            a$ = "    Text(__UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ")) = " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
+                            a$ = "    Text(__UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ")) = " + __UI_SpecialCharsToCHR$(PreviewTexts(i))
                             PRINT #TextFileNum, a$
                     END SELECT
                     b$ = MKI$(-3) + MKL$(LEN(PreviewTexts(i))) '-3 indicates a text
@@ -5522,6 +5524,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 ELSEIF PreviewControls(i).VAlign = __UI_Bottom THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Bottom"
                     b$ = MKI$(-32) + _MK$(_BYTE, PreviewControls(i).VAlign): PUT #BinaryFileNum, , b$
+                END IF
+                IF PreviewControls(i).PasswordField = True AND PreviewControls(i).Type = __UI_Type_TextBox THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
+                    b$ = MKI$(-33): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Value <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))

@@ -695,6 +695,13 @@ SUB __UI_BeforeUpdateDisplay
                             Control(i).VAlign = CVI(b$)
                         END IF
                     NEXT
+                CASE 33 'Password field
+                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
+                            Control(i).PasswordField = CVI(b$)
+                        END IF
+                    NEXT
                 CASE 201 TO 210
                     'Alignment commands
                     __UI_DesignModeAlignCommand = TempValue
@@ -1042,6 +1049,8 @@ SUB LoadPreview
                         b$ = SPACE$(1): GET #BinaryFileNum, , b$
                         Control(TempValue).VAlign = _CV(_BYTE, b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "VALIGN="; Control(TempValue).VAlign
+                    CASE -33
+                        Control(TempValue).PasswordField = True
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
@@ -1202,6 +1211,9 @@ SUB SavePreview
                 b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign): PUT #BinFileNum, , b$
             ELSEIF Control(i).VAlign = __UI_Bottom THEN
                 b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign): PUT #BinFileNum, , b$
+            END IF
+            IF Control(i).PasswordField = True THEN
+                b$ = MKI$(-33): PUT #BinFileNum, , b$
             END IF
             IF Control(i).Value <> 0 THEN
                 b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value): PUT #BinFileNum, , b$
