@@ -3085,11 +3085,39 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE 19200 'Left arrow key
                                 __UI_CheckSelection __UI_Focus
-                                IF Control(__UI_Focus).Cursor > 0 THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                IF __UI_CtrlIsDown THEN
+                                    IF Control(__UI_Focus).Cursor > 0 THEN
+                                        'Go back until we hit a nonseparator character
+                                        DO
+                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                            IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
+                                        LOOP UNTIL INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+
+                                        'Find the beginning of a word
+                                        DO
+                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                            IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
+                                        LOOP WHILE INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+
+                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                    END IF
+                                ELSE
+                                    IF Control(__UI_Focus).Cursor > 0 THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                END IF
                                 IF MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1) = CHR$(10) THEN Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
                             CASE 19712 'Right arrow key
                                 __UI_CheckSelection __UI_Focus
-                                IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                IF __UI_CtrlIsDown THEN
+                                    IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN
+                                        DO
+                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                            IF Control(__UI_Focus).Cursor > LEN(Text(__UI_Focus)) THEN EXIT DO
+                                        LOOP WHILE INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                    END IF
+                                ELSE
+                                    IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                END IF
                                 IF MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor, 1) = CHR$(10) THEN Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine + 1
                             CASE 18432 'Up arrow key
                                 IF Control(__UI_Focus).Multiline THEN
