@@ -2840,6 +2840,7 @@ SUB __UI_EventDispatcher
                                                     '__UI_SelectedText = ""
                                                     '__UI_SelectionLength = 0
                                                 END IF
+                                                __UI_TextChanged __UI_Focus
                                             END IF
                                             IF ContextMenuPaste THEN
                                                 ContextMenuPaste = False
@@ -2871,6 +2872,7 @@ SUB __UI_EventDispatcher
                                                     __UI_SelectedText = ""
                                                     __UI_SelectionLength = 0
                                                 END IF
+                                                __UI_TextChanged __UI_Focus
                                             END IF
                                             IF ContextMenuPaste THEN
                                                 ContextMenuPaste = False
@@ -2889,6 +2891,7 @@ SUB __UI_EventDispatcher
                                         IF LEN(__UI_SelectedText) > 0 THEN
                                             _CLIPBOARD$ = __UI_SelectedText
                                             __UI_DeleteSelection
+                                            __UI_TextChanged __UI_Focus
                                         END IF
                                         __UI_KeyHit = 0
                                     END IF
