@@ -880,6 +880,7 @@ SUB LoadPreview
             END IF
 
             TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
+            IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
 
             DO 'read properties
                 b$ = SPACE$(2): GET #BinaryFileNum, , b$
