@@ -183,13 +183,13 @@ SUB __UI_BeforeUpdateDisplay
             SELECT CASE TempValue
                 CASE __UI_Type_Button
                     TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton
                     TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_TextBox
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_ListBox
                     TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
                     Control(TempValue).HasBorder = True
@@ -203,7 +203,7 @@ SUB __UI_BeforeUpdateDisplay
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
                 CASE __UI_Type_Frame
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
-                    SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_MenuBar
                     'Before adding a menu bar item, reset all other menu bar items' alignment
                     FOR i = 1 TO UBOUND(Control)
@@ -212,13 +212,13 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                     TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, 0)
-                    SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                     __UI_RefreshMenuBar
                     __UI_ActivateMenu Control(TempValue), False
                 CASE __UI_Type_MenuItem
                     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
                         TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
-                        SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                        SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         __UI_ActivateMenu Control(__UI_ParentMenu), False
                     END IF
             END SELECT
@@ -306,7 +306,7 @@ SUB __UI_BeforeUpdateDisplay
                                     DIM TotalReplacements AS LONG
                                     b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                                 END IF
-                                SetCaption RTRIM$(Control(i).Name), b$
+                                SetCaption i, b$
                                 IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                 IF Control(i).Type = __UI_Type_MenuItem THEN
                                     __UI_ActivateMenu Control(Control(i).ParentID), False
@@ -911,7 +911,7 @@ SUB LoadPreview
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         b$ = SPACE$(CVL(b$))
                         GET #BinaryFileNum, , b$
-                        SetCaption RTRIM$(Control(TempValue).Name), b$
+                        SetCaption TempValue, b$
                         IF LogFileLoad THEN PRINT #LogFileNum, "CAPTION:" + Caption(TempValue)
                     CASE -3 'Text
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$

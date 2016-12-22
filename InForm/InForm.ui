@@ -290,46 +290,46 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf",12,"")
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignLeft", "Align &Left"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignLeft"), "Align &Left"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignRight", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignRight", "Align &Right"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignRight"), "Align &Right"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignTops", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignTops", "Align T&op"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignTops"), "Align T&op"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignBottoms", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignBottoms", "Align &Bottom-"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignBottoms"), "Align &Bottom-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCentersV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignCentersV", "Align cent&ers Vertically"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignCentersV"), "Align cent&ers Vertically"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCentersH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignCentersH", "Ali&gn centers Horizontally"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignCentersH"), "Ali&gn centers Horizontally"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCenterV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignCenterV", "Center &Vertically"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignCenterH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuAlignCenterH", "Center &Horizontally-"
+    SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDistributeV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuDistributeV", "Distribute Ver&tically"
+    SetCaption __UI_GetID("__UI_PreviewMenuDistributeV"), "Distribute Ver&tically"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDistributeH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuDistributeH", "Distribute Hori&zontally-"
+    SetCaption __UI_GetID("__UI_PreviewMenuDistributeH"), "Distribute Hori&zontally-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuCopy", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuCopy", "&Copy"
+    SetCaption __UI_GetID("__UI_PreviewMenuCopy"), "&Copy"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuPaste", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuPaste", "&Paste"
+    SetCaption __UI_GetID("__UI_PreviewMenuPaste"), "&Paste"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDelete", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuDelete", "&Delete-"
+    SetCaption __UI_GetID("__UI_PreviewMenuDelete"), "&Delete-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSelect", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption "__UI_PreviewMenuSelect", "Select &All"
+    SetCaption __UI_GetID("__UI_PreviewMenuSelect"), "Select &All"
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -364,19 +364,19 @@ SUB __UI_Init
         NEXT
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuCut", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        SetCaption "__UI_TextMenuCut", "Cu&t"
+        SetCaption __UI_GetID("__UI_TextMenuCut"), "Cu&t"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuCopy", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        SetCaption "__UI_TextMenuCopy", "&Copy"
+        SetCaption __UI_GetID("__UI_TextMenuCopy"), "&Copy"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuPaste", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        SetCaption "__UI_TextMenuPaste", "&Paste"
+        SetCaption __UI_GetID("__UI_TextMenuPaste"), "&Paste"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuDelete", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        SetCaption "__UI_TextMenuDelete", "&Delete-"
+        SetCaption __UI_GetID("__UI_TextMenuDelete"), "&Delete-"
 
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_TextMenuSelect", 0, 0, 0, 0, __UI_GetID("__UI_TextFieldMenu"))
-        SetCaption "__UI_TextMenuSelect", "Select &all"
+        SetCaption __UI_GetID("__UI_TextMenuSelect"), "Select &all"
     END IF
 
     _DISPLAYORDER _SOFTWARE, _HARDWARE
@@ -1486,7 +1486,7 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_HoveringID).Type = __UI_Type_MenuPanel AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
                         DIM TempValue AS LONG
                         TempValue = __UI_NewControl(__UI_Type_MenuItem, "", 0, 0, 0, 0, __UI_ParentMenu)
-                        SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                        SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         __UI_ActivateMenu Control(__UI_ParentMenu), False
                         FOR i = 1 TO UBOUND(Control)
                             Control(i).ControlIsSelected = False
@@ -1497,7 +1497,7 @@ SUB __UI_EventDispatcher
                     ELSEIF Control(__UI_HoveringID).Type = __UI_Type_Form AND __UI_MouseTop <= (uspacing& + 5) THEN
                         IF __UI_HasMenuBar THEN
                             TempValue = __UI_NewControl(__UI_Type_MenuBar, "", 0, 0, 0, 0, 0)
-                            SetCaption Control(TempValue).Name, RTRIM$(Control(TempValue).Name)
+                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                             FOR i = 1 TO UBOUND(Control)
                                 Control(i).ControlIsSelected = False
                             NEXT
@@ -3803,15 +3803,15 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB SetCaption (Control$, TempCaption$)
-    DIM i AS LONG, FindSep%, ThisID AS LONG, NewCaption$, UsedList$, TempKey AS _UNSIGNED _BYTE
+SUB SetCaption (ThisID AS LONG, TempCaption$)
+    DIM i AS LONG, FindSep%, NewCaption$, UsedList$, TempKey AS _UNSIGNED _BYTE
     DIM PrevFont AS LONG, TempCanvas AS LONG, PrevDest AS LONG
 
-    ThisID = __UI_GetID(Control$)
     IF ThisID = 0 THEN EXIT SUB
 
     NewCaption$ = TempCaption$
 
+    'Parse for hotkey markers
     FindSep% = INSTR(NewCaption$, "&")
     IF FindSep% > 0 AND FindSep% < LEN(NewCaption$) THEN
         FOR i = 1 TO UBOUND(Control)
@@ -3851,6 +3851,9 @@ SUB SetCaption (Control$, TempCaption$)
     ELSE
         Control(ThisID).HotKey = 0
     END IF
+
+    'Replace \n for line breaks:
+    NewCaption$ = Replace$(NewCaption$, "\n", CHR$(10), False, 0)
 
     Caption(ThisID) = NewCaption$
 END SUB
