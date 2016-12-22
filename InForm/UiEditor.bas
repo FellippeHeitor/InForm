@@ -11,7 +11,7 @@ DIM SHARED PropertyUpdateStatusID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
-DIM SHARED OpenDialogOpen AS _BYTE
+DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -5320,13 +5320,34 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
     DIM BaseOutputFileName AS STRING, BinaryFileNum AS INTEGER
     DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
-    DIM NewFontSize AS INTEGER, Dummy AS LONG
+    DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
 
     BaseOutputFileName = RTRIM$(PreviewControls(PreviewFormID).Name)
     IF _FILEEXISTS(BaseOutputFileName + ".bas") OR _FILEEXISTS(BaseOutputFileName + ".frmbin") OR _FILEEXISTS(BaseOutputFileName + ".bas") THEN
         Answer = MessageBox("Some files will be overwritten. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN EXIT SUB
     END IF
+
+    'Backup existing files
+    FOR i = 1 TO 3
+        IF i = 1 THEN BackupFile$ = BaseOutputFileName + ".bas"
+        IF i = 2 THEN BackupFile$ = BaseOutputFileName + ".frmbin"
+        IF i = 3 THEN BackupFile$ = BaseOutputFileName + ".frm"
+
+        IF _FILEEXISTS(BackupFile$) THEN
+            TextFileNum = FREEFILE
+            OPEN BackupFile$ FOR BINARY AS #TextFileNum
+            b$ = SPACE$(LOF(TextFileNum))
+            GET #TextFileNum, 1, b$
+            CLOSE #TextFileNum
+
+            TextFileNum = FREEFILE
+            OPEN BackupFile$ + "-backup" FOR BINARY AS #TextFileNum
+            PUT #TextFileNum, 1, b$
+            CLOSE #TextFileNum
+        END IF
+    NEXT
+
     TextFileNum = FREEFILE
     OPEN BaseOutputFileName + ".frm" FOR OUTPUT AS #TextFileNum
     IF _FILEEXISTS(BaseOutputFileName + ".frmbin") THEN KILL BaseOutputFileName + ".frmbin"
