@@ -174,6 +174,7 @@ SUB __UI_Click (id AS LONG)
         CASE "OPTIONSMENUAUTONAME"
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
+            SaveSettings
         CASE "INSERTMENUMENUBAR"
             UiEditorFile = FREEFILE
             OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
@@ -191,6 +192,7 @@ SUB __UI_Click (id AS LONG)
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
+            SaveSettings
         CASE "ADDBUTTON": Dummy = __UI_Type_Button
         CASE "ADDLABEL": Dummy = __UI_Type_Label
         CASE "ADDTEXTBOX": Dummy = __UI_Type_TextBox
@@ -1009,6 +1011,24 @@ SUB __UI_BeforeUnload
             SaveForm False
         END IF
     END IF
+    SaveSettings
+END SUB
+
+SUB SaveSettings
+    DIM FreeFileNum AS INTEGER, b$
+
+    FreeFileNum = FREEFILE
+    OPEN "InForm.ini" FOR OUTPUT AS #FreeFileNum
+    PRINT #FreeFileNum, "[InForm Settings]"
+    PRINT #FreeFileNum, "'This file will be recreated everytime the editor is closed."
+
+    PRINT #FreeFileNum, "Keep preview window attached = ";
+    IF PreviewAttached THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+
+    PRINT #FreeFileNum, "Auto-name controls = ";
+    IF AutoNameControls THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+
+    CLOSE #FreeFileNum
 END SUB
 
 SUB __UI_BeforeInit
@@ -1085,10 +1105,40 @@ SUB __UI_OnLoad
     PreviewAttached = True
     AutoNameControls = True
 
+    DIM FileToOpen$, FreeFileNum AS INTEGER
+
+    IF _FILEEXISTS("InForm.ini") THEN
+        'Load settings
+        FreeFileNum = FREEFILE
+        OPEN "InForm.ini" FOR BINARY AS #FreeFileNum
+        LINE INPUT #FreeFileNum, b$
+        IF b$ = "[InForm Settings]" THEN
+            DIM EqualSign AS INTEGER, IniProperty$, IniValue$
+            DO
+                IF EOF(FreeFileNum) THEN EXIT DO
+                LINE INPUT #FreeFileNum, b$
+                b$ = UCASE$(b$)
+                EqualSign = INSTR(b$, "=")
+                IF EqualSign > 0 AND LEFT$(LTRIM$(b$), 1) <> "'" THEN
+                    IniProperty$ = LTRIM$(RTRIM$(LEFT$(b$, EqualSign - 1)))
+                    IniValue$ = LTRIM$(RTRIM$(MID$(b$, EqualSign + 1)))
+                    SELECT CASE IniProperty$
+                        CASE "KEEP PREVIEW WINDOW ATTACHED"
+                            IF IniValue$ = "FALSE" THEN PreviewAttached = False
+                        CASE "AUTO-NAME CONTROLS"
+                            IF IniValue$ = "FALSE" THEN AutoNameControls = False
+                    END SELECT
+                END IF
+            LOOP
+        END IF
+        CLOSE #FreeFileNum
+        Control(__UI_GetID("VIEWMENUPREVIEWDETACH")).Value = PreviewAttached
+        Control(__UI_GetID("OPTIONSMENUAUTONAME")).Value = AutoNameControls
+    END IF
+
     IF _FILEEXISTS("UiEditorPreview.frmbin") THEN KILL "UiEditorPreview.frmbin"
     IF _FILEEXISTS("UiEditorUndo.dat") THEN KILL "UiEditorUndo.dat"
 
-    DIM FileToOpen$, FreeFileNum AS INTEGER
     IF _FILEEXISTS(COMMAND$) THEN
         SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
             CASE ".bas", ".frm"
