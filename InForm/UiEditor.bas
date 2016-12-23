@@ -522,6 +522,9 @@ SUB __UI_BeforeUpdateDisplay
             IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
             __UI_Focus = 0
             __UI_ForceRedraw = True
+        ELSEIF CVI(b$) = -6 THEN
+            'User attempted to load an invalid icon file
+            Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 

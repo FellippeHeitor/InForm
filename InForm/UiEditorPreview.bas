@@ -382,8 +382,15 @@ SUB __UI_BeforeUpdateDisplay
                         ELSE
                             _ICON
                             IF _FILEEXISTS(b$) THEN
-                                SendSignal -4
-                                Text(__UI_FormID) = b$
+                                IF LCASE$(RIGHT$(b$, 4)) <> ".ico" THEN
+                                    SendSignal -6
+                                    Text(__UI_FormID) = ""
+                                ELSE
+                                    SendSignal -4
+                                    Text(__UI_FormID) = b$
+                                END IF
+                            ELSE
+                                Text(__UI_FormID) = ""
                             END IF
                         END IF
                     END IF
