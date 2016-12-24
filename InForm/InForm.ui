@@ -2431,13 +2431,41 @@ SUB __UI_EventDispatcher
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ControlIsSelected THEN
                 'Right
-                IF __UI_ResizeHandleHover = 1 THEN Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
+                IF __UI_ResizeHandleHover = 1 THEN
+                    IF __UI_ShiftIsDown THEN
+                        Control(i).Width = Control(i).Width + (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
+                        IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left - (__UI_MouseLeft - __UI_DragX)
+                    ELSE
+                        Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
+                    END IF
+                END IF
                 'Bottom
-                IF __UI_ResizeHandleHover = 2 THEN Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
+                IF __UI_ResizeHandleHover = 2 THEN
+                    IF __UI_ShiftIsDown THEN
+                        Control(i).Height = Control(i).Height + (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
+                        IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top - (__UI_MouseTop - __UI_DragY)
+                    ELSE
+                        Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
+                    END IF
+                END IF
                 'Left
-                IF __UI_ResizeHandleHover = 3 THEN Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
+                IF __UI_ResizeHandleHover = 3 THEN
+                    IF __UI_ShiftIsDown THEN
+                        Control(i).Width = Control(i).Width - (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
+                        IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
+                    ELSE
+                        Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
+                    END IF
+                END IF
                 'Top
-                IF __UI_ResizeHandleHover = 4 THEN Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+                IF __UI_ResizeHandleHover = 4 THEN
+                    IF __UI_ShiftIsDown THEN
+                        Control(i).Height = Control(i).Height - (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
+                        IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+                    ELSE
+                        Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+                    END IF
+                END IF
                 'Top-right
                 IF __UI_ResizeHandleHover = 5 THEN
                     Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
