@@ -2185,11 +2185,7 @@ SUB __UI_EventDispatcher
                                         END IF
                                     NEXT
                                     SelectionHeight = BottomMost - TopMost
-                                    IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
-                                        NewTopMost = Control(__UI_FormID).Height / 2
-                                    ELSE
-                                        NewTopMost = Control(Control(__UI_FirstSelectedID).ParentID).Height / 2
-                                    END IF
+                                    NewTopMost = TopMost + SelectionHeight / 2
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
                                             __UI_Click 0 'Force the preview to inform it was edited
@@ -2212,11 +2208,7 @@ SUB __UI_EventDispatcher
                                         END IF
                                     NEXT
                                     SelectionWidth = RightMost - LeftMost
-                                    IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
-                                        NewLeftMost = Control(__UI_FormID).Width / 2
-                                    ELSE
-                                        NewLeftMost = Control(Control(__UI_FirstSelectedID).ParentID).Width / 2
-                                    END IF
+                                    NewLeftMost = LeftMost + SelectionWidth / 2
                                     FOR i = 1 TO UBOUND(Control)
                                         IF Control(i).ControlIsSelected THEN
                                             __UI_Click 0 'Force the preview to inform it was edited
