@@ -502,6 +502,13 @@ SUB __UI_BeforeUpdateDisplay
                 PUT #UiEditorFile, OffsetWindowLeft, b$
                 PUT #UiEditorFile, OffsetWindowTop, b$
             END IF
+        $ELSE
+            IF PreviewAttached = True THEN
+            PreviewAttached = False
+            SaveSettings
+            END IF
+            Control(__UI_GetID("VIEWMENUPREVIEWDETACH")).Disabled = True
+            Control(__UI_GetID("VIEWMENUPREVIEWDETACH")).Value = False
         $END IF
 
         b$ = MKI$(AutoNameControls)

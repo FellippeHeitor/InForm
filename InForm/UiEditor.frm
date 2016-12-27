@@ -10,7 +10,7 @@ SUB __UI_LoadForm
     $IF WIN THEN
         Control(__UI_NewID).Font = SetFont("segoeui.ttf", 12, "")
     $ELSE
-        Control(__UI_NewID).Font = SetFont("resources\NotoMono-Regular.ttf", 12, "")
+        Control(__UI_NewID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12, "")
     $END IF
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 44, 18, 8, 0, 0)
