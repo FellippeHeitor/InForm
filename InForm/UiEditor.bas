@@ -177,14 +177,14 @@ SUB __UI_Click (id AS LONG)
             SaveSettings
         CASE "INSERTMENUMENUBAR"
             UiEditorFile = FREEFILE
-            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuBar)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
             Edited = True
         CASE "INSERTMENUMENUITEM"
             UiEditorFile = FREEFILE
-            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuItem)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
@@ -208,7 +208,7 @@ SUB __UI_Click (id AS LONG)
         "ADDRADIOBUTTON", "ADDLISTBOX", "ADDDROPDOWNLIST", _
         "ADDTRACKBAR", "ADDPROGRESSBAR", "ADDPICTUREBOX", "ADDFRAME"
             UiEditorFile = FREEFILE
-            OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+            OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(Dummy)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
@@ -248,9 +248,9 @@ SUB __UI_Click (id AS LONG)
             SendData b$, 33
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
-                SHELL _DONTWAIT "UiEditorPreview.exe"
+                SHELL _DONTWAIT "InForm/UiEditorPreview.exe"
             $ELSE
-                SHELL _DONTWAIT "./UiEditorPreview"
+                SHELL _DONTWAIT "./InForm/UiEditorPreview"
             $END IF
         CASE "VIEWMENULOADEDFONTS"
             DIM Temp$
@@ -367,7 +367,7 @@ SUB __UI_Click (id AS LONG)
 
             'Refresh the file list control's contents
             DIM TotalFiles%
-            CurrentPath$ = _CWD$
+            IF CurrentPath$ = "" THEN CurrentPath$ = _CWD$
             Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -376,6 +376,11 @@ SUB __UI_Click (id AS LONG)
             Control(OpenFrame).Left = 68: Control(OpenFrame).Top = 70
             OpenDialogOpen = True
             __UI_Focus = FileNameTextBox
+            IF LEN(Text(FileNameTextBox)) > 0 THEN
+                Control(FileNameTextBox).SelectionStart = 0
+                Control(FileNameTextBox).Cursor = LEN(Text(FileNameTextBox))
+                Control(FileNameTextBox).TextIsSelected = True
+            END IF
             __UI_ForceRedraw = True
         CASE "CANCELBT"
             Text(FileNameTextBox) = ""
@@ -393,7 +398,7 @@ SUB __UI_Click (id AS LONG)
             FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
             IF _FILEEXISTS(FileToOpen$) THEN
                 FreeFileNum = FREEFILE
-                OPEN "UiEditor.dat" FOR BINARY AS #FreeFileNum
+                OPEN "InForm/UiEditor.dat" FOR BINARY AS #FreeFileNum
                 'Send the data first, then the signal
                 b$ = MKI$(LEN(FileToOpen$)) + FileToOpen$
                 PUT #FreeFileNum, OffsetPropertyValue, b$
@@ -481,7 +486,7 @@ SUB __UI_BeforeUpdateDisplay
     IF NOT MidRead THEN
         MidRead = True
         UiEditorFile = FREEFILE
-        OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+        OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
 
         LoadPreview
 
@@ -565,7 +570,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(EditMenuRedo).Disabled = True
         DIM BinFileNum AS INTEGER, UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
         BinFileNum = FREEFILE
-        OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+        OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
         IF LOF(BinFileNum) > 0 THEN
             b$ = SPACE$(2): GET #BinFileNum, 1, b$: UndoPointer = CVI(b$)
             b$ = SPACE$(2): GET #BinFileNum, 3, b$: TotalUndoImages = CVI(b$)
@@ -1018,7 +1023,8 @@ SUB SaveSettings
     DIM FreeFileNum AS INTEGER, b$
 
     FreeFileNum = FREEFILE
-    OPEN "InForm.ini" FOR OUTPUT AS #FreeFileNum
+    IF _DIREXISTS("InForm") = 0 THEN EXIT SUB
+    OPEN "InForm/InForm.ini" FOR OUTPUT AS #FreeFileNum
     PRINT #FreeFileNum, "[InForm Settings]"
     PRINT #FreeFileNum, "'This file will be recreated everytime the editor is closed."
 
@@ -1107,10 +1113,12 @@ SUB __UI_OnLoad
 
     DIM FileToOpen$, FreeFileNum AS INTEGER
 
-    IF _FILEEXISTS("InForm.ini") THEN
+    IF _DIREXISTS("InForm") = 0 THEN MKDIR "InForm"
+
+    IF _FILEEXISTS("InForm/InForm.ini") THEN
         'Load settings
         FreeFileNum = FREEFILE
-        OPEN "InForm.ini" FOR BINARY AS #FreeFileNum
+        OPEN "InForm/InForm.ini" FOR BINARY AS #FreeFileNum
         LINE INPUT #FreeFileNum, b$
         IF b$ = "[InForm Settings]" THEN
             DIM EqualSign AS INTEGER, IniProperty$, IniValue$
@@ -1136,8 +1144,8 @@ SUB __UI_OnLoad
         Control(__UI_GetID("OPTIONSMENUAUTONAME")).Value = AutoNameControls
     END IF
 
-    IF _FILEEXISTS("UiEditorPreview.frmbin") THEN KILL "UiEditorPreview.frmbin"
-    IF _FILEEXISTS("UiEditorUndo.dat") THEN KILL "UiEditorUndo.dat"
+    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
+    IF _FILEEXISTS("InForm/UiEditorUndo.dat") THEN KILL "InForm/UiEditorUndo.dat"
 
     IF _FILEEXISTS(COMMAND$) THEN
         SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
@@ -1158,46 +1166,46 @@ SUB __UI_OnLoad
             GET #FreeFileNum, 1, b$
             CLOSE #FreeFileNum
 
-            OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FreeFileNum
+            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FreeFileNum
             PUT #FreeFileNum, 1, b$
             CLOSE #FreeFileNum
         END IF
     END IF
 
-    IF _FILEEXISTS("UiEditor.dat") THEN KILL "UiEditor.dat"
+    IF _FILEEXISTS("InForm/UiEditor.dat") THEN KILL "InForm/UiEditor.dat"
 
     $IF WIN THEN
-        IF _FILEEXISTS("UiEditorPreview.exe") = 0 THEN
-            IF _FILEEXISTS(".\InForm\UiEditorPreview.bas") = 0 THEN
+        IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN
+            IF _FILEEXISTS("InForm/UiEditorPreview.bas") = 0 THEN
                 GOTO UiEditorPreviewNotFound
             ELSE
                 b$ = "Compiling Preview component..."
                 GOSUB ShowMessage
-                SHELL "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\UiEditorPreview.exe"
-                IF _FILEEXISTS("UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
+                SHELL "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
+                IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
         b$ = "Launching..."
         GOSUB ShowMessage
-        SHELL _DONTWAIT "UiEditorPreview.exe"
+        SHELL _DONTWAIT "InForm/UiEditorPreview.exe"
     $ELSE
-        IF _FILEEXISTS("UiEditorPreview") = 0 THEN
+        IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
         IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
         GOTO UiEditorPreviewNotFound
         ELSE
         b$ = "Compiling Preview component..."
         GOSUB ShowMessage
-        SHELL "./qb64 -x ./InForm/UiEditorPreview.bas -o ./UiEditorPreview"
-        IF _FILEEXISTS("UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
+        SHELL "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
+        IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
         b$ = "Launching..."
         GOSUB ShowMessage
-        SHELL _DONTWAIT "./UiEditorPreview"
+        SHELL _DONTWAIT "./InForm/UiEditorPreview"
     $END IF
 
     UiEditorFile = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
     b$ = MKL$(__UI_GetPID)
     PUT #UiEditorFile, OffsetEditorPID, b$
     CLOSE #UiEditorFile
@@ -1237,7 +1245,7 @@ SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
     SELECT CASE id
         CASE FileNameTextBox
-            __UI_ListBoxSearchItem Control(FileList)
+            IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
     END SELECT
 END SUB
 
@@ -5079,14 +5087,14 @@ SUB LoadPreview
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, Dummy AS LONG
     DIM BinaryFileNum AS INTEGER
 
-    IF _FILEEXISTS("UiEditorPreview.frmbin") = 0 THEN
+    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") = 0 THEN
         EXIT SUB
     ELSE
         TIMER(__UI_EventsTimer) OFF
         TIMER(__UI_RefreshTimer) OFF
 
         BinaryFileNum = FREEFILE
-        OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
+        OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
 
         b$ = SPACE$(7): GET #BinaryFileNum, 1, b$
         IF b$ <> "InForm" + CHR$(1) THEN
@@ -5250,7 +5258,7 @@ END SUB
 SUB SendData (b$, Property AS INTEGER)
     DIM FileNum AS INTEGER
     FileNum = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #FileNum
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
     'Send the data first, then the signal
     PUT #FileNum, OffsetPropertyValue, b$
@@ -5263,7 +5271,7 @@ END SUB
 SUB SendSignal (Value AS INTEGER)
     DIM FileNum AS INTEGER, b$
     FileNum = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #FileNum
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
     b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromEditor, b$
     CLOSE #FileNum
@@ -5300,7 +5308,7 @@ SUB CheckPreview
     IF OpenDialogOpen THEN EXIT SUB
 
     UiEditorFile = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
     b$ = SPACE$(4): GET #UiEditorFile, OffsetPreviewPID, b$
     CLOSE #UiEditorFile
     UiPreviewPID = CVL(b$)
@@ -5318,15 +5326,15 @@ SUB CheckPreview
                 TIMER(__UI_EventsTimer) OFF
                 Control(__UI_GetID("ViewMenuPreview")).Disabled = False
                 __UI_WaitMessage = "Reloading preview window..."
-                OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+                OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
                 b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
                 CLOSE #UiEditorFile
                 UiPreviewPID = 0
-                SHELL _DONTWAIT "UiEditorPreview.exe"
+                SHELL _DONTWAIT "InForm/UiEditorPreview.exe"
                 __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
                 DO
                     _LIMIT 10
-                    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+                    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
                     b$ = SPACE$(4)
                     GET #UiEditorFile, OffsetPreviewPID, b$
                     CLOSE #UiEditorFile
@@ -5344,15 +5352,15 @@ SUB CheckPreview
         TIMER(__UI_EventsTimer) OFF
         Control(__UI_GetID("ViewMenuPreview")).Disabled = False
         __UI_WaitMessage = "Reloading preview window..."
-        OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+        OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
         b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
         CLOSE #UiEditorFile
         UiPreviewPID = 0
-        SHELL _DONTWAIT "./UiEditorPreview"
+        SHELL _DONTWAIT "./InForm/UiEditorPreview"
         __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
         DO
         _LIMIT 10
-        OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+        OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
         b$ = SPACE$(4)
         GET #UiEditorFile, OffsetPreviewPID, b$
         CLOSE #UiEditorFile
