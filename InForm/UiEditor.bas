@@ -248,7 +248,7 @@ SUB __UI_Click (id AS LONG)
             SendData b$, 33
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
-                SHELL _DONTWAIT "InForm/UiEditorPreview.exe"
+                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
             $ELSE
                 SHELL _DONTWAIT "./InForm/UiEditorPreview"
             $END IF
@@ -1194,7 +1194,7 @@ SUB __UI_OnLoad
         END IF
         b$ = "Launching..."
         GOSUB ShowMessage
-        SHELL _DONTWAIT "InForm/UiEditorPreview.exe"
+        SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
     $ELSE
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
         IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
@@ -5337,7 +5337,7 @@ SUB CheckPreview
                 b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
                 CLOSE #UiEditorFile
                 UiPreviewPID = 0
-                SHELL _DONTWAIT "InForm/UiEditorPreview.exe"
+                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
                 __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
                 DO
                     _LIMIT 10

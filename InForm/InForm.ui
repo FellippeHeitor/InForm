@@ -77,13 +77,6 @@ TYPE __UI_ControlTYPE
     ThumbHeight AS INTEGER
     ThumbTop AS INTEGER
     VScrollbarRatio AS SINGLE
-    'HasHScrollbar AS _BYTE
-    'HScrollbarButton2Left AS INTEGER
-    'LongestLine AS LONG
-    'HoveringHScrollbarButton AS _BYTE
-    'ThumbWidth AS INTEGER
-    'ThumbLeft AS INTEGER
-    'HScrollbarRatio AS SINGLE
     Cursor AS LONG
     PasswordField AS _BYTE
     PrevCursor AS LONG

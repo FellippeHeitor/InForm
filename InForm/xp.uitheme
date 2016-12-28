@@ -620,21 +620,6 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        'IF Text(This.ID) <> __UI_TempTexts(This.ID) THEN
-        '    __UI_TempTexts(This.ID) = Text(This.ID)
-        '    IF This.Multiline THEN
-        '        This.HasHScrollbar = False
-        '        DIM TempWidth AS LONG
-        '        This.LongestLine = 0
-        '        FOR i = 1 TO __UI_CountLines(This.ID)
-        '            TempWidth = __UI_PrintWidth(__UI_GetTextBoxLine$(This.ID, i, 0))
-        '            IF TempWidth > This.LongestLine THEN This.LongestLine = TempWidth
-        '            IF (This.LongestLine > This.Width AND This.HasVScrollBar = False) OR (This.LongestLine > This.Width - __UI_ScrollbarWidth AND This.HasVScrollBar = True) THEN
-        '                This.HasHScrollbar = True
-        '            END IF
-        '        NEXT
-        '    END IF
-        'END IF
         This.SelectionLength = __UI_SelectionLength
         This.PrevCursor = This.Cursor
         This.PrevVisibleCursor = This.VisibleCursor
@@ -784,10 +769,6 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             ELSE
                 This.HasVScrollbar = False
             END IF
-
-            'IF This.HasHScrollbar THEN
-            '    __UI_DrawHScrollbar This, ControlState
-            'END IF
         END IF
 
         IF This.HasBorder THEN
