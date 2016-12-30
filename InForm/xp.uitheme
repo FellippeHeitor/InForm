@@ -1408,7 +1408,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG
+    DIM PrevDest AS LONG, TheX AS INTEGER, TheY AS INTEGER
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     IF This.Stretch <> This.PreviousStretch OR This.PreviousValue <> This.HelperCanvas OR This.ControlState <> ControlState OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
@@ -1437,7 +1437,15 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF This.Stretch THEN
             _PUTIMAGE (0, 0)-(This.Width - 1, This.Height - 1), This.HelperCanvas, This.Canvas
         ELSE
-            _PUTIMAGE (0, 0), This.HelperCanvas, This.Canvas
+            TheX = 0 'Default = Left
+            IF This.Align = __UI_Center THEN TheX = This.Width / 2 - _WIDTH(This.HelperCanvas) / 2
+            IF This.Align = __UI_Right THEN TheX = This.Width - 1 - _WIDTH(This.HelperCanvas)
+
+            TheY = 0 'Default = Top
+            IF This.VAlign = __UI_Middle THEN TheY = This.Height / 2 - _HEIGHT(This.HelperCanvas) / 2
+            IF This.VAlign = __UI_Bottom THEN TheY = This.Height - 1 - _HEIGHT(This.HelperCanvas)
+
+            _PUTIMAGE (TheX, TheY), This.HelperCanvas, This.Canvas
         END IF
 
         IF This.HasBorder = True THEN
