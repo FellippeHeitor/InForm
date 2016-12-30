@@ -23,6 +23,8 @@ DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
 
+CHDIR ".."
+
 CONST EmptyForm$ = "9iVA_9GK1P<000`oo30000@00D006mVL]53;1`B000000000noO100006mVL]5cnoo00cEfI_EFMYi2MdIV:Z4S<%0`?"
 
 DIM i AS LONG
@@ -99,7 +101,7 @@ SUB __UI_BeforeUpdateDisplay
     SendData b$, OffsetMenuPanelIsON
 
     UiEditorFile = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #UiEditorFile
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
 
     IF NOT MidRead THEN
         MidRead = True
@@ -255,7 +257,7 @@ SUB __UI_BeforeUpdateDisplay
             CLOSE #FileToLoad
 
             FileToLoad = FREEFILE
-            OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
             PUT #FileToLoad, 1, a$
             CLOSE #FileToLoad
 
@@ -268,7 +270,7 @@ SUB __UI_BeforeUpdateDisplay
             a$ = Unpack$(EmptyForm$)
 
             FileToLoad = FREEFILE
-            OPEN "UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
             PUT #FileToLoad, 1, a$
             CLOSE #FileToLoad
 
@@ -841,11 +843,11 @@ SUB LoadPreview
 
     CONST LogFileLoad = False
 
-    IF _FILEEXISTS("UiEditorPreview.frmbin") = 0 THEN
+    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") = 0 THEN
         EXIT SUB
     ELSE
         BinaryFileNum = FREEFILE
-        OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
+        OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
 
         LogFileNum = FREEFILE
         IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #LogFileNum
@@ -1078,7 +1080,7 @@ SUB LoadPreview
 
         LoadError:
         CLOSE #BinaryFileNum
-        KILL "UiEditorPreview.frmbin"
+        KILL "InForm/UiEditorPreview.frmbin"
         __UI_AutoRefresh = True
         EXIT SUB
     END IF
@@ -1091,7 +1093,7 @@ SUB SavePreview
     CONST Debug = False
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
 
     IF Debug THEN
         TxtFileNum = FREEFILE
@@ -1283,7 +1285,7 @@ END SUB
 SUB SendData (b$, Offset AS LONG)
     DIM FileNum AS INTEGER
     FileNum = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #FileNum
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
     PUT #FileNum, Offset, b$
     CLOSE #FileNum
@@ -1292,7 +1294,7 @@ END SUB
 SUB SendSignal (Value AS INTEGER)
     DIM FileNum AS INTEGER, b$
     FileNum = FREEFILE
-    OPEN "UiEditor.dat" FOR BINARY AS #FileNum
+    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
     b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromPreview, b$
     CLOSE #FileNum
@@ -1524,7 +1526,7 @@ SUB SaveUndoImage
     STATIC LastForm$
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
     a$ = SPACE$(LOF(BinFileNum))
     GET #BinFileNum, 1, a$
     CLOSE #BinFileNum
@@ -1538,7 +1540,7 @@ SUB SaveUndoImage
     LastForm$ = a$
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
     b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
     b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
 
@@ -1561,7 +1563,7 @@ SUB RestoreUndoImage
     UndoPointer = UndoPointer - 1
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
     b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
     b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
 
@@ -1577,7 +1579,7 @@ SUB RestoreUndoImage
     CLOSE #BinFileNum
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
     PUT #BinFileNum, 1, a$
     CLOSE #BinFileNum
 
@@ -1592,7 +1594,7 @@ SUB RestoreRedoImage
     UndoPointer = UndoPointer + 1
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorUndo.dat" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
     b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
     b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
 
@@ -1608,7 +1610,7 @@ SUB RestoreRedoImage
     CLOSE #BinFileNum
 
     BinFileNum = FREEFILE
-    OPEN "UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
     PUT #BinFileNum, 1, a$
     CLOSE #BinFileNum
 
