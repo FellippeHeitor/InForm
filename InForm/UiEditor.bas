@@ -25,8 +25,10 @@ CONST OffsetFormID = 23
 CONST OffsetFirstSelectedID = 27
 CONST OffsetMenuPanelIsON = 31
 CONST OffsetAutoName = 33
-CONST OffsetPropertyChanged = 35
-CONST OffsetPropertyValue = 37
+CONST OffsetShowPosSize = 35
+CONST OffsetSnapLines = 37
+CONST OffsetPropertyChanged = 39
+CONST OffsetPropertyValue = 41
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -174,6 +176,10 @@ SUB __UI_Click (id AS LONG)
         CASE "OPTIONSMENUAUTONAME"
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
+            SaveSettings
+        CASE "OPTIONSMENUSNAPLINES"
+            __UI_SnapLines = NOT __UI_SnapLines
+            Control(id).Value = __UI_SnapLines
             SaveSettings
         CASE "INSERTMENUMENUBAR"
             UiEditorFile = FREEFILE
@@ -445,6 +451,16 @@ SUB __UI_Click (id AS LONG)
         CASE "EDITMENUREDO"
             b$ = MKI$(0)
             SendData b$, 215
+        CASE "EDITMENUCP437"
+            b$ = MKL$(437)
+            SendData b$, 34 'Encoding
+        CASE "EDITMENUCP1252"
+            b$ = MKL$(1252)
+            SendData b$, 34 'Encoding
+        CASE "VIEWMENUSHOWPOSITIONANDSIZE"
+            __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
+            Control(id).Value = __UI_ShowPositionAndSize
+            SaveSettings
     END SELECT
 
     LastClickedID = id
@@ -513,6 +529,12 @@ SUB __UI_BeforeUpdateDisplay
 
         b$ = MKI$(AutoNameControls)
         PUT #UiEditorFile, OffsetAutoName, b$
+
+        b$ = MKI$(__UI_ShowPositionAndSize)
+        PUT #UiEditorFile, OffsetShowPosSize, b$
+
+        b$ = MKI$(__UI_SnapLines)
+        PUT #UiEditorFile, OffsetSnapLines, b$
 
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
@@ -607,6 +629,15 @@ SUB __UI_BeforeUpdateDisplay
             END SELECT
         NEXT
 
+        Control(__UI_GetID("EDITMENUCP1252")).Value = False
+        Control(__UI_GetID("EDITMENUCP437")).Value = False
+        SELECT CASE PreviewControls(PreviewFormID).Encoding
+            CASE 0, 437
+                Control(__UI_GetID("EDITMENUCP437")).Value = True
+            CASE 1252
+                Control(__UI_GetID("EDITMENUCP1252")).Value = True
+        END SELECT
+
         IF PreviewHasMenuActive THEN
             Control(__UI_GetID("InsertMenuMenuItem")).Disabled = False
         ELSE
@@ -682,7 +713,7 @@ SUB __UI_BeforeUpdateDisplay
 
         IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
 
-        IF __UI_Focus <> PropertyValueID THEN
+        IF __UI_Focus <> PropertyValueID AND FirstSelected > 0 THEN
             Control(PropertyValueID).Width = 250
 
             SELECT CASE SelectedProperty
@@ -724,7 +755,7 @@ SUB __UI_BeforeUpdateDisplay
                     Text(PropertyValueID) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
             END SELECT
             Control(PropertyUpdateStatusID).Hidden = True
-        ELSE
+        ELSEIF FirstSelected > 0 THEN
             __UI_CursorAdjustments
             DIM PropertyAccept AS _BYTE
             SELECT CASE SelectedProperty
@@ -846,6 +877,8 @@ SUB __UI_BeforeUpdateDisplay
                     END SELECT
                 CASE __UI_Type_PictureBox
                     ReplaceItem __UI_GetID("PropertiesList"), 3, "Image file"
+                    Control(__UI_GetID("AlignOptions")).Disabled = False
+                    Control(__UI_GetID("VAlignOptions")).Disabled = False
                     Control(__UI_GetID("Stretch")).Disabled = False
                     Control(__UI_GetID("Transparent")).Disabled = False
                     SELECT CASE SelectedProperty
@@ -1041,6 +1074,12 @@ SUB SaveSettings
     PRINT #FreeFileNum, "Auto-name controls = ";
     IF AutoNameControls THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
 
+    PRINT #FreeFileNum, "Snap to edges = ";
+    IF __UI_SnapLines THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+
+    PRINT #FreeFileNum, "Show position and size = ";
+    IF __UI_ShowPositionAndSize THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+
     CLOSE #FreeFileNum
 END SUB
 
@@ -1117,6 +1156,8 @@ SUB __UI_OnLoad
 
     PreviewAttached = True
     AutoNameControls = True
+    __UI_ShowPositionAndSize = True
+    __UI_SnapLines = True
 
     DIM FileToOpen$, FreeFileNum AS INTEGER
 
@@ -1142,6 +1183,10 @@ SUB __UI_OnLoad
                             IF IniValue$ = "FALSE" THEN PreviewAttached = False
                         CASE "AUTO-NAME CONTROLS"
                             IF IniValue$ = "FALSE" THEN AutoNameControls = False
+                        CASE "SHOW POSITION AND SIZE"
+                            IF IniValue$ = "FALSE" THEN __UI_ShowPositionAndSize = False
+                        CASE "SNAP TO EDGES"
+                            IF IniValue$ = "FALSE" THEN __UI_SnapLines = False
                     END SELECT
                 END IF
             LOOP
@@ -1149,6 +1194,8 @@ SUB __UI_OnLoad
         CLOSE #FreeFileNum
         Control(__UI_GetID("VIEWMENUPREVIEWDETACH")).Value = PreviewAttached
         Control(__UI_GetID("OPTIONSMENUAUTONAME")).Value = AutoNameControls
+        Control(__UI_GetID("OPTIONSMENUSNAPLINES")).Value = __UI_SnapLines
+        Control(__UI_GetID("VIEWMENUSHOWPOSITIONANDSIZE")).Value = __UI_ShowPositionAndSize
     END IF
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
@@ -5245,6 +5292,9 @@ SUB LoadPreview
                         PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
                     CASE -33
                         PreviewControls(Dummy).PasswordField = True
+                    CASE -34
+                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                        PreviewControls(Dummy).Encoding = CVL(b$)
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -5669,6 +5719,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
                 IF PreviewControls(i).Padding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
                     b$ = MKI$(-31) + MKI$(PreviewControls(i).Padding): PUT #BinaryFileNum, , b$
+                END IF
+                IF PreviewControls(i).Encoding > 0 THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTRIM$(STR$(PreviewControls(i).Encoding))
+                    b$ = MKI$(-34) + MKL$(PreviewControls(i).Encoding): PUT #BinaryFileNum, , b$
                 END IF
                 PRINT #TextFileNum,
             END IF

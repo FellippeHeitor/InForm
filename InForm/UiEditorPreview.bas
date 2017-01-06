@@ -12,8 +12,10 @@ CONST OffsetFormID = 23
 CONST OffsetFirstSelectedID = 27
 CONST OffsetMenuPanelIsON = 31
 CONST OffsetAutoName = 33
-CONST OffsetPropertyChanged = 35
-CONST OffsetPropertyValue = 37
+CONST OffsetShowPosSize = 35
+CONST OffsetSnapLines = 37
+CONST OffsetPropertyChanged = 39
+CONST OffsetPropertyValue = 41
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
@@ -121,6 +123,12 @@ SUB __UI_BeforeUpdateDisplay
 
         GET #UiEditorFile, OffsetAutoName, b$
         AutoNameControls = CVI(b$)
+
+        GET #UiEditorFile, OffsetShowPosSize, b$
+        __UI_ShowPositionAndSize = CVI(b$)
+
+        GET #UiEditorFile, OffsetSnapLines, b$
+        __UI_SnapLines = CVI(b$)
 
         'Check if the editor is still alive
         $IF WIN THEN
@@ -711,6 +719,9 @@ SUB __UI_BeforeUpdateDisplay
                             Control(i).PasswordField = CVI(b$)
                         END IF
                     NEXT
+                CASE 34 'Encoding
+                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    Control(__UI_FormID).Encoding = CVL(b$)
                 CASE 201 TO 210
                     'Alignment commands
                     __UI_DesignModeAlignCommand = TempValue
@@ -793,6 +804,7 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
+
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
@@ -1060,6 +1072,11 @@ SUB LoadPreview
                         IF LogFileLoad THEN PRINT #LogFileNum, "VALIGN="; Control(TempValue).VAlign
                     CASE -33
                         Control(TempValue).PasswordField = True
+                        IF LogFileLoad THEN PRINT #LogFileNum, "PASSWORDFIELD"
+                    CASE -34
+                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                        Control(TempValue).Encoding = CVL(b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "ENCODING="; Control(TempValue).Encoding
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
@@ -1223,6 +1240,9 @@ SUB SavePreview
             END IF
             IF Control(i).PasswordField = True THEN
                 b$ = MKI$(-33): PUT #BinFileNum, , b$
+            END IF
+            IF Control(i).Encoding > 0 THEN
+                b$ = MKI$(-34) + MKL$(Control(i).Encoding): PUT #BinFileNum, , b$
             END IF
             IF Control(i).Value <> 0 THEN
                 b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value): PUT #BinFileNum, , b$
@@ -1399,6 +1419,8 @@ END FUNCTION
 FUNCTION AdaptName$ (tName$, TargetID AS LONG)
     DIM Name$, NewName$, i AS LONG, c$, NextIsCapital AS _BYTE, CheckID AS LONG
     Name$ = RTRIM$(tName$)
+
+    IF LEN(Name$) = 0 THEN EXIT FUNCTION
 
     DO
         IF Alpha(ASC(Name$, 1)) OR ASC(Name$, 1) = 38 THEN

@@ -65,11 +65,22 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuRedo", 56, 18, 0, 40, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "&Redo-"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCP437", 56, 18, 0, 40, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Use code page &OEM-437"
+    Control(__UI_NewID).Value = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCP1252", 56, 18, 0, 40, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Use code page &Windows-1252-"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuZOrdering", 56, 18, 0, 40, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "&Z-Ordering"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreviewDetach", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
     SetCaption __UI_NewID, "&Keep preview window attached"
+    Control(__UI_NewID).Value = -1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuShowPositionAndSize", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "&Show position and size on the preview"
     Control(__UI_NewID).Value = -1
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreview", 56, 18, 0, 40, __UI_GetID("ViewMenu"))
@@ -84,6 +95,12 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuItem", 0, 0, 0, 0, __UI_GetID("InsertMenu"))
     SetCaption __UI_NewID, "Menu &Item"
     Control(__UI_NewID).Disabled = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSnapLines", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
+    SetCaption __UI_NewID, "&Snap to edges-"
+    Control(__UI_NewID).Value = True
+    ToolTip(__UI_NewID) = "Automatically snap control's edges to other controls, for easy aligning. Can be temporarily bypassed by holding Ctrl."
+
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
     SetCaption __UI_NewID, "Align &Left"
@@ -104,10 +121,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Ali&gn centers Horizontally"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignCenterV", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
-    SetCaption __UI_NewID, "Center &Vertically"
+    SetCaption __UI_NewID, "Center &Vertically (group)"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignCenterH", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
-    SetCaption __UI_NewID, "Center &Horizontally-"
+    SetCaption __UI_NewID, "Center &Horizontally (group)-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuDistributeV", 0, 0, 0, 0, __UI_GetID("AlignMenu"))
     SetCaption __UI_NewID, "Distribute Ver&tically"
@@ -128,36 +145,47 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddButton", 22, 22, 20, 26, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New button"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddLabel", 22, 22, 20, 56, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New label"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTextBox", 22, 22, 20, 86, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New text box"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddCheckBox", 22, 22, 20, 116, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New check box"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddRadioButton", 22, 22, 20, 146, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New radio button"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddListBox", 22, 22, 20, 176, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New list box"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddDropdownList", 22, 22, 20, 206, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New drop-down list box"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTrackBar", 22, 22, 20, 236, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New track bar/slider"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddProgressBar", 22, 22, 20, 266, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New progress bar"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddPictureBox", 22, 22, 20, 296, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New picture box"
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddFrame", 22, 22, 20, 326, __UI_GetID("ToolBox"))
     Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "New frame"
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "PropertiesList", 174, 23, 20, 20, __UI_GetID("PropertiesFrame"))
     AddItem __UI_NewID, "Name"
