@@ -463,8 +463,6 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
         '------
         DIM DisplayValue AS _FLOAT
 
-        IF This.Value > This.Max THEN ERROR 101
-
         'Draw track
         'Back
         _PUTIMAGE (5, 4)-STEP(This.Width - 9, This.Height - 8), ControlImage_Track, , (5, 4)-STEP(0, 11)
@@ -560,8 +558,6 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
 
         '------
         DIM DisplayValue AS _FLOAT
-
-        IF This.Value > This.Max THEN ERROR 102
 
         'Draw track
         _PUTIMAGE (3, 10), ControlImage_Track, , (0, 0)-STEP(1, 4)
@@ -662,14 +658,14 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             ThisTempText$ = __UI_TrimAt0$(Text(This.ID))
 
             IF LEN(ThisTempText$) > 0 AND This.PasswordField = True THEN
-                IF This.Font <> 8 AND This.Font <> 16 THEN
-                    ThisTempText$ = ""
-                    FOR i = 1 TO LEN(Text(This.ID))
-                        ThisTempText$ = ThisTempText$ + CHR$(226) + CHR$(151) + CHR$(143) 'UTF-8 e2978f
-                    NEXT
-                ELSE
-                    ThisTempText$ = STRING$(LEN(ThisTempText$), 7)
-                END IF
+                ThisTempText$ = STRING$(LEN(ThisTempText$), 7)
+                'IF This.Font <> 8 AND This.Font <> 16 THEN
+                '    ThisTempText$ = ""
+                '    FOR i = 1 TO LEN(Text(This.ID))
+                '        ThisTempText$ = ThisTempText$ + CHR$(7)
+                '    NEXT
+                'ELSE
+                'END IF
             END IF
 
             IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu = This.ContextMenuID)) AND NOT This.Disabled THEN

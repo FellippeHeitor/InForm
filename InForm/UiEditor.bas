@@ -713,6 +713,8 @@ SUB __UI_BeforeUpdateDisplay
 
         IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
 
+        Control(PropertyValueID).Max = 0 '0 means the length won't be capped.
+
         IF __UI_Focus <> PropertyValueID AND FirstSelected > 0 THEN
             Control(PropertyValueID).Width = 250
 
@@ -816,6 +818,10 @@ SUB __UI_BeforeUpdateDisplay
             Control(PropertyUpdateStatusID).PreviousValue = 0 'Force update
         END IF
 
+        IF PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND SelectedProperty = 3 THEN
+            Control(PropertyValueID).Max = PreviewControls(FirstSelected).Max
+        END IF
+
         'Update checkboxes:
         Control(__UI_GetID("Stretch")).Value = PreviewControls(FirstSelected).Stretch
         Control(__UI_GetID("HasBorder")).Value = PreviewControls(FirstSelected).HasBorder
@@ -898,9 +904,15 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_TextBox
                     Control(__UI_GetID("Transparent")).Disabled = False
                     Control(__UI_GetID("PasswordMaskCB")).Disabled = False
+                    SELECT CASE SelectedProperty
+                        CASE 1, 2, 3, 4, 5, 6, 7, 8, 9, 12
+                            Control(PropertyValueID).Disabled = False
+                        CASE ELSE
+                            Control(PropertyValueID).Disabled = True
+                    END SELECT
                 CASE __UI_Type_Button, __UI_Type_MenuItem
                     ReplaceItem __UI_GetID("PropertiesList"), 3, "Image file"
-                CASE __UI_Type_Button, __UI_Type_TextBox
+                CASE __UI_Type_Button
                     SELECT CASE SelectedProperty
                         CASE 1, 2, 3, 4, 5, 6, 7, 8, 9
                             Control(PropertyValueID).Disabled = False

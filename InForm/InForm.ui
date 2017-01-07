@@ -268,23 +268,6 @@ LOOP
 
 SYSTEM
 __UI_ErrorHandler:
-DIM e&, em$
-SELECT CASE ERR
-    CASE 100
-        em$ = "Invalid operation on Listbox or DropdownList object."
-    CASE 101
-        em$ = "Invalid operation on ProgressBar object."
-    CASE 102
-        em$ = "Invalid operation on TrackBar object."
-    CASE ELSE
-        em$ = "Unexpected error."
-END SELECT
-em$ = em$ + CHR$(10) + "ERR =" + STR$(ERR) + " ERL =" + STR$(ERL) + _
-            CHR$(10) + "_ERRORLINE=" + STR$(_ERRORLINE) + _
-            CHR$(10) + "LINE" + STR$(_INCLERRORLINE) + " (" + _INCLERRORFILE$ + ")" + _
-            CHR$(10) + "Continue?"
-e& = MessageBox(em$, "", MsgBox_YesNo + MsgBox_Question)
-IF e& = MsgBox_No THEN SYSTEM
 RESUME NEXT
 
 '---------------------------------------------------------------------------------
@@ -656,28 +639,31 @@ SUB __UI_ProcessInput
             Control(__UI_FormID).Width = _RESIZEWIDTH
             Control(__UI_FormID).Height = _RESIZEHEIGHT
         END IF
-        __UI_CurrentBackColor = Control(__UI_FormID).BackColor
-        OldScreen& = _DEST
-        SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-        _FREEIMAGE OldScreen&
-        'Recreate the main form's canvas
-        IF Control(__UI_FormID).Canvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).Canvas
-        Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-        _DEST Control(__UI_FormID).Canvas
-        COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
-        CLS
-        IF __UI_HasMenuBar = True THEN
-            'Add menubar div to main form's canvas
-            _FONT Control(__UI_FormID).Font
-            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
-            __UI_RefreshMenuBar
-        END IF
-        _DEST 0
+        IF Control(__UI_FormID).Width > 0 AND Control(__UI_FormID).Height > 0 THEN
+            __UI_CurrentBackColor = Control(__UI_FormID).BackColor
+            OldScreen& = _DEST
+            SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+            _FREEIMAGE OldScreen&
+            'Recreate the main form's canvas
+            IF Control(__UI_FormID).Canvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).Canvas
+            Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+            _DEST Control(__UI_FormID).Canvas
+            COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
+            CLS
+            IF __UI_HasMenuBar = True THEN
+                'Add menubar div to main form's canvas
+                _FONT Control(__UI_FormID).Font
+                LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+                LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+                __UI_RefreshMenuBar
+            END IF
+            _DEST 0
 
-        IF LEN(__UI_CurrentTitle) THEN _TITLE __UI_CurrentTitle
-        __UI_AutoRefresh = True
-        __UI_HasInput = True
+            IF LEN(__UI_CurrentTitle) THEN _TITLE __UI_CurrentTitle
+
+            __UI_AutoRefresh = True
+            __UI_HasInput = True
+        END IF
     END IF
 
     'Update main window title if needed
@@ -809,7 +795,7 @@ SUB __UI_UpdateDisplay
             SELECT CASE Control(i).Type
                 CASE __UI_Type_Form
                     'Main window:
-                    _PUTIMAGE (0, 0), Control(i).Canvas, 0
+                    IF Control(i).Canvas < -1 THEN _PUTIMAGE (0, 0), Control(i).Canvas, 0
                 CASE __UI_Type_Button
                     'Buttons
                     __UI_DrawButton Control(i), ControlState
@@ -967,53 +953,6 @@ SUB __UI_UpdateDisplay
             LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
             LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Size and position indicator:
-            IF __UI_Snapped = False AND __UI_ShowPositionAndSize AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
-                DIM SizeAndPosition1$, SizeAndPosition2$, pw&
-                DIM InfoLeft AS INTEGER, InfoTop AS INTEGER
-                _FONT 8
-                'Calculate the info panel width
-                SizeAndPosition1$ = LTRIM$(STR$(Control(i).Left)) + "," + LTRIM$(STR$(Control(i).Top))
-                pw& = __UI_PrintWidth(SizeAndPosition1$)
-                SizeAndPosition2$ = LTRIM$(STR$(Control(i).Width)) + "x" + LTRIM$(STR$(Control(i).Height))
-                IF __UI_PrintWidth(SizeAndPosition2$) > pw& THEN pw& = __UI_PrintWidth(SizeAndPosition2$)
-
-                'Calculate the info panel position
-                InfoLeft = Control(Control(i).ParentID).Left + Control(i).Left
-                IF InfoLeft < 0 THEN InfoLeft = 0
-                IF InfoLeft + pw& + 4 > Control(__UI_FormID).Width THEN InfoLeft = Control(__UI_FormID).Width - (pw& + 4)
-
-                InfoTop = Control(Control(i).ParentID).Top + Control(i).Top + Control(i).Height + 2
-                IF InfoTop < 0 THEN InfoTop = 0
-                IF InfoTop + uspacing& * 2 + 4 > Control(__UI_FormID).Height THEN InfoTop = Control(__UI_FormID).Height - (uspacing& * 2 + 4)
-
-                'Reposition the panel if it intersects with the controls
-                IF InfoLeft < Control(Control(i).ParentID).Left + Control(i).Left + Control(i).Width AND _
-                    Control(Control(i).ParentID).Left + Control(i).Left < InfoLeft + pw& + 4 AND _
-                    InfoTop < Control(Control(i).ParentID).Top + Control(i).Top + Control(i).Height + 2 AND _
-                    Control(Control(i).ParentID).Top + Control(i).Top < InfoTop + uspacing& * 2 + 4 THEN
-                    InfoTop = Control(Control(i).ParentID).Top + Control(i).Top - (uspacing& * 2 + 4)
-                END IF
-
-                'Reposition the panel if the mouse is where it'd be drawn
-                IF __UI_MouseLeft >= InfoLeft AND __UI_MouseLeft <= InfoLeft + pw& + 4 AND _
-                    __UI_MouseTop >= InfoTop AND __UI_MouseTop <= InfoTop + uspacing& * 2 + 4 THEN
-                    InfoLeft = InfoLeft + Control(i).Width
-                END IF
-
-                'Draw the info panel
-                LINE (InfoLeft, InfoTop)-STEP(pw& + 4, uspacing& * 2 + 4), _RGBA32(255, 255, 255, 50), BF
-                LINE (InfoLeft, InfoTop)-STEP(pw& + 4, uspacing& * 2 + 4), _RGBA32(0, 0, 0, 50), B
-
-                'Print the info with a shadow, for contrast
-                COLOR _RGB32(0, 0, 0)
-                __UI_PrintString InfoLeft + 4, InfoTop + 5, SizeAndPosition1$
-                __UI_PrintString InfoLeft + 4, InfoTop + 5 + uspacing&, SizeAndPosition2$
-                COLOR _RGB32(255, 255, 255)
-                __UI_PrintString InfoLeft + 3, InfoTop + 4, SizeAndPosition1$
-                __UI_PrintString InfoLeft + 3, InfoTop + 4 + uspacing&, SizeAndPosition2$
-            END IF
-
             IF TempParentID > 0 THEN Control(i).ParentID = TempParentID
             _DEST 0
         END IF
@@ -1045,6 +984,7 @@ SUB __UI_UpdateDisplay
         END IF
     NEXT
 
+    'Selection rectangle:
     IF __UI_DesignMode AND __UI_SelectionRectangle THEN
         IF OverlayReset = False THEN
             'Reset the helper canvas of the main form
@@ -1060,8 +1000,70 @@ SUB __UI_UpdateDisplay
 
         LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGBA32(0, 177, 255, 150), BF
         LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), _RGB32(39, 188, 244), B
-        'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), Control(__UI_FormID).SelectedBackColor, B, 255
+        'LINE(__UI_SelectionRectangleLeft, __UI_SelectionRectangleTop)-(__UI_MouseLeft,__UI_MouseTop), Control(__UI_FormID).SelectedBackColor, B, 255 'Dotted line
         _DEST 0
+    END IF
+
+    'Size and position indicator:
+    IF __UI_TotalSelectedControls > 0 AND __UI_Snapped = False AND __UI_ShowPositionAndSize THEN
+        IF Control(__UI_FormID).Width > 0 AND Control(__UI_FormID).Height > 0 THEN
+            IF OverlayReset = False THEN
+                'Reset the helper canvas of the main form
+                OverlayReset = True
+                IF Control(__UI_FormID).HelperCanvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).HelperCanvas
+                Control(__UI_FormID).HelperCanvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+                _DEST Control(__UI_FormID).HelperCanvas
+                CLS , _RGBA32(0, 0, 0, 0)
+            ELSE
+                _DEST Control(__UI_FormID).HelperCanvas
+            END IF
+            OverlayisVisible = True
+
+            i = __UI_FirstSelectedID
+            IF Control(__UI_HoveringID).ControlIsSelected THEN i = __UI_HoveringID
+
+            DIM SizeAndPosition1$, SizeAndPosition2$, pw&
+            DIM InfoLeft AS INTEGER, InfoTop AS INTEGER
+            _FONT Control(__UI_FormID).Font
+            'Calculate the info panel width
+            SizeAndPosition1$ = LTRIM$(STR$(Control(i).Left)) + "," + LTRIM$(STR$(Control(i).Top))
+            pw& = __UI_PrintWidth(SizeAndPosition1$)
+            SizeAndPosition2$ = LTRIM$(STR$(Control(i).Width)) + "x" + LTRIM$(STR$(Control(i).Height))
+            IF __UI_PrintWidth(SizeAndPosition2$) > pw& THEN pw& = __UI_PrintWidth(SizeAndPosition2$)
+
+            'Calculate the info panel position
+            InfoLeft = Control(Control(i).ParentID).Left + Control(i).Left
+            IF InfoLeft < 0 THEN InfoLeft = 0
+            IF InfoLeft + pw& + 4 > Control(__UI_FormID).Width THEN InfoLeft = Control(__UI_FormID).Width - (pw& + 4)
+
+            InfoTop = Control(Control(i).ParentID).Top + Control(i).Top + Control(i).Height + 2
+            IF InfoTop < 0 THEN InfoTop = 0
+            IF InfoTop + uspacing& * 2 + 4 > Control(__UI_FormID).Height THEN InfoTop = Control(__UI_FormID).Height - (uspacing& * 2 + 4)
+
+            'Reposition the panel if it intersects with the controls
+            IF InfoLeft < Control(Control(i).ParentID).Left + Control(i).Left + Control(i).Width AND _
+                Control(Control(i).ParentID).Left + Control(i).Left < InfoLeft + pw& + 4 AND _
+                InfoTop < Control(Control(i).ParentID).Top + Control(i).Top + Control(i).Height + 2 AND _
+                Control(Control(i).ParentID).Top + Control(i).Top < InfoTop + uspacing& * 2 + 4 THEN
+                InfoTop = Control(Control(i).ParentID).Top + Control(i).Top - (uspacing& * 2 + 4)
+            END IF
+
+            'Reposition the panel if the mouse is where it'd be drawn
+            IF __UI_MouseLeft >= InfoLeft AND __UI_MouseLeft <= InfoLeft + pw& + 4 AND _
+                __UI_MouseTop >= InfoTop AND __UI_MouseTop <= InfoTop + uspacing& * 2 + 4 THEN
+                InfoLeft = InfoLeft + Control(i).Width
+            END IF
+
+            'Draw the info panel
+            __UI_ShadowBox InfoLeft, InfoTop, pw& + 4, uspacing& * 2 + 4, __UI_DefaultColor(__UI_Type_Form, 6), 40, 5
+
+            'Print the info
+            COLOR _RGB32(0, 0, 0)
+            __UI_PrintString InfoLeft + 3, InfoTop + 3, SizeAndPosition1$
+            __UI_PrintString InfoLeft + 3, InfoTop + 3 + uspacing&, SizeAndPosition2$
+
+            _DEST 0
+        END IF
     END IF
 
     IF __UI_ActiveMenu > 0 THEN
@@ -1070,7 +1072,7 @@ SUB __UI_UpdateDisplay
 
     IF OverlayisVisible THEN
         __UI_MakeHardwareImage Control(__UI_FormID).HelperCanvas
-        _PUTIMAGE , Control(__UI_FormID).HelperCanvas
+        IF Control(__UI_FormID).HelperCanvas < -1 THEN _PUTIMAGE , Control(__UI_FormID).HelperCanvas
     END IF
 
     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
@@ -3180,11 +3182,15 @@ SUB __UI_EventDispatcher
                                 IF __UI_KeyHit THEN
                                     IF NOT Control(__UI_Focus).TextIsSelected THEN
                                         IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                            Text(__UI_Focus) = Text(__UI_Focus) + CHR$(__UI_KeyHit)
-                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(CHR$(__UI_KeyHit))
+                                            IF (Control(__UI_Focus).Max > 0 AND LEN(Text(__UI_Focus)) < Control(__UI_Focus).Max) OR Control(__UI_Focus).Max = 0 THEN
+                                                Text(__UI_Focus) = Text(__UI_Focus) + CHR$(__UI_KeyHit)
+                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(CHR$(__UI_KeyHit))
+                                            END IF
                                         ELSE
-                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
-                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(CHR$(__UI_KeyHit))
+                                            IF (Control(__UI_Focus).Max > 0 AND LEN(Text(__UI_Focus)) < Control(__UI_Focus).Max) OR Control(__UI_Focus).Max = 0 THEN
+                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
+                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                            END IF
                                         END IF
                                     ELSE
                                         s1 = Control(__UI_Focus).SelectionStart
@@ -3194,7 +3200,7 @@ SUB __UI_EventDispatcher
                                         Control(__UI_Focus).TextIsSelected = False
                                         __UI_SelectedText = ""
                                         __UI_SelectionLength = 0
-                                        Control(__UI_Focus).Cursor = s1 + LEN(CHR$(__UI_KeyHit))
+                                        Control(__UI_Focus).Cursor = s1 + 1
                                     END IF
 
                                     __UI_TextChanged __UI_Focus
@@ -3930,14 +3936,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     This.Padding = 0
     This.Align = 0
     This.BorderColor = 0
-    IF This.Type = __UI_Type_Font THEN
-        IF This.Value > 0 AND This.Value <> 8 AND This.Value <> 16 THEN
-            IF _FONT = This.Value THEN _FONT 16
-            _FREEFONT This.Value: This.Value = 0
-        END IF
-    ELSE
-        This.Value = 0
-    END IF
+    This.Value = 0
     This.Type = 0
     This.PreviousValue = 0
     This.Min = 0
@@ -3975,7 +3974,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     This.PrevCurrentLine = 0
     This.VisibleCursor = 0
     This.PrevVisibleCursor = 0
-    This.ControlIsSelected = False
+    IF This.ControlIsSelected THEN This.ControlIsSelected = False: __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
     This.SelectionLength = 0
     This.SelectionStart = 0
     This.WordWrap = False
@@ -4382,7 +4381,7 @@ SUB RemoveItem (WhichListBox AS LONG, ItemToRemove AS INTEGER)
     This = Control(WhichListBox)
     IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN EXIT SUB
 
-    IF ItemToRemove > This.Max THEN ERROR 100: EXIT SUB
+    IF ItemToRemove > This.Max THEN EXIT SUB
 
     TempText$ = Text(This.ID)
     Text(This.ID) = ""
@@ -4436,7 +4435,7 @@ SUB ReplaceItem (WhichListBox AS LONG, ItemToReplace AS INTEGER, NewText$)
     This = Control(WhichListBox)
     IF This.Type <> __UI_Type_ListBox AND This.Type <> __UI_Type_DropdownList THEN EXIT SUB
 
-    IF ItemToReplace > This.Max THEN ERROR 100: EXIT SUB
+    IF ItemToReplace > This.Max THEN EXIT SUB
 
     TempText$ = Text(This.ID)
     Text(This.ID) = ""
@@ -4548,10 +4547,14 @@ END SUB
 SUB __UI_PrintString(Left AS INTEGER, Top AS INTEGER, Text$)
     DIM Utf$
 
-    IF Control(__UI_FormID).Encoding = 1252 THEN
-        Utf$ = FromCP1252$(Text$)
-    ELSE 'Default to 437
-        Utf$ = FromCP437$(Text$)
+    IF LEFT$(Text$, 1) = CHR$(7) AND (_FONT = 8 OR _FONT = 16) THEN
+        Utf$ = Text$
+    ELSE
+        IF Control(__UI_FormID).Encoding = 1252 THEN
+            Utf$ = FromCP1252$(Text$)
+        ELSE 'Default to 437
+            Utf$ = FromCP437$(Text$)
+        END IF
     END IF
 
     REDIM __UI_ThisLineChars(LEN(Utf$)) AS LONG
@@ -4963,6 +4966,7 @@ SUB __UI_RefreshMenuBar
     NEXT
 END SUB
 
+'UTF conversion functions courtesy of Luke Ceddia.
 FUNCTION FromCP437$ (source$)
     STATIC init&, table$(255)
     IF init& = 0 THEN
@@ -4970,6 +4974,7 @@ FUNCTION FromCP437$ (source$)
         FOR i& = 0 TO 127
             table$(i&) = CHR$(i&)
         NEXT i&
+        table$(7) = CHR$(226) + CHR$(151) + CHR$(143) 'UTF-8 e2978f
         table$(128) = CHR$(&HE2) + CHR$(&H82) + CHR$(&HAC)
         table$(128) = CHR$(&HC3) + CHR$(&H87)
         table$(129) = CHR$(&HC3) + CHR$(&HBC)
@@ -5111,6 +5116,7 @@ FUNCTION FromCP1252$ (source$)
         FOR i& = 0 TO 127
             table$(i&) = CHR$(i&)
         NEXT i&
+        table$(7) = CHR$(226) + CHR$(151) + CHR$(143) 'UTF-8 e2978f
         table$(128) = CHR$(&HE2) + CHR$(&H82) + CHR$(&HAC)
         table$(130) = CHR$(&HE2) + CHR$(&H80) + CHR$(&H9A)
         table$(131) = CHR$(&HC6) + CHR$(&H92)

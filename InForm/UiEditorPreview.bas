@@ -269,10 +269,10 @@ SUB __UI_BeforeUpdateDisplay
             PUT #FileToLoad, 1, a$
             CLOSE #FileToLoad
 
+            _SCREENSHOW
             LoadPreview
             UndoPointer = 0
             TotalUndoImages = 0
-            _SCREENSHOW
         ELSEIF TempValue = -5 THEN
             'Reset request (new form)
             a$ = Unpack$(EmptyForm$)
@@ -367,6 +367,9 @@ SUB __UI_BeforeUpdateDisplay
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
                                 Text(i) = b$
+                                IF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
+                                    Text(i) = LEFT$(b$, Control(i).Max)
+                                END IF
                                 IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
                                     LoadImage Control(i), b$
                                 ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
@@ -528,6 +531,9 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Max = _CV(_FLOAT, b$)
+                            IF Control(i).Type = __UI_Type_TextBox THEN
+                                Text(i) = LEFT$(Text(i), INT(Control(i).Max))
+                            END IF
                         END IF
                     NEXT
                 CASE 13 'Interval
