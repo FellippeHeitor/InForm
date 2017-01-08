@@ -4210,7 +4210,7 @@ FUNCTION __UI_SpecialCharsToCHR$ (Text$)
 
     Temp$ = CHR$(34)
     FOR i = 1 TO LEN(Text$)
-        IF ASC(Text$, i) < 32 THEN
+        IF ASC(Text$, i) < 32 OR ASC(Text$, i) = 34 THEN
             Temp$ = Temp$ + CHR$(34) + " + CHR$(" + LTRIM$(STR$(ASC(Text$, i))) + ") + " + CHR$(34)
         ELSE
             Temp$ = Temp$ + MID$(Text$, i, 1)
