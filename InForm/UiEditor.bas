@@ -1311,7 +1311,9 @@ SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
     SELECT CASE id
         CASE FileNameTextBox
-            IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
+            IF OpenDialogOpen THEN
+                IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
+            END IF
     END SELECT
 END SUB
 

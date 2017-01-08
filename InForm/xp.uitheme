@@ -1275,7 +1275,7 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
-        IF This.HotKey > 0 AND ((__UI_AltIsDown OR Control(__UI_Focus).Type = __UI_Type_MenuBar) OR __UI_DesignMode) THEN
+        IF This.HotKey > 0 AND (__UI_AltIsDown OR Control(__UI_Focus).Type = __UI_Type_MenuBar OR __UI_DesignMode) THEN
             'Has "hot-key"
             Temp& = __UI_PrintWidth(CHR$(This.HotKey))
             LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
