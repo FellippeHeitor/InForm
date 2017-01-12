@@ -126,6 +126,8 @@ REDIM SHARED Caption(1 TO 100) AS STRING
 REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
 REDIM SHARED Text(1 TO 100) AS STRING
 REDIM SHARED __UI_TempTexts(1 TO 100) AS STRING
+REDIM SHARED Mask(1 TO 100) AS STRING
+REDIM SHARED __UI_TempMask(1 TO 100) AS STRING
 REDIM SHARED ToolTip(0 TO 100) AS STRING
 REDIM SHARED __UI_TempTips(1 TO 100) AS STRING
 REDIM SHARED Control(0 TO 100) AS __UI_ControlTYPE
@@ -253,7 +255,7 @@ CONST MsgBox_Continue = 11
 CONST True = -1
 CONST False = 0
 
-ON ERROR GOTO __UI_ErrorHandler
+'ON ERROR GOTO __UI_ErrorHandler
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -693,7 +695,7 @@ SUB __UI_UpdateDisplay
         EXIT SUB
     END IF
 
-    ON ERROR GOTO __UI_ErrorHandler
+    'ON ERROR GOTO __UI_ErrorHandler
 
     'Clear frames canvases and count its children;
     FOR i = 1 TO UBOUND(Control)
@@ -3188,38 +3190,80 @@ SUB __UI_EventDispatcher
                                 END IF
 
                                 IF __UI_KeyHit THEN
-                                    IF NOT Control(__UI_Focus).TextIsSelected THEN
-                                        IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                            IF (Control(__UI_Focus).Max > 0 AND LEN(Text(__UI_Focus)) < Control(__UI_Focus).Max) OR Control(__UI_Focus).Max = 0 THEN
-                                                Text(__UI_Focus) = Text(__UI_Focus) + CHR$(__UI_KeyHit)
-                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(CHR$(__UI_KeyHit))
+                                    IF Mask(__UI_Focus) = "" OR Control(__UI_Focus).Multiline THEN
+                                        IF NOT Control(__UI_Focus).TextIsSelected THEN
+                                            IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
+                                                IF (Control(__UI_Focus).Max > 0 AND LEN(Text(__UI_Focus)) < Control(__UI_Focus).Max) OR Control(__UI_Focus).Max = 0 THEN
+                                                    Text(__UI_Focus) = Text(__UI_Focus) + CHR$(__UI_KeyHit)
+                                                    Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(CHR$(__UI_KeyHit))
+                                                END IF
+                                            ELSE
+                                                IF (Control(__UI_Focus).Max > 0 AND LEN(Text(__UI_Focus)) < Control(__UI_Focus).Max) OR Control(__UI_Focus).Max = 0 THEN
+                                                    Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
+                                                    Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                                END IF
                                             END IF
                                         ELSE
-                                            IF (Control(__UI_Focus).Max > 0 AND LEN(Text(__UI_Focus)) < Control(__UI_Focus).Max) OR Control(__UI_Focus).Max = 0 THEN
-                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
-                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
-                                            END IF
+                                            s1 = Control(__UI_Focus).SelectionStart
+                                            s2 = Control(__UI_Focus).Cursor
+                                            IF s1 > s2 THEN SWAP s1, s2
+                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), s2 + 1)
+                                            Control(__UI_Focus).TextIsSelected = False
+                                            __UI_SelectedText = ""
+                                            __UI_SelectionLength = 0
+                                            Control(__UI_Focus).Cursor = s1 + 1
                                         END IF
                                     ELSE
-                                        s1 = Control(__UI_Focus).SelectionStart
-                                        s2 = Control(__UI_Focus).Cursor
-                                        IF s1 > s2 THEN SWAP s1, s2
-                                        Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), s2 + 1)
-                                        Control(__UI_Focus).TextIsSelected = False
-                                        __UI_SelectedText = ""
-                                        __UI_SelectionLength = 0
-                                        Control(__UI_Focus).Cursor = s1 + 1
+                                        'Masked input KeyHit:
+                                        IF Control(__UI_Focus).TextIsSelected THEN
+                                            __UI_DeleteSelectionMasked
+                                        END IF
+                                        DO
+                                            SELECT CASE MID$(Mask(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)
+                                                CASE "0", "9", "#"
+                                                    IF __UI_KeyHit >= 48 AND __UI_KeyHit <= 57 THEN
+                                                        MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1) = CHR$(__UI_KeyHit)
+                                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                                        EXIT DO
+                                                    END IF
+                                                CASE ELSE
+                                                    IF Control(__UI_Focus).Cursor < LEN(Mask(__UI_Focus)) THEN
+                                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                                    ELSE
+                                                        EXIT DO
+                                                    END IF
+                                            END SELECT
+                                        LOOP
                                     END IF
 
                                     __UI_TextChanged __UI_Focus
                                 END IF
                             CASE 8 'Backspace
-                                IF LEN(Text(__UI_Focus)) > 0 THEN
+                                IF Mask(__UI_Focus) = "" OR Control(__UI_Focus).Multiline THEN
+                                    IF LEN(Text(__UI_Focus)) > 0 THEN
+                                        IF NOT Control(__UI_Focus).TextIsSelected THEN
+                                            IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
+                                                IF Control(__UI_Focus).Multiline AND RIGHT$(Text(__UI_Focus), 1) = CHR$(10) THEN
+                                                    Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
+                                                END IF
+                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
+                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                            ELSEIF Control(__UI_Focus).Cursor >= 1 THEN
+                                                IF Control(__UI_Focus).Multiline AND MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor, 1) = CHR$(10) THEN
+                                                    Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
+                                                END IF
+                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor - 1) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
+                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
+                                            END IF
+                                        ELSE
+                                            __UI_DeleteSelection
+                                        END IF
+                                        __UI_TextChanged __UI_Focus
+                                    END IF
+                                ELSE
+                                    'Masked input Backspace:
                                     IF NOT Control(__UI_Focus).TextIsSelected THEN
                                         IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                            IF Control(__UI_Focus).Multiline AND RIGHT$(Text(__UI_Focus), 1) = CHR$(10) THEN
-                                                Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
-                                            END IF
                                             Text(__UI_Focus) = LEFT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                         ELSEIF Control(__UI_Focus).Cursor >= 1 THEN
@@ -3230,50 +3274,43 @@ SUB __UI_EventDispatcher
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                         END IF
 
-                                        'IF Control(__UI_Focus).Cursor + 1 = Control(__UI_Focus).InputViewStart AND Control(__UI_Focus).InputViewStart > 1 THEN
-                                        '    Control(__UI_Focus).InputViewStart = Control(__UI_Focus).InputViewStart - Control(__UI_Focus).FieldArea / 2
-                                        'END IF
+                                        Text(__UI_Focus) = __UI_MaskToText$(__UI_Focus)
                                     ELSE
-                                        __UI_DeleteSelection
+                                        __UI_DeleteSelectionMasked
                                     END IF
                                     __UI_TextChanged __UI_Focus
                                 END IF
-                            CASE 13
-                                IF Control(__UI_Focus).Multiline THEN
-                                    IF NOT Control(__UI_Focus).TextIsSelected THEN
-                                        IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                            Text(__UI_Focus) = Text(__UI_Focus) + CHR$(10)
-                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
-                                        ELSE
-                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + CHR$(10) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
-                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
-                                        END IF
-                                        Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine + 1
-                                        __UI_TextChanged __UI_Focus
-                                    ELSE
-                                        's1 = Control(__UI_Focus).SelectionStart
-                                        's2 = Control(__UI_Focus).Cursor
-                                        'IF s1 > s2 THEN SWAP s1, s2
-                                        'Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + CHR$(__UI_KeyHit) + MID$(Text(__UI_Focus), s2 + 1)
-                                        'Control(__UI_Focus).TextIsSelected = False
-                                        '__UI_SelectedText = ""
-                                        '__UI_SelectionLength = 0
-                                        'Control(__UI_Focus).Cursor = s1 + 1
-                                    END IF
-                                END IF
                             CASE 21248 'Delete
-                                IF NOT Control(__UI_Focus).TextIsSelected THEN
-                                    IF LEN(Text(__UI_Focus)) > 0 THEN
-                                        IF Control(__UI_Focus).Cursor = 0 THEN
-                                            Text(__UI_Focus) = RIGHT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
-                                        ELSEIF Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).Cursor <= LEN(Text(__UI_Focus)) - 1 THEN
-                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 2)
+                                IF LEN(Mask(__UI_Focus)) = 0 THEN
+                                    IF NOT Control(__UI_Focus).TextIsSelected THEN
+                                        IF LEN(Text(__UI_Focus)) > 0 THEN
+                                            IF Control(__UI_Focus).Cursor = 0 THEN
+                                                Text(__UI_Focus) = RIGHT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
+                                            ELSEIF Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).Cursor <= LEN(Text(__UI_Focus)) - 1 THEN
+                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 2)
+                                            END IF
+                                            __UI_TextChanged __UI_Focus
                                         END IF
+                                    ELSE
+                                        __UI_DeleteSelection
                                         __UI_TextChanged __UI_Focus
                                     END IF
                                 ELSE
-                                    __UI_DeleteSelection
-                                    __UI_TextChanged __UI_Focus
+                                    'Masked input Delete:
+                                    IF NOT Control(__UI_Focus).TextIsSelected THEN
+                                        IF LEN(Text(__UI_Focus)) > 0 THEN
+                                            IF Control(__UI_Focus).Cursor = 0 THEN
+                                                Text(__UI_Focus) = RIGHT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
+                                            ELSEIF Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).Cursor <= LEN(Text(__UI_Focus)) - 1 THEN
+                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 2)
+                                            END IF
+                                            Text(__UI_Focus) = __UI_MaskToText$(__UI_Focus)
+                                            __UI_TextChanged __UI_Focus
+                                        END IF
+                                    ELSE
+                                        __UI_DeleteSelectionMasked
+                                        __UI_TextChanged __UI_Focus
+                                    END IF
                                 END IF
                             CASE 19200 'Left arrow key
                                 __UI_CheckSelection __UI_Focus
@@ -3613,6 +3650,47 @@ SUB __UI_EventDispatcher
 END SUB
 
 '---------------------------------------------------------------------------------
+FUNCTION __UI_MaskToText$(id AS LONG)
+    DIM i AS LONG
+    DIM Text$
+
+    Text$ = Text(id)
+    IF LEN(Text$) < LEN(Mask(id)) THEN Text$ = Text$ + SPACE$(LEN(Mask(id)) - LEN(Text$))
+
+    FOR i = 1 TO LEN(Mask(id))
+        SELECT CASE MID$(Mask(id), i, 1)
+            CASE "0", "9", "#"
+                IF MID$(Text$, i, 1) <> MID$(Mask(id), i, 1) AND ASC(Text$, i) >= 48 AND ASC(Text$, i) <= 57 THEN
+                    'Do nothing
+                ELSEIF MID$(Text$, i, 1) <> MID$(Mask(id), i, 1) THEN
+                    MID$(Text$, i, 1) = "_"
+                END IF
+            CASE ELSE
+                MID$(Text$, i, 1) = MID$(Mask(id), i, 1)
+        END SELECT
+    NEXT
+
+    __UI_MaskToText$ = Text$
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_EmptyMask$(id AS LONG)
+    DIM i AS LONG
+    DIM Text$
+
+    FOR i = 1 TO LEN(Mask(id))
+        SELECT CASE MID$(Mask(id), i, 1)
+            CASE "0", "9", "#"
+                Text$ = Text$ + "_"
+            CASE ELSE
+                Text$ = Text$ +  MID$(Mask(id), i, 1)
+        END SELECT
+    NEXT
+
+    __UI_EmptyMask$ = Text$
+END FUNCTION
+
+'---------------------------------------------------------------------------------
 FUNCTION __UI_GetID (ControlName$)
     DIM i AS LONG, ControlSearch$
 
@@ -3675,6 +3753,8 @@ FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAtt
         REDIM _PRESERVE __UI_TempCaptions(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE Text(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempTexts(1 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Mask(1 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempMask(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE ToolTip(0 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempTips(0 TO NextSlot + 99) AS STRING
     END IF
@@ -3780,6 +3860,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         REDIM _PRESERVE __UI_TempCaptions(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE Text(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempTexts(1 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Mask(1 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempMask(1 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE ToolTip(0 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempTips(0 TO NextSlot + 99) AS STRING
     END IF
@@ -4262,6 +4344,20 @@ SUB __UI_DeleteSelection
         __UI_SelectionLength = 0
         Control(__UI_Focus).Cursor = s1
     END IF
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_DeleteSelectionMasked
+    DIM s1 AS LONG, s2 AS LONG
+
+    s1 = Control(__UI_Focus).SelectionStart
+    s2 = Control(__UI_Focus).Cursor
+    IF s1 > s2 THEN SWAP s1, s2
+    MID$(Text(__UI_Focus), s1 + 1, s2 - s1) = MID$(__UI_EmptyMask$(__UI_Focus), s1 + 1, s2 - s1)
+    Control(__UI_Focus).TextIsSelected = False
+    __UI_SelectedText = ""
+    __UI_SelectionLength = 0
+    Control(__UI_Focus).Cursor = s1
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -4994,7 +5090,9 @@ SUB __UI_RefreshMenuBar
     NEXT
 END SUB
 
+'---------------------------------------------------------------------------------
 'UTF conversion functions courtesy of Luke Ceddia.
+'http://www.qb64.net/forum/index.php?topic=13981.msg121324#msg121324
 FUNCTION FromCP437$ (source$)
     STATIC init&, table$(255)
     IF init& = 0 THEN

@@ -609,11 +609,13 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.VisibleCursor <> This.PrevVisibleCursor OR _
         This.FirstVisibleLine <> This.PrevFirstVisibleLine OR _
         This.CurrentLine <> This.PrevCurrentLine OR _
+        Mask(This.ID) <> __UI_TempMask(This.ID) OR _
         __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
+        __UI_TempMask(This.ID) = Mask(This.ID)
         This.SelectionLength = __UI_SelectionLength
         This.PrevCursor = This.Cursor
         This.PrevVisibleCursor = This.VisibleCursor
@@ -684,16 +686,27 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                     cursorBlink%% = NOT cursorBlink%%
                 END IF
 
-                IF cursorBlink%% THEN
-                    IF This.Cursor > UBOUND(__UI_ThisLineChars) THEN This.Cursor = UBOUND(__UI_ThisLineChars)
-                    This.VisibleCursor = CaptionIndent + __UI_ThisLineChars(This.Cursor) - This.InputViewStart
-                    LINE (This.VisibleCursor, ((This.Height \ 2) - uspacing& \ 2))-STEP(0, uspacing&), _RGB32(0, 0, 0)
-                END IF
+                IF This.Cursor > UBOUND(__UI_ThisLineChars) THEN This.Cursor = UBOUND(__UI_ThisLineChars)
+                This.VisibleCursor = CaptionIndent + __UI_ThisLineChars(This.Cursor) - This.InputViewStart
+
+                SELECT CASE MID$(Mask(This.ID), This.Cursor + 1, 1)
+                    CASE "0", "9", "#" 'Digit placeholders
+                        LINE (This.VisibleCursor, ((This.Height \ 2) - uspacing& \ 2))-STEP(__UI_ThisLineChars(This.Cursor + 1) - __UI_ThisLineChars(This.Cursor), uspacing&), c, BF
+                    CASE ELSE
+                        IF cursorBlink%% THEN
+                            LINE (This.VisibleCursor, ((This.Height \ 2) - uspacing& \ 2))-STEP(0, uspacing&), _RGB32(0, 0, 0)
+                        END IF
+                END SELECT
+
             ELSE
                 IF LEN(Text(This.ID)) THEN
                     __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), ThisTempText$
                 ELSE
-                    __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+                    IF LEN(Mask(This.ID)) = 0 THEN
+                        __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+                    ELSE
+                        Text(This.ID) = __UI_MaskToText$(This.ID)
+                    END IF
                 END IF
             END IF
         ELSE
