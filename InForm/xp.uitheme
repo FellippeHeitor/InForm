@@ -705,7 +705,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                     IF LEN(Mask(This.ID)) = 0 THEN
                         __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
                     ELSE
-                        Text(This.ID) = __UI_MaskToText$(This.ID)
+                        Text(This.ID) = __UI_EmptyMask$(This.ID)
                     END IF
                 END IF
             END IF

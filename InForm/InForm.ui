@@ -1271,7 +1271,7 @@ SUB __UI_EventDispatcher
         STATIC LastMouseLeft AS INTEGER
         IF NOT __UI_DraggingThumb AND __UI_HoveringID = __UI_ActiveDropdownList AND Control(__UI_HoveringID).HoveringVScrollbarButton = 0 THEN
             'Dropdown list items are preselected when hovered
-            _FONT Control(__UI_HoveringID).Font
+            IF Control(__UI_HoveringID).Font > 0 THEN _FONT Control(__UI_HoveringID).Font
             ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ uspacing&) + Control(__UI_HoveringID).InputViewStart
             IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
                 Control(__UI_HoveringID).Value = ThisItem%
@@ -3299,13 +3299,10 @@ SUB __UI_EventDispatcher
                                     'Masked input Delete:
                                     IF NOT Control(__UI_Focus).TextIsSelected THEN
                                         IF LEN(Text(__UI_Focus)) > 0 THEN
-                                            IF Control(__UI_Focus).Cursor = 0 THEN
-                                                Text(__UI_Focus) = RIGHT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
-                                            ELSEIF Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).Cursor <= LEN(Text(__UI_Focus)) - 1 THEN
-                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 2)
+                                            IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN
+                                                MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1) = MID$(__UI_EmptyMask$(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)
+                                                __UI_TextChanged __UI_Focus
                                             END IF
-                                            Text(__UI_Focus) = __UI_MaskToText$(__UI_Focus)
-                                            __UI_TextChanged __UI_Focus
                                         END IF
                                     ELSE
                                         __UI_DeleteSelectionMasked
@@ -3671,6 +3668,28 @@ FUNCTION __UI_MaskToText$(id AS LONG)
     NEXT
 
     __UI_MaskToText$ = Text$
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION RawText$(id AS LONG)
+    DIM t$, c$
+
+    IF Mask(id) = "" THEN
+        RawText$ = Text(id)
+    ELSE
+        FOR i = 1 TO LEN(Mask(id))
+            c$ = MID$(Text(id), i, 1)
+            SELECT CASE MID$(Mask(id), i, 1)
+                CASE "0", "9", "#"
+                    IF c$ <> "_" THEN
+                        t$ = t$ + c$
+                    ELSE
+                        t$ = t$ + " "
+                    END IF
+            END SELECT
+        NEXT
+        RawText$ = t$
+    END IF
 END FUNCTION
 
 '---------------------------------------------------------------------------------
