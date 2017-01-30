@@ -1,6 +1,5 @@
 '---------------------------------------------------------------------------------
 '*** XP.UITHEME ***
-'Beta version 1
 'UI theme mimicking Windows XP's controls style
 'Image data embeded into SUB __UI_ImageData$
 'Uses hardware images.

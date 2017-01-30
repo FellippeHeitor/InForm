@@ -1,6 +1,9 @@
-'InForm - GUI system for QB64 - Beta version 1
+'InForm - GUI system for QB64
 'Fellippe Heitor, 2016 - fellippe@qb64.org - @fellippeheitor
 '
+
+CONST __UI_Version = "Beta version 2"
+
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
 END DECLARE
@@ -92,6 +95,8 @@ TYPE __UI_ControlTYPE
     VisibleCursor AS LONG
     PrevVisibleCursor AS LONG
     ControlIsSelected AS _BYTE
+    LeftOffsetFromFirstSelected AS INTEGER
+    TopOffsetFromFirstSelected AS INTEGER
     SelectionLength AS LONG
     SelectionStart AS LONG
     WordWrap AS _BYTE
@@ -1831,9 +1836,15 @@ SUB __UI_EventDispatcher
                         __UI_DraggingID = __UI_HoveringID
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_Frame THEN
+                                'Frames can't be dragged with other controls
                                 __UI_DraggingID = i
                                 FOR i = 1 TO UBOUND(Control)
-                                    IF i <> __UI_DraggingID THEN Control(i).ControlIsSelected = False
+                                    IF i <> __UI_DraggingID THEN
+                                        IF Control(i).ControlIsSelected THEN
+                                            Control(i).ControlIsSelected = False
+                                            __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
+                                        END IF
+                                    END IF
                                 NEXT
                                 EXIT FOR
                             END IF
@@ -1846,12 +1857,15 @@ SUB __UI_EventDispatcher
                             __UI_MouseDownOnID = 0
                             __UI_DragY = __UI_MouseTop
                             __UI_DragX = __UI_MouseLeft
-                            IF __UI_TotalSelectedControls = 1 THEN
-                                OriginalDragX = __UI_DragX - Control(__UI_DraggingID).Left - Control(Control(__UI_DraggingID).ParentID).Left
-                                OriginalDragY = __UI_DragY - Control(__UI_DraggingID).Top - Control(Control(__UI_DraggingID).ParentID).Top
-                            ELSE
-                                OriginalDragX = -1
-                                OriginalDragY = -1
+                            OriginalDragX = __UI_DragX - Control(__UI_DraggingID).Left - Control(Control(__UI_DraggingID).ParentID).Left
+                            OriginalDragY = __UI_DragY - Control(__UI_DraggingID).Top - Control(Control(__UI_DraggingID).ParentID).Top
+                            IF __UI_TotalSelectedControls > 1 THEN
+                                FOR i = 1 TO UBOUND(Control)
+                                    IF i <> __UI_DraggingID THEN
+                                        Control(i).LeftOffsetFromFirstSelected = Control(__UI_DraggingID).Left - Control(i).Left
+                                        Control(i).TopOffsetFromFirstSelected = Control(__UI_DraggingID).Top - Control(i).Top
+                                    END IF
+                                NEXT
                             END IF
                         END IF
                     END IF
@@ -2474,44 +2488,44 @@ SUB __UI_EventDispatcher
     DIM SetNewParent AS _BYTE, LeftOffset AS INTEGER, TopOffset AS INTEGER
     IF __UI_IsDragging AND __UI_DraggingID > 0 THEN
         __UI_Click 0 'Force the preview to inform it was edited
-        IF __UI_TotalSelectedControls > 1 THEN
-            IF Control(__UI_DraggingID).Type <> __UI_Type_Frame THEN
-                IF Control(__UI_BelowHoveringID).Type = __UI_Type_Frame OR Control(__UI_HoveringID).Type = __UI_Type_Frame THEN
-                    IF Control(__UI_HoveringID).Type = __UI_Type_Frame THEN __UI_BelowHoveringID = __UI_HoveringID
-                    IF Control(__UI_FirstSelectedID).ParentID <> __UI_BelowHoveringID THEN
-                        SetNewParent = True
-                        LeftOffset = Control(__UI_BelowHoveringID).Left
-                        TopOffset = Control(__UI_BelowHoveringID).Top
-                    END IF
-                ELSEIF Control(__UI_BelowHoveringID).Type = __UI_Type_Form OR __UI_BelowHoveringID = 0 THEN
-                    IF Control(__UI_FirstSelectedID).ParentID > 0 THEN
-                        LeftOffset = Control(Control(__UI_FirstSelectedID).ParentID).Left
-                        TopOffset = Control(Control(__UI_FirstSelectedID).ParentID).Top
-                        __UI_BelowHoveringID = 0
-                        SetNewParent = True
+        IF Control(__UI_DraggingID).Type <> __UI_Type_Frame THEN
+            IF Control(__UI_BelowHoveringID).Type = __UI_Type_Frame OR Control(__UI_HoveringID).Type = __UI_Type_Frame THEN
+                IF Control(__UI_HoveringID).Type = __UI_Type_Frame THEN __UI_BelowHoveringID = __UI_HoveringID
+                IF Control(__UI_FirstSelectedID).ParentID <> __UI_BelowHoveringID THEN
+                    SetNewParent = True
+                    LeftOffset = Control(__UI_BelowHoveringID).Left
+                    TopOffset = Control(__UI_BelowHoveringID).Top
+                END IF
+            ELSEIF Control(__UI_BelowHoveringID).Type = __UI_Type_Form OR __UI_BelowHoveringID = 0 THEN
+                IF Control(__UI_FirstSelectedID).ParentID > 0 THEN
+                    LeftOffset = Control(Control(__UI_FirstSelectedID).ParentID).Left
+                    TopOffset = Control(Control(__UI_FirstSelectedID).ParentID).Top
+                    __UI_BelowHoveringID = 0
+                    SetNewParent = True
+                END IF
+            END IF
+        END IF
+
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ControlIsSelected THEN
+                Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+                Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
+
+                IF SetNewParent THEN
+                    Control(i).ParentID = __UI_BelowHoveringID
+                    Control(i).ParentName = Control(__UI_BelowHoveringID).Name
+                    IF __UI_BelowHoveringID = 0 THEN
+                        Control(i).Top = Control(i).Top + TopOffset
+                        Control(i).Left = Control(i).Left + LeftOffset
+                    ELSE
+                        Control(i).Top = Control(i).Top - TopOffset
+                        Control(i).Left = Control(i).Left - LeftOffset
                     END IF
                 END IF
             END IF
+        NEXT
 
-            FOR i = 1 TO UBOUND(Control)
-                IF Control(i).ControlIsSelected THEN
-                    Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
-                    Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
-
-                    IF SetNewParent THEN
-                        Control(i).ParentID = __UI_BelowHoveringID
-                        Control(i).ParentName = Control(__UI_BelowHoveringID).Name
-                        IF __UI_BelowHoveringID = 0 THEN
-                            Control(i).Top = Control(i).Top + TopOffset
-                            Control(i).Left = Control(i).Left + LeftOffset
-                        ELSE
-                            Control(i).Top = Control(i).Top - TopOffset
-                            Control(i).Left = Control(i).Left - LeftOffset
-                        END IF
-                    END IF
-                END IF
-            NEXT
-        ELSEIF __UI_TotalSelectedControls = 1 AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+        IF (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
             'How far the mouse is from the currently being dragged control:
             DIM MouseXOffset AS INTEGER, MouseYOffset AS INTEGER
             'How distant from the neighboring snapped control's edge we are:
@@ -2532,15 +2546,16 @@ SUB __UI_EventDispatcher
             MouseXOffset = ABS(__UI_MouseLeft - (Control(__UI_DraggingID).Left + Control(Control(__UI_DraggingID).ParentID).Left + OriginalDragX))
             FOR i = 1 TO UBOUND(Control)
                 IF Control(i).ParentID = Control(__UI_DraggingID).ParentID AND Control(i).Type > 0 AND _
-                    i <> __UI_DraggingID AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuPanel THEN
+                    i <> __UI_DraggingID AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuPanel AND _
+                    Control(i).ControlIsSelected = False THEN
 
                     'Tops:
                     YSnapOffset = ABS((Control(i).Top + Control(Control(i).ParentID).Top) - (Control(__UI_DraggingID).Top + Control(Control(__UI_DraggingID).ParentID).Top))
                     IF YSnapOffset < 5 AND YSnapOffset < PrevYSnapOffset AND MouseYOffset < 10 THEN
                         PrevYSnapOffset = YSnapOffset
-                        Control(__UI_DraggingID).Top = Control(i).Top
+                        Control(__UI_DraggingID).Top = Control(i).Top + Control(Control(i).ParentID).Top
                         __UI_Snapped = True
-                        __UI_SnappedY = Control(i).Top
+                        __UI_SnappedY = Control(i).Top + Control(Control(i).ParentID).Top
                         __UI_SnappedYID = i
                     END IF
 
@@ -2548,9 +2563,9 @@ SUB __UI_EventDispatcher
                     YSnapOffset = ABS((Control(i).Top + Control(i).Height / 2 + Control(Control(i).ParentID).Top) - (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2 + Control(Control(__UI_DraggingID).ParentID).Top))
                     IF YSnapOffset < 5 AND YSnapOffset < PrevYSnapOffset AND MouseYOffset < 10 THEN
                         PrevYSnapOffset = YSnapOffset
-                        Control(__UI_DraggingID).Top = Control(i).Top + Control(i).Height / 2 - Control(__UI_DraggingID).Height / 2
+                        Control(__UI_DraggingID).Top = Control(i).Top + Control(i).Height / 2 - Control(__UI_DraggingID).Height / 2 + Control(Control(i).ParentID).Top
                         __UI_Snapped = True
-                        __UI_SnappedY = Control(i).Top + Control(i).Height / 2
+                        __UI_SnappedY = Control(i).Top + Control(i).Height / 2 + Control(Control(i).ParentID).Top
                         __UI_SnappedYID = i
                     END IF
 
@@ -2558,9 +2573,9 @@ SUB __UI_EventDispatcher
                     YSnapOffset = ABS((Control(i).Top + Control(i).Height + Control(Control(i).ParentID).Top) - (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height + Control(Control(__UI_DraggingID).ParentID).Top))
                     IF YSnapOffset < 5 AND YSnapOffset < PrevYSnapOffset AND MouseYOffset < 10 THEN
                         PrevYSnapOffset = YSnapOffset
-                        Control(__UI_DraggingID).Top = Control(i).Top + Control(i).Height - Control(__UI_DraggingID).Height
+                        Control(__UI_DraggingID).Top = Control(i).Top + Control(i).Height - Control(__UI_DraggingID).Height + Control(Control(i).ParentID).Top
                         __UI_Snapped = True
-                        __UI_SnappedY = Control(i).Top + Control(i).Height
+                        __UI_SnappedY = Control(i).Top + Control(i).Height + Control(Control(i).ParentID).Top
                         __UI_SnappedYID = i
                     END IF
 
@@ -2568,9 +2583,9 @@ SUB __UI_EventDispatcher
                     XSnapOffset = ABS((Control(i).Left + Control(Control(i).ParentID).Left) - (Control(__UI_DraggingID).Left + Control(Control(__UI_DraggingID).ParentID).Left))
                     IF XSnapOffset < 5 AND XSnapOffset < PrevXSnapOffset AND MouseXOffset < 10 THEN
                         PrevXSnapOffset = XSnapOffset
-                        Control(__UI_DraggingID).Left = Control(i).Left
+                        Control(__UI_DraggingID).Left = Control(i).Left + Control(Control(i).ParentID).Left
                         __UI_Snapped = True
-                        __UI_SnappedX = Control(i).Left
+                        __UI_SnappedX = Control(i).Left + Control(Control(i).ParentID).Left
                         __UI_SnappedXID = i
                     END IF
 
@@ -2578,9 +2593,9 @@ SUB __UI_EventDispatcher
                     XSnapOffset = ABS((Control(i).Left + Control(i).Width / 2 + Control(Control(i).ParentID).Left) - (Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2 + Control(Control(__UI_DraggingID).ParentID).Left))
                     IF XSnapOffset < 5 AND XSnapOffset < PrevXSnapOffset AND MouseXOffset < 10 THEN
                         PrevXSnapOffset = XSnapOffset
-                        Control(__UI_DraggingID).Left = Control(i).Left + Control(i).Width / 2 - Control(__UI_DraggingID).Width / 2
+                        Control(__UI_DraggingID).Left = Control(i).Left + Control(i).Width / 2 - Control(__UI_DraggingID).Width / 2 + Control(Control(i).ParentID).Left
                         __UI_Snapped = True
-                        __UI_SnappedX = Control(i).Left + Control(i).Width / 2
+                        __UI_SnappedX = Control(i).Left + Control(i).Width / 2 + Control(Control(i).ParentID).Left
                         __UI_SnappedXID = i
                     END IF
 
@@ -2588,9 +2603,9 @@ SUB __UI_EventDispatcher
                     XSnapOffset = ABS((Control(i).Left + Control(i).Width + Control(Control(i).ParentID).Left) - (Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width + Control(Control(__UI_DraggingID).ParentID).Left))
                     IF XSnapOffset < 5 AND XSnapOffset < PrevXSnapOffset AND MouseXOffset < 10 THEN
                         PrevXSnapOffset = XSnapOffset
-                        Control(__UI_DraggingID).Left = Control(i).Left + Control(i).Width - Control(__UI_DraggingID).Width
+                        Control(__UI_DraggingID).Left = Control(i).Left + Control(i).Width - Control(__UI_DraggingID).Width + Control(Control(i).ParentID).Left
                         __UI_Snapped = True
-                        __UI_SnappedX = Control(i).Left + Control(i).Width
+                        __UI_SnappedX = Control(i).Left + Control(i).Width + Control(Control(i).ParentID).Left
                         __UI_SnappedXID = i
                     END IF
                 END IF
@@ -2599,11 +2614,20 @@ SUB __UI_EventDispatcher
 
         IF (_KEYDOWN(100305) OR _KEYDOWN(100306)) THEN __UI_Snapped = False: __UI_SnappedX = -1: __UI_SnappedY=-1
 
-        IF __UI_TotalSelectedControls = 1 THEN
-            IF __UI_SnappedX = -1 THEN Control(__UI_DraggingID).Left = __UI_MouseLeft - OriginalDragX
-            IF __UI_SnappedY = -1 THEN Control(__UI_DraggingID).Top = __UI_MouseTop - OriginalDragY
-        END IF
+        IF __UI_SnappedX = -1 THEN Control(__UI_DraggingID).Left = __UI_MouseLeft - OriginalDragX
+        IF __UI_SnappedY = -1 THEN Control(__UI_DraggingID).Top = __UI_MouseTop - OriginalDragY
 
+        Control(__UI_DraggingID).Left = Control(__UI_DraggingID).Left - Control(Control(__UI_DraggingID).ParentID).Left
+        Control(__UI_DraggingID).Top = Control(__UI_DraggingID).Top - Control(Control(__UI_DraggingID).ParentID).Top
+
+        IF __UI_TotalSelectedControls > 1 THEN
+            FOR i = 1 TO UBOUND(Control)
+                IF Control(i).ControlIsSelected AND i <> __UI_DraggingID THEN
+                    Control(i).Left = Control(__UI_DraggingID).Left - Control(i).LeftOffsetFromFirstSelected
+                    Control(i).Top = Control(__UI_DraggingID).Top - Control(i).TopOffsetFromFirstSelected
+                END IF
+            NEXT
+        END IF
 
         __UI_DragY = __UI_MouseTop
         __UI_DragX = __UI_MouseLeft
@@ -3672,7 +3696,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION RawText$(id AS LONG)
-    DIM t$, c$
+    DIM t$, c$, i AS INTEGER
 
     IF Mask(id) = "" THEN
         RawText$ = Text(id)
