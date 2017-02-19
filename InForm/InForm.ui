@@ -171,7 +171,7 @@ DIM SHARED __UI_Loaded AS _BYTE
 DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
 DIM SHARED __UI_ActiveMenu AS LONG, __UI_ParentMenu AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
-DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS DOUBLE
+DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS DOUBLE, __UI_PreviousTipID AS LONG
 DIM SHARED __UI_ActiveTipTop AS INTEGER, __UI_ActiveTipLeft AS INTEGER
 DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
 DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
@@ -255,6 +255,9 @@ CONST MsgBox_Yes = 6
 CONST MsgBox_No = 7
 CONST MsgBox_Tryagain = 10
 CONST MsgBox_Continue = 11
+
+'General constants
+CONST __UI_ToolTipTimeOut = .8
 
 'Global constants
 CONST True = -1
@@ -592,32 +595,15 @@ SUB __UI_ProcessInput
     IF __UI_HoveringID <> __UI_LastHoveringID OR __UI_MouseButton1 OR __UI_MouseButton2 THEN
         __UI_TipTimer = TIMER
         __UI_ActiveTipID = 0
-        __UI_ActiveTipTop = -1
-        __UI_ActiveTipLeft = -1
     ELSE
-        IF __UI_HoveringID > 0 AND NOT __UI_IsDragging THEN
-            IF TIMER - __UI_TipTimer >= .8 THEN
+        IF __UI_HoveringID <> __UI_ActiveTipID AND __UI_HoveringID > 0 AND NOT __UI_IsDragging THEN
+            IF TIMER - __UI_TipTimer >= __UI_ToolTipTimeOut THEN
                 IF LEN(ToolTip(__UI_HoveringID)) > 0 THEN
                     __UI_ActiveTipID = __UI_HoveringID
-                    _FONT Control(__UI_FormID).Font
-                    IF __UI_ActiveTipTop = -1 THEN
-                        __UI_ActiveTipTop = __UI_MouseTop + 16
-                        IF __UI_ActiveTipTop + uspacing& * 1.5 > Control(__UI_FormID).Height THEN
-                            __UI_ActiveTipTop = __UI_MouseTop - uspacing& * 1.5
-                        END IF
-                    END IF
-                    IF __UI_ActiveTipLeft = -1 THEN
-                        __UI_ActiveTipLeft = __UI_MouseLeft
-                        IF __UI_ActiveTipLeft + __UI_PrintWidth(" " + ToolTip(__UI_ActiveTipID) + " ") > Control(__UI_FormID).Width THEN
-                            __UI_ActiveTipLeft = Control(__UI_FormID).Width - __UI_PrintWidth(" " + ToolTip(__UI_ActiveTipID) + " ")
-                        END IF
-                    END IF
+                    __UI_ActiveTipTop = __UI_MouseTop + 16
+                    __UI_ActiveTipLeft = __UI_MouseLeft
                 END IF
             END IF
-        ELSE
-            __UI_ActiveTipID = 0
-            __UI_ActiveTipTop = -1
-            __UI_ActiveTipLeft = -1
         END IF
     END IF
 
@@ -685,7 +671,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_UpdateDisplay
-    STATIC GridDrawn AS _BYTE, ActiveTipPanel AS LONG, PreviousTipID AS LONG
+    STATIC GridDrawn AS _BYTE, ActiveTipPanel AS LONG
     DIM i AS LONG, TempCaption$, TempColor~&, PrevDest AS LONG, TempParentID AS LONG
     DIM CaptionIndent AS INTEGER, OverlayisVisible AS _BYTE, OverlayReset AS _BYTE
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
@@ -1090,22 +1076,23 @@ SUB __UI_UpdateDisplay
         __UI_DrawMenuPanel Control(__UI_ActiveMenu), ControlState
     END IF
 
+    STATIC PanelWidth AS INTEGER, PanelHeight AS INTEGER
     IF __UI_ActiveTipID > 0 THEN
-        IF __UI_ActiveTipID <> PreviousTipID OR ToolTip(__UI_ActiveTipID) <> __UI_TempTips(__UI_ActiveTipID) THEN
-            PreviousTipID = __UI_ActiveTipID
+        IF __UI_ActiveTipID <> __UI_PreviousTipID OR ToolTip(__UI_ActiveTipID) <> __UI_TempTips(__UI_ActiveTipID) THEN
+            __UI_PreviousTipID = __UI_ActiveTipID
             __UI_TempTips(__UI_ActiveTipID) = ToolTip(__UI_ActiveTipID)
 
-            DIM PanelWidth AS INTEGER, PanelHeight AS INTEGER, ThisLine%, TextTop%, Temp&
+            DIM ThisLine%, TextTop%, Temp&
             DIM FindLF AS LONG, TotalLines AS INTEGER, TempLine$
             _FONT Control(__UI_FormID).Font
 
-            TempCaption$ = __UI_WordWrap(ToolTip(__UI_ActiveTipID), Control(__UI_FormID).Width / 3, TotalLines)
+            TempCaption$ = __UI_WordWrap(ToolTip(__UI_ActiveTipID), Control(__UI_FormID).Width / 2, TotalLines)
 
             IF TotalLines = 1 THEN
                 PanelWidth = __UI_PrintWidth(TempCaption$) + 10
                 PanelHeight = uspacing& + 5 + 5
             ELSE
-                PanelWidth = Control(__UI_FormID).Width / 3 + 10
+                PanelWidth = Control(__UI_FormID).Width / 2 + 10
                 PanelHeight = (TotalLines * uspacing&) + 5 + 5
             END IF
 
@@ -1141,6 +1128,15 @@ SUB __UI_UpdateDisplay
             __UI_MakeHardwareImage ActiveTipPanel
         END IF
         _DEST 0
+        IF __UI_ActiveTipTop + PanelHeight > Control(__UI_FormID).Height THEN
+            __UI_ActiveTipTop = Control(__UI_FormID).Height - PanelHeight
+            IF __UI_ActiveTipTop < 0 THEN __UI_ActiveTipTop = 0
+        END IF
+
+        IF __UI_ActiveTipLeft + PanelWidth > Control(__UI_FormID).Width THEN
+            __UI_ActiveTipLeft = Control(__UI_FormID).Width - PanelWidth
+            IF __UI_ActiveTipLeft < 0 THEN __UI_ActiveTipLeft = 0
+        END IF
         _PUTIMAGE (__UI_ActiveTipLeft, __UI_ActiveTipTop), ActiveTipPanel
     END IF
 
