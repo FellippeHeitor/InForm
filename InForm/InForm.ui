@@ -162,6 +162,7 @@ DIM SHARED __UI_IsResizing AS _BYTE, __UI_ResizingID AS LONG
 DIM SHARED __UI_ResizeHandleHover AS _BYTE
 DIM SHARED __UI_IsSelectingText AS _BYTE, __UI_IsSelectingTextOnID AS LONG
 DIM SHARED __UI_SelectedText AS STRING, __UI_SelectionLength AS LONG
+DIM SHARED __UI_StateHasChanged AS _BYTE
 DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_ThumbDragTop AS INTEGER
 DIM SHARED __UI_DraggingThumbOnID AS LONG
 DIM SHARED __UI_HasInput AS _BYTE, __UI_LastInputReceived AS DOUBLE
@@ -806,7 +807,9 @@ SUB __UI_UpdateDisplay
                     __UI_DrawProgressBar Control(i), ControlState
                 CASE __UI_Type_TrackBar
                     'Track bars
+                    __UI_StateHasChanged = False
                     __UI_DrawTrackBar Control(i), ControlState
+                    IF __UI_StateHasChanged THEN __UI_ValueChanged i
                 CASE __UI_Type_TextBox
                     'Text boxes
                     'IF Control(i).InputViewStart = 0 THEN Control(i).InputViewStart = 1
@@ -837,7 +840,9 @@ SUB __UI_UpdateDisplay
                         __UI_SelectionLength = LEN(__UI_SelectedText)
                     END IF
 
+                    __UI_StateHasChanged = False
                     __UI_DrawTextBox Control(i), ControlState, ss1, ss2
+                    IF __UI_StateHasChanged THEN __UI_TextChanged i
                 CASE __UI_Type_ListBox
                     'List boxes
                     IF Control(i).InputViewStart <= 0 THEN Control(i).InputViewStart = 1
@@ -1083,17 +1088,16 @@ SUB __UI_UpdateDisplay
             __UI_TempTips(__UI_ActiveTipID) = ToolTip(__UI_ActiveTipID)
 
             DIM ThisLine%, TextTop%, Temp&
-            DIM FindLF AS LONG, TotalLines AS INTEGER, TempLine$
+            DIM FindLF AS LONG, TotalLines AS INTEGER, LongestLine AS INTEGER, TempLine$
             _FONT Control(__UI_FormID).Font
 
-            TempCaption$ = __UI_WordWrap(ToolTip(__UI_ActiveTipID), Control(__UI_FormID).Width / 2, TotalLines)
+            TempCaption$ = __UI_WordWrap(ToolTip(__UI_ActiveTipID), Control(__UI_FormID).Width / 2, LongestLine, TotalLines)
 
+            PanelWidth = LongestLine + 16
             IF TotalLines = 1 THEN
-                PanelWidth = __UI_PrintWidth(TempCaption$) + 10
-                PanelHeight = uspacing& + 5 + 5
+                PanelHeight = uspacing& + 8
             ELSE
-                PanelWidth = Control(__UI_FormID).Width / 2 + 10
-                PanelHeight = (TotalLines * uspacing&) + 5 + 5
+                PanelHeight = (TotalLines * uspacing&) + 8
             END IF
 
             IF ActiveTipPanel <> 0 THEN _FREEIMAGE ActiveTipPanel
@@ -1108,7 +1112,7 @@ SUB __UI_UpdateDisplay
             ELSE
                 DO WHILE LEN(TempCaption$)
                     ThisLine% = ThisLine% + 1
-                    TextTop% = 3 + ThisLine% * uheight& - uheight&
+                    TextTop% = 3 + ThisLine% * uspacing& - uspacing&
 
                     FindLF& = INSTR(TempCaption$, CHR$(1))
                     IF FindLF& > 0 THEN
@@ -1117,7 +1121,7 @@ SUB __UI_UpdateDisplay
                     ELSE
                         TempLine$ = TempCaption$
                         TempCaption$ = ""
-                        IF ThisLine% = 1 THEN TextTop% = ((_HEIGHT \ 2) - uheight& \ 2)
+                        IF ThisLine% = 1 THEN TextTop% = ((_HEIGHT \ 2) - uspacing& \ 2)
                     END IF
 
                     __UI_PrintString 5, TextTop%, TempLine$
@@ -1269,9 +1273,10 @@ SUB __UI_EventDispatcher
         IF __UI_LastHoveringID THEN __UI_MouseLeave __UI_LastHoveringID
         __UI_MouseEnter __UI_HoveringID
 
-        STATIC LastMouseLeft AS INTEGER
-        IF NOT __UI_DraggingThumb AND __UI_HoveringID = __UI_ActiveDropdownList AND Control(__UI_HoveringID).HoveringVScrollbarButton = 0 THEN
+        STATIC LastMouseLeft AS INTEGER, LastMouseTop AS INTEGER
+        IF NOT __UI_DraggingThumb AND __UI_HoveringID = __UI_ActiveDropdownList AND Control(__UI_HoveringID).HoveringVScrollbarButton = 0 AND LastMouseTop <> __UI_MouseTop THEN
             'Dropdown list items are preselected when hovered
+            LastMouseTop = __UI_MouseTop
             IF Control(__UI_HoveringID).Font > 0 THEN _FONT Control(__UI_HoveringID).Font
             ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ uspacing&) + Control(__UI_HoveringID).InputViewStart
             IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
@@ -2012,17 +2017,20 @@ SUB __UI_EventDispatcher
                     END IF
 
                     IF Control(__UI_MouseDownOnID).Type = __UI_Type_TrackBar AND NOT Control(__UI_MouseDownOnID).Disabled THEN
-                        Control(__UI_HoveringID).Value = INT(((__UI_MouseLeft - (ContainerOffsetLeft + Control(__UI_HoveringID).Left)) / Control(__UI_HoveringID).Width) * Control(__UI_HoveringID).Max)
+                        Control(__UI_HoveringID).Value = __UI_MAP((__UI_MouseLeft - (ContainerOffsetLeft + Control(__UI_HoveringID).Left)), 0, Control(__UI_HoveringID).Width, Control(__UI_HoveringID).Min, Control(__UI_HoveringID).Max)
                         IF Control(__UI_HoveringID).Value < Control(__UI_HoveringID).Min THEN
                             Control(__UI_HoveringID).Value = Control(__UI_HoveringID).Min
                         END IF
-                        IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_Focus
+                        IF Control(__UI_HoveringID).Value > Control(__UI_HoveringID).Max THEN
+                            Control(__UI_HoveringID).Value = Control(__UI_HoveringID).Max
+                        END IF
+                        IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_MouseDownOnID
                     END IF
                 END IF
             END IF
 
             IF __UI_MouseDownOnID = 0 AND Control(__UI_PreviousMouseDownOnID).Type = __UI_Type_TrackBar AND NOT Control(__UI_PreviousMouseDownOnID).Disabled THEN
-                Control(__UI_PreviousMouseDownOnID).Value = INT(((__UI_MouseLeft - (Control(Control(__UI_PreviousMouseDownOnID).ParentID).Left + Control(__UI_PreviousMouseDownOnID).Left)) / Control(__UI_PreviousMouseDownOnID).Width) * Control(__UI_PreviousMouseDownOnID).Max)
+                Control(__UI_PreviousMouseDownOnID).Value = __UI_MAP((__UI_MouseLeft - (Control(Control(__UI_PreviousMouseDownOnID).ParentID).Left + Control(__UI_PreviousMouseDownOnID).Left)), 0, Control(__UI_PreviousMouseDownOnID).Width, Control(__UI_PreviousMouseDownOnID).Min, Control(__UI_PreviousMouseDownOnID).Max)
                 IF Control(__UI_PreviousMouseDownOnID).Value > Control(__UI_PreviousMouseDownOnID).Max THEN Control(__UI_PreviousMouseDownOnID).Value = Control(__UI_PreviousMouseDownOnID).Max
                 IF Control(__UI_PreviousMouseDownOnID).Value < Control(__UI_PreviousMouseDownOnID).Min THEN Control(__UI_PreviousMouseDownOnID).Value = Control(__UI_PreviousMouseDownOnID).Min
                 IF Control(__UI_PreviousMouseDownOnID).PreviousValue <> Control(__UI_PreviousMouseDownOnID).Value THEN __UI_ValueChanged __UI_PreviousMouseDownOnID
@@ -3210,6 +3218,7 @@ SUB __UI_EventDispatcher
                                 END IF
 
                                 IF __UI_KeyHit THEN
+                                    IF __UI_KeyHit = 13 THEN __UI_KeyHit = 10
                                     IF Mask(__UI_Focus) = "" OR Control(__UI_Focus).Multiline THEN
                                         IF NOT Control(__UI_Focus).TextIsSelected THEN
                                             IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
@@ -4198,6 +4207,19 @@ SUB SetCaption (ThisID AS LONG, TempCaption$)
 END SUB
 
 '---------------------------------------------------------------------------------
+SUB BeginDraw(ThisID AS LONG)
+    IF Control(ThisID).Type <> __UI_Type_PictureBox THEN EXIT SUB
+    _DEST Control(ThisID).HelperCanvas
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB EndDraw(ThisID AS LONG)
+    IF Control(ThisID).Type <> __UI_Type_PictureBox THEN EXIT SUB
+    _DEST 0
+    Control(ThisID).PreviousValue = 0
+END SUB
+
+'---------------------------------------------------------------------------------
 SUB LoadImage (This AS __UI_ControlTYPE, File$)
     DIM PrevDest AS LONG, ErrorMessage$
     STATIC NotFoundImage AS LONG
@@ -4400,21 +4422,21 @@ SUB __UI_DeleteSelectionMasked
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_CursorAdjustments
+SUB __UI_CursorAdjustments(This AS LONG)
     DIM i AS LONG, ThisLineStart AS LONG, ThisLineLen AS LONG
-    IF NOT Control(__UI_Focus).Multiline THEN
-        IF Control(__UI_Focus).VisibleCursor >= Control(__UI_Focus).Width THEN Control(__UI_Focus).InputViewStart = Control(__UI_Focus).InputViewStart + Control(__UI_Focus).Width / 4
-        IF Control(__UI_Focus).VisibleCursor <= 0 THEN Control(__UI_Focus).InputViewStart = Control(__UI_Focus).InputViewStart - Control(__UI_Focus).Width / 4
-        IF Control(__UI_Focus).InputViewStart < 0 THEN Control(__UI_Focus).InputViewStart = 0
-    ELSE
-        'ThisLineLen = LEN(__UI_GetTextBoxLine(__UI_Focus, Control(__UI_Focus).CurrentLine, ThisLineStart))
-        'IF Control(__UI_Focus).VisibleCursor > ThisLineLen THEN Control(__UI_Focus).VisibleCursor = ThisLineLen
-        'IF Control(__UI_Focus).VisibleCursor > Control(__UI_Focus).PrevVisibleCursor THEN
-        '    IF Control(__UI_Focus).VisibleCursor - Control(__UI_Focus).InputViewStart + 2 > Control(__UI_Focus).FieldArea THEN Control(__UI_Focus).InputViewStart = (Control(__UI_Focus).VisibleCursor - Control(__UI_Focus).FieldArea) + 2
-        'ELSEIF Control(__UI_Focus).VisibleCursor < Control(__UI_Focus).PrevVisibleCursor THEN
-        '    IF Control(__UI_Focus).VisibleCursor < Control(__UI_Focus).InputViewStart - 1 THEN Control(__UI_Focus).InputViewStart = Control(__UI_Focus).VisibleCursor
+    IF NOT Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
+        IF Control(This).VisibleCursor >= Control(This).Width THEN Control(This).InputViewStart = Control(This).InputViewStart + Control(This).Width / 4
+        IF Control(This).VisibleCursor <= 0 THEN Control(This).InputViewStart = Control(This).InputViewStart - Control(This).Width / 4
+        IF Control(This).InputViewStart < 0 THEN Control(This).InputViewStart = 0
+    ELSEIF Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
+        'ThisLineLen = LEN(__UI_GetTextBoxLine(This, Control(This).CurrentLine, ThisLineStart))
+        'IF Control(This).VisibleCursor > ThisLineLen THEN Control(This).VisibleCursor = ThisLineLen
+        'IF Control(This).VisibleCursor > Control(This).PrevVisibleCursor THEN
+        '    IF Control(This).VisibleCursor - Control(This).InputViewStart + 2 > Control(This).FieldArea THEN Control(This).InputViewStart = (Control(This).VisibleCursor - Control(This).FieldArea) + 2
+        'ELSEIF Control(This).VisibleCursor < Control(This).PrevVisibleCursor THEN
+        '    IF Control(This).VisibleCursor < Control(This).InputViewStart - 1 THEN Control(This).InputViewStart = Control(This).VisibleCursor
         'END IF
-        'IF Control(__UI_Focus).InputViewStart < 1 THEN Control(__UI_Focus).InputViewStart = 1
+        'IF Control(This).InputViewStart < 1 THEN Control(This).InputViewStart = 1
     END IF
 END SUB
 
@@ -4731,11 +4753,13 @@ FUNCTION __UI_PrintWidth&(Text$)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGER)
+FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, LongestLine AS INTEGER, Lines AS INTEGER)
     DIM Temp$, TempCaption$, FindSep AS LONG, PrevSep AS LONG
     DIM NextSlot AS LONG, TempLine$, i AS LONG, Text AS STRING
+    DIM ThisLineWidth AS INTEGER
 
     Text = RTRIM$(PassedText)
+    IF Text = "" THEN Lines = 1: EXIT FUNCTION
 
     FOR i = 1 TO UBOUND(__UI_WordWrapHistoryTexts)
         IF __UI_WordWrapHistoryTexts(i) = "" THEN EXIT FOR
@@ -4764,6 +4788,7 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
     __UI_WordWrapHistory(NextSlot).Width = Width
     __UI_WordWrapHistory(NextSlot).Font = _FONT
     Lines = 0
+    LongestLine = 0
     TempCaption$ = Text
     IF __UI_PrintWidth&(TempCaption$) > Width THEN
         'Word wrap is faster for fixed-width fonts.
@@ -4781,6 +4806,8 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
             DO WHILE LEN(TempLine$)
                 IF __UI_PrintWidth&(TempLine$) < Width THEN
                     IF LEN(Temp$) > 0 THEN Temp$ = Temp$ + CHR$(1)
+                    ThisLineWidth = __UI_PrintWidth(Templine$)
+                    IF LongestLine < ThisLineWidth THEN LongestLine = ThisLineWidth
                     Temp$ = Temp$ + TempLine$
                     TempLine$ = ""
                     Lines = Lines + 1
@@ -4800,6 +4827,8 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
                                 ELSE
                                     IF LEN(Temp$) > 0 THEN Temp$ = Temp$ + CHR$(1)
                                     Temp$ = Temp$ + LEFT$(TempLine$, PrevSep - 1)
+                                    ThisLineWidth = __UI_PrintWidth(LEFT$(TempLine$, PrevSep - 1))
+                                    IF LongestLine < ThisLineWidth THEN LongestLine = ThisLineWidth
                                     TempLine$ = MID$(TempLine$, PrevSep + 1)
                                     Lines = Lines + 1
                                     EXIT DO
@@ -4810,12 +4839,16 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
                             IF PrevSep > 0 THEN
                                 IF LEN(Temp$) > 0 THEN Temp$ = Temp$ + CHR$(1)
                                 Temp$ = Temp$ + LEFT$(TempLine$, PrevSep - 1)
+                                ThisLineWidth = __UI_PrintWidth(LEFT$(TempLine$, PrevSep - 1))
+                                IF LongestLine < ThisLineWidth THEN LongestLine = ThisLineWidth
                                 TempLine$ = MID$(TempLine$, PrevSep + 1)
                                 Lines = Lines + 1
                                 EXIT DO
                             ELSE
                                 IF LEN(Temp$) > 0 THEN Temp$ = Temp$ + CHR$(1)
                                 Temp$ = Temp$ + Templine$
+                                ThisLineWidth = __UI_PrintWidth(Templine$)
+                                IF LongestLine < ThisLineWidth THEN LongestLine = ThisLineWidth
                                 TempLine$ = ""
                                 Lines = Lines + 1
                                 EXIT DO
@@ -4831,6 +4864,7 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
     ELSE
         'Count line breaks
         Lines = 1
+        LongestLine = 0
         Temp$ = TempCaption$
         FindSep = INSTR(TempCaption$, CHR$(10))
         IF FindSep > 0 THEN
@@ -4842,6 +4876,8 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
                     Lines = Lines + 1
                     IF LEN(Temp$) > 0 THEN Temp$ = Temp$ + CHR$(1)
                     Temp$ = Temp$ + LEFT$(TempCaption$, FindSep - 1)
+                    ThisLineWidth = __UI_PrintWidth(LEFT$(TempCaption$, FindSep - 1))
+                    IF LongestLine < ThisLineWidth THEN LongestLine = ThisLineWidth
                     TempCaption$ = MID$(TempCaption$, FindSep + 1)
                 ELSE
                     Lines = Lines + 1
@@ -4849,6 +4885,8 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, Lines AS INTEGE
                     EXIT DO
                 END IF
             LOOP
+        ELSE
+            LongestLine = __UI_PrintWidth(TempCaption$)
         END IF
 
         __UI_WordWrap$ = Temp$
@@ -4872,6 +4910,11 @@ FUNCTION MessageBox& (Message$, Title$, Setup AS LONG)
         MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 0)
         END IF
     $END IF
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_MAP## (value##, minRange##, maxRange##, newMinRange##, newMaxRange##)
+    __UI_MAP## = ((value## - minRange##) / (maxRange## - minRange##)) * (newMaxRange## - newMinRange##) + newMinRange##
 END FUNCTION
 
 '---------------------------------------------------------------------------------

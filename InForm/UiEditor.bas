@@ -758,7 +758,7 @@ SUB __UI_BeforeUpdateDisplay
             END SELECT
             Control(PropertyUpdateStatusID).Hidden = True
         ELSEIF FirstSelected > 0 THEN
-            __UI_CursorAdjustments
+            __UI_CursorAdjustments PropertyValueID
             DIM PropertyAccept AS _BYTE
             SELECT CASE SelectedProperty
                 CASE 1 'Name
