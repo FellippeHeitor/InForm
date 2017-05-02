@@ -50,12 +50,17 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&New"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuOpen", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    SetCaption __UI_NewID, "&Open..."
+    SetCaption __UI_NewID, "&Open...-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    SetCaption __UI_NewID, "&Save form-"
-    ToolTip(__UI_NewID) = "File name is automatically taken from your form's name property"
-    
+    SetCaption __UI_NewID, "&Save project"
+    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSaveFrm", 91, 18, 0, 22, __UI_GetID("FileMenu"))
+    SetCaption __UI_NewID, "&Save form only-"
+    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property" + CHR$(10) + _
+                          "Only the .frm and .frmbin files will be updated."
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "E&xit"
 
@@ -133,9 +138,19 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Distribute Hori&zontally"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuAutoName", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
-    SetCaption __UI_NewID, "&Auto-name controls"
+    $IF WIN THEN
+        SetCaption __UI_NewID, "&Auto-name controls"
+    $ELSE
+        SetCaption __UI_NewID, "&Auto-name controls-"
+    $END IF
     Control(__UI_NewID).Value = True
     ToolTip(__UI_NewID) = "Automatically set control names based on caption and type"
+    
+    $IF WIN THEN
+    $ELSE
+        __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSwapButtons", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
+        SetCaption __UI_NewID, "&Swap mouse buttons"
+    $END IF
     
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     SetCaption __UI_NewID, "&What's all this?-"
@@ -427,4 +442,5 @@ SUB __UI_AssignIDs
     ControlList = __UI_GetID("ControlList")
     EditMenuUndo = __UI_GetID("EditMenuUndo")
     EditMenuRedo = __UI_GetID("EditMenuRedo")
+    OptionsMenuSwapButtons = __UI_GetID("OptionsMenuSwapButtons")
 END SUB

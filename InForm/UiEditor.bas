@@ -12,6 +12,7 @@ DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameContr
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
+DIM SHARED OptionsMenuSwapButtons AS LONG
 
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
@@ -28,7 +29,8 @@ CONST OffsetAutoName = 33
 CONST OffsetShowPosSize = 35
 CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
-CONST OffsetPropertyValue = 41
+CONST OffsetMouseSwapped = 41
+CONST OffsetPropertyValue = 43
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -177,6 +179,10 @@ SUB __UI_Click (id AS LONG)
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
             SaveSettings
+        CASE "OPTIONSMENUSWAPBUTTONS"
+            __UI_MouseButtonsSwap = NOT __UI_MouseButtonsSwap
+            Control(id).Value = __UI_MouseButtonsSwap
+            SaveSettings
         CASE "OPTIONSMENUSNAPLINES"
             __UI_SnapLines = NOT __UI_SnapLines
             Control(id).Value = __UI_SnapLines
@@ -281,13 +287,15 @@ SUB __UI_Click (id AS LONG)
                 IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
                 ELSEIF Answer = MsgBox_Yes THEN
-                    SaveForm False
+                    SaveForm False, False
                 END IF
             END IF
 
             SendSignal -5
+        CASE "FILEMENUSAVEFRM"
+            SaveForm True, True
         CASE "FILEMENUSAVE"
-            SaveForm True
+            SaveForm True, False
         CASE "HELPMENUABOUT"
             Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
         CASE "HELPMENUHELP"
@@ -302,7 +310,7 @@ SUB __UI_Click (id AS LONG)
                 IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
                 ELSEIF Answer = MsgBox_Yes THEN
-                    SaveForm False
+                    SaveForm False, False
                 END IF
             END IF
             SYSTEM
@@ -364,7 +372,7 @@ SUB __UI_Click (id AS LONG)
                 IF Answer = MsgBox_Cancel THEN
                     EXIT SUB
                 ELSEIF Answer = MsgBox_Yes THEN
-                    SaveForm False
+                    SaveForm False, False
                 END IF
             END IF
 
@@ -530,6 +538,9 @@ SUB __UI_BeforeUpdateDisplay
         b$ = MKI$(AutoNameControls)
         PUT #UiEditorFile, OffsetAutoName, b$
 
+        b$ = MKI$(__UI_MouseButtonsSwap)
+        PUT #UiEditorFile, OffsetMouseSwapped, b$
+
         b$ = MKI$(__UI_ShowPositionAndSize)
         PUT #UiEditorFile, OffsetShowPosSize, b$
 
@@ -585,7 +596,7 @@ SUB __UI_BeforeUpdateDisplay
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
             Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin"
-            SetCaption __UI_GetID("FileMenuSave"), "&Save '" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin'-"
+            SetCaption __UI_GetID("FileMenuSaveFrm"), "&Save form only ('" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin')-"
         END IF
 
         IF Edited THEN
@@ -1065,7 +1076,7 @@ SUB __UI_BeforeUnload
         IF Answer = MsgBox_Cancel THEN
             __UI_UnloadSignal = False
         ELSEIF Answer = MsgBox_Yes THEN
-            SaveForm False
+            SaveForm False, False
         END IF
     END IF
     SaveSettings
@@ -1092,6 +1103,11 @@ SUB SaveSettings
     PRINT #FreeFileNum, "Show position and size = ";
     IF __UI_ShowPositionAndSize THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
 
+    $IF WIN THEN
+    $ELSE
+        PRINT #FreeFileNum, "Swap mouse buttons = ";
+        IF __UI_MouseButtonsSwap THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+    $END IF
     CLOSE #FreeFileNum
 END SUB
 
@@ -1199,6 +1215,11 @@ SUB __UI_OnLoad
                             IF IniValue$ = "FALSE" THEN __UI_ShowPositionAndSize = False
                         CASE "SNAP TO EDGES"
                             IF IniValue$ = "FALSE" THEN __UI_SnapLines = False
+                        CASE "SWAP MOUSE BUTTONS"
+                            $IF WIN THEN
+                            $ELSE
+                                IF IniValue$ = "TRUE" THEN __UI_MouseButtonsSwap = True
+                            $END IF
                     END SELECT
                 END IF
             LOOP
@@ -1208,6 +1229,10 @@ SUB __UI_OnLoad
         Control(__UI_GetID("OPTIONSMENUAUTONAME")).Value = AutoNameControls
         Control(__UI_GetID("OPTIONSMENUSNAPLINES")).Value = __UI_SnapLines
         Control(__UI_GetID("VIEWMENUSHOWPOSITIONANDSIZE")).Value = __UI_ShowPositionAndSize
+        $IF WIN THEN
+        $ELSE
+            Control(__UI_GetID("OPTIONSMENUSWAPBUTTONS")).Value = __UI_MouseButtonsSwap
+        $END IF
     END IF
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
@@ -5448,7 +5473,7 @@ SUB CheckPreview
     $END IF
 END SUB
 
-SUB SaveForm (ExitToQB64 AS _BYTE)
+SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     DIM BaseOutputFileName AS STRING, BinaryFileNum AS INTEGER
     DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
@@ -5462,7 +5487,13 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
 
     'Backup existing files
     FOR i = 1 TO 3
-        IF i = 1 THEN BackupFile$ = BaseOutputFileName + ".bas"
+        IF i = 1 THEN
+            IF SaveOnlyFrm THEN
+                GOTO SkipSavingBas
+            ELSE
+                BackupFile$ = BaseOutputFileName + ".bas"
+            END IF
+        END IF
         IF i = 2 THEN BackupFile$ = BaseOutputFileName + ".frmbin"
         IF i = 3 THEN BackupFile$ = BaseOutputFileName + ".frm"
 
@@ -5478,6 +5509,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
             PUT #TextFileNum, 1, b$
             CLOSE #TextFileNum
         END IF
+        SkipSavingBas:
     NEXT
 
     TextFileNum = FREEFILE
@@ -5755,91 +5787,97 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
     NEXT
     PRINT #TextFileNum, "END SUB"
     CLOSE #TextFileNum, #BinaryFileNum
-    OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
-    PRINT #TextFileNum, "': This program was generated by"
-    PRINT #TextFileNum, "': InForm - GUI system for QB64 - "; __UI_Version
-    PRINT #TextFileNum, "': Fellippe Heitor, 2016 - fellippe@qb64.org - @fellippeheitor"
-    PRINT #TextFileNum, "'-----------------------------------------------------------"
-    PRINT #TextFileNum,
-    PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
-    FOR i = 1 TO UBOUND(PreviewControls)
-        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_ContextMenu THEN
-            PRINT #TextFileNum, "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
-        END IF
-    NEXT
-    PRINT #TextFileNum,
-    PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
-    PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
-    PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
-    PRINT #TextFileNum, "'$INCLUDE:'" + BaseOutputFileName + ".frm'"
-    PRINT #TextFileNum,
-    PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
-    FOR i = 0 TO 13
-        SELECT EVERYCASE i
-            CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
-            CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
-            CASE 2: PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
-            CASE 3: PRINT #TextFileNum, "SUB __UI_BeforeUnload"
-            CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
-            CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
-            CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
-            CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
-            CASE 8: PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
-            CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
-            CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
-            CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
-            CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
-            CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
-
-            CASE 0 TO 3
-                PRINT #TextFileNum,
-
-            CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-                PRINT #TextFileNum, "    SELECT CASE id"
-                FOR Dummy = 1 TO UBOUND(PreviewControls)
-                    IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
-                        PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                        PRINT #TextFileNum,
-                    END IF
-                NEXT
-                PRINT #TextFileNum, "    END SELECT"
-
-            CASE 7, 8, 11 'Controls that can have focus only
-                PRINT #TextFileNum, "    SELECT CASE id"
-                FOR Dummy = 1 TO UBOUND(PreviewControls)
-                    IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
-                        PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                        PRINT #TextFileNum,
-                    END IF
-                NEXT
-                PRINT #TextFileNum, "    END SELECT"
-
-            CASE 12 'Text boxes
-                PRINT #TextFileNum, "    SELECT CASE id"
-                FOR Dummy = 1 TO UBOUND(PreviewControls)
-                    IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
-                        PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                        PRINT #TextFileNum,
-                    END IF
-                NEXT
-                PRINT #TextFileNum, "    END SELECT"
-
-            CASE 13 'Dropdown list, List box and Track bar
-                PRINT #TextFileNum, "    SELECT CASE id"
-                FOR Dummy = 1 TO UBOUND(PreviewControls)
-                    IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar) THEN
-                        PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                        PRINT #TextFileNum,
-                    END IF
-                NEXT
-                PRINT #TextFileNum, "    END SELECT"
-        END SELECT
-        PRINT #TextFileNum, "END SUB"
+    IF NOT SaveOnlyFrm THEN
+        OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
+        PRINT #TextFileNum, "': This program was generated by"
+        PRINT #TextFileNum, "': InForm - GUI system for QB64 - "; __UI_Version
+        PRINT #TextFileNum, "': Fellippe Heitor, 2016 - fellippe@qb64.org - @fellippeheitor"
+        PRINT #TextFileNum, "'-----------------------------------------------------------"
         PRINT #TextFileNum,
-    NEXT
-    CLOSE #TextFileNum
+        PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
+        FOR i = 1 TO UBOUND(PreviewControls)
+            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_ContextMenu THEN
+                PRINT #TextFileNum, "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
+            END IF
+        NEXT
+        PRINT #TextFileNum,
+        PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
+        PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
+        PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
+        PRINT #TextFileNum, "'$INCLUDE:'" + BaseOutputFileName + ".frm'"
+        PRINT #TextFileNum,
+        PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
+        FOR i = 0 TO 13
+            SELECT EVERYCASE i
+                CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
+                CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
+                CASE 2: PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
+                CASE 3: PRINT #TextFileNum, "SUB __UI_BeforeUnload"
+                CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
+                CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
+                CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
+                CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
+                CASE 8: PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
+                CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
+                CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
+                CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
+                CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
+                CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
+
+                CASE 0 TO 3
+                    PRINT #TextFileNum,
+
+                CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
+                    PRINT #TextFileNum, "    SELECT CASE id"
+                    FOR Dummy = 1 TO UBOUND(PreviewControls)
+                        IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
+                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                            PRINT #TextFileNum,
+                        END IF
+                    NEXT
+                    PRINT #TextFileNum, "    END SELECT"
+
+                CASE 7, 8, 11 'Controls that can have focus only
+                    PRINT #TextFileNum, "    SELECT CASE id"
+                    FOR Dummy = 1 TO UBOUND(PreviewControls)
+                        IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
+                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                            PRINT #TextFileNum,
+                        END IF
+                    NEXT
+                    PRINT #TextFileNum, "    END SELECT"
+
+                CASE 12 'Text boxes
+                    PRINT #TextFileNum, "    SELECT CASE id"
+                    FOR Dummy = 1 TO UBOUND(PreviewControls)
+                        IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
+                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                            PRINT #TextFileNum,
+                        END IF
+                    NEXT
+                    PRINT #TextFileNum, "    END SELECT"
+
+                CASE 13 'Dropdown list, List box and Track bar
+                    PRINT #TextFileNum, "    SELECT CASE id"
+                    FOR Dummy = 1 TO UBOUND(PreviewControls)
+                        IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar) THEN
+                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                            PRINT #TextFileNum,
+                        END IF
+                    NEXT
+                    PRINT #TextFileNum, "    END SELECT"
+            END SELECT
+            PRINT #TextFileNum, "END SUB"
+            PRINT #TextFileNum,
+        NEXT
+        CLOSE #TextFileNum
+    END IF
+
+    b$ = "Exporting successful. Files output:" + CHR$(10)
+    IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + BaseOutputFileName + ".bas" + CHR$(10)
+    b$ = b$ + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin"
+
     IF ExitToQB64 THEN
-        b$ = "Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin"
         $IF WIN THEN
             IF _FILEEXISTS("qb64.exe") THEN
                 b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
@@ -5862,7 +5900,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE)
         $END IF
         SYSTEM
     ELSE
-        Answer = MessageBox("Exporting successful. Files output:" + CHR$(10) + "    " + BaseOutputFileName + ".bas" + CHR$(10) + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin", "", MsgBox_OkOnly + MsgBox_Information)
+        Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
     END IF
 END SUB
 

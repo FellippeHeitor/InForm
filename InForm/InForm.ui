@@ -24,7 +24,10 @@ END DECLARE
 $IF WIN THEN
     DECLARE LIBRARY
         FUNCTION __UI_MB& ALIAS MessageBox (BYVAL ignore&, message$, title$, BYVAL type&)
+        FUNCTION GetSystemMetrics& (BYVAL WhichMetric&)
     END DECLARE
+
+    CONST __UI_SM_SWAPBUTTON = 23
 $ELSE
     DECLARE LIBRARY ""
     FUNCTION __UI_MB& ALIAS MessageBox (BYVAL ignore&, message$, title$, BYVAL type&)
@@ -143,7 +146,7 @@ REDIM SHARED __UI_WordWrapHistory(1 TO 100) AS __UI_WordWrapHistoryType
 REDIM SHARED __UI_ThisLineChars(0) AS LONG
 
 DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
-DIM SHARED __UI_MouseWheel AS INTEGER
+DIM SHARED __UI_MouseWheel AS INTEGER, __UI_MouseButtonsSwap AS _BYTE
 DIM SHARED __UI_PrevMouseLeft AS INTEGER, __UI_PrevMouseTop AS INTEGER
 DIM SHARED __UI_MouseButton1 AS _BYTE, __UI_MouseButton2 AS _BYTE
 DIM SHARED __UI_MouseIsDown AS _BYTE, __UI_MouseDownOnID AS LONG
@@ -407,6 +410,30 @@ END SUB
 '---------------------------------------------------------------------------------
 'Internal procedures: ------------------------------------------------------------
 '---------------------------------------------------------------------------------
+FUNCTION __UI_GetProperMouseButton%%(Which%%)
+        $IF WIN THEN
+        IF GetSystemMetrics(__UI_SM_SWAPBUTTON) = 0 THEN
+            __UI_GetProperMouseButton%% = _MOUSEBUTTON(Which%%)
+        ELSE
+            IF Which%% = 1 THEN
+                __UI_GetProperMouseButton%% = _MOUSEBUTTON(2)
+            ELSEIF Which%% = 2 THEN
+                __UI_GetProperMouseButton%% = _MOUSEBUTTON(1)
+            END IF
+        END IF
+        $ELSE
+            IF __UI_MouseButtonsSwap THEN
+                IF Which%% = 1 THEN
+                    __UI_GetProperMouseButton%% = _MOUSEBUTTON(2)
+                ELSEIF Which%% = 2 THEN
+                    __UI_GetProperMouseButton%% = _MOUSEBUTTON(1)
+                END IF
+            ELSE
+                __UI_GetProperMouseButton%% = _MOUSEBUTTON(Which%%)
+            END IF
+        $END IF
+END FUNCTION
+
 SUB __UI_ProcessInput
     DIM OldScreen&, i AS LONG
     DIM ContainerOffsetTop AS INTEGER, ContainerOffsetLeft AS INTEGER
@@ -428,14 +455,14 @@ SUB __UI_ProcessInput
     IF _MOUSEINPUT THEN
         __UI_HasInput = True
         __UI_MouseWheel = __UI_MouseWheel + _MOUSEWHEEL
-        IF _MOUSEBUTTON(1) = __UI_MouseButton1 AND _MOUSEBUTTON(2) = __UI_MouseButton2 THEN
+        IF __UI_GetProperMouseButton%%(1) = __UI_MouseButton1 AND __UI_GetProperMouseButton%%(2) = __UI_MouseButton2 THEN
             DO WHILE _MOUSEINPUT
                 __UI_MouseWheel = __UI_MouseWheel + _MOUSEWHEEL
-                IF NOT (_MOUSEBUTTON(1) = __UI_MouseButton1 AND _MOUSEBUTTON(2) = __UI_MouseButton2) THEN EXIT DO
+                IF NOT (__UI_GetProperMouseButton%%(1) = __UI_MouseButton1 AND __UI_GetProperMouseButton%%(2) = __UI_MouseButton2) THEN EXIT DO
             LOOP
         END IF
-        __UI_MouseButton1 = _MOUSEBUTTON(1)
-        __UI_MouseButton2 = _MOUSEBUTTON(2)
+        __UI_MouseButton1 = __UI_GetProperMouseButton%%(1)
+        __UI_MouseButton2 = __UI_GetProperMouseButton%%(2)
         __UI_MouseLeft = _MOUSEX
         __UI_MouseTop = _MOUSEY
     END IF
@@ -2786,6 +2813,7 @@ SUB __UI_EventDispatcher
         IF __UI_AltIsDown AND Control(__UI_Focus).Type = __UI_Type_MenuBar THEN
             __UI_Focus = __UI_PreviousFocus
             __UI_AltIsDown = False
+            __UI_ForceRedraw = True 'Trigger a global redraw
         ELSEIF __UI_AltIsDown AND __UI_ActiveMenu > 0 THEN
             __UI_Focus = __UI_PreviousFocus
             __UI_DestroyControl Control(__UI_ActiveMenu)

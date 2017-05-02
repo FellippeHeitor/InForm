@@ -15,7 +15,8 @@ CONST OffsetAutoName = 33
 CONST OffsetShowPosSize = 35
 CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
-CONST OffsetPropertyValue = 41
+CONST OffsetMouseSwapped = 41
+CONST OffsetPropertyValue = 43
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
@@ -123,6 +124,9 @@ SUB __UI_BeforeUpdateDisplay
 
         GET #UiEditorFile, OffsetAutoName, b$
         AutoNameControls = CVI(b$)
+
+        GET #UiEditorFile, OffsetMouseSwapped, b$
+        __UI_MouseButtonsSwap = CVI(b$)
 
         GET #UiEditorFile, OffsetShowPosSize, b$
         __UI_ShowPositionAndSize = CVI(b$)
