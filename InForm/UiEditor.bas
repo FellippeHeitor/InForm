@@ -512,6 +512,7 @@ SUB __UI_BeforeUpdateDisplay
         UiEditorFile = FREEFILE
         OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
 
+        Reload:
         LoadPreview
 
         $IF WIN THEN
@@ -581,6 +582,9 @@ SUB __UI_BeforeUpdateDisplay
         PreviewFormID = CVL(b$)
         b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
         FirstSelected = CVL(b$)
+
+        IF FirstSelected > UBOUND(PreviewCaptions) THEN GOTO Reload
+
         IF PrevFirstSelected <> FirstSelected THEN
             PrevFirstSelected = FirstSelected
             __UI_ForceRedraw = True
@@ -1345,27 +1349,29 @@ END SUB
 SUB __UI_TextChanged (id AS LONG)
     SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "PROPERTYVALUE"
-            'Send the preview the new property value
-            DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
-            STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
+            IF __UI_Focus = id THEN
+                'Send the preview the new property value
+                DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
+                STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
 
-            TempValue = Control(__UI_GetID("PropertiesList")).Value
-            IF PreviousValue$ <> Text(PropertyValueID) OR PreviousControl <> FirstSelected OR PreviousProperty <> TempValue THEN
-                PreviousValue$ = Text(PropertyValueID)
-                PreviousControl = FirstSelected
-                PreviousProperty = TempValue
-                SELECT CASE TempValue
-                    CASE 1, 2, 3, 9 'Name, caption, text, tooltips
-                        b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
-                    CASE 4, 5, 6, 7, 14 'Top, left, width, height, padding
-                        b$ = MKI$(VAL(Text(PropertyValueID)))
-                        IF TempValue = 14 THEN TempValue = 31
-                    CASE 8 'Font
-                        b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
-                    CASE 10, 11, 12, 13 'Value, min, max, interval
-                        b$ = _MK$(_FLOAT, VAL(Text(PropertyValueID)))
-                END SELECT
-                SendData b$, TempValue
+                TempValue = Control(__UI_GetID("PropertiesList")).Value
+                IF PreviousValue$ <> Text(PropertyValueID) OR PreviousControl <> FirstSelected OR PreviousProperty <> TempValue THEN
+                    PreviousValue$ = Text(PropertyValueID)
+                    PreviousControl = FirstSelected
+                    PreviousProperty = TempValue
+                    SELECT CASE TempValue
+                        CASE 1, 2, 3, 9 'Name, caption, text, tooltips
+                            b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
+                        CASE 4, 5, 6, 7, 14 'Top, left, width, height, padding
+                            b$ = MKI$(VAL(Text(PropertyValueID)))
+                            IF TempValue = 14 THEN TempValue = 31
+                        CASE 8 'Font
+                            b$ = MKL$(LEN(Text(PropertyValueID))) + Text(PropertyValueID)
+                        CASE 10, 11, 12, 13 'Value, min, max, interval
+                            b$ = _MK$(_FLOAT, VAL(Text(PropertyValueID)))
+                    END SELECT
+                    SendData b$, TempValue
+                END IF
             END IF
         CASE "REDVALUE", "GREENVALUE", "BLUEVALUE"
             IF VAL(Text(id)) > 255 THEN Text(id) = "255"
