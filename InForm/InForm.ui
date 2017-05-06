@@ -2,7 +2,7 @@
 'Fellippe Heitor, 2016 - fellippe@qb64.org - @fellippeheitor
 '
 
-CONST __UI_Version = "Beta version 2"
+CONST __UI_Version = "Beta version 3"
 
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
