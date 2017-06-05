@@ -126,7 +126,7 @@ END TYPE
 TYPE __UI_WordWrapHistoryType
     StringSlot AS LONG
     Width AS INTEGER
-    LongestLine AS LONG
+    LongestLine AS INTEGER
     Font AS LONG
     TotalLines AS INTEGER
 END TYPE
