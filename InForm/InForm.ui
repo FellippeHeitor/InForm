@@ -126,6 +126,7 @@ END TYPE
 TYPE __UI_WordWrapHistoryType
     StringSlot AS LONG
     Width AS INTEGER
+    LongestLine AS LONG
     Font AS LONG
     TotalLines AS INTEGER
 END TYPE
@@ -4797,6 +4798,7 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, LongestLine AS 
             IF  __UI_WordWrapHistory(i).Width = Width AND __UI_WordWrapHistory(i).Font = _FONT THEN
                 __UI_WordWrap$ = __UI_WordWrapHistoryResults(i)
                 Lines = __UI_WordWrapHistory(i).TotalLines
+                LongestLine = __UI_WordWrapHistory(i).LongestLine
                 EXIT FUNCTION
             ELSE
                 'Otherwise, it'll be reprocessed
@@ -4889,6 +4891,7 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, LongestLine AS 
         __UI_WordWrap$ = Temp$
         __UI_WordWrapHistoryResults(NextSlot) = Temp$
         __UI_WordWrapHistory(NextSlot).TotalLines = Lines
+        __UI_WordWrapHistory(NextSlot).LongestLine = LongestLine
     ELSE
         'Count line breaks
         Lines = 1
