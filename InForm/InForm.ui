@@ -353,7 +353,9 @@ SUB __UI_Init
     IF __UI_FormID = 0 THEN SYSTEM
 
     SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-    _DELAY .1
+    COLOR Control(__UI_FormID).ForeColor,Control(__UI_FormID).BackColor
+    CLS
+    _PRINTSTRING (_WIDTH / 2 - _PRINTWIDTH("Starting...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2), "Starting..."
     _SCREENSHOW
 
     _DELAY .1
