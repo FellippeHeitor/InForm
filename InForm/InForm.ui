@@ -1,8 +1,8 @@
 'InForm - GUI system for QB64
-'Fellippe Heitor, 2016 - fellippe@qb64.org - @fellippeheitor
+'Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor
 '
 
-CONST __UI_Version = "Beta version 3"
+CONST __UI_Version = "Beta version 4"
 
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
@@ -111,6 +111,7 @@ TYPE __UI_ControlTYPE
     ControlState AS _BYTE
     ChildrenRedrawn AS _BYTE
     FocusState AS LONG
+    LastChange AS DOUBLE
 END TYPE
 
 TYPE __UI_Types
@@ -197,7 +198,7 @@ DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE
 
 'Control types:
-DIM SHARED __UI_Type(0 TO 17) AS __UI_Types
+DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
 CONST __UI_Type_Form = 1: __UI_Type(1).Name = "Form"
 CONST __UI_Type_Frame = 2: __UI_Type(2).Name = "Frame"
 CONST __UI_Type_Button = 3: __UI_Type(3).Name = "Button"
@@ -215,6 +216,7 @@ CONST __UI_Type_PictureBox = 14: __UI_Type(14).Name = "PictureBox"
 CONST __UI_Type_TrackBar = 15: __UI_Type(15).Name = "TrackBar"
 CONST __UI_Type_ContextMenu = 16: __UI_Type(16).Name = "ContextMenuPanel"
 CONST __UI_Type_Font = 17: __UI_Type(17).Name = "Font"
+CONST __UI_Type_ToggleSwitch = 18: __UI_Type(18).Name = "ToggleSwitch"
 
 'Back styles:
 CONST __UI_Opaque = 0
@@ -268,7 +270,7 @@ CONST __UI_ToolTipTimeOut = .8
 CONST True = -1
 CONST False = 0
 
-'ON ERROR GOTO __UI_ErrorHandler
+ON ERROR GOTO __UI_ErrorHandler
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -717,7 +719,8 @@ SUB __UI_UpdateDisplay
         EXIT SUB
     END IF
 
-    'ON ERROR GOTO __UI_ErrorHandler
+    ON ERROR GOTO 0
+    ON ERROR GOTO __UI_ErrorHandler
 
     'Clear frames canvases and count its children;
     FOR i = 1 TO UBOUND(Control)
@@ -887,6 +890,8 @@ SUB __UI_UpdateDisplay
                     __UI_DrawMenuBar Control(i), ControlState
                 CASE __UI_Type_PictureBox
                     __UI_DrawPictureBox Control(i), ControlState
+                CASE __UI_Type_ToggleSwitch
+                    __UI_DrawToggleSwitch Control(i), ControlState
             END SELECT
         END IF
 
@@ -2098,8 +2103,9 @@ SUB __UI_EventDispatcher
                     SELECT CASE Control(__UI_HoveringID).Type
                         CASE __UI_Type_RadioButton
                             SetRadioButtonValue __UI_HoveringID
-                        CASE __UI_Type_CheckBox
+                        CASE __UI_Type_CheckBox, __UI_Type_ToggleSwitch
                             Control(__UI_HoveringID).Value = NOT Control(__UI_HoveringID).Value
+                            Control(__UI_HoveringID).LastChange = TIMER
                         CASE __UI_Type_TextBox
                             DIM TempNewCursor AS LONG
                             STATIC LastTextBoxClick AS DOUBLE, LastTextBoxClickID AS LONG
@@ -4946,8 +4952,8 @@ FUNCTION MessageBox& (Message$, Title$, Setup AS LONG)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_MAP## (value##, minRange##, maxRange##, newMinRange##, newMaxRange##)
-    __UI_MAP## = ((value## - minRange##) / (maxRange## - minRange##)) * (newMaxRange## - newMinRange##) + newMinRange##
+FUNCTION __UI_MAP! (value!, minRange!, maxRange!, newMinRange!, newMaxRange!)
+    __UI_MAP! = ((value! - minRange!) / (maxRange! - minRange!)) * (newMaxRange! - newMinRange!) + newMinRange!
 END FUNCTION
 
 '---------------------------------------------------------------------------------

@@ -278,6 +278,84 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
+SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
+    DIM PrevDest AS LONG, Temp&
+    DIM CaptionIndent AS INTEGER, TempCaption$
+
+    'STATIC ControlImage AS LONG
+    CONST ImageHeight = 15
+    CONST ImageWidth = 30
+
+    'IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("radiobutton.png")
+
+    IF This.ControlState <> ControlState OR TIMER - This.LastChange < .5 OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+        'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.ControlState = ControlState
+        This.FocusState = __UI_Focus = This.ID
+        This.PreviousValue = This.Value
+        __UI_TempCaptions(This.ID) = Caption(This.ID)
+        IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
+        This.PreviousParentID = This.ParentID
+
+        IF This.Canvas <> 0 THEN
+            _FREEIMAGE This.Canvas
+        END IF
+
+        IF This.Height < ImageHeight THEN This.Height = ImageHeight
+        IF This.Width < ImageWidth THEN This.Width = ImageWidth
+        This.Canvas = _NEWIMAGE(This.Width + 1, This.Height + 1, 32)
+
+        PrevDest = _DEST
+        _DEST This.Canvas
+        _FONT This.Font
+        '------
+        IF This.BackStyle = __UI_Opaque THEN
+            CLS , This.BackColor
+        ELSE
+            CLS , _RGBA32(0, 0, 0, 0)
+        END IF
+
+        DIM i AS SINGLE
+
+        CaptionIndent = 0
+
+        AnimationOffset = __UI_MAP(TIMER - This.LastChange, 0, .2, This.Width / 2, 0)
+        IF AnimationOffset < 0 THEN AnimationOffset = 0
+        IF AnimationOffset > This.Width / 2 THEN AnimationOffset = This.Width / 2
+
+        IF This.Value THEN
+            IF NOT This.Disabled THEN
+                LINE (0, 0)-(This.Width, This.Height), This.SelectedBackColor, BF
+            ELSE
+                LINE (0, 0)-(This.Width, This.Height), Darken(This.SelectedBackColor, 150), BF
+            END IF
+
+            LINE (This.Width / 2 + 4 - AnimationOffset, 4)-STEP(This.Width / 2 - 8, This.Height - 8), This.SelectedForeColor, BF
+            LINE (0, 0)-(This.Width, This.Height), This.BorderColor, B
+        ELSE
+            IF NOT This.Disabled THEN
+                LINE (0, 0)-(This.Width, This.Height), This.BackColor, BF
+            ELSE
+                LINE (0, 0)-(This.Width, This.Height), Darken(This.BackColor, 80), BF
+            END IF
+            LINE (4 + AnimationOffset, 4)-STEP(This.Width / 2 - 8, This.Height - 8), This.ForeColor, BF
+            LINE (0, 0)-(This.Width, This.Height), This.BorderColor, B
+        END IF
+
+        'Focus outline
+        IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
+            LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
+        END IF
+        '------
+
+        __UI_MakeHardwareImageFromCanvas This
+        _DEST PrevDest
+    END IF
+
+    IF This.Canvas THEN _PUTIMAGE (This.Left, This.Top), This.Canvas
+END SUB
+
+'---------------------------------------------------------------------------------
 SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, Temp&
     DIM CaptionIndent AS INTEGER, TempCaption$

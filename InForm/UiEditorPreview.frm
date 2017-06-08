@@ -1,5 +1,5 @@
-'InForm - GUI system for QB64 - Beta version 1
-'Fellippe Heitor, 2016 - fellippe@qb64.org - @fellippeheitor
+'InForm - GUI system for QB64 - Beta version 4
+'Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor
 '-----------------------------------------------------------
 SUB __UI_LoadForm
     DIM __UI_NewID AS LONG
