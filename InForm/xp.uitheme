@@ -319,6 +319,7 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         CaptionIndent = 0
 
+        DIM AnimationOffset AS SINGLE
         AnimationOffset = __UI_MAP(TIMER - This.LastChange, 0, .2, This.Width / 2, 0)
         IF AnimationOffset < 0 THEN AnimationOffset = 0
         IF AnimationOffset > This.Width / 2 THEN AnimationOffset = This.Width / 2
