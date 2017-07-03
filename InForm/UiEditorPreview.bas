@@ -813,6 +813,10 @@ SUB __UI_BeforeInit
     LoadPreview
 END SUB
 
+SUB __UI_FormResized
+
+END SUB
+
 SUB __UI_OnLoad
 
 END SUB

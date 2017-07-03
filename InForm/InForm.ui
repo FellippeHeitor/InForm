@@ -171,7 +171,7 @@ DIM SHARED __UI_StateHasChanged AS _BYTE
 DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_ThumbDragTop AS INTEGER
 DIM SHARED __UI_DraggingThumbOnID AS LONG
 DIM SHARED __UI_HasInput AS _BYTE, __UI_LastInputReceived AS DOUBLE
-DIM SHARED __UI_UnloadSignal AS _BYTE
+DIM SHARED __UI_UnloadSignal AS _BYTE, __UI_HasResized AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
 DIM SHARED __UI_Loaded AS _BYTE
 DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
@@ -270,7 +270,7 @@ CONST __UI_ToolTipTimeOut = .8
 CONST True = -1
 CONST False = 0
 
-ON ERROR GOTO __UI_ErrorHandler
+'ON ERROR GOTO __UI_ErrorHandler
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -357,7 +357,7 @@ SUB __UI_Init
     SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
     COLOR Control(__UI_FormID).ForeColor,Control(__UI_FormID).BackColor
     CLS
-    _PRINTSTRING (_WIDTH / 2 - _PRINTWIDTH("Starting...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2), "Starting..."
+    _PRINTSTRING (_WIDTH / 2 - _PRINTWIDTH("Initializing...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2), "Initializing..."
     _SCREENSHOW
 
     _DELAY .1
@@ -659,7 +659,6 @@ SUB __UI_ProcessInput
     DIM CheckResize AS _BYTE
     CheckResize = _RESIZE
     IF (CheckResize AND Control(__UI_FormID).CanResize) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
-        __UI_AutoRefresh = False
         _DELAY .1
         IF CheckResize THEN
             Control(__UI_FormID).Width = _RESIZEWIDTH
@@ -667,6 +666,9 @@ SUB __UI_ProcessInput
         END IF
         IF Control(__UI_FormID).Width > 0 AND Control(__UI_FormID).Height > 0 THEN
             __UI_CurrentBackColor = Control(__UI_FormID).BackColor
+
+            __UI_HasResized = 2 'Indicate this process is in the middle
+
             OldScreen& = _DEST
             SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
             _FREEIMAGE OldScreen&
@@ -687,7 +689,7 @@ SUB __UI_ProcessInput
 
             IF LEN(__UI_CurrentTitle) THEN _TITLE __UI_CurrentTitle
 
-            __UI_AutoRefresh = True
+            __UI_HasResized = True
             __UI_HasInput = True
         END IF
     END IF
@@ -719,8 +721,7 @@ SUB __UI_UpdateDisplay
         EXIT SUB
     END IF
 
-    ON ERROR GOTO 0
-    ON ERROR GOTO __UI_ErrorHandler
+    'ON ERROR GOTO __UI_ErrorHandler
 
     'Clear frames canvases and count its children;
     FOR i = 1 TO UBOUND(Control)
@@ -822,7 +823,11 @@ SUB __UI_UpdateDisplay
             SELECT CASE Control(i).Type
                 CASE __UI_Type_Form
                     'Main window:
-                    IF Control(i).Canvas < -1 THEN _PUTIMAGE (0, 0), Control(i).Canvas, 0
+                    IF __UI_HasResized <> 2 THEN
+                        IF Control(i).Canvas < -1 THEN _PUTIMAGE (0, 0), Control(i).Canvas, 0
+                    ELSE
+                        PAINT (0, 0), Control(i).BackColor
+                    END IF
                 CASE __UI_Type_Button
                     'Buttons
                     __UI_DrawButton Control(i), ControlState
@@ -1301,6 +1306,9 @@ SUB __UI_EventDispatcher
         IF __UI_UnloadSignal THEN SYSTEM
         END IF
     $END IF
+
+    'Have we had a resize?
+    IF __UI_HasResized THEN __UI_FormResized: __UI_HasResized = False
 
     'Hover actions
     IF __UI_LastHoveringID <> __UI_HoveringID OR __UI_HoveringID = __UI_ActiveDropdownList THEN
@@ -4931,6 +4939,7 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, LongestLine AS 
         __UI_WordWrap$ = Temp$
         __UI_WordWrapHistoryResults(NextSlot) = Temp$
         __UI_WordWrapHistory(NextSlot).TotalLines = Lines
+        __UI_WordWrapHistory(NextSlot).LongestLine = LongestLine
     END IF
 END FUNCTION
 
@@ -5089,7 +5098,7 @@ END FUNCTION
 SUB __UI_MakeHardwareImageFromCanvas (This AS __UI_ControlTYPE)
     DIM TempCanvas AS LONG
 
-    IF This.ID = 0 OR This.Canvas = 0 OR __UI_DesignMode THEN EXIT SUB
+    IF This.ID = 0 OR This.Canvas = 0 OR __UI_DesignMode = True THEN EXIT SUB
 
     'Convert to hardware images only those that aren't contained in a frame
     IF This.ParentID = 0 THEN
@@ -5103,7 +5112,7 @@ END SUB
 SUB __UI_MakeHardwareImage (This AS LONG)
     DIM TempCanvas AS LONG
 
-    IF __UI_DesignMode THEN EXIT SUB
+    IF __UI_DesignMode = True THEN EXIT SUB
 
     TempCanvas = _COPYIMAGE(This, 33)
     _FREEIMAGE This

@@ -1118,6 +1118,9 @@ END SUB
 SUB __UI_BeforeInit
 END SUB
 
+SUB __UI_FormResized
+END SUB
+
 SUB __UI_OnLoad
     DIM i AS LONG, b$, UiEditorFile AS INTEGER
 
@@ -5813,7 +5816,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         PRINT #TextFileNum, "'$INCLUDE:'" + BaseOutputFileName + ".frm'"
         PRINT #TextFileNum,
         PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
-        FOR i = 0 TO 13
+        FOR i = 0 TO 14
             SELECT EVERYCASE i
                 CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
                 CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
@@ -5829,8 +5832,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
                 CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
                 CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
+                CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
 
-                CASE 0 TO 3
+                CASE 0 TO 3, 14
                     PRINT #TextFileNum,
 
                 CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
