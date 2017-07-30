@@ -5436,7 +5436,7 @@ SUB CheckPreview
                 CLOSE #UiEditorFile
                 UiPreviewPID = 0
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
-                __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
+                __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
                 DO
                     _LIMIT 10
                     OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
@@ -5462,7 +5462,7 @@ SUB CheckPreview
         CLOSE #UiEditorFile
         UiPreviewPID = 0
         SHELL _DONTWAIT "./InForm/UiEditorPreview"
-        __UI_LastInputReceived = 0 'Make the "Please wait" message show up immediataly
+        __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
         DO
         _LIMIT 10
         OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile

@@ -1275,10 +1275,11 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
         __UI_ClearColor ControlImage, 0, 0
     END IF
 
-    IF This.ChildrenRedrawn OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND Control(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw OR __UI_DesignMode THEN
+    IF This.PreviouslyHidden <> This.Hidden OR This.ChildrenRedrawn OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND Control(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw OR __UI_DesignMode THEN
         'Last time we drew this frame its children had different images
         This.ChildrenRedrawn = False
         This.PreviousValue = This.Value
+        This.PreviouslyHidden = This.Hidden
         __UI_TempCaptions(This.ID) = Caption(This.ID)
 
         _FONT This.Font
@@ -1358,7 +1359,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
     END IF
 
     _FONT This.Font
-    IF This.HelperCanvas THEN _PUTIMAGE (This.Left, This.Top - uspacing& \ 2), This.HelperCanvas
+    IF This.HelperCanvas < -1 THEN _PUTIMAGE (This.Left, This.Top - uspacing& \ 2), This.HelperCanvas
 END SUB
 
 '---------------------------------------------------------------------------------

@@ -107,6 +107,7 @@ TYPE __UI_ControlTYPE
     CanHaveFocus AS _BYTE
     Disabled AS _BYTE
     Hidden AS _BYTE
+    PreviouslyHidden AS _BYTE
     CenteredWindow AS _BYTE
     ControlState AS _BYTE
     ChildrenRedrawn AS _BYTE
@@ -170,7 +171,7 @@ DIM SHARED __UI_SelectedText AS STRING, __UI_SelectionLength AS LONG
 DIM SHARED __UI_StateHasChanged AS _BYTE
 DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_ThumbDragTop AS INTEGER
 DIM SHARED __UI_DraggingThumbOnID AS LONG
-DIM SHARED __UI_HasInput AS _BYTE, __UI_LastInputReceived AS DOUBLE
+DIM SHARED __UI_HasInput AS _BYTE, __UI_ProcessInputTimer AS DOUBLE
 DIM SHARED __UI_UnloadSignal AS _BYTE, __UI_HasResized AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
 DIM SHARED __UI_Loaded AS _BYTE
@@ -701,7 +702,7 @@ SUB __UI_ProcessInput
         __UI_HasInput = True
     END IF
 
-    __UI_LastInputReceived = TIMER
+    __UI_ProcessInputTimer = TIMER
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -1214,7 +1215,7 @@ SUB __UI_UpdateDisplay
 
     STATIC WaitMessageSetup AS _BYTE, PrevWaitMessage AS STRING
     DIM NoInputMessage$
-    IF TIMER - __UI_LastInputReceived > 2 THEN
+    IF TIMER - __UI_ProcessInputTimer > 2 THEN
         'Visually indicate that something is hogging the input routine
         IF __UI_WaitMessageHandle = 0 THEN
             __UI_WaitMessageHandle = _NEWIMAGE(_WIDTH(0), _HEIGHT(0), 32)
