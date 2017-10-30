@@ -3811,18 +3811,39 @@ FUNCTION __UI_GetFontID (FontHandle&)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAttributes AS STRING)
+FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAttributes AS STRING)
     DIM NextSlot AS LONG, i AS LONG, Temp$, NewFontAttributes AS STRING
+    DIM NewFontFile AS STRING, PassedFontFile AS STRING, FindSep AS LONG
+    DIM TotalPassedFonts AS LONG
+    REDIM PassedFonts(10) AS STRING
 
-    'If the passed font is already loaded, we'll just return its handle
-    FOR NextSlot = 1 TO UBOUND(Control)
-        IF Control(NextSlot).Type = __UI_Type_Font THEN
-            IF UCASE$(Text(NextSlot)) = UCASE$(NewFontFile) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
-                SetFont& = Control(NextSlot).Value
-                EXIT FUNCTION
-            END IF
+    'common sense is not to use question marks for file names, so
+    'we'll use it as a separator for multiple font assignments.
+    '"arial.ttf?cour.ttf?lucon.ttf" - First font that is found is used.
+    PassedFontFile = __NewFontFile
+    DO
+        FindSep = INSTR(PassedFontFile, "?")
+        IF FindSep > 0 THEN
+            NewFontFile = LEFT$(PassedFontFile, FindSep - 1)
+            PassedFontFile = RTRIM$(LTRIM$(MID$(PassedFontFile, FindSep + 1)))
+        ELSE
+            NewFontFile = RTRIM$(LTRIM$(PassedFontFile))
         END IF
-    NEXT
+
+        TotalPassedFonts = TotalPassedFonts + 1
+        IF TotalPassedFonts > UBOUND(PassedFonts) THEN REDIM _PRESERVE PassedFonts(UBOUND(PassedFonts) + 9) AS STRING
+        PassedFonts(TotalPassedFonts) = NewFontFile
+
+        'If the passed font is already loaded, we'll just return its handle
+        FOR NextSlot = 1 TO UBOUND(Control)
+            IF Control(NextSlot).Type = __UI_Type_Font THEN
+                IF (UCASE$(Text(NextSlot)) = UCASE$(NewFontFile) OR UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
+                    SetFont& = Control(NextSlot).Value
+                    EXIT FUNCTION
+                END IF
+            END IF
+        NEXT
+    LOOP WHILE FindSep > 0
 
     '-------------------------------------------------
     'The font isn't loaded, so we'll attempt to do so.
@@ -3857,6 +3878,14 @@ FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAtt
     Control(NextSlot).ID = NextSlot
     Control(NextSlot).Type = __UI_Type_Font
     Control(NextSlot).Name = "Font" + LTRIM$(STR$(__UI_Type(__UI_Type_Font).Count))
+
+    NewFontFile = ""
+    FOR i = 1 TO TotalPassedFonts
+        IF _FILEEXISTS(PassedFonts(i)) OR _FILEEXISTS("C:\Windows\Fonts\" + PassedFonts(i)) THEN
+            NewFontFile = PassedFonts(i)
+            EXIT FOR
+        END IF
+    NEXT
 
     IF NewFontFile = "" THEN
         'Internal emulated fonts
@@ -3895,6 +3924,7 @@ FUNCTION SetFont& (NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAtt
         Control(NextSlot).Value = _LOADFONT(NewFontFile, NewFontSize, NewFontAttributes)
         Control(NextSlot).Max = NewFontSize
         Text(NextSlot) = NewFontFile
+        ToolTip(NextSlot) = __NewFontFile 'save the original string passed
         Caption(NextSlot) = UCASE$(NewFontAttributes)
 
         SetFont& = Control(NextSlot).Value
