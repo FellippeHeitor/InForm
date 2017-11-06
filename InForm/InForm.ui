@@ -4216,7 +4216,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     'This.CanHaveFocus = False
     'This.Disabled = False
     'This.Hidden = False
-    uw& = __GetCDO(This.ID)    'This.CenteredWindow = False
+    uw& = __GetControlDrawOrder(This.ID)    'This.CenteredWindow = False
     ControlDrawOrder(uw&) = 0    'This.ControlState = 0
     IF ubound (ControlDrawOrder) = uw& then __ExpandControlDrawOrder -1 'This.ChildrenRedrawn = False
     This = noti    'This.FocusState = 0
