@@ -1250,10 +1250,10 @@ SUB __UI_UpdateDisplay
         IF _EXIT THEN SYSTEM 'Can't force user to wait...
         _PUTIMAGE , __UI_WaitMessageHandle
     END IF
-
+    For i = 1 to 2: IF ControlDrawOrder(ubound(ControlDrawOrder)) = 0 then __ExpandControlDrawOrder -1
+    Next i 'run that a couple times for good measure
     _DISPLAY
 END SUB
-
 '---------------------------------------------------------------------------------
 FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
     Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
@@ -4218,7 +4218,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     'This.Hidden = False
     uw& = __GetControlDrawOrder(This.ID)    'This.CenteredWindow = False
     ControlDrawOrder(uw&) = 0    'This.ControlState = 0
-    IF ubound (ControlDrawOrder) = uw& then __ExpandControlDrawOrder -1 'This.ChildrenRedrawn = False
+    
     This = noti    'This.FocusState = 0
 
     __UI_HasMenuBar = (__UI_FirstMenuBarControl > 0)
