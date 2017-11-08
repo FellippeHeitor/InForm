@@ -800,7 +800,9 @@ SUB __UI_UpdateDisplay
     END IF
 
     'Control drawing
-    FOR i = 1 TO UBOUND(Control)
+    DIM icount AS LONG
+    FOR icount = 1 TO UBOUND(ControlDrawOrder)
+    i = ControlDrawOrder(icount)
         IF Control(i).ID > 0 AND NOT Control(i).Hidden THEN
             'Direct the drawing to the appropriate canvas (main or container)
             IF Control(i).ParentID > 0 AND Control(i).Type <> __UI_Type_MenuItem THEN
@@ -1250,10 +1252,10 @@ SUB __UI_UpdateDisplay
         IF _EXIT THEN SYSTEM 'Can't force user to wait...
         _PUTIMAGE , __UI_WaitMessageHandle
     END IF
-
+    For i = 1 to 2: IF ControlDrawOrder(ubound(ControlDrawOrder)) = 0 then __ExpandControlDrawOrder -1
+    Next i 'run that a couple times for good measure
     _DISPLAY
 END SUB
-
 '---------------------------------------------------------------------------------
 FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
     Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
@@ -3943,7 +3945,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     STATIC InternalMenus AS LONG
 
     IF ControlType = 0 THEN EXIT SUB
-
+    __ExpandControlDrawOrder 1
     'Increase the global count of controls of this type
     __UI_Type(ControlType).Count = __UI_Type(ControlType).Count + 1
 
@@ -3977,6 +3979,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         END IF
     NEXT
 
+    ControlDrawOrder (UBOUND(ControlDrawOrder)) = NextSlot
     IF NextSlot = UBOUND(Control) + 1 THEN
         'No empty slots. We must increase Control() and its helper arrays
         REDIM _PRESERVE Control(0 TO NextSlot + 99) AS __UI_ControlTYPE
@@ -4105,7 +4108,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
-    DIM i AS LONG
+    DIM i AS LONG, uw AS LONG
 
     __UI_AutoRefresh = False
 
@@ -4147,79 +4150,15 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
         END IF
     END IF
 
-    This.ID = 0
-    This.ParentID = 0
-    This.PreviousParentID = 0
-    This.ContextMenuID = 0
-    This.Name = ""
-    This.Top = 0
-    This.Left = 0
-    This.Width = 0
-    This.Height = 0
+    DIM noti AS __ui_ControlTYPE    
+    
     IF This.Canvas <> 0 THEN _FREEIMAGE This.Canvas: This.Canvas = 0
     IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas: This.HelperCanvas = 0
-    This.TransparentColor = 0
-    This.Stretch = False
-    This.PreviousStretch = False
-    This.BackColor = 0
-    This.ForeColor = 0
-    This.SelectedForeColor = 0
-    This.SelectedBackColor = 0
-    This.BackStyle = 0
-    This.HasBorder = False
-    This.Padding = 0
-    This.Align = 0
-    This.BorderColor = 0
-    This.Value = 0
-    This.Type = 0
-    This.PreviousValue = 0
-    This.Min = 0
-    This.Max = 0
-    This.Interval = 0
-    This.HotKey = 0
-    This.HotKeyOffset = 0
-    This.HotKeyPosition = 0
-    This.ShowPercentage = False
-    This.InputViewStart = 0
-    This.PreviousInputViewStart = 0
-    This.LastVisibleItem = 0
-    This.HasVScrollbar = False
-    This.VScrollbarButton2Top = 0
-    This.HoveringVScrollbarButton = 0
-    This.ThumbHeight = 0
-    This.ThumbTop = 0
-    This.VScrollbarRatio = 0
-    'This.HasHScrollbar = False
-    'This.HScrollbarButton2Left = 0
-    'This.HoveringHScrollbarButton = 0
-    'This.LongestLine = 0
-    'This.ThumbWidth = 0
-    'This.ThumbLeft = 0
-    'This.HScrollbarRatio = 0
-    This.Cursor = 0
-    This.PrevCursor = 0
-    This.FieldArea = 0
-    This.PreviousFieldArea = 0
-    This.TextIsSelected = False
-    This.Multiline = False
-    This.FirstVisibleLine = 0
-    This.PrevFirstVisibleLine = 0
-    This.CurrentLine = 0
-    This.PrevCurrentLine = 0
-    This.VisibleCursor = 0
-    This.PrevVisibleCursor = 0
     IF This.ControlIsSelected THEN This.ControlIsSelected = False: __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
-    This.SelectionLength = 0
-    This.SelectionStart = 0
-    This.WordWrap = False
-    This.CanResize = 0
-    This.CanHaveFocus = False
-    This.Disabled = False
-    This.Hidden = False
-    This.CenteredWindow = False
-    This.ControlState = 0
-    This.ChildrenRedrawn = False
-    This.FocusState = 0
+    
+    uw& = __GetControlDrawOrder(This.ID)   
+    ControlDrawOrder(uw&) = 0    
+    This = noti
 
     __UI_HasMenuBar = (__UI_FirstMenuBarControl > 0)
 
@@ -5540,3 +5479,13 @@ FUNCTION UTF8$ (source$, table$())
     UTF8$ = dest$
 END FUNCTION
 
+FUNCTION GetControlDrawOrder&(ctrlref AS LONG)
+    DIM i AS LONG
+    FOR i& = 1 to UBOUND(ControlDrawOrder)
+        IF ControlDrawOrder(i&) = ctrlref THEN GetControlDrawOrder& = i&: EXIT FUNCTION
+    NEXT i&
+END FUNCTION
+
+SUB __ExpandControlDrawOrder (size&)
+    REDIM _PRESERVE ControlDrawOrder (UBOUND(ControlDrawOrder) + size&) AS _uns$
+END SUB
