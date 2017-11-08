@@ -142,6 +142,7 @@ REDIM SHARED __UI_TempMask(1 TO 100) AS STRING
 REDIM SHARED ToolTip(0 TO 100) AS STRING
 REDIM SHARED __UI_TempTips(1 TO 100) AS STRING
 REDIM SHARED Control(0 TO 100) AS __UI_ControlTYPE
+REDIM SHARED ControlDrawOrder(0) AS LONG
 REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
 REDIM SHARED __UI_WordWrapHistoryTexts(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistoryResults(1 TO 100) AS STRING
@@ -802,7 +803,7 @@ SUB __UI_UpdateDisplay
     'Control drawing
     DIM icount AS LONG
     FOR icount = 1 TO UBOUND(ControlDrawOrder)
-    i = ControlDrawOrder(icount)
+        i = ControlDrawOrder(icount)
         IF Control(i).ID > 0 AND NOT Control(i).Hidden THEN
             'Direct the drawing to the appropriate canvas (main or container)
             IF Control(i).ParentID > 0 AND Control(i).Type <> __UI_Type_MenuItem THEN
@@ -1252,8 +1253,9 @@ SUB __UI_UpdateDisplay
         IF _EXIT THEN SYSTEM 'Can't force user to wait...
         _PUTIMAGE , __UI_WaitMessageHandle
     END IF
-    For i = 1 to 2: IF ControlDrawOrder(ubound(ControlDrawOrder)) = 0 then __ExpandControlDrawOrder -1
-    Next i 'run that a couple times for good measure
+    FOR i = 1 TO 2
+        IF ControlDrawOrder(UBOUND(ControlDrawOrder)) = 0 THEN __UI_ExpandControlDrawOrder -1
+    NEXT i 'run that a couple times for good measure
     _DISPLAY
 END SUB
 '---------------------------------------------------------------------------------
@@ -3945,7 +3947,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     STATIC InternalMenus AS LONG
 
     IF ControlType = 0 THEN EXIT SUB
-    __ExpandControlDrawOrder 1
+    __UI_ExpandControlDrawOrder 1
     'Increase the global count of controls of this type
     __UI_Type(ControlType).Count = __UI_Type(ControlType).Count + 1
 
@@ -3979,7 +3981,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         END IF
     NEXT
 
-    ControlDrawOrder (UBOUND(ControlDrawOrder)) = NextSlot
+    ControlDrawOrder(UBOUND(ControlDrawOrder)) = NextSlot
     IF NextSlot = UBOUND(Control) + 1 THEN
         'No empty slots. We must increase Control() and its helper arrays
         REDIM _PRESERVE Control(0 TO NextSlot + 99) AS __UI_ControlTYPE
@@ -4156,7 +4158,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas: This.HelperCanvas = 0
     IF This.ControlIsSelected THEN This.ControlIsSelected = False: __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
     
-    uw& = __GetControlDrawOrder(This.ID)   
+    uw& = GetControlDrawOrder(This.ID)
     ControlDrawOrder(uw&) = 0    
     This = noti
 
@@ -5479,13 +5481,13 @@ FUNCTION UTF8$ (source$, table$())
     UTF8$ = dest$
 END FUNCTION
 
-FUNCTION GetControlDrawOrder&(ctrlref AS LONG)
+FUNCTION GetControlDrawOrder&(ctrlRef AS LONG)
     DIM i AS LONG
     FOR i& = 1 to UBOUND(ControlDrawOrder)
-        IF ControlDrawOrder(i&) = ctrlref THEN GetControlDrawOrder& = i&: EXIT FUNCTION
+        IF ControlDrawOrder(i&) = ctrlRef THEN GetControlDrawOrder& = i&: EXIT FUNCTION
     NEXT i&
 END FUNCTION
 
-SUB __ExpandControlDrawOrder (size&)
-    REDIM _PRESERVE ControlDrawOrder (UBOUND(ControlDrawOrder) + size&) AS _uns$
+SUB __UI_ExpandControlDrawOrder (size&)
+    REDIM _PRESERVE ControlDrawOrder(UBOUND(ControlDrawOrder) + size&) AS LONG
 END SUB
