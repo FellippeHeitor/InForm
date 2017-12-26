@@ -2,7 +2,7 @@
 'Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor
 '
 
-CONST __UI_Version = "Beta version 4"
+'$INCLUDE:'InFormVersion.bas'
 
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
