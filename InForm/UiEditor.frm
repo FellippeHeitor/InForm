@@ -58,8 +58,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSaveFrm", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "&Save form only-"
-    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property" + CHR$(10) + _
-                          "Only the .frm and .frmbin files will be updated."
+    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property" + CHR$(10) + "Only the .frm and .frmbin files will be updated."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "E&xit"
@@ -390,7 +389,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 200, 23, 25, 255, __UI_GetID("OpenFrame"))
-    SetCaption __UI_NewID, "Show only .frmbin files"
+    SetCaption __UI_NewID, "Show only compatible files"
     Control(__UI_NewID).Value = -1
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).BackStyle = __UI_Transparent

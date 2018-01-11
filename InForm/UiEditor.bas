@@ -1247,12 +1247,14 @@ SUB __UI_OnLoad
 
     IF _FILEEXISTS(COMMAND$) THEN
         SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
-            CASE ".bas", ".frm"
+            CASE ".bas"
                 IF _FILEEXISTS(LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frmbin") THEN
                     FileToOpen$ = LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frmbin"
+                ELSEIF _FILEEXISTS(LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frm") THEN
+                    FileToOpen$ = LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frm"
                 END IF
             CASE ELSE
-                IF LCASE$(RIGHT$(COMMAND$, 7)) = ".frmbin" THEN
+                IF LCASE$(RIGHT$(COMMAND$, 7)) = ".frmbin" OR LCASE$(RIGHT$(COMMAND$, 4)) = ".frm" THEN
                     FileToOpen$ = COMMAND$
                 END IF
         END SELECT
@@ -6148,14 +6150,14 @@ END SUB
 
 'FUNCTION idezfilelist$ and idezpathlist$ (and helper functions) were
 'adapted from ide_methods.bas (QB64):
-FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.bas, method1=*.*
+FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.frm and *.frmbin, method1=*.*
     DIM sep AS STRING * 1, filelist$, a$
     sep = CHR$(13)
 
     TotalFound = 0
     $IF WIN THEN
         OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        IF method = 0 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.frmbin >opendlgfiles.dat"
+        IF method = 0 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.frm >opendlgfiles.dat"
         IF method = 1 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.* >opendlgfiles.dat"
         filelist$ = ""
         OPEN "opendlgfiles.dat" FOR INPUT AS #150
@@ -6176,8 +6178,8 @@ FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.bas, me
         FOR i = 1 TO 2 - method
         OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
         IF method = 0 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.frmbin" + CHR$(34) + " >opendlgfiles.dat"
-        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.FRMBIN" + CHR$(34) + " >opendlgfiles.dat"
+        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
+        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
         END IF
         IF method = 1 THEN
         IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"

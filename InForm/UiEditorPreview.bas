@@ -274,7 +274,11 @@ SUB __UI_BeforeUpdateDisplay
             CLOSE #FileToLoad
 
             _SCREENSHOW
-            LoadPreview
+            IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
+                LoadPreviewText
+            ELSE
+                LoadPreview
+            END IF
             UndoPointer = 0
             TotalUndoImages = 0
         ELSEIF TempValue = -5 THEN
@@ -810,7 +814,21 @@ END SUB
 SUB __UI_BeforeInit
     __UI_DesignMode = True
     UiPreviewPID = __UI_GetPID
-    LoadPreview
+
+    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN
+        DIM FileToLoad AS INTEGER, a$
+        FileToLoad = FREEFILE
+        OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+        a$ = SPACE$(LOF(FileToLoad))
+        GET #FileToLoad, 1, a$
+        CLOSE #FileToLoad
+
+        IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
+            LoadPreviewText
+        ELSE
+            LoadPreview
+        END IF
+    END IF
 END SUB
 
 SUB __UI_FormResized
@@ -1116,6 +1134,323 @@ SUB LoadPreview
         EXIT SUB
     END IF
 END SUB
+
+SUB LoadPreviewText
+    DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
+    DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
+    DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
+    DIM NewParentID AS STRING, FloatValue AS _FLOAT, TempValue AS LONG
+    DIM Dummy AS LONG, DummyText$, TotalNewControls AS LONG
+    DIM BinaryFileNum AS INTEGER, LogFileNum AS INTEGER
+    DIM NewRed AS _UNSIGNED _BYTE, NewGreen AS _UNSIGNED _BYTE, NewBlue AS _UNSIGNED _BYTE
+
+    CONST LogFileLoad = False
+
+    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") = 0 THEN
+        EXIT SUB
+    ELSE
+        BinaryFileNum = FREEFILE
+        OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
+
+        LogFileNum = FREEFILE
+        IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #LogFileNum
+        DO
+            LINE INPUT #BinaryFileNum, b$
+        LOOP UNTIL b$ = "SUB __UI_LoadForm"
+        IF LogFileLoad THEN PRINT #LogFileNum, "FOUND SUB __UI_LOADFORM"
+
+        __UI_AutoRefresh = False
+        FOR i = UBOUND(Control) TO 1 STEP -1
+            IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                __UI_DestroyControl Control(i)
+            END IF
+        NEXT
+        IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
+
+        DO
+            LINE INPUT #BinaryFileNum, b$
+        LOOP UNTIL INSTR(b$, "__UI_NewControl") > 0
+        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL"
+        DO
+            DummyText$ = nextParameter(b$)
+            SELECT CASE DummyText$
+                CASE "__UI_Type_Form": NewType = 1
+                CASE "__UI_Type_Frame": NewType = 2
+                CASE "__UI_Type_Button": NewType = 3
+                CASE "__UI_Type_Label": NewType = 4
+                CASE "__UI_Type_CheckBox": NewType = 5
+                CASE "__UI_Type_RadioButton": NewType = 6
+                CASE "__UI_Type_TextBox": NewType = 7
+                CASE "__UI_Type_ProgressBar": NewType = 8
+                CASE "__UI_Type_ListBox": NewType = 9
+                CASE "__UI_Type_DropdownList": NewType = 10
+                CASE "__UI_Type_MenuBar": NewType = 11
+                CASE "__UI_Type_MenuItem": NewType = 12
+                CASE "__UI_Type_MenuPanel": NewType = 13
+                CASE "__UI_Type_PictureBox": NewType = 14
+                CASE "__UI_Type_TrackBar": NewType = 15
+                CASE "__UI_Type_ContextMenu": NewType = 16
+                CASE "__UI_Type_Font": NewType = 17
+                CASE "__UI_Type_ToggleSwitch": NewType = 18
+            END SELECT
+            IF LogFileLoad THEN PRINT #LogFileNum, "TYPE:" + DummyText$
+
+            NewName = nextParameter(b$)
+            IF LogFileLoad THEN PRINT #LogFileNum, "NAME:" + NewName
+
+            NewWidth = VAL(nextParameter(b$))
+            IF LogFileLoad THEN PRINT #LogFileNum, "WIDTH:" + STR$(NewWidth)
+
+            NewHeight = VAL(nextParameter(b$))
+            IF LogFileLoad THEN PRINT #LogFileNum, "HEIGHT:" + STR$(NewHeight)
+
+            NewLeft = VAL(nextParameter(b$))
+            IF LogFileLoad THEN PRINT #LogFileNum, "LEFT:" + STR$(NewLeft)
+
+            NewTop = VAL(nextParameter(b$))
+            IF LogFileLoad THEN PRINT #LogFileNum, "TOP:" + STR$(NewTop)
+
+            DummyText$ = nextParameter(b$)
+            IF DummyText$ = "0" THEN
+                NewParentID = ""
+                IF LogFileLoad THEN PRINT #LogFileNum, "PARENT: ORPHAN/CONTAINER"
+            ELSE
+                NewParentID = MID$(DummyText$, 13)
+                IF LogFileLoad THEN PRINT #LogFileNum, "PARENT:" + NewParentID
+            END IF
+
+            TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
+            IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
+
+            DO 'read properties
+                DO
+                    LINE INPUT #BinaryFileNum, b$
+                    b$ = LTRIM$(RTRIM$(b$))
+                    IF LEN(b$) > 0 THEN EXIT DO
+                LOOP
+                IF LEFT$(b$, 20) = "Control(__UI_NewID)." THEN
+                    'Property
+                    DummyText$ = MID$(b$, INSTR(21, b$, " = ") + 3)
+                    SELECT CASE MID$(b$, 21, INSTR(21, b$, " =") - 21)
+                        CASE "Stretch"
+                            Control(TempValue).Stretch = (DummyText$ = "True")
+                        CASE "Font"
+                            DIM NewFontFile AS STRING
+                            DIM NewFontSize AS INTEGER, NewFontAttributes AS STRING
+
+                            IF LEFT$(DummyText$, 8) = "SetFont(" THEN
+                                NewFontFile = nextParameter(DummyText$)
+                                NewFontSize = VAL(nextParameter(DummyText$))
+                                NewFontAttributes = nextParameter(DummyText$)
+                                Control(TempValue).Font = SetFont(NewFontFile, NewFontSize, NewFontAttributes)
+                            END IF
+                        CASE "ForeColor"
+                            IF LEFT$(DummyText$, 6) = "_RGB32" THEN
+                                NewRed = VAL(nextParameter(DummyText$))
+                                NewGreen = VAL(nextParameter(DummyText$))
+                                NewBlue = VAL(nextParameter(DummyText$))
+                                Control(TempValue).ForeColor = _RGB32(NewRed, NewGreen, NewBlue)
+                            ELSEIF LEFT$(DummyText$, 2) = "&H" THEN
+                                Control(TempValue).ForeColor = VAL(DummyText$)
+                            END IF
+                        CASE "BackColor"
+                            IF LEFT$(DummyText$, 6) = "_RGB32" THEN
+                                NewRed = VAL(nextParameter(DummyText$))
+                                NewGreen = VAL(nextParameter(DummyText$))
+                                NewBlue = VAL(nextParameter(DummyText$))
+                                Control(TempValue).BackColor = _RGB32(NewRed, NewGreen, NewBlue)
+                            ELSEIF LEFT$(DummyText$, 2) = "&H" THEN
+                                Control(TempValue).BackColor = VAL(DummyText$)
+                            END IF
+                        CASE "SelectedForeColor"
+                            IF LEFT$(DummyText$, 6) = "_RGB32" THEN
+                                NewRed = VAL(nextParameter(DummyText$))
+                                NewGreen = VAL(nextParameter(DummyText$))
+                                NewBlue = VAL(nextParameter(DummyText$))
+                                Control(TempValue).SelectedForeColor = _RGB32(NewRed, NewGreen, NewBlue)
+                            ELSEIF LEFT$(DummyText$, 2) = "&H" THEN
+                                Control(TempValue).SelectedForeColor = VAL(DummyText$)
+                            END IF
+                        CASE "SelectedBackColor"
+                            IF LEFT$(DummyText$, 6) = "_RGB32" THEN
+                                NewRed = VAL(nextParameter(DummyText$))
+                                NewGreen = VAL(nextParameter(DummyText$))
+                                NewBlue = VAL(nextParameter(DummyText$))
+                                Control(TempValue).SelectedBackColor = _RGB32(NewRed, NewGreen, NewBlue)
+                            ELSEIF LEFT$(DummyText$, 2) = "&H" THEN
+                                Control(TempValue).SelectedBackColor = VAL(DummyText$)
+                            END IF
+                        CASE "BorderColor"
+                            IF LEFT$(DummyText$, 6) = "_RGB32" THEN
+                                NewRed = VAL(nextParameter(DummyText$))
+                                NewGreen = VAL(nextParameter(DummyText$))
+                                NewBlue = VAL(nextParameter(DummyText$))
+                                Control(TempValue).BorderColor = _RGB32(NewRed, NewGreen, NewBlue)
+                            ELSEIF LEFT$(DummyText$, 2) = "&H" THEN
+                                Control(TempValue).BorderColor = VAL(DummyText$)
+                            END IF
+                        CASE "BackStyle"
+                            IF DummyText$ = "__UI_Transparent" THEN
+                                Control(TempValue).BackStyle = __UI_Transparent
+                            END IF
+                        CASE "HasBorder"
+                            Control(TempValue).HasBorder = (DummyText$ = "True")
+                        CASE "Align"
+                            SELECT CASE DummyText$
+                                CASE "__UI_Center": Control(TempValue).Align = __UI_Center
+                                CASE "__UI_Right": Control(TempValue).Align = __UI_Right
+                            END SELECT
+                        CASE "Value"
+                            Control(TempValue).Value = VAL(DummyText$)
+                        CASE "Min"
+                            Control(TempValue).Min = VAL(DummyText$)
+                        CASE "Max"
+                            Control(TempValue).Max = VAL(DummyText$)
+                        CASE "ShowPercentage"
+                            Control(TempValue).ShowPercentage = (DummyText$ = "True")
+                        CASE "CanHaveFocus"
+                            Control(TempValue).CanHaveFocus = (DummyText$ = "True")
+                        CASE "Disabled"
+                            Control(TempValue).Disabled = (DummyText$ = "True")
+                        CASE "Hidden"
+                            Control(TempValue).Hidden = (DummyText$ = "True")
+                        CASE "CenteredWindow"
+                            Control(TempValue).CenteredWindow = (DummyText$ = "True")
+                        CASE "ContextMenuID"
+                        CASE "Interval"
+                        CASE "WordWrap"
+                            Control(TempValue).WordWrap = (DummyText$ = "True")
+                        CASE "TransparentColor"
+                            IF LEFT$(DummyText$, 6) = "_RGB32" THEN
+                                NewRed = VAL(nextParameter(DummyText$))
+                                NewGreen = VAL(nextParameter(DummyText$))
+                                NewBlue = VAL(nextParameter(DummyText$))
+                                Control(TempValue).TransparentColor = _RGB32(NewRed, NewGreen, NewBlue)
+                                __UI_ClearColor Control(TempValue).HelperCanvas, Control(TempValue).TransparentColor, -1
+                            ELSEIF LEFT$(DummyText$, 2) = "&H" THEN
+                                Control(TempValue).TransparentColor = VAL(DummyText$)
+                                __UI_ClearColor Control(TempValue).HelperCanvas, Control(TempValue).TransparentColor, -1
+                            END IF
+                        CASE "CanResize"
+                            Control(TempValue).CanResize = (DummyText$ = "True")
+                        CASE "Padding"
+                            Control(TempValue).Padding = VAL(DummyText$)
+                        CASE "VAlign"
+                            SELECT CASE DummyText$
+                                CASE "__UI_Middle": Control(TempValue).VAlign = __UI_Middle
+                                CASE "__UI_Bottom": Control(TempValue).VAlign = __UI_Bottom
+                            END SELECT
+                        CASE "PasswordField"
+                            Control(TempValue).PasswordField = (DummyText$ = "True")
+                        CASE "Encoding"
+                            Control(TempValue).Encoding = VAL(DummyText$)
+                    END SELECT
+                ELSEIF LEFT$(b$, 11) = "SetCaption " THEN
+                    'Caption
+                    DummyText$ = nextParameter(b$) 'discard first parameter
+                    DummyText$ = nextParameter(b$)
+                    'Replace CHR$(10) with \n:
+                    DummyText$ = Replace$(DummyText$, CHR$(34) + " + CHR$(10) + " + CHR$(34), "\n", False, 0)
+                    SetCaption TempValue, DummyText$
+                ELSEIF LEFT$(b$, 8) = "AddItem " THEN
+                    'Caption
+                    DummyText$ = nextParameter(b$) 'discard first parameter
+                    DummyText$ = nextParameter(b$)
+                    AddItem TempValue, DummyText$
+                ELSEIF LEFT$(b$, 22) = "ToolTip(__UI_NewID) = " THEN
+                    'Tooltip
+                    DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
+                    DummyText$ = Replace$(DummyText$, CHR$(34) + " + CHR$(10) + " + CHR$(34), CHR$(10), False, 0)
+                    ToolTip(TempValue) = removeQuotation$(DummyText$)
+                ELSEIF LEFT$(b$, 19) = "Text(__UI_NewID) = " THEN
+                    'Text
+                    DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
+                    DummyText$ = Replace$(DummyText$, CHR$(34) + " + CHR$(10) + " + CHR$(34), CHR$(10), False, 0)
+                    Text(TempValue) = removeQuotation$(DummyText$)
+
+                    IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
+                        LoadImage Control(TempValue), Text(TempValue)
+                    ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
+                        IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
+                        ExeIcon = IconPreview&(b$)
+                        IF ExeIcon < -1 THEN
+                            _ICON ExeIcon
+                        END IF
+                    END IF
+                ELSEIF INSTR(b$, "__UI_NewControl") > 0 THEN
+                    'New Control
+                    EXIT DO
+                ELSEIF b$ = "END SUB" THEN
+                    __UI_EOF = True
+                    EXIT DO
+                END IF
+            LOOP
+        LOOP UNTIL __UI_EOF
+        CLOSE #BinaryFileNum
+        IF LogFileLoad THEN CLOSE #LogFileNum
+        __UI_AutoRefresh = True
+        EXIT SUB
+
+        LoadError:
+        CLOSE #BinaryFileNum
+        KILL "InForm/UiEditorPreview.frmbin"
+        __UI_AutoRefresh = True
+        EXIT SUB
+    END IF
+    EXIT SUB
+END SUB
+
+FUNCTION nextParameter$ (__text$)
+    STATIC lastText$
+    STATIC position1 AS LONG, position2 AS LONG
+    DIM text$, thisParameter$
+
+    text$ = LTRIM$(RTRIM$(__text$))
+    IF text$ <> lastText$ THEN
+        lastText$ = text$
+        position1 = INSTR(text$, "(")
+        IF position1 > 0 THEN
+            'check that this bracket is outside quotation marks
+            DIM quote AS _BYTE, i AS LONG
+            FOR i = 1 TO position1
+                IF ASC(text$, i) = 34 THEN quote = NOT quote
+            NEXT
+            IF quote THEN position1 = 0
+        END IF
+
+        IF position1 = 0 THEN
+            'no opening bracket; must be a sub call
+            position1 = INSTR(text$, " ")
+            IF position1 = 0 THEN EXIT FUNCTION
+            position1 = position1 + 1 'skip space
+        ELSE
+            position1 = position1 + 1 'skip bracket
+        END IF
+    END IF
+
+    position2 = INSTR(position1, text$, ",")
+    IF position2 = 0 THEN position2 = INSTR(position1, text$, ")")
+    IF position2 > 0 THEN
+        'check that this bracket is outside quotation marks
+        quote = False
+        FOR i = 1 TO position2
+            IF ASC(text$, i) = 34 THEN quote = NOT quote
+        NEXT
+        IF quote THEN position2 = 0
+    END IF
+    IF position2 = 0 THEN position2 = LEN(text$) + 1
+    thisParameter$ = LTRIM$(RTRIM$(MID$(text$, position1, position2 - position1)))
+    nextParameter$ = removeQuotation$(thisParameter$)
+    position1 = position2 + 1
+END FUNCTION
+
+FUNCTION removeQuotation$ (__text$)
+    DIM text$
+    text$ = __text$
+    IF LEFT$(text$, 1) = CHR$(34) THEN text$ = MID$(text$, 2)
+    IF RIGHT$(text$, 1) = CHR$(34) THEN text$ = LEFT$(text$, LEN(text$) - 1)
+    removeQuotation$ = text$
+END FUNCTION
 
 SUB SavePreview
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
