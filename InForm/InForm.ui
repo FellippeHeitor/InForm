@@ -1,5 +1,5 @@
 'InForm - GUI system for QB64
-'Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor
+'Fellippe Heitor, 2016/2018 - fellippe@qb64.org - @fellippeheitor
 '
 
 '$INCLUDE:'InFormVersion.bas'
@@ -3063,7 +3063,7 @@ SUB __UI_EventDispatcher
                             __UI_Focus = __UI_NextMenuItem(__UI_Focus)
                             Control(__UI_ActiveMenu).Value = Control(__UI_Focus).ID
                     END SELECT
-                CASE __UI_Type_Button, __UI_Type_RadioButton, __UI_Type_CheckBox
+                CASE __UI_Type_Button, __UI_Type_RadioButton, __UI_Type_CheckBox, __UI_Type_ToggleSwitch
                     SELECT CASE __UI_KeyHit
                         CASE 32
                             'Emulate mouse down/click
@@ -3080,8 +3080,10 @@ SUB __UI_EventDispatcher
                                 IF __UI_KeyIsDown AND __UI_Focus = __UI_KeyDownOnID THEN
                                     IF Control(__UI_KeyDownOnID).Type = __UI_Type_RadioButton THEN
                                         SetRadioButtonValue __UI_KeyDownOnID
-                                    ELSEIF Control(__UI_KeyDownOnID).Type = __UI_Type_CheckBox THEN
+                                    ELSEIF Control(__UI_KeyDownOnID).Type = __UI_Type_CheckBox OR _
+                                           Control(__UI_KeyDownOnID).Type = __UI_Type_ToggleSwitch THEN
                                         Control(__UI_KeyDownOnID).Value = NOT Control(__UI_KeyDownOnID).Value
+                                        Control(__UI_KeyDownOnID).LastChange = TIMER
                                     END IF
                                     __UI_KeyDownOnID = 0
                                     __UI_KeyIsDown = False
@@ -4053,7 +4055,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         END IF
     END IF
 
-    IF ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
+    IF ControlType = __UI_Type_ToggleSwitch OR ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
         Control(NextSlot).CanHaveFocus = True
     END IF
 

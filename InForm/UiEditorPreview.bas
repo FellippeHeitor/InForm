@@ -235,6 +235,8 @@ SUB __UI_BeforeUpdateDisplay
                         SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         __UI_ActivateMenu Control(__UI_ParentMenu), False
                     END IF
+                CASE __UI_Type_ToggleSwitch
+                    TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempHeight \ 2 - 8, ThisContainer)
             END SELECT
             IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
                 __UI_DestroyControl Control(__UI_ActiveMenu)

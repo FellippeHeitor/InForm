@@ -345,7 +345,7 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Focus outline
         IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
-            LINE (CaptionIndent - 1, 0)-STEP(This.Width - CaptionIndent - 1, This.Height - 1), _RGB32(0, 0, 0), B , 21845
+            LINE (1, 1)-STEP(This.Width - 2, This.Height - 2), _RGB32(0, 0, 0), B , 21845
         END IF
         '------
 
