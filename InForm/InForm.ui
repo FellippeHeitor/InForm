@@ -2973,12 +2973,16 @@ SUB __UI_EventDispatcher
                     SELECT CASE __UI_KeyHit
                         CASE 19200 'Left
                             IF Control(__UI_Focus).Value > Control(__UI_Focus).Min THEN
-                                Control(__UI_Focus).Value = Control(__UI_Focus).Value - 1
+                                Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).Interval
+                                IF Control(__UI_Focus).Value < Control(__UI_Focus).Min THEN _
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Min
                                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 19712 'Right
                             IF Control(__UI_Focus).Value < Control(__UI_Focus).Max THEN
-                                Control(__UI_Focus).Value = Control(__UI_Focus).Value + 1
+                                Control(__UI_Focus).Value = Control(__UI_Focus).Value + Control(__UI_Focus).Interval
+                                IF Control(__UI_Focus).Value > Control(__UI_Focus).Max THEN _
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Max
                                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 18176 'Home
