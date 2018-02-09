@@ -9,7 +9,7 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 598, 430, 0, 0, 0)
     SetCaption __UI_NewID, UiEditorTitle$
     $IF LINUX THEN
-        Control(__UI_NewID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12, "")
+        Control(__UI_NewID).Font = SetFont("/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf", 12, "")
     $ELSE
         Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12, "")
     $END IF
