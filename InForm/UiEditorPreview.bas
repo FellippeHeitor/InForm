@@ -1359,6 +1359,11 @@ SUB LoadPreviewText
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
                     AddItem TempValue, DummyText$
+                ELSEIF LEFT$(b$, 10) = "LoadImage " THEN
+                    'Image
+                    DummyText$ = nextParameter(b$) 'discard first parameter
+                    DummyText$ = nextParameter(b$)
+                    LoadImage Control(TempValue), DummyText$
                 ELSEIF LEFT$(b$, 22) = "ToolTip(__UI_NewID) = " THEN
                     'Tooltip
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
