@@ -67,8 +67,9 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
     END IF
 
-    IF This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = TempControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
@@ -150,8 +151,9 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, Temp&
     DIM CaptionIndent AS INTEGER, TempCaption$, TempLine$
 
-    IF This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
@@ -288,8 +290,9 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     'IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("radiobutton.png")
 
-    IF This.ControlState <> ControlState OR TIMER - This.LastChange < .5 OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> ControlState OR TIMER - This.LastChange < .5 OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
@@ -367,8 +370,9 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("radiobutton.png")
 
-    IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
@@ -445,8 +449,9 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("checkbox.png")
 
-    IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
@@ -518,8 +523,9 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
     IF ControlImage_Chunk = 0 THEN ControlImage_Chunk = __UI_LoadThemeImage("progresschunk.png")
     IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("progresstrack.png")
 
-    IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
@@ -613,8 +619,9 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
     TempControlState = ControlState
     IF This.Disabled THEN TempControlState = 5
 
-    IF This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = TempControlState
         This.FocusState = __UI_Focus = This.ID
         IF This.PreviousValue <> This.Value THEN
@@ -676,7 +683,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
 
     __UI_CursorAdjustments This.ID
 
-    IF This.ControlState <> ControlState OR _
+    IF This.Redraw OR This.ControlState <> ControlState OR _
         This.FocusState <> (__UI_Focus = This.ID) OR _
         Caption(This.ID) <> __UI_TempCaptions(This.ID) OR _
         Text(This.ID) <> __UI_TempTexts(This.ID) OR _
@@ -690,6 +697,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         __UI_ForceRedraw THEN
 
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
@@ -909,8 +917,9 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
     DIM PrevDest AS LONG, Temp&
     DIM CaptionIndent AS INTEGER, TempCaption$
 
-    IF This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.PreviousValue <> This.Value OR Text(This.ID) <> __UI_TempTexts(This.ID) OR This.PreviousInputViewStart <> This.InputViewStart OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.PreviousValue <> This.Value OR Text(This.ID) <> __UI_TempTexts(This.ID) OR This.PreviousInputViewStart <> This.InputViewStart OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
@@ -1140,7 +1149,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         __UI_ClearColor ControlImage_Arrow, 0, 0
     END IF
 
-    IF This.ControlState <> ControlState OR _
+    IF This.Redraw OR This.ControlState <> ControlState OR _
         This.FocusState <> (__UI_Focus = This.ID) OR _
         This.PreviousValue <> This.Value OR _
         Text(This.ID) <> __UI_TempTexts(This.ID) OR _
@@ -1148,6 +1157,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         This.PreviousParentID <> This.ParentID OR _
         __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         This.PreviousValue = This.Value
@@ -1275,8 +1285,9 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
         __UI_ClearColor ControlImage, 0, 0
     END IF
 
-    IF This.PreviouslyHidden <> This.Hidden OR This.ChildrenRedrawn OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND Control(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw OR __UI_DesignMode THEN
+    IF This.Redraw OR This.PreviouslyHidden <> This.Hidden OR This.ChildrenRedrawn OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND Control(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw OR __UI_DesignMode THEN
         'Last time we drew this frame its children had different images
+        This.Redraw = False
         This.ChildrenRedrawn = False
         This.PreviousValue = This.Value
         This.PreviouslyHidden = This.Hidden
@@ -1367,8 +1378,9 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
     DIM Temp&
 
-    IF This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         This.PreviousValue = This.Value
 
@@ -1447,8 +1459,9 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         __UI_ClearColor ControlImage, 0, 0
     END IF
 
-    IF This.Value <> This.PreviousValue OR This.FocusState <> (__UI_Focus = This.ID) OR This.ControlState <> ControlState OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.Value <> This.PreviousValue OR This.FocusState <> (__UI_Focus = This.ID) OR This.ControlState <> ControlState OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.FocusState = (__UI_Focus = This.ID)
         This.ControlState = ControlState
         This.PreviousValue = This.Value
@@ -1543,8 +1556,9 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, TheX AS INTEGER, TheY AS INTEGER
     DIM CaptionIndent AS INTEGER, TempCaption$
 
-    IF This.Stretch <> This.PreviousStretch OR This.PreviousValue <> This.HelperCanvas OR This.ControlState <> ControlState OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
+    IF This.Redraw OR This.Stretch <> This.PreviousStretch OR This.PreviousValue <> This.HelperCanvas OR This.ControlState <> ControlState OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
         This.ControlState = ControlState
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID

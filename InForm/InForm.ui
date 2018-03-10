@@ -113,6 +113,7 @@ TYPE __UI_ControlTYPE
     ChildrenRedrawn AS _BYTE
     FocusState AS LONG
     LastChange AS DOUBLE
+    Redraw AS _BYTE
 END TYPE
 
 TYPE __UI_Types
