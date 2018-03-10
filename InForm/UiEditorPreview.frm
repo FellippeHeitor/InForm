@@ -5,7 +5,6 @@ SUB __UI_LoadForm
     DIM __UI_NewID AS LONG
 
     $RESIZE:ON
-    _RESIZE OFF
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "Form1", 300, 300, 0, 0,0)
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12, "")

@@ -652,12 +652,14 @@ SUB __UI_ProcessInput
     IF __UI_KeyHit THEN __UI_HasInput = True
 
     'Adjust the Resize Status of this form based on its CanResize property:
-    IF Control(__UI_FormID).CanResize <> __UI_CurrentResizeStatus THEN
-        __UI_CurrentResizeStatus = Control(__UI_FormID).CanResize
-        IF __UI_CurrentResizeStatus THEN
-            _RESIZE ON
-        ELSE
-            _RESIZE OFF
+    IF __UI_DesignMode = False THEN
+        IF Control(__UI_FormID).CanResize <> __UI_CurrentResizeStatus THEN
+            __UI_CurrentResizeStatus = Control(__UI_FormID).CanResize
+            IF __UI_CurrentResizeStatus THEN
+                _RESIZE ON
+            ELSE
+                _RESIZE OFF
+            END IF
         END IF
     END IF
 
@@ -665,7 +667,7 @@ SUB __UI_ProcessInput
     '(Triggered either programatically or by directly resizing the form):
     DIM CheckResize AS _BYTE
     CheckResize = _RESIZE
-    IF (CheckResize AND Control(__UI_FormID).CanResize) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
+    IF (CheckResize AND Control(__UI_FormID).CanResize) OR (CheckResize AND __UI_DesignMode) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
         _DELAY .1
         IF CheckResize THEN
             Control(__UI_FormID).Width = _RESIZEWIDTH
