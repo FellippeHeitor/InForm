@@ -305,6 +305,11 @@ SUB __UI_InternalMenus
     __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_PreviewMenu", 0, 0, 0, 0, 0)
     Control(__UI_NewID).Font = SetFont("segoeui.ttf",12,"")
 
+    'Hotkeys used:
+    'A, B, C, D, E, G, H, I, L, O, P, R, T, V, Z
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuImageOriginalSize", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuAlignLeft"), "Align &Left"
 
@@ -1532,6 +1537,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = True
+                    Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
@@ -1543,6 +1549,17 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
+                    END IF
+                    IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
+                        IF Control(__UI_FirstSelectedID).Height <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
+                           Control(__UI_FirstSelectedID).Width <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                            Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = False
+                            SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions (" + LTRIM$(STR$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))) + "x" + LTRIM$(STR$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))) + ")-"
+                        ELSE
+                            Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                        END IF
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     END IF
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
@@ -1563,6 +1580,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
@@ -1576,6 +1594,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                 END IF
 
                 IF _CLIPBOARD$ = "InForm" + CHR$(1) THEN
@@ -2505,6 +2524,12 @@ SUB __UI_EventDispatcher
 
                                 __UI_AutoRefresh = True
                                 __UI_ForceRedraw = True
+                            CASE "__UI_PREVIEWMENUIMAGEORIGINALSIZE"
+                                IF LEN(Text(__UI_FirstSelectedID)) THEN
+                                    Control(__UI_FirstSelectedID).Height = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
+                                    Control(__UI_FirstSelectedID).Width = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
+                                    Control(__UI_FirstSelectedID).Redraw = True
+                                END IF
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
                             CASE "__UI_PREVIEWMENUDELETE": GOTO ControlDelete
