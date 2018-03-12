@@ -5369,6 +5369,8 @@ SUB LoadPreview
                     CASE -34
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Encoding = CVL(b$)
+                    CASE -35
+                        PreviewDefaultButtonID = Dummy
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -5614,6 +5616,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 b$ = b$ + RTRIM$(PreviewControls(i).Name)
                 b$ = b$ + MKI$(PreviewControls(i).Width) + MKI$(PreviewControls(i).Height) + MKI$(PreviewControls(i).Left) + MKI$(PreviewControls(i).Top) + MKI$(LEN(PreviewParentIDS(i))) + PreviewParentIDS(i)
                 PUT #BinaryFileNum, , b$
+
+                IF PreviewDefaultButtonID = i THEN
+                    b$ = MKI$(-35): PUT #BinaryFileNum, , b$
+                    PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_NewID"
+                END IF
 
                 IF LEN(PreviewCaptions(i)) > 0 THEN
                     'IF PreviewControls(i).HotKeyPosition > 0 THEN
@@ -5865,7 +5872,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
 
                 CASE 1
                     IF PreviewDefaultButtonID > 0 THEN
-                        PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_GetID(" + CHR$(34) + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name)) + CHR$(34) + ")"
+                        PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
                     ELSE
                         PRINT #TextFileNum,
                     END IF

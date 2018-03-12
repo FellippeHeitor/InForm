@@ -1115,6 +1115,9 @@ SUB LoadPreview
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         Control(TempValue).Encoding = CVL(b$)
                         IF LogFileLoad THEN PRINT #LogFileNum, "ENCODING="; Control(TempValue).Encoding
+                    CASE -35
+                        __UI_DefaultButtonID = TempValue
+                        IF LogFileLoad THEN PRINT #LogFileNum, "DEFAULT BUTTON"
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
@@ -1351,6 +1354,8 @@ SUB LoadPreviewText
                         CASE "Encoding"
                             Control(TempValue).Encoding = VAL(DummyText$)
                     END SELECT
+                ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
+                    __UI_DefaultButtonID = TempValue
                 ELSEIF LEFT$(b$, 11) = "SetCaption " THEN
                     'Caption
                     DummyText$ = nextParameter(b$) 'discard first parameter
