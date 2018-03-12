@@ -16,7 +16,8 @@ CONST OffsetShowPosSize = 35
 CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
 CONST OffsetMouseSwapped = 41
-CONST OffsetPropertyValue = 43
+CONST OffsetDefaultButtonID = 43
+CONST OffsetPropertyValue = 47
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
@@ -99,6 +100,9 @@ SUB __UI_BeforeUpdateDisplay
 
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
+
+    b$ = MKL$(__UI_DefaultButtonID)
+    SendData b$, OffsetDefaultButtonID
 
     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
     SendData b$, OffsetMenuPanelIsON

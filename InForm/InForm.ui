@@ -306,7 +306,11 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf",12,"")
 
     'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, O, P, R, T, V, Z
+    'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Z
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
+    ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuImageOriginalSize", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
 
@@ -1540,6 +1544,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
@@ -1563,6 +1568,19 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     END IF
+                    IF Control(__UI_FirstSelectedID).Type = __UI_Type_Button THEN
+                        IF __UI_FirstSelectedID <> __UI_DefaultButtonID THEN
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = False
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Disabled = False
+                            SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
+                        ELSE
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = False
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Disabled = True
+                            SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "This is the default button-"
+                        END IF
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    END IF
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
@@ -1583,6 +1601,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
@@ -1597,6 +1616,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 END IF
 
                 IF _CLIPBOARD$ = "InForm" + CHR$(1) THEN
@@ -2532,6 +2552,8 @@ SUB __UI_EventDispatcher
                                     Control(__UI_FirstSelectedID).Width = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
                                     Control(__UI_FirstSelectedID).Redraw = True
                                 END IF
+                            CASE UCASE$("__UI_PreviewMenuSetDefaultButton")
+                                __UI_DefaultButtonID = __UI_FirstSelectedID
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
                             CASE "__UI_PREVIEWMENUDELETE": GOTO ControlDelete

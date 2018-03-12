@@ -29,7 +29,8 @@ CONST OffsetShowPosSize = 35
 CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
 CONST OffsetMouseSwapped = 41
-CONST OffsetPropertyValue = 43
+CONST OffsetDefaultButtonID = 43
+CONST OffsetPropertyValue = 47
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -38,6 +39,7 @@ REDIM SHARED PreviewFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
+DIM SHARED PreviewDefaultButtonID AS LONG
 
 DIM SHARED FontList.Names AS STRING
 REDIM SHARED FontList.FileNames(0) AS STRING
@@ -583,6 +585,8 @@ SUB __UI_BeforeUpdateDisplay
         PreviewFormID = CVL(b$)
         b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
         FirstSelected = CVL(b$)
+        b$ = SPACE$(4): GET #UiEditorFile, OffsetDefaultButtonID, b$
+        PreviewDefaultButtonID = CVL(b$)
 
         IF FirstSelected > UBOUND(PreviewCaptions) THEN GOTO Reload
 
@@ -5856,8 +5860,15 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
                 CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
 
-                CASE 0 TO 3, 14
+                CASE 0, 2, 3, 14
                     PRINT #TextFileNum,
+
+                CASE 1
+                    IF PreviewDefaultButtonID > 0 THEN
+                        PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_GetID(" + CHR$(34) + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name)) + CHR$(34) + ")"
+                    ELSE
+                        PRINT #TextFileNum,
+                    END IF
 
                 CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
                     PRINT #TextFileNum, "    SELECT CASE id"
