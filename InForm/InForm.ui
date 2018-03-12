@@ -200,6 +200,7 @@ DIM SHARED __UI_Snapped AS _BYTE
 DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE
+DIM SHARED __UI_FrameRate AS SINGLE
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -357,9 +358,30 @@ SUB __UI_InternalMenus
     SetCaption __UI_GetID("__UI_PreviewMenuSelect"), "Select &All"
 END SUB
 
+SUB SetFrameRate(FPS AS _UNSIGNED INTEGER)
+    IF FPS >= 30 THEN
+        __UI_FrameRate = 1 / FPS
+    ELSE
+        __UI_FrameRate = 1 / 30
+    END IF
+
+    IF __UI_RefreshTimer = 0 THEN
+        __UI_RefreshTimer = _FREETIMER
+        ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
+    ELSE
+        TIMER(__UI_RefreshTimer) OFF
+        TIMER(__UI_RefreshTimer) FREE
+        __UI_RefreshTimer = _FREETIMER
+        ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
+        TIMER(__UI_RefreshTimer) ON
+    END IF
+END SUB
+
 '---------------------------------------------------------------------------------
 SUB __UI_Init
     DIM i AS LONG
+
+    SetFrameRate 30
 
     __UI_BeforeInit
 
@@ -373,6 +395,7 @@ SUB __UI_Init
 
     _DELAY .1
     _ICON
+    _TITLE "InForm"
     IF Control(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
 
     IF Control(__UI_FormID).Font = 0 THEN Control(__UI_FormID).Font = SetFont("", 8, "")
@@ -413,9 +436,7 @@ SUB __UI_Init
     __UI_OnLoad
 
     __UI_EventsTimer = _FREETIMER
-    __UI_RefreshTimer = _FREETIMER
     ON TIMER(__UI_EventsTimer, .008) __UI_DoEvents
-    ON TIMER(__UI_RefreshTimer, .03) __UI_UpdateDisplay
     TIMER(__UI_EventsTimer) ON
     TIMER(__UI_RefreshTimer) ON
 
