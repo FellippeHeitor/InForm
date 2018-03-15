@@ -1,4 +1,5 @@
 OPTION _EXPLICIT
+
 $EXEICON:'.\resources\InForm.ico'
 
 DIM SHARED RedTrackID AS LONG, GreenTrackID AS LONG, BlueTrackID AS LONG
@@ -176,6 +177,7 @@ SUB __UI_Click (id AS LONG)
         "ALIGNMENUDISTRIBUTEH"
             b$ = MKI$(0)
             SendData b$, Dummy
+            Edited = True: echo "edited while aligning controls"
         CASE "OPTIONSMENUAUTONAME"
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
@@ -194,14 +196,14 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(__UI_Type_MenuBar)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = True
+            Edited = True: echo "edited while inserting menu item in menu bar"
         CASE "INSERTMENUMENUITEM"
             UiEditorFile = FREEFILE
             OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuItem)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = True
+            Edited = True: echo "edited while inserting menu item in existing menu panel"
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
@@ -227,40 +229,51 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(Dummy)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = True
+            Edited = True: echo "edited while adding a new control"
         CASE "STRETCH"
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
+            Edited = True: echo "edited while setting STRETCH"
         CASE "HASBORDER"
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
+            Edited = True: echo "edited while setting HASBORDER"
         CASE "TRANSPARENT"
             b$ = MKI$(Control(__UI_GetID("TRANSPARENT")).Value)
             SendData b$, 28
+            Edited = True: echo "edited while setting TRANSPARENT"
         CASE "SHOWPERCENTAGE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
+            Edited = True: echo "edited while setting SHOWPERCENTAGE"
         CASE "WORDWRAP"
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
+            Edited = True: echo "edited while setting WORDWRAP"
         CASE "CANHAVEFOCUS"
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
+            Edited = True: echo "edited while setting CANHAVEFOCUS"
         CASE "DISABLED"
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
+            Edited = True: echo "edited while setting DISABLED"
         CASE "HIDDEN"
             b$ = MKI$(Control(id).Value)
             SendData b$, 20
+            Edited = True: echo "edited while setting HIDDEN"
         CASE "CENTEREDWINDOW"
             b$ = MKI$(Control(id).Value)
             SendData b$, 21
+            Edited = True: echo "edited while setting CENTERED WINDOW"
         CASE "RESIZABLE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
+            Edited = True: echo "edited while setting RESIZABLE"
         CASE "PASSWORDMASKCB"
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
+            Edited = True: echo "edited while setting PASSWORDMASKCB"
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
@@ -295,6 +308,7 @@ SUB __UI_Click (id AS LONG)
             END IF
 
             SendSignal -5
+            Edited = False
         CASE "FILEMENUSAVEFRM"
             SaveForm True, True
         CASE "FILEMENUSAVE"
@@ -347,6 +361,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
             SendData b$, 211
+            Edited = True: echo "edited while changing z ordering UP"
             _DELAY .1
             LoadPreview
             Moving = True: GOSUB ReloadZList
@@ -358,6 +373,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
+            Edited = True: echo "edited while changing z ordering DOWN"
             _DELAY .1
             LoadPreview
             Moving = True: GOSUB ReloadZList
@@ -459,15 +475,19 @@ SUB __UI_Click (id AS LONG)
         CASE "EDITMENUUNDO"
             b$ = MKI$(0)
             SendData b$, 214
+            Edited = True: echo "edited while clicking UNDO"
         CASE "EDITMENUREDO"
             b$ = MKI$(0)
             SendData b$, 215
+            Edited = True: echo "edited while clicking REDO"
         CASE "EDITMENUCP437"
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
+            Edited = True: echo "edited while changing to CP437"
         CASE "EDITMENUCP1252"
             b$ = MKL$(1252)
             SendData b$, 34 'Encoding
+            Edited = True: echo "edited while changing to CP1252"
         CASE "VIEWMENUSHOWPOSITIONANDSIZE"
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
@@ -494,15 +514,19 @@ SUB __UI_MouseDown (id AS LONG)
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
-    DIM b$
     SELECT CASE UCASE$(RTRIM$(Control(id).Name))
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
-            DIM NewColor AS _UNSIGNED LONG
-            NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
-            b$ = _MK$(_UNSIGNED LONG, NewColor)
-            SendData b$, Control(ColorPropertiesListID).Value + 22
+            SendNewRGB
+            Edited = True: echo "edited while sending new RGB"
     END SELECT
+END SUB
+
+SUB SendNewRGB
+    DIM b$, NewColor AS _UNSIGNED LONG
+    NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
+    b$ = _MK$(_UNSIGNED LONG, NewColor)
+    SendData b$, Control(ColorPropertiesListID).Value + 22
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -554,7 +578,7 @@ SUB __UI_BeforeUpdateDisplay
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
             'Controls in the editor lose focus when the preview is manipulated
-            IF CVI(b$) = -1 THEN Edited = True
+            IF CVI(b$) = -1 THEN Edited = True: echo "edited while the preview was manipulated"
             IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
             IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
             __UI_ForceRedraw = True
@@ -631,9 +655,11 @@ SUB __UI_BeforeUpdateDisplay
         IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 214
+            Edited = True: echo "edited while CTRL Z"
         ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 215
+            Edited = True: echo "edited while CTRL Y"
         END IF
 
         'Make ZOrdering menu enabled/disabled according to control list
@@ -1373,6 +1399,15 @@ SUB __UI_KeyPress (id AS LONG)
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
             END IF
     END SELECT
+
+    SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
+        CASE "PROPERTYVALUE"
+            Edited = True: echo "edited while changing PROPERTYVALUE"
+        CASE "ALIGNOPTIONS"
+            Edited = True: echo "edited while changing ALIGNOPTIONS"
+        CASE "VALIGNOPTIONS"
+            Edited = True: echo "edited while changing VALIGNOPTIONS"
+    END SELECT
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
@@ -1407,7 +1442,7 @@ SUB __UI_TextChanged (id AS LONG)
             DIM TempID AS LONG
             TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
             Control(TempID).Value = VAL(Text(id))
-            __UI_MouseUp TempID
+            SendNewRGB
     END SELECT
 END SUB
 
@@ -5398,7 +5433,6 @@ SUB SendData (b$, Property AS INTEGER)
     b$ = MKI$(Property): PUT #FileNum, OffsetPropertyChanged, b$
     b$ = MKI$(-1): PUT #FileNum, OffsetNewDataFromEditor, b$
     CLOSE #FileNum
-    Edited = True
 END SUB
 
 SUB SendSignal (Value AS INTEGER)
@@ -6365,3 +6399,12 @@ FUNCTION QuotedFilename$ (f$)
         QuotedFilename$ = "'" + f$ + "'"
     $END IF
 END FUNCTION
+
+SUB echo (text$)
+    '$CONSOLE
+    'DIM prevDest AS LONG
+    'prevDest = _DEST
+    '_DEST _CONSOLE
+    'PRINT text$
+    '_DEST prevDest
+END SUB
