@@ -23,6 +23,7 @@ DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
+DIM SHARED IsCreating AS _BYTE
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -64,15 +65,11 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-    DIM b$
-    b$ = MKI$(-1)
-    SendData b$, OffsetNewDataFromPreview
+    SendSignal -1
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
-    DIM b$
-    b$ = MKI$(-3)
-    SendData b$, OffsetNewDataFromPreview
+    SendSignal -3
 END SUB
 
 SUB __UI_MouseLeave (id AS LONG)
@@ -265,6 +262,7 @@ SUB __UI_BeforeUpdateDisplay
             _SCREENSHOW
         ELSEIF TempValue = -4 THEN
             'Load an existing file
+            IsCreating = True
             b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
             b$ = SPACE$(CVI(b$)): GET #UiEditorFile, , b$
             DIM FileToLoad AS INTEGER
@@ -287,8 +285,10 @@ SUB __UI_BeforeUpdateDisplay
             END IF
             UndoPointer = 0
             TotalUndoImages = 0
+            SendSignal -7 'Form just loaded
         ELSEIF TempValue = -5 THEN
             'Reset request (new form)
+            IsCreating = True
             a$ = Unpack$(EmptyForm$)
 
             FileToLoad = FREEFILE
@@ -299,6 +299,7 @@ SUB __UI_BeforeUpdateDisplay
             LoadPreview
             UndoPointer = 0
             TotalUndoImages = 0
+            SendSignal -7 'New form created
         ELSEIF TempValue = -1 THEN
             DIM FloatValue AS _FLOAT
             'Editor sent property value
@@ -838,7 +839,18 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_FormResized
+    STATIC TimesResized AS INTEGER
 
+    IF IsCreating THEN TimesResized = 0
+
+    TimesResized = TimesResized + 1
+
+    IF TimesResized > 5 THEN
+        'Manually resizing a form triggers this event a few times;
+        'Loading a form triggers it 2 or three times usually.
+        TimesResized = 0
+        SendSignal -8
+    END IF
 END SUB
 
 SUB __UI_OnLoad

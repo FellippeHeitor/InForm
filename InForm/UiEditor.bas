@@ -600,6 +600,12 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -6 THEN
             'User attempted to load an invalid icon file
             Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
+        ELSEIF CVI(b$) = -7 THEN
+            'A new empty form has just been created or a file has just finished loading from disk
+            Edited = False: echo "reset Edited with signal -7"
+        ELSEIF CVI(b$) = -8 THEN
+            'Preview form was resized
+            Edited = True: echo "-8 PreviewForm was resized
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 
