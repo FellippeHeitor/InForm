@@ -58,7 +58,6 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
-
 '$include:'InForm.ui'
 '$include:'xp.uitheme'
 '$include:'UiEditorPreview.frm'
@@ -842,7 +841,7 @@ END SUB
 SUB __UI_FormResized
     STATIC TimesResized AS INTEGER
 
-    IF IsCreating THEN TimesResized = 0
+    IF IsCreating THEN TimesResized = 0: IsCreating = False
 
     TimesResized = TimesResized + 1
 
