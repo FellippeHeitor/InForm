@@ -42,8 +42,8 @@ REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
 DIM SHARED PreviewDefaultButtonID AS LONG
 
-DIM SHARED FontList.Names AS STRING
-REDIM SHARED FontList.FileNames(0) AS STRING
+'DIM SHARED FontList.Names AS STRING
+'REDIM SHARED FontList.FileNames(0) AS STRING
 
 $IF WIN THEN
     CONST PathSep$ = "\"
@@ -176,7 +176,7 @@ SUB __UI_Click (id AS LONG)
         "ALIGNMENUDISTRIBUTEH"
             b$ = MKI$(0)
             SendData b$, Dummy
-            Edited = True: echo "edited while aligning controls"
+            Edited = True: echo 1, "edited while aligning controls"
         CASE "OPTIONSMENUAUTONAME"
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
@@ -195,14 +195,14 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(__UI_Type_MenuBar)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = True: echo "edited while inserting menu item in menu bar"
+            Edited = True: echo 1, "edited while inserting menu item in menu bar"
         CASE "INSERTMENUMENUITEM"
             UiEditorFile = FREEFILE
             OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuItem)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = True: echo "edited while inserting menu item in existing menu panel"
+            Edited = True: echo 1, "edited while inserting menu item in existing menu panel"
         CASE "VIEWMENUPREVIEWDETACH"
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
@@ -228,51 +228,51 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(Dummy)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
-            Edited = True: echo "edited while adding a new control"
+            Edited = True: echo 1, "edited while adding a new control"
         CASE "STRETCH"
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
-            Edited = True: echo "edited while setting STRETCH"
+            Edited = True: echo 1, "edited while setting STRETCH"
         CASE "HASBORDER"
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
-            Edited = True: echo "edited while setting HASBORDER"
+            Edited = True: echo 1, "edited while setting HASBORDER"
         CASE "TRANSPARENT"
             b$ = MKI$(Control(__UI_GetID("TRANSPARENT")).Value)
             SendData b$, 28
-            Edited = True: echo "edited while setting TRANSPARENT"
+            Edited = True: echo 1, "edited while setting TRANSPARENT"
         CASE "SHOWPERCENTAGE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
-            Edited = True: echo "edited while setting SHOWPERCENTAGE"
+            Edited = True: echo 1, "edited while setting SHOWPERCENTAGE"
         CASE "WORDWRAP"
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
-            Edited = True: echo "edited while setting WORDWRAP"
+            Edited = True: echo 1, "edited while setting WORDWRAP"
         CASE "CANHAVEFOCUS"
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
-            Edited = True: echo "edited while setting CANHAVEFOCUS"
+            Edited = True: echo 1, "edited while setting CANHAVEFOCUS"
         CASE "DISABLED"
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
-            Edited = True: echo "edited while setting DISABLED"
+            Edited = True: echo 1, "edited while setting DISABLED"
         CASE "HIDDEN"
             b$ = MKI$(Control(id).Value)
             SendData b$, 20
-            Edited = True: echo "edited while setting HIDDEN"
+            Edited = True: echo 1, "edited while setting HIDDEN"
         CASE "CENTEREDWINDOW"
             b$ = MKI$(Control(id).Value)
             SendData b$, 21
-            Edited = True: echo "edited while setting CENTERED WINDOW"
+            Edited = True: echo 1, "edited while setting CENTERED WINDOW"
         CASE "RESIZABLE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
-            Edited = True: echo "edited while setting RESIZABLE"
+            Edited = True: echo 1, "edited while setting RESIZABLE"
         CASE "PASSWORDMASKCB"
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
-            Edited = True: echo "edited while setting PASSWORDMASKCB"
+            Edited = True: echo 1, "edited while setting PASSWORDMASKCB"
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
@@ -360,7 +360,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
             SendData b$, 211
-            Edited = True: echo "edited while changing z ordering UP"
+            Edited = True: echo 1, "edited while changing z ordering UP"
             _DELAY .1
             LoadPreview
             Moving = True: GOSUB ReloadZList
@@ -372,7 +372,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
-            Edited = True: echo "edited while changing z ordering DOWN"
+            Edited = True: echo 1, "edited while changing z ordering DOWN"
             _DELAY .1
             LoadPreview
             Moving = True: GOSUB ReloadZList
@@ -474,19 +474,19 @@ SUB __UI_Click (id AS LONG)
         CASE "EDITMENUUNDO"
             b$ = MKI$(0)
             SendData b$, 214
-            Edited = True: echo "edited while clicking UNDO"
+            Edited = True: echo 1, "edited while clicking UNDO"
         CASE "EDITMENUREDO"
             b$ = MKI$(0)
             SendData b$, 215
-            Edited = True: echo "edited while clicking REDO"
+            Edited = True: echo 1, "edited while clicking REDO"
         CASE "EDITMENUCP437"
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
-            Edited = True: echo "edited while changing to CP437"
+            Edited = True: echo 1, "edited while changing to CP437"
         CASE "EDITMENUCP1252"
             b$ = MKL$(1252)
             SendData b$, 34 'Encoding
-            Edited = True: echo "edited while changing to CP1252"
+            Edited = True: echo 1, "edited while changing to CP1252"
         CASE "VIEWMENUSHOWPOSITIONANDSIZE"
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
@@ -517,7 +517,7 @@ SUB __UI_MouseUp (id AS LONG)
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
             SendNewRGB
-            Edited = True: echo "edited while sending new RGB"
+            Edited = True: echo 1, "edited while sending new RGB"
     END SELECT
 END SUB
 
@@ -577,7 +577,7 @@ SUB __UI_BeforeUpdateDisplay
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
             'Controls in the editor lose focus when the preview is manipulated
-            IF CVI(b$) = -1 THEN Edited = True: echo "edited while the preview was manipulated"
+            IF CVI(b$) = -1 THEN Edited = True: echo 1, "edited while the preview was manipulated"
             IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
             IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
             __UI_ForceRedraw = True
@@ -601,10 +601,10 @@ SUB __UI_BeforeUpdateDisplay
             Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
         ELSEIF CVI(b$) = -7 THEN
             'A new empty form has just been created or a file has just finished loading from disk
-            Edited = False: echo "reset Edited with signal -7"
+            Edited = False: echo 1, "reset Edited with signal -7"
         ELSEIF CVI(b$) = -8 THEN
             'Preview form was resized
-            Edited = True: echo "-8 PreviewForm was resized"
+            Edited = True: echo 1, "-8 PreviewForm was resized"
         ELSEIF CVI(b$) = -9 THEN
             'User attempted to close the preview form
             __UI_Click __UI_GetID("FileMenuNew")
@@ -663,11 +663,11 @@ SUB __UI_BeforeUpdateDisplay
         IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 214
-            Edited = True: echo "edited while CTRL Z"
+            Edited = True: echo 1, "edited while CTRL Z"
         ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 215
-            Edited = True: echo "edited while CTRL Y"
+            Edited = True: echo 1, "edited while CTRL Y"
         END IF
 
         'Make ZOrdering menu enabled/disabled according to control list
@@ -1430,11 +1430,11 @@ SUB __UI_KeyPress (id AS LONG)
 
     SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
         CASE "PROPERTYVALUE"
-            Edited = True: echo "edited while changing PROPERTYVALUE"
+            Edited = True: echo 1, "edited while changing PROPERTYVALUE"
         CASE "ALIGNOPTIONS"
-            Edited = True: echo "edited while changing ALIGNOPTIONS"
+            Edited = True: echo 1, "edited while changing ALIGNOPTIONS"
         CASE "VALIGNOPTIONS"
-            Edited = True: echo "edited while changing VALIGNOPTIONS"
+            Edited = True: echo 1, "edited while changing VALIGNOPTIONS"
     END SELECT
 END SUB
 
@@ -6367,8 +6367,9 @@ FUNCTION QuotedFilename$ (f$)
     $END IF
 END FUNCTION
 
-SUB echo (text$)
+SUB echo (debugSession AS INTEGER, text$)
     '$CONSOLE
+    'IF debugSession < 2 THEN EXIT SUB
     'DIM prevDest AS LONG
     'prevDest = _DEST
     '_DEST _CONSOLE

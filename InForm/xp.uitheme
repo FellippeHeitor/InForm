@@ -101,9 +101,14 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 _PUTIMAGE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) - ((IconWidth / 2) + 5), This.Height / 2 - ((This.Height - 4) / 2) + 1)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
             ELSE
                 'Icon will be centered
+                DIM PictureOffsetX AS INTEGER, PictureOffsetY AS INTEGER
+                IF This.ControlState = 3 THEN
+                    PictureOffsetX = 1
+                    PictureOffsetY = 1
+                END IF
                 IconHeight = This.Height - 6
                 IconWidth = _WIDTH(This.HelperCanvas) * (IconHeight / _HEIGHT(This.HelperCanvas))
-                _PUTIMAGE (This.Width \ 2 - ((IconWidth \ 2)), This.Height / 2 - ((This.Height - 4) / 2) + 1)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
+                _PUTIMAGE (This.Width \ 2 - ((IconWidth \ 2)) + PictureOffsetX, This.Height / 2 - ((This.Height - 4) / 2) + 1 + PictureOffsetY)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
             END IF
         END IF
 
