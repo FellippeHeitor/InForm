@@ -815,7 +815,8 @@ SUB __UI_BeforeUpdateDisplay
 END SUB
 
 SUB __UI_BeforeUnload
-
+    __UI_UnloadSignal = False
+    SendSignal -9
 END SUB
 
 SUB __UI_BeforeInit

@@ -605,6 +605,9 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -8 THEN
             'Preview form was resized
             Edited = True: echo "-8 PreviewForm was resized"
+        ELSEIF CVI(b$) = -9 THEN
+            'User attempted to close the preview form
+            __UI_Click __UI_GetID("FileMenuNew")
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 
