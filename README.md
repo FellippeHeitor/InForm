@@ -5,6 +5,8 @@ A GUI engine and WYSIWYG interface designer for QB64
 
 Wiki: https://github.com/FellippeHeitor/InForm/wiki
 
+Official page: https://www.qb64.org/inform
+
 ## Event-driven QB64 programs
 InForm's main goal is to generate event-driven QB64 applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
 
@@ -30,4 +32,4 @@ the actual program you will add your code to.
 * *OnLoad*, triggered right after the form is first shown.
 * *BeforeUpdateDisplay*, triggered everytime the form is about to be repainted.
 * *BeforeUnload*, triggered when the user tries to close the program, either via clicking the window's X button, right click in the task bar -> Close or with Alt+F4 (Windows only).
-* *FormResized*, triggered when a form with the CanResize propery is resized at runtime.
+* *FormResized*, triggered when a form with the CanResize property is resized at runtime.
