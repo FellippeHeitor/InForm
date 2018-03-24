@@ -6376,12 +6376,3 @@ FUNCTION QuotedFilename$ (f$)
     $END IF
 END FUNCTION
 
-SUB echo (debugSession AS INTEGER, text$)
-    '$CONSOLE
-    'IF debugSession < 2 THEN EXIT SUB
-    'DIM prevDest AS LONG
-    'prevDest = _DEST
-    '_DEST _CONSOLE
-    'PRINT text$
-    '_DEST prevDest
-END SUB

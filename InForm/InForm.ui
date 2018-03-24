@@ -2271,6 +2271,7 @@ SUB __UI_EventDispatcher
                     __UI_MouseDownOnID = 0
 
                     ProcessClick:
+                    echo 3, "Entered ProcessClick"
                     IF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" OR RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenu" THEN
                         'Internal context menus - Text field/Design mode options
                         IF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" THEN
@@ -2582,7 +2583,9 @@ SUB __UI_EventDispatcher
                         END SELECT
                         __UI_KeyPress __UI_Focus
                     ELSE
+                        echo 3, "Will click HoveringID button"
                         __UI_Click __UI_HoveringID
+                        __UI_KeyHit = 0
                     END IF
                 ELSE
                     IF __UI_ActiveMenu > 0 THEN
@@ -3025,6 +3028,7 @@ SUB __UI_EventDispatcher
                     __UI_KeyHit = 0
                 END IF
                 __UI_HoveringID = i
+                echo 3, "Will ProcessClick after ENTER on Button or similar"
                 GOTO ProcessClick
             ELSEIF Control(__UI_Focus).Type = __UI_Type_ListBox AND __UI_Focus = __UI_ActiveDropdownList THEN
                 __UI_Focus = __UI_ParentDropdownList
@@ -3794,7 +3798,9 @@ SUB __UI_EventDispatcher
         'Enter activates the default button, if any
         IF __UI_IsDragging = False AND __UI_KeyHit = -13 AND __UI_DefaultButtonID > 0 THEN
             'Enter released and there is a default button
+            echo 3, "Will click Default Button"
             __UI_Click __UI_DefaultButtonID
+            __UI_KeyHit = 0
         END IF
     END IF
 
@@ -5569,3 +5575,16 @@ END FUNCTION
 SUB __UI_ExpandControlDrawOrder (size&)
     REDIM _PRESERVE ControlDrawOrder(UBOUND(ControlDrawOrder) + size&) AS LONG
 END SUB
+
+
+SUB echo (debugSession AS INTEGER, text$)
+    '$CONSOLE
+    'DIM prevDest AS LONG
+    'CONST thisSession = 3
+    'IF debugSession < thisSession THEN EXIT SUB
+    'prevDest = _DEST
+    '_DEST _CONSOLE
+    'PRINT text$
+    '_DEST prevDest
+END SUB
+
