@@ -1368,7 +1368,7 @@ SUB __UI_OnLoad
             ELSE
                 b$ = "Compiling Preview component..."
                 GOSUB ShowMessage
-                SHELL "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
+                SHELL _HIDE "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
                 IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
@@ -1382,7 +1382,7 @@ SUB __UI_OnLoad
         ELSE
         b$ = "Compiling Preview component..."
         GOSUB ShowMessage
-        SHELL "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
+        SHELL _HIDE "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
