@@ -150,6 +150,7 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
+
 '$include:'InForm.ui'
 '$include:'xp.uitheme'
 '$include:'UiEditor.frm'
@@ -399,7 +400,7 @@ SUB __UI_Click (id AS LONG)
 
             'Refresh the file list control's contents
             DIM TotalFiles%
-            IF CurrentPath$ = "" THEN CurrentPath$ = _CWD$
+            IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
             Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -1340,6 +1341,14 @@ SUB __UI_OnLoad
         END SELECT
 
         IF LEN(FileToOpen$) > 0 THEN
+            IF INSTR(FileToOpen$, "/") > 0 OR INSTR(FileToOpen$, "\") > 0 THEN
+                FOR i = LEN(FileToOpen$) TO 1 STEP -1
+                    IF ASC(FileToOpen$, i) = 92 OR ASC(FileToOpen$, i) = 47 THEN
+                        CurrentPath$ = LEFT$(FileToOpen$, i - 1)
+                        EXIT FOR
+                    END IF
+                NEXT
+            END IF
             FreeFileNum = FREEFILE
             OPEN FileToOpen$ FOR BINARY AS #FreeFileNum
             b$ = SPACE$(LOF(FreeFileNum))
@@ -1391,7 +1400,7 @@ SUB __UI_OnLoad
     'Fill "open dialog" listboxes:
     '-------------------------------------------------
     DIM TotalFiles%
-    CurrentPath$ = _CWD$
+    IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
     Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
     Control(FileList).Max = TotalFiles%
     Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -5578,7 +5587,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
     DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
 
-    BaseOutputFileName = RTRIM$(PreviewControls(PreviewFormID).Name)
+    BaseOutputFileName = CurrentPath$ + PathSep$ + RTRIM$(PreviewControls(PreviewFormID).Name)
     IF _FILEEXISTS(BaseOutputFileName + ".bas") OR _FILEEXISTS(BaseOutputFileName + ".frm") THEN
         Answer = MessageBox("Some files will be overwritten. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN EXIT SUB
@@ -5847,7 +5856,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
         PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
         PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
-        PRINT #TextFileNum, "'$INCLUDE:'" + BaseOutputFileName + ".frm'"
+        PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
         PRINT #TextFileNum,
         PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
         FOR i = 0 TO 14
@@ -5925,8 +5934,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
 
     b$ = "Exporting successful. Files output:" + CHR$(10)
-    IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + BaseOutputFileName + ".bas" + CHR$(10)
-    b$ = b$ + "    " + BaseOutputFileName + ".frm"
+    IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".bas" + CHR$(10)
+    b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm"
 
     IF ExitToQB64 THEN
         $IF WIN THEN
@@ -5945,9 +5954,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN Edited = False: EXIT SUB
         $IF WIN THEN
-            IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + BaseOutputFileName + ".bas"
+            IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + QuotedFilename$(BaseOutputFileName + ".bas")
         $ELSE
-            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + BaseOutputFileName + ".bas"
+            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
         $END IF
         SYSTEM
     ELSE
