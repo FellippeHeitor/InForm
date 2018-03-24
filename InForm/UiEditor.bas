@@ -1503,11 +1503,11 @@ SUB __UI_ValueChanged (id AS LONG)
             b$ = MKI$(Control(__UI_GetID("VAlignOptions")).Value - 1)
             SendData b$, 32
         CASE "RED"
-            Text(RedTextBoxID) = LTRIM$(STR$(Control(RedTrackID).Value))
+            Text(RedTextBoxID) = LTRIM$(STR$(INT(Control(RedTrackID).Value)))
         CASE "GREEN"
-            Text(GreenTextBoxID) = LTRIM$(STR$(Control(GreenTrackID).Value))
+            Text(GreenTextBoxID) = LTRIM$(STR$(INT(Control(GreenTrackID).Value)))
         CASE "BLUE"
-            Text(BlueTextBoxID) = LTRIM$(STR$(Control(BlueTrackID).Value))
+            Text(BlueTextBoxID) = LTRIM$(STR$(INT(Control(BlueTrackID).Value)))
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
             DIM NewColor AS _UNSIGNED LONG
