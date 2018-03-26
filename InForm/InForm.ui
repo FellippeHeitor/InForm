@@ -1,5 +1,5 @@
 'InForm - GUI system for QB64
-'Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor
+'Fellippe Heitor, 2016/2018 - fellippe@qb64.org - @fellippeheitor
 '
 
 '$INCLUDE:'InFormVersion.bas'
@@ -113,6 +113,7 @@ TYPE __UI_ControlTYPE
     ChildrenRedrawn AS _BYTE
     FocusState AS LONG
     LastChange AS DOUBLE
+    Redraw AS _BYTE
 END TYPE
 
 TYPE __UI_Types
@@ -199,6 +200,7 @@ DIM SHARED __UI_Snapped AS _BYTE
 DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE
+DIM SHARED __UI_FrameRate AS SINGLE
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -304,6 +306,15 @@ SUB __UI_InternalMenus
     __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_PreviewMenu", 0, 0, 0, 0, 0)
     Control(__UI_NewID).Font = SetFont("segoeui.ttf",12,"")
 
+    'Hotkeys used:
+    'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Z
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
+    ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuImageOriginalSize", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuAlignLeft"), "Align &Left"
 
@@ -347,9 +358,30 @@ SUB __UI_InternalMenus
     SetCaption __UI_GetID("__UI_PreviewMenuSelect"), "Select &All"
 END SUB
 
+SUB SetFrameRate(FPS AS _UNSIGNED INTEGER)
+    IF FPS >= 30 THEN
+        __UI_FrameRate = 1 / FPS
+    ELSE
+        __UI_FrameRate = 1 / 30
+    END IF
+
+    IF __UI_RefreshTimer = 0 THEN
+        __UI_RefreshTimer = _FREETIMER
+        ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
+    ELSE
+        TIMER(__UI_RefreshTimer) OFF
+        TIMER(__UI_RefreshTimer) FREE
+        __UI_RefreshTimer = _FREETIMER
+        ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
+        TIMER(__UI_RefreshTimer) ON
+    END IF
+END SUB
+
 '---------------------------------------------------------------------------------
 SUB __UI_Init
     DIM i AS LONG
+
+    SetFrameRate 30
 
     __UI_BeforeInit
 
@@ -363,6 +395,7 @@ SUB __UI_Init
 
     _DELAY .1
     _ICON
+    _TITLE "InForm"
     IF Control(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
 
     IF Control(__UI_FormID).Font = 0 THEN Control(__UI_FormID).Font = SetFont("", 8, "")
@@ -403,9 +436,7 @@ SUB __UI_Init
     __UI_OnLoad
 
     __UI_EventsTimer = _FREETIMER
-    __UI_RefreshTimer = _FREETIMER
     ON TIMER(__UI_EventsTimer, .008) __UI_DoEvents
-    ON TIMER(__UI_RefreshTimer, .03) __UI_UpdateDisplay
     TIMER(__UI_EventsTimer) ON
     TIMER(__UI_RefreshTimer) ON
 
@@ -646,12 +677,14 @@ SUB __UI_ProcessInput
     IF __UI_KeyHit THEN __UI_HasInput = True
 
     'Adjust the Resize Status of this form based on its CanResize property:
-    IF Control(__UI_FormID).CanResize <> __UI_CurrentResizeStatus THEN
-        __UI_CurrentResizeStatus = Control(__UI_FormID).CanResize
-        IF __UI_CurrentResizeStatus THEN
-            _RESIZE ON
-        ELSE
-            _RESIZE OFF
+    IF __UI_DesignMode = False THEN
+        IF Control(__UI_FormID).CanResize <> __UI_CurrentResizeStatus THEN
+            __UI_CurrentResizeStatus = Control(__UI_FormID).CanResize
+            IF __UI_CurrentResizeStatus THEN
+                _RESIZE ON
+            ELSE
+                _RESIZE OFF
+            END IF
         END IF
     END IF
 
@@ -659,7 +692,7 @@ SUB __UI_ProcessInput
     '(Triggered either programatically or by directly resizing the form):
     DIM CheckResize AS _BYTE
     CheckResize = _RESIZE
-    IF (CheckResize AND Control(__UI_FormID).CanResize) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
+    IF (CheckResize AND Control(__UI_FormID).CanResize) OR (CheckResize AND __UI_DesignMode) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
         _DELAY .1
         IF CheckResize THEN
             Control(__UI_FormID).Width = _RESIZEWIDTH
@@ -1531,6 +1564,8 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = True
+                    Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
@@ -1542,6 +1577,30 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
+                    END IF
+                    IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
+                        IF Control(__UI_FirstSelectedID).Height <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
+                           Control(__UI_FirstSelectedID).Width <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                            Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = False
+                            SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions (" + LTRIM$(STR$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))) + "x" + LTRIM$(STR$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))) + ")-"
+                        ELSE
+                            Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                        END IF
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    END IF
+                    IF Control(__UI_FirstSelectedID).Type = __UI_Type_Button THEN
+                        IF __UI_FirstSelectedID <> __UI_DefaultButtonID THEN
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = False
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Disabled = False
+                            SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
+                        ELSE
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = False
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Disabled = True
+                            SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "This is the default button-"
+                        END IF
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                     END IF
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
@@ -1562,6 +1621,8 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
@@ -1575,6 +1636,8 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
+                    Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 END IF
 
                 IF _CLIPBOARD$ = "InForm" + CHR$(1) THEN
@@ -2504,6 +2567,14 @@ SUB __UI_EventDispatcher
 
                                 __UI_AutoRefresh = True
                                 __UI_ForceRedraw = True
+                            CASE "__UI_PREVIEWMENUIMAGEORIGINALSIZE"
+                                IF LEN(Text(__UI_FirstSelectedID)) THEN
+                                    Control(__UI_FirstSelectedID).Height = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
+                                    Control(__UI_FirstSelectedID).Width = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
+                                    Control(__UI_FirstSelectedID).Redraw = True
+                                END IF
+                            CASE UCASE$("__UI_PreviewMenuSetDefaultButton")
+                                __UI_DefaultButtonID = __UI_FirstSelectedID
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
                             CASE "__UI_PREVIEWMENUDELETE": GOTO ControlDelete
@@ -2512,6 +2583,7 @@ SUB __UI_EventDispatcher
                         __UI_KeyPress __UI_Focus
                     ELSE
                         __UI_Click __UI_HoveringID
+                        __UI_KeyHit = 0
                     END IF
                 ELSE
                     IF __UI_ActiveMenu > 0 THEN
@@ -2973,12 +3045,16 @@ SUB __UI_EventDispatcher
                     SELECT CASE __UI_KeyHit
                         CASE 19200 'Left
                             IF Control(__UI_Focus).Value > Control(__UI_Focus).Min THEN
-                                Control(__UI_Focus).Value = Control(__UI_Focus).Value - 1
+                                Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).Interval
+                                IF Control(__UI_Focus).Value < Control(__UI_Focus).Min THEN _
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Min
                                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 19712 'Right
                             IF Control(__UI_Focus).Value < Control(__UI_Focus).Max THEN
-                                Control(__UI_Focus).Value = Control(__UI_Focus).Value + 1
+                                Control(__UI_Focus).Value = Control(__UI_Focus).Value + Control(__UI_Focus).Interval
+                                IF Control(__UI_Focus).Value > Control(__UI_Focus).Max THEN _
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Max
                                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 18176 'Home
@@ -3063,7 +3139,7 @@ SUB __UI_EventDispatcher
                             __UI_Focus = __UI_NextMenuItem(__UI_Focus)
                             Control(__UI_ActiveMenu).Value = Control(__UI_Focus).ID
                     END SELECT
-                CASE __UI_Type_Button, __UI_Type_RadioButton, __UI_Type_CheckBox
+                CASE __UI_Type_Button, __UI_Type_RadioButton, __UI_Type_CheckBox, __UI_Type_ToggleSwitch
                     SELECT CASE __UI_KeyHit
                         CASE 32
                             'Emulate mouse down/click
@@ -3080,8 +3156,10 @@ SUB __UI_EventDispatcher
                                 IF __UI_KeyIsDown AND __UI_Focus = __UI_KeyDownOnID THEN
                                     IF Control(__UI_KeyDownOnID).Type = __UI_Type_RadioButton THEN
                                         SetRadioButtonValue __UI_KeyDownOnID
-                                    ELSEIF Control(__UI_KeyDownOnID).Type = __UI_Type_CheckBox THEN
+                                    ELSEIF Control(__UI_KeyDownOnID).Type = __UI_Type_CheckBox OR _
+                                           Control(__UI_KeyDownOnID).Type = __UI_Type_ToggleSwitch THEN
                                         Control(__UI_KeyDownOnID).Value = NOT Control(__UI_KeyDownOnID).Value
+                                        Control(__UI_KeyDownOnID).LastChange = TIMER
                                     END IF
                                     __UI_KeyDownOnID = 0
                                     __UI_KeyIsDown = False
@@ -3718,6 +3796,7 @@ SUB __UI_EventDispatcher
         IF __UI_IsDragging = False AND __UI_KeyHit = -13 AND __UI_DefaultButtonID > 0 THEN
             'Enter released and there is a default button
             __UI_Click __UI_DefaultButtonID
+            __UI_KeyHit = 0
         END IF
     END IF
 
@@ -3840,7 +3919,7 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontA
         'If the passed font is already loaded, we'll just return its handle
         FOR NextSlot = 1 TO UBOUND(Control)
             IF Control(NextSlot).Type = __UI_Type_Font THEN
-                IF (UCASE$(Text(NextSlot)) = UCASE$(NewFontFile) OR UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
+                IF (UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
                     SetFont& = Control(NextSlot).Value
                     EXIT FUNCTION
                 END IF
@@ -4053,9 +4132,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         END IF
     END IF
 
-    IF ControlType = __UI_Type_Label THEN Control(NextSlot).VAlign = __UI_Middle
-
-    IF ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
+    IF ControlType = __UI_Type_ToggleSwitch OR ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
         Control(NextSlot).CanHaveFocus = True
     END IF
 
@@ -5494,3 +5571,15 @@ END FUNCTION
 SUB __UI_ExpandControlDrawOrder (size&)
     REDIM _PRESERVE ControlDrawOrder(UBOUND(ControlDrawOrder) + size&) AS LONG
 END SUB
+
+'SUB echo (debugSession AS INTEGER, text$)
+'    $CONSOLE
+'    DIM prevDest AS LONG
+'    CONST thisSession = 4
+'    IF debugSession < thisSession THEN EXIT SUB
+'    prevDest = _DEST
+'    _DEST _CONSOLE
+'    PRINT text$
+'    _DEST prevDest
+'END SUB
+

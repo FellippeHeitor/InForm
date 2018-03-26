@@ -1,1 +1,1 @@
-CONST __UI_Version = "Beta version 5"
+CONST __UI_Version = "Beta version 6"

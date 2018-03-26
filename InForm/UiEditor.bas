@@ -30,7 +30,8 @@ CONST OffsetShowPosSize = 35
 CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
 CONST OffsetMouseSwapped = 41
-CONST OffsetPropertyValue = 43
+CONST OffsetDefaultButtonID = 43
+CONST OffsetPropertyValue = 47
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -39,9 +40,10 @@ REDIM SHARED PreviewFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
+DIM SHARED PreviewDefaultButtonID AS LONG
 
-DIM SHARED FontList.Names AS STRING
-REDIM SHARED FontList.FileNames(0) AS STRING
+'DIM SHARED FontList.Names AS STRING
+'REDIM SHARED FontList.FileNames(0) AS STRING
 
 $IF WIN THEN
     CONST PathSep$ = "\"
@@ -175,6 +177,7 @@ SUB __UI_Click (id AS LONG)
         "ALIGNMENUDISTRIBUTEH"
             b$ = MKI$(0)
             SendData b$, Dummy
+            Edited = True
         CASE "OPTIONSMENUAUTONAME"
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
@@ -216,9 +219,11 @@ SUB __UI_Click (id AS LONG)
         CASE "ADDPROGRESSBAR": Dummy = __UI_Type_ProgressBar
         CASE "ADDPICTUREBOX": Dummy = __UI_Type_PictureBox
         CASE "ADDFRAME": Dummy = __UI_Type_Frame
+        CASE "ADDTOGGLESWITCH": Dummy = __UI_Type_ToggleSwitch
         CASE "ADDBUTTON", "ADDLABEL", "ADDTEXTBOX", "ADDCHECKBOX", _
         "ADDRADIOBUTTON", "ADDLISTBOX", "ADDDROPDOWNLIST", _
-        "ADDTRACKBAR", "ADDPROGRESSBAR", "ADDPICTUREBOX", "ADDFRAME"
+        "ADDTRACKBAR", "ADDPROGRESSBAR", "ADDPICTUREBOX", "ADDFRAME", _
+        "ADDTOGGLESWITCH"
             UiEditorFile = FREEFILE
             OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(Dummy)
@@ -228,36 +233,47 @@ SUB __UI_Click (id AS LONG)
         CASE "STRETCH"
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
+            Edited = True
         CASE "HASBORDER"
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
+            Edited = True
         CASE "TRANSPARENT"
             b$ = MKI$(Control(__UI_GetID("TRANSPARENT")).Value)
             SendData b$, 28
+            Edited = True
         CASE "SHOWPERCENTAGE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
+            Edited = True
         CASE "WORDWRAP"
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
+            Edited = True
         CASE "CANHAVEFOCUS"
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
+            Edited = True
         CASE "DISABLED"
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
+            Edited = True
         CASE "HIDDEN"
             b$ = MKI$(Control(id).Value)
             SendData b$, 20
+            Edited = True
         CASE "CENTEREDWINDOW"
             b$ = MKI$(Control(id).Value)
             SendData b$, 21
+            Edited = True
         CASE "RESIZABLE"
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
+            Edited = True
         CASE "PASSWORDMASKCB"
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
+            Edited = True
         CASE "VIEWMENUPREVIEW"
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
@@ -292,6 +308,7 @@ SUB __UI_Click (id AS LONG)
             END IF
 
             SendSignal -5
+            Edited = False
         CASE "FILEMENUSAVEFRM"
             SaveForm True, True
         CASE "FILEMENUSAVE"
@@ -323,7 +340,7 @@ SUB __UI_Click (id AS LONG)
             ResetList ControlList
             FOR i = 1 TO UBOUND(PreviewControls)
                 SELECT CASE PreviewControls(i).Type
-                    CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15
+                    CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
                         j = j + 1
                         zOrderIDs(j) = i
                         AddItem ControlList, __UI_Type(PreviewControls(i).Type).Name + RTRIM$(PreviewControls(i).Name)
@@ -344,6 +361,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
             SendData b$, 211
+            Edited = True
             _DELAY .1
             LoadPreview
             Moving = True: GOSUB ReloadZList
@@ -355,6 +373,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
+            Edited = True
             _DELAY .1
             LoadPreview
             Moving = True: GOSUB ReloadZList
@@ -381,7 +400,7 @@ SUB __UI_Click (id AS LONG)
 
             'Refresh the file list control's contents
             DIM TotalFiles%
-            IF CurrentPath$ = "" THEN CurrentPath$ = _CWD$
+            IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
             Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -456,15 +475,19 @@ SUB __UI_Click (id AS LONG)
         CASE "EDITMENUUNDO"
             b$ = MKI$(0)
             SendData b$, 214
+            Edited = True
         CASE "EDITMENUREDO"
             b$ = MKI$(0)
             SendData b$, 215
+            Edited = True
         CASE "EDITMENUCP437"
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
+            Edited = True
         CASE "EDITMENUCP1252"
             b$ = MKL$(1252)
             SendData b$, 34 'Encoding
+            Edited = True
         CASE "VIEWMENUSHOWPOSITIONANDSIZE"
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
@@ -491,15 +514,19 @@ SUB __UI_MouseDown (id AS LONG)
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
-    DIM b$
     SELECT CASE UCASE$(RTRIM$(Control(id).Name))
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
-            DIM NewColor AS _UNSIGNED LONG
-            NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
-            b$ = _MK$(_UNSIGNED LONG, NewColor)
-            SendData b$, Control(ColorPropertiesListID).Value + 22
+            SendNewRGB
+            Edited = True
     END SELECT
+END SUB
+
+SUB SendNewRGB
+    DIM b$, NewColor AS _UNSIGNED LONG
+    NewColor = _RGB32(Control(RedTrackID).Value, Control(GreenTrackID).Value, Control(BlueTrackID).Value)
+    b$ = _MK$(_UNSIGNED LONG, NewColor)
+    SendData b$, Control(ColorPropertiesListID).Value + 22
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -573,6 +600,15 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -6 THEN
             'User attempted to load an invalid icon file
             Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
+        ELSEIF CVI(b$) = -7 THEN
+            'A new empty form has just been created or a file has just finished loading from disk
+            Edited = False
+        ELSEIF CVI(b$) = -8 THEN
+            'Preview form was resized
+            Edited = True
+        ELSEIF CVI(b$) = -9 THEN
+            'User attempted to close the preview form
+            __UI_Click __UI_GetID("FileMenuNew")
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 
@@ -582,6 +618,8 @@ SUB __UI_BeforeUpdateDisplay
         PreviewFormID = CVL(b$)
         b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
         FirstSelected = CVL(b$)
+        b$ = SPACE$(4): GET #UiEditorFile, OffsetDefaultButtonID, b$
+        PreviewDefaultButtonID = CVL(b$)
 
         IF FirstSelected > UBOUND(PreviewCaptions) THEN GOTO Reload
 
@@ -599,8 +637,8 @@ SUB __UI_BeforeUpdateDisplay
         PreviewHasMenuActive = CVI(b$)
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
-            Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin"
-            SetCaption __UI_GetID("FileMenuSaveFrm"), "&Save form only ('" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frmbin')-"
+            Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
+            SetCaption __UI_GetID("FileMenuSaveFrm"), "&Save form only ('" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm')-"
         END IF
 
         IF Edited THEN
@@ -626,16 +664,18 @@ SUB __UI_BeforeUpdateDisplay
         IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 214
+            Edited = True
         ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
             b$ = MKI$(0)
             SendData b$, 215
+            Edited = True
         END IF
 
         'Make ZOrdering menu enabled/disabled according to control list
         Control(__UI_GetID("EditMenuZOrdering")).Disabled = True
         FOR i = 1 TO UBOUND(PreviewControls)
             SELECT CASE PreviewControls(i).Type
-                CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15
+                CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
                     j = j + 1
                     IF j > 1 THEN
                         Control(__UI_GetID("EditMenuZOrdering")).Disabled = False
@@ -732,7 +772,7 @@ SUB __UI_BeforeUpdateDisplay
 
         IF __UI_Focus <> PropertyValueID AND FirstSelected > 0 THEN
             Control(PropertyValueID).Width = 250
-
+            ToolTip(PropertyValueID) = ""
             SELECT CASE SelectedProperty
                 CASE 1 'Name
                     Text(PropertyValueID) = RTRIM$(PreviewControls(FirstSelected).Name)
@@ -758,6 +798,7 @@ SUB __UI_BeforeUpdateDisplay
                     ELSE
                         Text(PropertyValueID) = PreviewFonts(PreviewFormID)
                     END IF
+                    ToolTip(PropertyValueID) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
                 CASE 9 'Tooltip
                     Text(PropertyValueID) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
                 CASE 10 'Value
@@ -870,6 +911,16 @@ SUB __UI_BeforeUpdateDisplay
         Caption(PropertyValueID) = ""
         IF TotalSelected > 0 THEN
             SELECT EVERYCASE PreviewControls(FirstSelected).Type
+                CASE __UI_Type_ToggleSwitch
+                    Control(__UI_GetID("CanHaveFocus")).Disabled = False
+                    Control(__UI_GetID("Disabled")).Disabled = False
+                    Control(__UI_GetID("Hidden")).Disabled = False
+                    SELECT CASE SelectedProperty
+                        CASE 1, 4, 5, 6, 7, 9, 10
+                            Control(PropertyValueID).Disabled = False
+                        CASE ELSE
+                            Control(PropertyValueID).Disabled = True
+                    END SELECT
                 CASE __UI_Type_MenuBar, __UI_Type_MenuItem
                     Control(__UI_GetID("Disabled")).Disabled = False
                     Control(__UI_GetID("Hidden")).Disabled = False
@@ -1123,6 +1174,7 @@ END SUB
 
 SUB __UI_OnLoad
     DIM i AS LONG, b$, UiEditorFile AS INTEGER
+    DIM prevDest AS LONG
 
     'LoadFontList
 
@@ -1153,6 +1205,13 @@ SUB __UI_OnLoad
     i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddPictureBox")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
     Control(__UI_GetID("AddFrame")).HelperCanvas = _NEWIMAGE(16, 16, 32)
     i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(__UI_GetID("AddFrame")).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(__UI_GetID("AddToggleSwitch")).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    prevDest = _DEST
+    _DEST Control(__UI_GetID("AddToggleSwitch")).HelperCanvas
+    LINE (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
+    LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
+    LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
+    _DEST prevDest
 
     PropertyUpdateStatusImage = LoadEditorImage("oknowait.bmp")
     __UI_ClearColor PropertyUpdateStatusImage, 0, 0
@@ -1173,6 +1232,7 @@ SUB __UI_OnLoad
     Text(__UI_GetID("AddPictureBox")) = "."
     Text(__UI_GetID("AddFrame")) = "."
     Text(__UI_GetID("FileMenuSave")) = "."
+    Text(__UI_GetID("AddToggleSwitch")) = "."
 
     _FREEIMAGE CommControls
 
@@ -1244,15 +1304,37 @@ SUB __UI_OnLoad
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
     IF _FILEEXISTS("InForm/UiEditorUndo.dat") THEN KILL "InForm/UiEditorUndo.dat"
+    IF _FILEEXISTS("InForm/UiEditor.dat") THEN KILL "InForm/UiEditor.dat"
 
     IF _FILEEXISTS(COMMAND$) THEN
         SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
             CASE ".bas"
-                IF _FILEEXISTS(LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frmbin") THEN
-                    FileToOpen$ = LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frmbin"
-                ELSEIF _FILEEXISTS(LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frm") THEN
-                    FileToOpen$ = LEFT$(COMMAND$, LEN(COMMAND$) - 4) + ".frm"
-                END IF
+                'Does this .bas $include a .frm?
+                FreeFileNum = FREEFILE
+                DIM uB$
+                OPEN COMMAND$ FOR BINARY AS #FreeFileNum
+                DO
+                    IF EOF(FreeFileNum) THEN EXIT DO
+                    LINE INPUT #FreeFileNum, b$
+                    b$ = LTRIM$(RTRIM$(b$))
+                    uB$ = UCASE$(b$)
+                    IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
+                       INSTR(uB$, "$INCLUDE") > 0 THEN
+                        DIM FirstMark AS INTEGER, SecondMark AS INTEGER
+                        FirstMark = INSTR(INSTR(uB$, "$INCLUDE") + 8, uB$, "'")
+                        IF FirstMark > 0 THEN
+                            SecondMark = INSTR(FirstMark + 1, uB$, "'")
+                            IF SecondMark > 0 THEN
+                                uB$ = MID$(uB$, FirstMark + 1, SecondMark - FirstMark - 1)
+                                IF RIGHT$(uB$, 4) = ".FRM" THEN
+                                    FileToOpen$ = MID$(b$, FirstMark + 1, SecondMark - FirstMark - 1)
+                                    EXIT DO
+                                END IF
+                            END IF
+                        END IF
+                    END IF
+                LOOP
+                CLOSE #FreeFileNum
             CASE ELSE
                 IF LCASE$(RIGHT$(COMMAND$, 7)) = ".frmbin" OR LCASE$(RIGHT$(COMMAND$, 4)) = ".frm" THEN
                     FileToOpen$ = COMMAND$
@@ -1260,6 +1342,14 @@ SUB __UI_OnLoad
         END SELECT
 
         IF LEN(FileToOpen$) > 0 THEN
+            IF INSTR(FileToOpen$, "/") > 0 OR INSTR(FileToOpen$, "\") > 0 THEN
+                FOR i = LEN(FileToOpen$) TO 1 STEP -1
+                    IF ASC(FileToOpen$, i) = 92 OR ASC(FileToOpen$, i) = 47 THEN
+                        CurrentPath$ = LEFT$(FileToOpen$, i - 1)
+                        EXIT FOR
+                    END IF
+                NEXT
+            END IF
             FreeFileNum = FREEFILE
             OPEN FileToOpen$ FOR BINARY AS #FreeFileNum
             b$ = SPACE$(LOF(FreeFileNum))
@@ -1272,8 +1362,6 @@ SUB __UI_OnLoad
         END IF
     END IF
 
-    IF _FILEEXISTS("InForm/UiEditor.dat") THEN KILL "InForm/UiEditor.dat"
-
     $IF WIN THEN
         IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN
             IF _FILEEXISTS("InForm/UiEditorPreview.bas") = 0 THEN
@@ -1281,7 +1369,7 @@ SUB __UI_OnLoad
             ELSE
                 b$ = "Compiling Preview component..."
                 GOSUB ShowMessage
-                SHELL "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
+                SHELL _HIDE "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
                 IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
@@ -1295,7 +1383,7 @@ SUB __UI_OnLoad
         ELSE
         b$ = "Compiling Preview component..."
         GOSUB ShowMessage
-        SHELL "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
+        SHELL _HIDE "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
@@ -1313,7 +1401,7 @@ SUB __UI_OnLoad
     'Fill "open dialog" listboxes:
     '-------------------------------------------------
     DIM TotalFiles%
-    CurrentPath$ = _CWD$
+    IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
     Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
     Control(FileList).Max = TotalFiles%
     Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -1349,6 +1437,15 @@ SUB __UI_KeyPress (id AS LONG)
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
             END IF
     END SELECT
+
+    SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
+        CASE "PROPERTYVALUE"
+            Edited = True
+        CASE "ALIGNOPTIONS"
+            Edited = True
+        CASE "VALIGNOPTIONS"
+            Edited = True
+    END SELECT
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
@@ -1383,7 +1480,7 @@ SUB __UI_TextChanged (id AS LONG)
             DIM TempID AS LONG
             TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
             Control(TempID).Value = VAL(Text(id))
-            __UI_MouseUp TempID
+            SendNewRGB
     END SELECT
 END SUB
 
@@ -1407,11 +1504,11 @@ SUB __UI_ValueChanged (id AS LONG)
             b$ = MKI$(Control(__UI_GetID("VAlignOptions")).Value - 1)
             SendData b$, 32
         CASE "RED"
-            Text(RedTextBoxID) = LTRIM$(STR$(Control(RedTrackID).Value))
+            Text(RedTextBoxID) = LTRIM$(STR$(INT(Control(RedTrackID).Value)))
         CASE "GREEN"
-            Text(GreenTextBoxID) = LTRIM$(STR$(Control(GreenTrackID).Value))
+            Text(GreenTextBoxID) = LTRIM$(STR$(INT(Control(GreenTrackID).Value)))
         CASE "BLUE"
-            Text(BlueTextBoxID) = LTRIM$(STR$(Control(BlueTrackID).Value))
+            Text(BlueTextBoxID) = LTRIM$(STR$(INT(Control(BlueTrackID).Value)))
         CASE "RED", "GREEN", "BLUE"
             'Compose a new color and send it to the preview
             DIM NewColor AS _UNSIGNED LONG
@@ -5345,6 +5442,8 @@ SUB LoadPreview
                     CASE -34
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Encoding = CVL(b$)
+                    CASE -35
+                        PreviewDefaultButtonID = Dummy
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -5372,7 +5471,6 @@ SUB SendData (b$, Property AS INTEGER)
     b$ = MKI$(Property): PUT #FileNum, OffsetPropertyChanged, b$
     b$ = MKI$(-1): PUT #FileNum, OffsetNewDataFromEditor, b$
     CLOSE #FileNum
-    Edited = True
 END SUB
 
 SUB SendSignal (Value AS INTEGER)
@@ -5485,28 +5583,27 @@ SUB CheckPreview
 END SUB
 
 SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
-    DIM BaseOutputFileName AS STRING, BinaryFileNum AS INTEGER
+    DIM BaseOutputFileName AS STRING
     DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
     DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
 
-    BaseOutputFileName = RTRIM$(PreviewControls(PreviewFormID).Name)
-    IF _FILEEXISTS(BaseOutputFileName + ".bas") OR _FILEEXISTS(BaseOutputFileName + ".frmbin") OR _FILEEXISTS(BaseOutputFileName + ".bas") THEN
+    BaseOutputFileName = CurrentPath$ + PathSep$ + RTRIM$(PreviewControls(PreviewFormID).Name)
+    IF _FILEEXISTS(BaseOutputFileName + ".bas") OR _FILEEXISTS(BaseOutputFileName + ".frm") THEN
         Answer = MessageBox("Some files will be overwritten. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN EXIT SUB
     END IF
 
     'Backup existing files
-    FOR i = 1 TO 3
+    FOR i = 1 TO 2
         IF i = 1 THEN
             IF SaveOnlyFrm THEN
-                GOTO SkipSavingBas
+                _CONTINUE
             ELSE
                 BackupFile$ = BaseOutputFileName + ".bas"
             END IF
         END IF
-        IF i = 2 THEN BackupFile$ = BaseOutputFileName + ".frmbin"
-        IF i = 3 THEN BackupFile$ = BaseOutputFileName + ".frm"
+        IF i = 2 THEN BackupFile$ = BaseOutputFileName + ".frm"
 
         IF _FILEEXISTS(BackupFile$) THEN
             TextFileNum = FREEFILE
@@ -5520,17 +5617,13 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             PUT #TextFileNum, 1, b$
             CLOSE #TextFileNum
         END IF
-        SkipSavingBas:
     NEXT
 
     TextFileNum = FREEFILE
     OPEN BaseOutputFileName + ".frm" FOR OUTPUT AS #TextFileNum
-    IF _FILEEXISTS(BaseOutputFileName + ".frmbin") THEN KILL BaseOutputFileName + ".frmbin"
-    BinaryFileNum = FREEFILE
-    OPEN BaseOutputFileName + ".frmbin" FOR BINARY AS #BinaryFileNum
     PRINT #TextFileNum, "': This form was generated by"
     PRINT #TextFileNum, "': InForm - GUI system for QB64 - "; __UI_Version
-    PRINT #TextFileNum, "': Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor"
+    PRINT #TextFileNum, "': Fellippe Heitor, 2016/2018 - fellippe@qb64.org - @fellippeheitor"
     PRINT #TextFileNum, "'-----------------------------------------------------------"
     PRINT #TextFileNum, "SUB __UI_LoadForm"
     PRINT #TextFileNum,
@@ -5543,10 +5636,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
     PRINT #TextFileNum, "    DIM __UI_NewID AS LONG"
     PRINT #TextFileNum,
-    b$ = "InForm" + CHR$(1)
-    PUT #BinaryFileNum, 1, b$
-    b$ = MKL$(UBOUND(PreviewControls))
-    PUT #BinaryFileNum, , b$
 
     'First pass is for the main form and containers (frames and menubars).
     'Second pass is for the rest of controls.
@@ -5573,6 +5662,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     CASE __UI_Type_PictureBox: a$ = a$ + "__UI_Type_PictureBox, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                     CASE __UI_Type_TrackBar: a$ = a$ + "__UI_Type_TrackBar, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                     CASE __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
+                    CASE __UI_Type_ToggleSwitch: a$ = a$ + "__UI_Type_ToggleSwitch, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                 END SELECT
                 a$ = a$ + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ","
                 a$ = a$ + STR$(PreviewControls(i).Width) + ","
@@ -5585,11 +5675,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     a$ = a$ + " 0)"
                 END IF
                 PRINT #TextFileNum, a$
-                b$ = MKI$(-1) + MKL$(0) + MKI$(PreviewControls(i).Type) '-1 indicates a new control
-                b$ = b$ + MKI$(LEN(RTRIM$(PreviewControls(i).Name)))
-                b$ = b$ + RTRIM$(PreviewControls(i).Name)
-                b$ = b$ + MKI$(PreviewControls(i).Width) + MKI$(PreviewControls(i).Height) + MKI$(PreviewControls(i).Left) + MKI$(PreviewControls(i).Top) + MKI$(LEN(PreviewParentIDS(i))) + PreviewParentIDS(i)
-                PUT #BinaryFileNum, , b$
+
+                IF PreviewDefaultButtonID = i THEN
+                    PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_NewID"
+                END IF
 
                 IF LEN(PreviewCaptions(i)) > 0 THEN
                     'IF PreviewControls(i).HotKeyPosition > 0 THEN
@@ -5598,17 +5687,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     '    a$ = PreviewCaptions(i)
                     'END IF
                     a$ = "    SetCaption __UI_NewID, " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
-                    b$ = MKI$(-2) + MKL$(LEN(PreviewCaptions(i))) '-2 indicates a caption
-                    PUT #BinaryFileNum, , b$
-                    PUT #BinaryFileNum, , PreviewCaptions(i)
                     PRINT #TextFileNum, a$
                 END IF
 
                 IF LEN(PreviewTips(i)) > 0 THEN
                     a$ = "    ToolTip(__UI_NewID) = " + __UI_SpecialCharsToCHR$(PreviewTips(i))
-                    b$ = MKI$(-24) + MKL$(LEN(PreviewTips(i))) '-24 indicates a tip
-                    PUT #BinaryFileNum, , b$
-                    PUT #BinaryFileNum, , PreviewTips(i)
                     PRINT #TextFileNum, a$
                 END IF
 
@@ -5640,26 +5723,17 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             a$ = "    Text(__UI_NewID) = " + __UI_SpecialCharsToCHR$(PreviewTexts(i))
                             PRINT #TextFileNum, a$
                     END SELECT
-                    b$ = MKI$(-3) + MKL$(LEN(PreviewTexts(i))) '-3 indicates a text
-                    PUT #BinaryFileNum, , b$
-                    PUT #BinaryFileNum, , PreviewTexts(i)
                 END IF
                 IF PreviewControls(i).TransparentColor > 0 THEN
                     PRINT #TextFileNum, "    __UI_ClearColor Control(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(PreviewControls(i).TransparentColor)) + ", -1"
-                    b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, PreviewControls(i).TransparentColor)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Stretch THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = True"
-                    b$ = MKI$(-4)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 'Fonts
                 IF LEN(PreviewFonts(i)) > 0 THEN
                     DIM NewFontParameters AS STRING
                     FontSetup$ = PreviewFonts(i)
-                    b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
-                    PUT #BinaryFileNum, , b$
 
                     'Parse FontSetup$ into Font variables
                     FindSep = INSTR(FontSetup$, "*")
@@ -5676,110 +5750,79 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 'Colors are saved only if they differ from the theme's defaults
                 IF PreviewControls(i).ForeColor > 0 AND PreviewControls(i).ForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 1) THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).ForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).ForeColor))) + ")"
-                    b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, PreviewControls(i).ForeColor)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).BackColor > 0 AND PreviewControls(i).BackColor <> __UI_DefaultColor(PreviewControls(i).Type, 2) THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).BackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BackColor))) + ")"
-                    b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, PreviewControls(i).BackColor)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).SelectedForeColor > 0 AND PreviewControls(i).SelectedForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 3) THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).SelectedForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedForeColor))) + ")"
-                    b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, PreviewControls(i).SelectedForeColor)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).SelectedBackColor > 0 AND PreviewControls(i).SelectedBackColor <> __UI_DefaultColor(PreviewControls(i).Type, 4) THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).SelectedBackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedBackColor))) + ")"
-                    b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, PreviewControls(i).SelectedBackColor)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).BorderColor > 0 AND PreviewControls(i).BorderColor <> __UI_DefaultColor(PreviewControls(i).Type, 5) THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).BorderColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BorderColor))) + ")"
-                    b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, PreviewControls(i).BorderColor)
-                    PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).BackStyle = __UI_Transparent THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).BackStyle = __UI_Transparent"
-                    b$ = MKI$(-11): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).HasBorder THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = True"
-                    b$ = MKI$(-12): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Align = __UI_Center THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Center"
-                    b$ = MKI$(-13) + _MK$(_BYTE, PreviewControls(i).Align): PUT #BinaryFileNum, , b$
                 ELSEIF PreviewControls(i).Align = __UI_Right THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Right"
-                    b$ = MKI$(-13) + _MK$(_BYTE, PreviewControls(i).Align): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).VAlign = __UI_Middle THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Middle"
-                    b$ = MKI$(-32) + _MK$(_BYTE, PreviewControls(i).VAlign): PUT #BinaryFileNum, , b$
                 ELSEIF PreviewControls(i).VAlign = __UI_Bottom THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Bottom"
-                    b$ = MKI$(-32) + _MK$(_BYTE, PreviewControls(i).VAlign): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).PasswordField = True AND PreviewControls(i).Type = __UI_Type_TextBox THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
-                    b$ = MKI$(-33): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Value <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
-                    b$ = MKI$(-14) + _MK$(_FLOAT, PreviewControls(i).Value): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Min <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
-                    b$ = MKI$(-15) + _MK$(_FLOAT, PreviewControls(i).Min): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Max <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
-                    b$ = MKI$(-16) + _MK$(_FLOAT, PreviewControls(i).Max): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).ShowPercentage THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = True"
-                    b$ = MKI$(-19): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CanHaveFocus THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).CanHaveFocus = True"
-                    b$ = MKI$(-20): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Disabled THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Disabled = True"
-                    b$ = MKI$(-21): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Hidden THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Hidden = True"
-                    b$ = MKI$(-22): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CenteredWindow THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = True"
-                    b$ = MKI$(-23): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).ContextMenuID THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name) + CHR$(34) + ")"
-                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name))) + RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Interval THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
-                    b$ = MKI$(-26) + _MK$(_FLOAT, PreviewControls(i).Interval): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).WordWrap THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).WordWrap = True"
-                    b$ = MKI$(-27): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).CanResize AND PreviewControls(i).Type = __UI_Type_Form THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).CanResize = True"
-                    b$ = MKI$(-29): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Padding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
-                    b$ = MKI$(-31) + MKI$(PreviewControls(i).Padding): PUT #BinaryFileNum, , b$
                 END IF
                 IF PreviewControls(i).Encoding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTRIM$(STR$(PreviewControls(i).Encoding))
-                    b$ = MKI$(-34) + MKL$(PreviewControls(i).Encoding): PUT #BinaryFileNum, , b$
                 END IF
                 PRINT #TextFileNum,
             END IF
@@ -5787,7 +5830,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         NEXT
     NEXT ThisPass
 
-    b$ = MKI$(-1024): PUT #BinaryFileNum, , b$ 'end of file
     PRINT #TextFileNum, "END SUB"
     PRINT #TextFileNum,
     PRINT #TextFileNum, "SUB __UI_AssignIDs"
@@ -5797,12 +5839,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         END IF
     NEXT
     PRINT #TextFileNum, "END SUB"
-    CLOSE #TextFileNum, #BinaryFileNum
+    CLOSE #TextFileNum
     IF NOT SaveOnlyFrm THEN
         OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
         PRINT #TextFileNum, "': This program was generated by"
         PRINT #TextFileNum, "': InForm - GUI system for QB64 - "; __UI_Version
-        PRINT #TextFileNum, "': Fellippe Heitor, 2016/2017 - fellippe@qb64.org - @fellippeheitor"
+        PRINT #TextFileNum, "': Fellippe Heitor, 2016/2018 - fellippe@qb64.org - @fellippeheitor"
         PRINT #TextFileNum, "'-----------------------------------------------------------"
         PRINT #TextFileNum,
         PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
@@ -5815,7 +5857,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
         PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
         PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
-        PRINT #TextFileNum, "'$INCLUDE:'" + BaseOutputFileName + ".frm'"
+        PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
         PRINT #TextFileNum,
         PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
         FOR i = 0 TO 14
@@ -5836,8 +5878,15 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
                 CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
 
-                CASE 0 TO 3, 14
+                CASE 0, 2, 3, 14
                     PRINT #TextFileNum,
+
+                CASE 1
+                    IF PreviewDefaultButtonID > 0 THEN
+                        PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
+                    ELSE
+                        PRINT #TextFileNum,
+                    END IF
 
                 CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
                     PRINT #TextFileNum, "    SELECT CASE id"
@@ -5886,8 +5935,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
 
     b$ = "Exporting successful. Files output:" + CHR$(10)
-    IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + BaseOutputFileName + ".bas" + CHR$(10)
-    b$ = b$ + "    " + BaseOutputFileName + ".frm" + CHR$(10) + "    " + BaseOutputFileName + ".frmbin"
+    IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".bas" + CHR$(10)
+    b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm"
 
     IF ExitToQB64 THEN
         $IF WIN THEN
@@ -5906,9 +5955,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN Edited = False: EXIT SUB
         $IF WIN THEN
-            IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + BaseOutputFileName + ".bas"
+            IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + QuotedFilename$(BaseOutputFileName + ".bas")
         $ELSE
-            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + BaseOutputFileName + ".bas"
+            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
         $END IF
         SYSTEM
     ELSE
@@ -6327,3 +6376,4 @@ FUNCTION QuotedFilename$ (f$)
         QuotedFilename$ = "'" + f$ + "'"
     $END IF
 END FUNCTION
+
