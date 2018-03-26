@@ -3923,7 +3923,7 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontA
         'If the passed font is already loaded, we'll just return its handle
         FOR NextSlot = 1 TO UBOUND(Control)
             IF Control(NextSlot).Type = __UI_Type_Font THEN
-                IF (UCASE$(Text(NextSlot)) = UCASE$(NewFontFile) OR UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
+                IF (UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
                     SetFont& = Control(NextSlot).Value
                     EXIT FUNCTION
                 END IF
@@ -5580,7 +5580,7 @@ END SUB
 SUB echo (debugSession AS INTEGER, text$)
     '$CONSOLE
     'DIM prevDest AS LONG
-    'CONST thisSession = 3
+    'CONST thisSession = 4
     'IF debugSession < thisSession THEN EXIT SUB
     'prevDest = _DEST
     '_DEST _CONSOLE

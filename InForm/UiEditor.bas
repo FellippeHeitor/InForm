@@ -772,7 +772,7 @@ SUB __UI_BeforeUpdateDisplay
 
         IF __UI_Focus <> PropertyValueID AND FirstSelected > 0 THEN
             Control(PropertyValueID).Width = 250
-
+            ToolTip(PropertyValueID) = ""
             SELECT CASE SelectedProperty
                 CASE 1 'Name
                     Text(PropertyValueID) = RTRIM$(PreviewControls(FirstSelected).Name)
@@ -798,6 +798,7 @@ SUB __UI_BeforeUpdateDisplay
                     ELSE
                         Text(PropertyValueID) = PreviewFonts(PreviewFormID)
                     END IF
+                    ToolTip(PropertyValueID) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
                 CASE 9 'Tooltip
                     Text(PropertyValueID) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
                 CASE 10 'Value

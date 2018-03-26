@@ -30,7 +30,7 @@ READ_KEYWORDS
 
 CHDIR ".."
 
-CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL]5cnog00Q9GJQaV;dAWIZXB<b00o%%%0"
+CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL]5cno760cEfI_EFMYi2MdIf?Q9GJQaV;dAWIol2CY9VLQ9GN_HdK^AgL_4TLY56K^@7MVmCB^IdKbef;bEfL_EWLSEfL_hdKdmFC_ifK]8EIWE7KQ9W;dAWIo<fKe9W;dAWIZXB<b00o%%%0"
 
 DIM i AS LONG
 DIM SHARED AlphaNumeric(255)
@@ -105,6 +105,13 @@ SUB __UI_BeforeUpdateDisplay
 
     UiEditorFile = FREEFILE
     OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).Type = __UI_Type_Font THEN
+            IF Control(i).Value > 0 THEN echo 4, RTRIM$(Control(i).Name) + " - " + Text(i) + STR$(Control(i).Value): j = 1
+        END IF
+    NEXT
+    IF j = 1 THEN echo 4, "---------------------"
 
     IF NOT MidRead THEN
         MidRead = True
@@ -1555,7 +1562,7 @@ SUB SavePreview
                     PUT #BinFileNum, , b$
                 ELSE
                     SaveExternalFont:
-                    FontSetup$ = Text(__UI_GetFontID(Control(i).Font)) + "*" + Caption(__UI_GetFontID(Control(i).Font)) + "*" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
+                    FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "*" + Caption(__UI_GetFontID(Control(i).Font)) + "*" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 END IF
