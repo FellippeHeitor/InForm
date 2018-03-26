@@ -106,13 +106,6 @@ SUB __UI_BeforeUpdateDisplay
     UiEditorFile = FREEFILE
     OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
 
-    FOR i = 1 TO UBOUND(Control)
-        IF Control(i).Type = __UI_Type_Font THEN
-            IF Control(i).Value > 0 THEN echo 4, RTRIM$(Control(i).Name) + " - " + Text(i) + STR$(Control(i).Value): j = 1
-        END IF
-    NEXT
-    IF j = 1 THEN echo 4, "---------------------"
-
     IF NOT MidRead THEN
         MidRead = True
         b$ = SPACE$(4): GET #UiEditorFile, OffsetEditorPID, b$
