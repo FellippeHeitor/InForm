@@ -1612,14 +1612,14 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_ShadowBox (b.X AS INTEGER, b.Y AS INTEGER, b.W AS INTEGER, b.H AS INTEGER, C AS LONG, shadow.Level AS INTEGER, shadow.Size AS INTEGER)
+SUB __UI_ShadowBox (bX AS INTEGER, bY AS INTEGER, bW AS INTEGER, bH AS INTEGER, C AS LONG, shadowLevel AS INTEGER, shadowSize AS INTEGER)
     DIM i AS INTEGER
 
-    FOR i = 1 TO shadow.Size
-        LINE (b.X + i, b.Y + i)-STEP(b.W, b.H), _RGBA32(0, 0, 0, shadow.Level - (shadow.Level / shadow.Size) * i), BF
+    FOR i = 1 TO shadowSize
+        LINE (bX + i, bY + i)-STEP(bW, bH), _RGBA32(0, 0, 0, shadowLevel - (shadowLevel / shadowSize) * i), BF
     NEXT i
 
-    LINE (b.X, b.Y)-STEP(b.W, b.H), C, BF
+    LINE (bX, bY)-STEP(bW, bH), C, BF
 END SUB
 
 '---------------------------------------------------------------------------------

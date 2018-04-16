@@ -204,76 +204,26 @@ DIM SHARED __UI_FrameRate AS SINGLE
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
-CONST __UI_Type_Form = 1: __UI_Type(1).Name = "Form"
-CONST __UI_Type_Frame = 2: __UI_Type(2).Name = "Frame"
-CONST __UI_Type_Button = 3: __UI_Type(3).Name = "Button"
-CONST __UI_Type_Label = 4: __UI_Type(4).Name = "Label"
-CONST __UI_Type_CheckBox = 5: __UI_Type(5).Name = "CheckBox"
-CONST __UI_Type_RadioButton = 6: __UI_Type(6).Name = "RadioButton"
-CONST __UI_Type_TextBox = 7: __UI_Type(7).Name = "TextBox"
-CONST __UI_Type_ProgressBar = 8: __UI_Type(8).Name = "ProgressBar"
-CONST __UI_Type_ListBox = 9: __UI_Type(9).Name = "ListBox"
-CONST __UI_Type_DropdownList = 10: __UI_Type(10).Name = "DropdownList"
-CONST __UI_Type_MenuBar = 11: __UI_Type(11).Name = "MenuBar"
-CONST __UI_Type_MenuItem = 12: __UI_Type(12).Name = "MenuItem"
-CONST __UI_Type_MenuPanel = 13: __UI_Type(13).Name = "MenuPanel"
-CONST __UI_Type_PictureBox = 14: __UI_Type(14).Name = "PictureBox"
-CONST __UI_Type_TrackBar = 15: __UI_Type(15).Name = "TrackBar"
-CONST __UI_Type_ContextMenu = 16: __UI_Type(16).Name = "ContextMenuPanel"
-CONST __UI_Type_Font = 17: __UI_Type(17).Name = "Font"
-CONST __UI_Type_ToggleSwitch = 18: __UI_Type(18).Name = "ToggleSwitch"
+__UI_Type(1).Name = "Form"
+__UI_Type(2).Name = "Frame"
+__UI_Type(3).Name = "Button"
+__UI_Type(4).Name = "Label"
+__UI_Type(5).Name = "CheckBox"
+__UI_Type(6).Name = "RadioButton"
+__UI_Type(7).Name = "TextBox"
+__UI_Type(8).Name = "ProgressBar"
+__UI_Type(9).Name = "ListBox"
+__UI_Type(10).Name = "DropdownList"
+__UI_Type(11).Name = "MenuBar"
+__UI_Type(12).Name = "MenuItem"
+__UI_Type(13).Name = "MenuPanel"
+__UI_Type(14).Name = "PictureBox"
+__UI_Type(15).Name = "TrackBar"
+__UI_Type(16).Name = "ContextMenuPanel"
+__UI_Type(17).Name = "Font"
+__UI_Type(18).Name = "ToggleSwitch"
 
-'Back styles:
-CONST __UI_Opaque = 0
-CONST __UI_Transparent = -1
-
-'Text alignment
-CONST __UI_Left = 0
-CONST __UI_Center = 1
-CONST __UI_Right = 2
-CONST __UI_Top = 0
-CONST __UI_Middle = 1
-CONST __UI_Bottom = 2
-
-'Messagebox constants
-CONST MsgBox_OkOnly = 0
-CONST MsgBox_OkCancel = 1
-CONST MsgBox_AbortRetryIgnore = 2
-CONST MsgBox_YesNoCancel = 3
-CONST MsgBox_YesNo = 4
-CONST MsgBox_RetryCancel = 5
-CONST MsgBox_CancelTryagainContinue = 6
-
-CONST MsgBox_Critical = 16
-CONST MsgBox_Question = 32
-CONST MsgBox_Exclamation = 48
-CONST MsgBox_Information = 64
-
-CONST MsgBox_DefaultButton1 = 0
-CONST MsgBox_DefaultButton2 = 256
-CONST MsgBox_DefaultButton3 = 512
-CONST MsgBox_Defaultbutton4 = 768
-
-CONST MsgBox_AppModal = 0
-CONST MsgBox_SystemModal = 4096
-CONST MsgBox_SetForeground = 65536
-
-CONST MsgBox_Ok = 1
-CONST MsgBox_Cancel = 2
-CONST MsgBox_Abort = 3
-CONST MsgBox_Retry = 4
-CONST MsgBox_Ignore = 5
-CONST MsgBox_Yes = 6
-CONST MsgBox_No = 7
-CONST MsgBox_Tryagain = 10
-CONST MsgBox_Continue = 11
-
-'General constants
-CONST __UI_ToolTipTimeOut = .8
-
-'Global constants
-CONST True = -1
-CONST False = 0
+CONST True = -1, False = 0
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -5006,7 +4956,7 @@ FUNCTION MessageBox& (Message$, Title$, Setup AS LONG)
     IF Title$ = "" THEN Title$ = __UI_CurrentTitle
 
     $IF WIN THEN
-        MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), Setup + MsgBox_SystemModal + MsgBox_SetForeground)
+        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False,0) + CHR$(0), Title$ + CHR$(0), Setup + MsgBox_SystemModal + MsgBox_SetForeground)
     $ELSE
         IF (Setup AND 4) THEN
         MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 4)
@@ -5682,4 +5632,72 @@ END FUNCTION
 '    PRINT text$
 '    _DEST prevDest
 'END SUB
+
+'Control types:
+FUNCTION __UI_Type_Form%%:__UI_Type_Form%% = 1: END FUNCTION
+FUNCTION __UI_Type_Frame%%: __UI_Type_Frame%% = 2: END FUNCTION
+FUNCTION __UI_Type_Button%%: __UI_Type_Button%% = 3: END FUNCTION
+FUNCTION __UI_Type_Label%%: __UI_Type_Label%% = 4: END FUNCTION
+FUNCTION __UI_Type_CheckBox%%: __UI_Type_CheckBox%% = 5: END FUNCTION
+FUNCTION __UI_Type_RadioButton%%: __UI_Type_RadioButton%% = 6: END FUNCTION
+FUNCTION __UI_Type_TextBox%%: __UI_Type_TextBox%% = 7: END FUNCTION
+FUNCTION __UI_Type_ProgressBar%%: __UI_Type_ProgressBar%% = 8: END FUNCTION
+FUNCTION __UI_Type_ListBox%%: __UI_Type_ListBox%% = 9: END FUNCTION
+FUNCTION __UI_Type_DropdownList%%: __UI_Type_DropdownList%% = 10: END FUNCTION
+FUNCTION __UI_Type_MenuBar%%: __UI_Type_MenuBar%% = 11: END FUNCTION
+FUNCTION __UI_Type_MenuItem%%: __UI_Type_MenuItem%% = 12: END FUNCTION
+FUNCTION __UI_Type_MenuPanel%%: __UI_Type_MenuPanel%% = 13: END FUNCTION
+FUNCTION __UI_Type_PictureBox%%: __UI_Type_PictureBox%% = 14: END FUNCTION
+FUNCTION __UI_Type_TrackBar%%: __UI_Type_TrackBar%% = 15: END FUNCTION
+FUNCTION __UI_Type_ContextMenu%%: __UI_Type_ContextMenu%% = 16: END FUNCTION
+FUNCTION __UI_Type_Font%%: __UI_Type_Font%% = 17: END FUNCTION
+FUNCTION __UI_Type_ToggleSwitch%%: __UI_Type_ToggleSwitch%% = 18: END FUNCTION
+
+'Back styles:
+FUNCTION __UI_Opaque%%: __UI_Opaque%% = 0: END FUNCTION
+FUNCTION __UI_Transparent%%: __UI_Transparent%% = -1: END FUNCTION
+
+'Text alignment
+FUNCTION __UI_Left%%: __UI_Left%% = 0: END FUNCTION
+FUNCTION __UI_Center%%: __UI_Center%% = 1: END FUNCTION
+FUNCTION __UI_Right%%: __UI_Right%% = 2: END FUNCTION
+FUNCTION __UI_Top%%: __UI_Top%% = 0: END FUNCTION
+FUNCTION __UI_Middle%%: __UI_Middle%% = 1: END FUNCTION
+FUNCTION __UI_Bottom%%: __UI_Bottom%% = 2: END FUNCTION
+
+'Messagebox constants
+FUNCTION MsgBox_OkOnly%%: MsgBox_OkOnly%% = 0: END FUNCTION
+FUNCTION MsgBox_OkCancel%%: MsgBox_OkCancel%% = 1: END FUNCTION
+FUNCTION MsgBox_AbortRetryIgnore%%: MsgBox_AbortRetryIgnore%% = 2: END FUNCTION
+FUNCTION MsgBox_YesNoCancel%%: MsgBox_YesNoCancel%% = 3: END FUNCTION
+FUNCTION MsgBox_YesNo%%: MsgBox_YesNo%% = 4: END FUNCTION
+FUNCTION MsgBox_RetryCancel%%: MsgBox_RetryCancel%% = 5: END FUNCTION
+FUNCTION MsgBox_CancelTryagainContinue%%: MsgBox_CancelTryagainContinue%% = 6: END FUNCTION
+
+FUNCTION MsgBox_Critical%: MsgBox_Critical% = 16: END FUNCTION
+FUNCTION MsgBox_Question%: MsgBox_Question% = 32: END FUNCTION
+FUNCTION MsgBox_Exclamation%: MsgBox_Exclamation% = 48: END FUNCTION
+FUNCTION MsgBox_Information%: MsgBox_Information% = 64: END FUNCTION
+
+FUNCTION MsgBox_DefaultButton1%: MsgBox_DefaultButton1% = 0: END FUNCTION
+FUNCTION MsgBox_DefaultButton2%: MsgBox_DefaultButton2% = 256: END FUNCTION
+FUNCTION MsgBox_DefaultButton3%: MsgBox_DefaultButton3% = 512: END FUNCTION
+FUNCTION MsgBox_Defaultbutton4%: MsgBox_Defaultbutton4% = 768: END FUNCTION
+
+FUNCTION MsgBox_AppModal%%: MsgBox_AppModal%% = 0: END FUNCTION
+FUNCTION MsgBox_SystemModal%: MsgBox_SystemModal% = 4096: END FUNCTION
+FUNCTION MsgBox_SetForeground&: MsgBox_SetForeground& = 65536: END FUNCTION
+
+FUNCTION MsgBox_Ok%%: MsgBox_Ok%% = 1: END FUNCTION
+FUNCTION MsgBox_Cancel%%: MsgBox_Cancel%% = 2: END FUNCTION
+FUNCTION MsgBox_Abort%%: MsgBox_Abort%% = 3: END FUNCTION
+FUNCTION MsgBox_Retry%%: MsgBox_Retry%% = 4: END FUNCTION
+FUNCTION MsgBox_Ignore%%: MsgBox_Ignore%% = 5: END FUNCTION
+FUNCTION MsgBox_Yes%%: MsgBox_Yes%% = 6: END FUNCTION
+FUNCTION MsgBox_No%%: MsgBox_No%% = 7: END FUNCTION
+FUNCTION MsgBox_Tryagain%%: MsgBox_Tryagain%% = 10: END FUNCTION
+FUNCTION MsgBox_Continue%%: MsgBox_Continue%% = 11: END FUNCTION
+
+'General constants
+FUNCTION __UI_ToolTipTimeOut!: __UI_ToolTipTimeOut! = .8: END FUNCTION
 
