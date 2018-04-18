@@ -1,7 +1,7 @@
 'InForm - GUI system for QB64
-'Fellippe Heitor, 2016/2018 - fellippe@qb64.org - @fellippeheitor
+'Fellippe Heitor, 2016-2018 - fellippe@qb64.org - @fellippeheitor
 '
-
+'VWATCH64:OFF
 '$INCLUDE:'InFormVersion.bas'
 
 DECLARE LIBRARY
@@ -197,9 +197,10 @@ DIM SHARED __UI_SelectionRectangleTop AS INTEGER, __UI_SelectionRectangleLeft AS
 DIM SHARED __UI_SelectionRectangle AS _BYTE, __UI_DesignModeAlignCommand AS INTEGER
 DIM SHARED __UI_CantShowContextMenu AS _BYTE, __UI_ShowPositionAndSize AS _BYTE
 DIM SHARED __UI_Snapped AS _BYTE
+DIM SHARED __UI_SnappedByProximityX AS _BYTE, __UI_SnappedByProximityY AS _BYTE
 DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
-DIM SHARED __UI_SnapLines AS _BYTE
+DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER
 DIM SHARED __UI_FrameRate AS SINGLE
 
 'Control types:
@@ -224,6 +225,7 @@ __UI_Type(17).Name = "Font"
 __UI_Type(18).Name = "ToggleSwitch"
 
 CONST True = -1, False = 0
+__UI_SnapDistance = 5
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -900,24 +902,58 @@ SUB __UI_UpdateDisplay
             OverlayisVisible = True
 
             IF __UI_Snapped THEN
-                IF __UI_SnappedY >= 0 THEN _
-                    DIM X1 AS INTEGER, X2 AS INTEGER
-                    'X1 = Control(__UI_SnappedYID).Left
-                    'X2 = Control(__UI_DraggingID).Left
-                    'IF X1 > X2 THEN SWAP X1, X2
-                    'X2 = X2 - X1
+                DIM X1 AS INTEGER, X2 AS INTEGER
+                DIM Y1 AS INTEGER, Y2 AS INTEGER
+
+                IF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY = 0 THEN
                     X1 = 0
                     X2 = _WIDTH
                     LINE (X1, __UI_SnappedY)-STEP(X2, 0), Control(__UI_FormID).SelectedBackColor
-                IF __UI_SnappedX >=0 THEN _
-                    DIM Y1 AS INTEGER, Y2 AS INTEGER
-                    'Y1 = Control(__UI_SnappedYID).Top
-                    'Y2 = Control(__UI_DraggingID).Top
-                    'IF Y1 > Y2 THEN SWAP Y1, Y2
-                    'Y2 = Y2 - Y1
+                ELSEIF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY > 0 THEN
+                    SELECT CASE __UI_SnappedByProximityY
+                        CASE 1 'bottom of dragged control to top of snapped control
+                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
+                            IF X1 < Control(__UI_SnappedXID).Left + 1 THEN X1 = Control(__UI_SnappedXID).Left + 1
+                            IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
+                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height
+                            FOR X1 = X1 - 1 TO X1 + 1
+                                LINE (X1, Y1)-STEP(0, __UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                        CASE 2 'top of dragged control to bottom of snapped control
+                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
+                            IF X1 < Control(__UI_SnappedXID).Left + 1 THEN X1 = Control(__UI_SnappedXID).Left + 1
+                            IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
+                            Y1 = Control(__UI_DraggingID).Top
+                            FOR X1 = X1 - 1 TO X1 + 1
+                                LINE (X1, Y1)-STEP(0, -__UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                    END SELECT
+                END IF
+
+                IF __UI_SnappedX >= 0 AND __UI_SnappedByProximityX = 0 THEN
                     Y1 = 0
                     Y2 = _HEIGHT
                     LINE (__UI_SnappedX, Y1)-STEP(0, Y2), Control(__UI_FormID).SelectedBackColor
+                ELSEIF __UI_SnappedX >= 0 AND __UI_SnappedByProximityX > 0 THEN
+                    SELECT CASE __UI_SnappedByProximityX
+                        CASE 1 'left of dragged control to right of snapped control
+                            X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width
+                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
+                            IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
+                            IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
+                            FOR Y1 = Y1 - 1 TO Y1 + 1
+                                LINE (X1, Y1)-STEP(__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                        CASE 2 'right of dragged control to left of snapped control
+                            X1 = Control(__UI_SnappedXID).Left
+                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
+                            IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
+                            IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
+                            FOR Y1 = Y1 - 1 TO Y1 + 1
+                                LINE (X1, Y1)-STEP(-__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                    END SELECT
+                END IF
             END IF
             _DEST 0
         END IF
@@ -945,38 +981,39 @@ SUB __UI_UpdateDisplay
             'Dotted outline:
             LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(i).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
 
-            'Right resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
+            IF NOT __UI_IsDragging THEN
+                'Right resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Left resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
+                'Left resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Bottom resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
+                'Bottom resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Bottom-right resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
+                'Bottom-right resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Bottom-left resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
+                'Bottom-left resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Top resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
+                'Top resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Top-right resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
+                'Top-right resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
 
-            'Top-left resize handle:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
-
+                'Top-left resize handle:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top)-STEP(7, 7), _RGB32(0, 0, 0), B
+            END IF
             IF TempParentID > 0 THEN Control(i).ParentID = TempParentID
             _DEST 0
         END IF
@@ -2104,6 +2141,8 @@ SUB __UI_EventDispatcher
                 __UI_IsDragging = False
                 __UI_DraggingID = 0
                 __UI_Snapped = 0
+                __UI_SnappedByProximityX = False
+                __UI_SnappedByProximityY = False
                 __UI_ForceRedraw = True
             END IF
             IF __UI_IsResizing THEN
@@ -2556,6 +2595,8 @@ SUB __UI_EventDispatcher
     IF __UI_IsDragging AND __UI_DraggingID = __UI_FormID THEN __UI_IsDragging = False
 
     __UI_Snapped = False
+    __UI_SnappedByProximityX = False
+    __UI_SnappedByProximityY = False
     __UI_SnappedX = -1
     __UI_SnappedY = -1
 
@@ -2681,6 +2722,70 @@ SUB __UI_EventDispatcher
                         __UI_Snapped = True
                         __UI_SnappedX = Control(i).Left + Control(i).Width + Control(Control(i).ParentID).Left
                         __UI_SnappedXID = i
+                    END IF
+
+                    'Right to left snap when close:
+                    XSnapOffset = ABS((Control(i).Left + Control(i).Width + Control(Control(i).ParentID).Left + __UI_SnapDistance) - (Control(__UI_DraggingID).Left + Control(Control(__UI_DraggingID).ParentID).Left))
+                    IF XSnapOffset < 5 AND XSnapOffset < PrevXSnapOffset AND MouseXOffset < 10 THEN
+                        IF (Control(__UI_DraggingID).Top <= Control(i).Top + Control(i).Height AND _
+                           Control(__UI_DraggingID).Top >= Control(i).Top) OR _
+                           (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height >= Control(i).Top AND _
+                           Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height <= Control(i).Top + Control(i).Height) THEN
+                            PrevXSnapOffset = XSnapOffset
+                            Control(__UI_DraggingID).Left = Control(i).Left + Control(i).Width + Control(Control(i).ParentID).Left + __UI_SnapDistance
+                            __UI_Snapped = True
+                            __UI_SnappedX = Control(i).Left + Control(i).Width + Control(Control(i).ParentID).Left + __UI_SnapDistance
+                            __UI_SnappedXID = i
+                            __UI_SnappedByProximityX = 1
+                        END IF
+                    END IF
+
+                    'Left to right snap when close:
+                    XSnapOffset = ABS((Control(i).Left - __UI_SnapDistance) - (Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width + Control(Control(__UI_DraggingID).ParentID).Left))
+                    IF XSnapOffset < 5 AND XSnapOffset < PrevXSnapOffset AND MouseXOffset < 10 THEN
+                        IF (Control(__UI_DraggingID).Top <= Control(i).Top + Control(i).Height AND _
+                           Control(__UI_DraggingID).Top >= Control(i).Top) OR _
+                           (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height >= Control(i).Top AND _
+                           Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height <= Control(i).Top + Control(i).Height) THEN
+                            PrevXSnapOffset = XSnapOffset
+                            Control(__UI_DraggingID).Left = Control(i).Left - Control(__UI_DraggingID).Width - __UI_SnapDistance
+                            __UI_Snapped = True
+                            __UI_SnappedX = Control(i).Left - Control(__UI_DraggingID).Width - __UI_SnapDistance
+                            __UI_SnappedXID = i
+                            __UI_SnappedByProximityX = 2
+                        END IF
+                    END IF
+
+                    'Bottom to top snap when close:
+                    YSnapOffset = ABS((Control(i).Top + Control(Control(i).ParentID).Top - __UI_SnapDistance) - (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height + Control(Control(__UI_DraggingID).ParentID).Top))
+                    IF YSnapOffset < 5 AND YSnapOffset < PrevYSnapOffset AND MouseYOffset < 10 THEN
+                        IF (Control(__UI_DraggingID).Left <= Control(i).Left + Control(i).Width AND _
+                           Control(__UI_DraggingID).Left >= Control(i).Left) OR _
+                           (Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width >= Control(i).Left AND _
+                           Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width <= Control(i).Left + Control(i).Width) THEN
+                            PrevYSnapOffset = YSnapOffset
+                            Control(__UI_DraggingID).Top = Control(i).Top + Control(Control(i).ParentID).Top - Control(__UI_DraggingID).Height - __UI_SnapDistance
+                            __UI_Snapped = True
+                            __UI_SnappedY = Control(i).Top + Control(Control(i).ParentID).Top - Control(__UI_DraggingID).Height - __UI_SnapDistance
+                            __UI_SnappedYID = i
+                            __UI_SnappedByProximityY = 1
+                        END IF
+                    END IF
+
+                    'Top to bottom snap when close:
+                    YSnapOffset = ABS((Control(i).Top + Control(i).Height + Control(Control(i).ParentID).Top + __UI_SnapDistance) - (Control(__UI_DraggingID).Top + Control(Control(__UI_DraggingID).ParentID).Top))
+                    IF YSnapOffset < 5 AND YSnapOffset < PrevYSnapOffset AND MouseYOffset < 10 THEN
+                        IF (Control(__UI_DraggingID).Left <= Control(i).Left + Control(i).Width AND _
+                           Control(__UI_DraggingID).Left >= Control(i).Left) OR _
+                           (Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width >= Control(i).Left AND _
+                           Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width <= Control(i).Left + Control(i).Width) THEN
+                            PrevYSnapOffset = YSnapOffset
+                            Control(__UI_DraggingID).Top = Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height + __UI_SnapDistance
+                            __UI_Snapped = True
+                            __UI_SnappedY = Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height + __UI_SnapDistance
+                            __UI_SnappedYID = i
+                            __UI_SnappedByProximityY = 2
+                        END IF
                     END IF
                 END IF
             NEXT
@@ -5700,4 +5805,4 @@ FUNCTION MsgBox_Continue%%: MsgBox_Continue%% = 11: END FUNCTION
 
 'General constants
 FUNCTION __UI_ToolTipTimeOut!: __UI_ToolTipTimeOut! = .8: END FUNCTION
-
+'VWATCH64:ON

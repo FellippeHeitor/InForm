@@ -4,6 +4,7 @@
 'Image data embeded into SUB __UI_ImageData$
 'Uses hardware images.
 '---------------------------------------------------------------------------------
+'VWATCH64:OFF
 SUB __UI_ThemeSetup
     'Metrics
     __UI_ScrollbarWidth = 17
@@ -2713,4 +2714,4 @@ FUNCTION __UI_ImageData$ (File$)
     END SELECT
     __UI_ImageData$ = A$
 END FUNCTION
-
+'VWATCH64:ON
