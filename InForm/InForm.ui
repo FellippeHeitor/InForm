@@ -2696,41 +2696,60 @@ SUB __UI_EventDispatcher
             MouseXOffset = ABS(__UI_MouseLeft - (Control(__UI_DraggingID).Left + Control(Control(__UI_DraggingID).ParentID).Left + OriginalDragX))
 
             'Snap to form borders first: -------------------------------
-            'Right to left of form snap when close:
-            XSnapOffset = Control(__UI_DraggingID).Left
-            IF XSnapOffSet >= __UI_SnapDistanceFromForm / 2 AND XSnapOffset =< __UI_SnapDistanceFromForm AND MouseXOffset < 10 THEN
-                Control(__UI_DraggingID).Left = __UI_SnapDistanceFromForm
-                __UI_Snapped = True
-                __UI_SnappedX = __UI_SnapDistanceFromForm
-                __UI_SnappedByProximityX = 3
+            IF Control(__UI_DraggingID).ParentID = 0 THEN
+                'Right to left of form snap when close:
+                XSnapOffset = Control(__UI_DraggingID).Left
+                IF XSnapOffSet >= __UI_SnapDistanceFromForm / 2 AND XSnapOffset =< __UI_SnapDistanceFromForm AND MouseXOffset < 10 THEN
+                    Control(__UI_DraggingID).Left = __UI_SnapDistanceFromForm
+                    __UI_Snapped = True
+                    __UI_SnappedX = __UI_SnapDistanceFromForm
+                    __UI_SnappedByProximityX = 3
+                END IF
+
+                'Left to right of form snap when close:
+                XSnapOffset = ABS((Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width + __UI_SnapDistanceFromForm) - Control(__UI_FormID).Width)
+                IF XSnapOffSet < __UI_SnapDistanceFromForm AND MouseXOffset < 10 THEN
+                    Control(__UI_DraggingID).Left = Control(__UI_FormID).Width - (Control(__UI_DraggingID).Width + __UI_SnapDistanceFromForm)
+                    __UI_Snapped = True
+                    __UI_SnappedX = Control(__UI_DraggingID).Left
+                    __UI_SnappedByProximityX = 4
+                END IF
+
+                'Top to top of form snap when close:
+                YSnapOffset = Control(__UI_DraggingID).Top
+                IF YSnapOffSet >= __UI_SnapDistanceFromForm / 2 AND YSnapOffset =< __UI_SnapDistanceFromForm AND MouseYOffset < 10 THEN
+                    Control(__UI_DraggingID).Top = __UI_SnapDistanceFromForm
+                    __UI_Snapped = True
+                    __UI_SnappedY = __UI_SnapDistanceFromForm
+                    __UI_SnappedByProximityY = 3
+                END IF
+
+                'Bottom to bottom of form snap when close:
+                YSnapOffset = ABS((Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height + __UI_SnapDistanceFromForm) - Control(__UI_FormID).Height)
+                IF YSnapOffSet < __UI_SnapDistanceFromForm AND MouseYOffset < 10 THEN
+                    Control(__UI_DraggingID).Top = Control(__UI_FormID).Height - (Control(__UI_DraggingID).Height + __UI_SnapDistanceFromForm)
+                    __UI_Snapped = True
+                    __UI_SnappedY = Control(__UI_DraggingID).Top
+                    __UI_SnappedByProximityY = 4
+                END IF
+
+                'Middle of form:
+                YSnapOffset = ABS((Control(__UI_FormID).Height / 2) - (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2))
+                IF YSnapOffset < 5 AND MouseYOffset < 10 THEN
+                    Control(__UI_DraggingID).Top = Control(__UI_FormID).Height / 2 - Control(__UI_DraggingID).Height / 2
+                    __UI_Snapped = True
+                    __UI_SnappedY = Control(__UI_FormID).Height / 2
+                END IF
+
+                'Center of form:
+                XSnapOffset = ABS((Control(__UI_FormID).Width / 2) - (Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2))
+                IF XSnapOffset < 5 AND MouseXOffset < 10 THEN
+                    Control(__UI_DraggingID).Left = Control(__UI_FormID).Width / 2 - Control(__UI_DraggingID).Width / 2
+                    __UI_Snapped = True
+                    __UI_SnappedX = Control(__UI_FormID).Width / 2
+                END IF
             END IF
 
-            'Left to right of form snap when close:
-            XSnapOffset = ABS((Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width + __UI_SnapDistanceFromForm) - Control(__UI_FormID).Width)
-            IF XSnapOffSet < __UI_SnapDistanceFromForm AND MouseXOffset < 10 THEN
-                Control(__UI_DraggingID).Left = Control(__UI_FormID).Width - (Control(__UI_DraggingID).Width + __UI_SnapDistanceFromForm)
-                __UI_Snapped = True
-                __UI_SnappedX = Control(__UI_DraggingID).Left
-                __UI_SnappedByProximityX = 4
-            END IF
-
-            'Top to top of form snap when close:
-            YSnapOffset = Control(__UI_DraggingID).Top
-            IF YSnapOffSet >= __UI_SnapDistanceFromForm / 2 AND YSnapOffset =< __UI_SnapDistanceFromForm AND MouseYOffset < 10 THEN
-                Control(__UI_DraggingID).Top = __UI_SnapDistanceFromForm
-                __UI_Snapped = True
-                __UI_SnappedY = __UI_SnapDistanceFromForm
-                __UI_SnappedByProximityY = 3
-            END IF
-
-            'Bottom to bottom of form snap when close:
-            YSnapOffset = ABS((Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height + __UI_SnapDistanceFromForm) - Control(__UI_FormID).Height)
-            IF YSnapOffSet < __UI_SnapDistanceFromForm AND MouseYOffset < 10 THEN
-                Control(__UI_DraggingID).Top = Control(__UI_FormID).Height - (Control(__UI_DraggingID).Height + __UI_SnapDistanceFromForm)
-                __UI_Snapped = True
-                __UI_SnappedY = Control(__UI_DraggingID).Top
-                __UI_SnappedByProximityY = 4
-            END IF
 
             'Snap to other controls: -----------------------------------
             FOR i = 1 TO UBOUND(Control)
