@@ -200,7 +200,7 @@ DIM SHARED __UI_Snapped AS _BYTE
 DIM SHARED __UI_SnappedByProximityX AS _BYTE, __UI_SnappedByProximityY AS _BYTE
 DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
-DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER
+DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDistanceFromForm AS INTEGER
 DIM SHARED __UI_FrameRate AS SINGLE
 
 'Control types:
@@ -226,6 +226,7 @@ __UI_Type(18).Name = "ToggleSwitch"
 
 CONST True = -1, False = 0
 __UI_SnapDistance = 5
+__UI_SnapDistanceFromForm = 10
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -927,6 +928,22 @@ SUB __UI_UpdateDisplay
                             FOR X1 = X1 - 1 TO X1 + 1
                                 LINE (X1, Y1)-STEP(0, -__UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
                             NEXT
+                        CASE 3 'snapped to top of form
+                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
+                            IF X1 < 1 THEN X1 = 1
+                            IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
+                            Y1 = Control(__UI_DraggingID).Top
+                            FOR X1 = X1 - 1 TO X1 + 1
+                                LINE (X1, Y1)-STEP(0, -__UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                        CASE 4 'snapped to bottom of form
+                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
+                            IF X1 < 1 THEN X1 = 1
+                            IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
+                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height
+                            FOR X1 = X1 - 1 TO X1 + 1
+                                LINE (X1, Y1)-STEP(0, __UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
+                            NEXT
                     END SELECT
                 END IF
 
@@ -951,6 +968,22 @@ SUB __UI_UpdateDisplay
                             IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
                             FOR Y1 = Y1 - 1 TO Y1 + 1
                                 LINE (X1, Y1)-STEP(-__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                        CASE 3 'snapped to left side of form
+                            X1 = Control(__UI_DraggingID).Left
+                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
+                            IF Y1 < 1 THEN Y1 = 1
+                            IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
+                            FOR Y1 = Y1 - 1 TO Y1 + 1
+                                LINE (X1, Y1)-STEP(-__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
+                            NEXT
+                        CASE 4 'snapped to right side of form
+                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width
+                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
+                            IF Y1 < 1 THEN Y1 = 1
+                            IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
+                            FOR Y1 = Y1 - 1 TO Y1 + 1
+                                LINE (X1, Y1)-STEP(__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
                             NEXT
                     END SELECT
                 END IF
@@ -1230,7 +1263,14 @@ SUB __UI_UpdateDisplay
             __UI_MakeHardwareImage DragTip
         END IF
         _DEST 0
-        _PUTIMAGE (_WIDTH \ 2 - TipPanelWidth \ 2, 0), DragTip
+
+        X1 = _WIDTH \ 2 - TipPanelWidth \ 2
+        Y1 = 0
+        IF Control(__UI_DraggingID).Top <= _HEIGHT(DragTip) THEN
+            _PUTIMAGE (X1, Control(__UI_FormID).Height - _HEIGHT(DragTip)), DragTip
+        ELSE
+            _PUTIMAGE (X1, 0), DragTip
+        END IF
     END IF
 
     __UI_ForceRedraw = False
@@ -2647,18 +2687,52 @@ SUB __UI_EventDispatcher
             DIM XSnapOffset AS INTEGER, YSnapOffset AS INTEGER
             'Last snap coordinates, for priority comparison:
             DIM PrevXSnapOffset AS INTEGER, PrevYSnapOffset AS INTEGER
-            'Identify which nearby control is closer
-            DIM ClosestNeighborX AS INTEGER, ClosestNeighborY AS INTEGER
 
             'Look for a control nearby to which this one may be aligned automatically
-
             PrevXSnapOffset = 10
             PrevYSnapOffset = 10
-            ClosestNeighborX = Control(__UI_FormID).Width
-            ClosestNeighborY = Control(__UI_FormID).Height
 
             MouseYOffset = ABS(__UI_MouseTop - (Control(__UI_DraggingID).Top + Control(Control(__UI_DraggingID).ParentID).Top + OriginalDragY))
             MouseXOffset = ABS(__UI_MouseLeft - (Control(__UI_DraggingID).Left + Control(Control(__UI_DraggingID).ParentID).Left + OriginalDragX))
+
+            'Snap to form borders first: -------------------------------
+            'Right to left of form snap when close:
+            XSnapOffset = Control(__UI_DraggingID).Left
+            IF XSnapOffSet >= __UI_SnapDistanceFromForm / 2 AND XSnapOffset =< __UI_SnapDistanceFromForm AND MouseXOffset < 10 THEN
+                Control(__UI_DraggingID).Left = __UI_SnapDistanceFromForm
+                __UI_Snapped = True
+                __UI_SnappedX = __UI_SnapDistanceFromForm
+                __UI_SnappedByProximityX = 3
+            END IF
+
+            'Left to right of form snap when close:
+            XSnapOffset = ABS((Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width + __UI_SnapDistanceFromForm) - Control(__UI_FormID).Width)
+            IF XSnapOffSet < __UI_SnapDistanceFromForm AND MouseXOffset < 10 THEN
+                Control(__UI_DraggingID).Left = Control(__UI_FormID).Width - (Control(__UI_DraggingID).Width + __UI_SnapDistanceFromForm)
+                __UI_Snapped = True
+                __UI_SnappedX = Control(__UI_DraggingID).Left
+                __UI_SnappedByProximityX = 4
+            END IF
+
+            'Top to top of form snap when close:
+            YSnapOffset = Control(__UI_DraggingID).Top
+            IF YSnapOffSet >= __UI_SnapDistanceFromForm / 2 AND YSnapOffset =< __UI_SnapDistanceFromForm AND MouseYOffset < 10 THEN
+                Control(__UI_DraggingID).Top = __UI_SnapDistanceFromForm
+                __UI_Snapped = True
+                __UI_SnappedY = __UI_SnapDistanceFromForm
+                __UI_SnappedByProximityY = 3
+            END IF
+
+            'Bottom to bottom of form snap when close:
+            YSnapOffset = ABS((Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height + __UI_SnapDistanceFromForm) - Control(__UI_FormID).Height)
+            IF YSnapOffSet < __UI_SnapDistanceFromForm AND MouseYOffset < 10 THEN
+                Control(__UI_DraggingID).Top = Control(__UI_FormID).Height - (Control(__UI_DraggingID).Height + __UI_SnapDistanceFromForm)
+                __UI_Snapped = True
+                __UI_SnappedY = Control(__UI_DraggingID).Top
+                __UI_SnappedByProximityY = 4
+            END IF
+
+            'Snap to other controls: -----------------------------------
             FOR i = 1 TO UBOUND(Control)
                 IF Control(i).ParentID = Control(__UI_DraggingID).ParentID AND Control(i).Type > 0 AND _
                     i <> __UI_DraggingID AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuPanel AND _
