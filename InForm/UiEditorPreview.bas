@@ -87,14 +87,19 @@ SUB __UI_MouseUp (id AS LONG)
 END SUB
 
 SUB AutoSizeLabel (this AS __UI_ControlTYPE)
-    IF this.WordWrap = False AND this.Height = 23 THEN
-        DIM tempFont AS LONG
-        tempFont = _FONT
-        _FONT this.Font
+    DIM tempFont AS LONG, tempCenter AS INTEGER
+    tempFont = _FONT
+    _FONT this.Font
+    IF this.WordWrap = False AND (this.Height = 23 OR this.Height = uheight) THEN
         this.Width = __UI_PrintWidth(Caption(this.ID))
+        IF this.Height <> uheight THEN
+            tempCenter = this.Top + this.Height / 2
+            this.Height = uheight
+            this.Top = tempCenter - this.Height / 2
+        END IF
         this.Redraw = True
-        _FONT tempFont
     END IF
+    _FONT tempFont
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -209,12 +214,13 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_Button
                     TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                CASE __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton
+                CASE __UI_Type_Label
                     TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                    IF Control(TempValue).Type = __UI_Type_Label THEN
-                        AutoSizeLabel Control(TempValue)
-                    END IF
+                    AutoSizeLabel Control(TempValue)
+                CASE __UI_Type_CheckBox, __UI_Type_RadioButton
+                    TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_TextBox
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
