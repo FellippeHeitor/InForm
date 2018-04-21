@@ -5789,7 +5789,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
                 END IF
                 IF PreviewControls(i).Max <> 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
+                    IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
+                       PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
+                        PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
+                    END IF
                 END IF
                 IF PreviewControls(i).ShowPercentage THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = True"
