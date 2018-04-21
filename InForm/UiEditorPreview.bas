@@ -86,6 +86,17 @@ END SUB
 SUB __UI_MouseUp (id AS LONG)
 END SUB
 
+SUB AutoSizeLabel (this AS __UI_ControlTYPE)
+    IF this.WordWrap = False AND this.Height = 23 THEN
+        DIM tempFont AS LONG
+        tempFont = _FONT
+        _FONT this.Font
+        this.Width = __UI_PrintWidth(Caption(this.ID))
+        this.Redraw = True
+        _FONT tempFont
+    END IF
+END SUB
+
 SUB __UI_BeforeUpdateDisplay
     DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
     DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
@@ -201,6 +212,9 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton
                     TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                    IF Control(TempValue).Type = __UI_Type_Label THEN
+                        AutoSizeLabel Control(TempValue)
+                    END IF
                 CASE __UI_Type_TextBox
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
@@ -331,6 +345,7 @@ SUB __UI_BeforeUpdateDisplay
                                     b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                                 END IF
                                 SetCaption i, b$
+                                IF Control(i).Type = __UI_Type_Label THEN AutoSizeLabel Control(i)
                                 IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                 IF Control(i).Type = __UI_Type_MenuItem THEN
                                     __UI_ActivateMenu Control(Control(i).ParentID), False

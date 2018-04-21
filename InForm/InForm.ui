@@ -4403,6 +4403,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         Control(NextSlot).VAlign = __UI_Middle
     END IF
 
+    IF ControlType = __UI_Type_Label AND __UI_DesignMode THEN Control(NextSlot).VAlign = __UI_Middle
+
     __UI_NewControl = NextSlot
 END FUNCTION
 
