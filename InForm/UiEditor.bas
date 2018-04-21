@@ -5726,8 +5726,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF PreviewControls(i).TransparentColor > 0 THEN
                     PRINT #TextFileNum, "    __UI_ClearColor Control(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(PreviewControls(i).TransparentColor)) + ", -1"
                 END IF
-                IF PreviewControls(i).Stretch = False THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = False"
+                IF PreviewControls(i).Stretch = True THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = True"
                 END IF
                 'Fonts
                 IF LEN(PreviewFonts(i)) > 0 THEN
