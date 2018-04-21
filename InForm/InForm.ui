@@ -2600,8 +2600,16 @@ SUB __UI_EventDispatcher
                                 __UI_ForceRedraw = True
                             CASE "__UI_PREVIEWMENUIMAGEORIGINALSIZE"
                                 IF LEN(Text(__UI_FirstSelectedID)) THEN
+                                    DIM KeepCenterX AS INTEGER, KeepCenterY AS INTEGER
+                                    KeepCenterY = Control(__UI_FirstSelectedID).Top + Control(__UI_FirstSelectedID).Height / 2
+                                    KeepCenterX = Control(__UI_FirstSelectedID).Left + Control(__UI_FirstSelectedID).Width / 2
+
                                     Control(__UI_FirstSelectedID).Height = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
                                     Control(__UI_FirstSelectedID).Width = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
+
+                                    Control(__UI_FirstSelectedID).Top = KeepCenterY - Control(__UI_FirstSelectedID).Height / 2
+                                    Control(__UI_FirstSelectedID).Left = KeepCenterX - Control(__UI_FirstSelectedID).Width / 2
+
                                     Control(__UI_FirstSelectedID).Redraw = True
                                 END IF
                             CASE UCASE$("__UI_PreviewMenuSetDefaultButton")
