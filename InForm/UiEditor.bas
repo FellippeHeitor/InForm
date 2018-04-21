@@ -5715,7 +5715,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                                 a$ = "    AddItem __UI_NewID, " + CHR$(34) + TempCaption$ + CHR$(34)
                                 PRINT #TextFileNum, a$
                             LOOP
-                        CASE __UI_Type_PictureBox, __UI_Type_Button
+                        CASE __UI_Type_PictureBox, __UI_Type_Button, __UI_Type_MenuItem
                             a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
                             PRINT #TextFileNum, a$
                         CASE ELSE
