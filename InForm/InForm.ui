@@ -4399,6 +4399,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     IF ControlType = __UI_Type_PictureBox THEN
         Control(NextSlot).HelperCanvas = _NEWIMAGE(NewWIdth, NewHeight, 32)
         Control(NextSlot).Stretch = True
+        Control(NextSlot).Align = __UI_Center
+        Control(NextSlot).VAlign = __UI_Middle
     END IF
 
     __UI_NewControl = NextSlot
