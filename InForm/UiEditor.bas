@@ -5629,7 +5629,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     PRINT #TextFileNum,
     IF LEN(PreviewTexts(PreviewFormID)) > 0 THEN
         PRINT #TextFileNum, "    $EXEICON:'" + PreviewTexts(PreviewFormID) + "'"
-        PRINT #TextFileNum, "    _ICON"
     END IF
     IF PreviewControls(PreviewFormID).CanResize THEN
         PRINT #TextFileNum, "    $RESIZE:ON"
