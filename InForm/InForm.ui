@@ -2946,7 +2946,8 @@ SUB __UI_EventDispatcher
                         Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                     END IF
                 END IF
-                DIM OldCenter AS INTEGER
+                DIM OldAlignmentY AS INTEGER
+                'Resizing by corners keeps original aspect ratio for PictureBox controls
                 'Top-right
                 IF __UI_ResizeHandleHover = 5 THEN
                     IF __UI_ShiftIsDown THEN
@@ -2955,14 +2956,21 @@ SUB __UI_EventDispatcher
 
                         Control(i).Height = Control(i).Height - (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            OldAlignmentY = Control(i).Top + Control(i).Height / 2
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                            Control(i).Top = OldAlignmentY - Control(i).Height / 2
+                        END IF
                     ELSE
                         Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                         Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
-                    END IF
-                    IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
-                        'Resizing by corners keeps original aspect ratio
-                        'OldCenter = Control(i).Top + Control(i).Height / 2 + Control(Control
-                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            OldAlignmentY = Control(i).Top + Control(i).Height
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                            Control(i).Top = OldAlignmentY - Control(i).Height
+                        END IF
                     END IF
                 END IF
                 'Top-left
@@ -2973,13 +2981,21 @@ SUB __UI_EventDispatcher
 
                         Control(i).Height = Control(i).Height - (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            OldAlignmentY = Control(i).Top + Control(i).Height / 2
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                            Control(i).Top = OldAlignmentY - Control(i).Height / 2
+                        END IF
                     ELSE
                         Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                         Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
-                    END IF
-                    IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
-                        'Resizing by corners keeps original aspect ratio
-                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            OldAlignmentY = Control(i).Top + Control(i).Height
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                            Control(i).Top = OldAlignmentY - Control(i).Height
+                        END IF
                     END IF
                 END IF
                 'Bottom-right
@@ -2990,13 +3006,19 @@ SUB __UI_EventDispatcher
 
                         Control(i).Height = Control(i).Height + (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top - (__UI_MouseTop - __UI_DragY)
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            OldAlignmentY = Control(i).Top + Control(i).Height / 2
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                            Control(i).Top = OldAlignmentY - Control(i).Height / 2
+                        END IF
                     ELSE
                         Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
-                    END IF
-                    IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
-                        'Resizing by corners keeps original aspect ratio
-                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                        END IF
                     END IF
                 END IF
                 'Bottom-left
@@ -3007,13 +3029,19 @@ SUB __UI_EventDispatcher
 
                         Control(i).Height = Control(i).Height + (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top - (__UI_MouseTop - __UI_DragY)
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            OldAlignmentY = Control(i).Top + Control(i).Height / 2
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                            Control(i).Top = OldAlignmentY - Control(i).Height / 2
+                        END IF
                     ELSE
                         Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
-                    END IF
-                    IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
-                        'Resizing by corners keeps original aspect ratio
-                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+
+                        IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
+                            Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                        END IF
                     END IF
                 END IF
             END IF
