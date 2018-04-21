@@ -257,7 +257,7 @@ SUB __UI_InternalMenus
     'Internal "design mode" context menu. -------------------------------------------
     DIM __UI_NewID AS LONG
     __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_PreviewMenu", 0, 0, 0, 0, 0)
-    Control(__UI_NewID).Font = SetFont("segoeui.ttf",12,"")
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf",12,"")
 
     'Hotkeys used:
     'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Z
