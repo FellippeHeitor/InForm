@@ -1264,12 +1264,14 @@ SUB __UI_UpdateDisplay
         END IF
         _DEST 0
 
-        X1 = _WIDTH \ 2 - TipPanelWidth \ 2
-        Y1 = 0
-        IF Control(__UI_DraggingID).Top <= _HEIGHT(DragTip) THEN
-            _PUTIMAGE (X1, Control(__UI_FormID).Height - _HEIGHT(DragTip)), DragTip
-        ELSE
-            _PUTIMAGE (X1, 0), DragTip
+        IF __UI_Snapped THEN
+            X1 = _WIDTH \ 2 - TipPanelWidth \ 2
+            Y1 = 0
+            IF Control(__UI_DraggingID).Top <= _HEIGHT(DragTip) THEN
+                _PUTIMAGE (X1, Control(__UI_FormID).Height - _HEIGHT(DragTip)), DragTip
+            ELSE
+                _PUTIMAGE (X1, 0), DragTip
+            END IF
         END IF
     END IF
 
