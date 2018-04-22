@@ -3514,23 +3514,51 @@ SUB __UI_EventDispatcher
                                             FindLF& = INSTR(Clip$, CHR$(10))
                                             IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
                                             IF LEN(Clip$) > 0 THEN
-                                                IF NOT Control(__UI_Focus).TextIsSelected THEN
-                                                    IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                                        Text(__UI_Focus) = Text(__UI_Focus) + Clip$
-                                                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                                    ELSE
-                                                        Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + Clip$ + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
-                                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(Clip$)
+                                                IF LEN(Mask(__UI_Focus)) THEN
+                                                    'Paste only numbers and only up until the limit of
+                                                    'numeric placeholders:
+                                                    DIM NumericClip$
+                                                    NumericClip$ = ""
+                                                    FOR i = 1 TO LEN(Clip$)
+                                                        IF ASC(Clip$, i) >= 48 AND ASC(Clip$, i) <= 57 THEN
+                                                            NumericClip$ = NumericClip$ + CHR$(ASC(Clip$, i))
+                                                        END IF
+                                                    NEXT
+                                                    IF LEN(NumericClip$) THEN
+                                                        Text(__UI_Focus) = ""
+                                                        FOR i = 1 TO LEN(Mask(__UI_Focus))
+                                                            SELECT CASE MID$(Mask(__UI_Focus), i, 1)
+                                                                CASE "0", "9", "#"
+                                                                    IF LEN(NumericClip$) THEN
+                                                                        Text(__UI_Focus) = Text(__UI_Focus) + LEFT$(NumericClip$, 1)
+                                                                        NumericClip$ = MID$(NumericClip$, 2)
+                                                                    ELSE
+                                                                        Text(__UI_Focus) = Text(__UI_Focus) + "_"
+                                                                    END IF
+                                                                CASE ELSE
+                                                                    Text(__UI_Focus) = Text(__UI_Focus) + MID$(Mask(__UI_Focus), i, 1)
+                                                            END SELECT
+                                                        NEXT
                                                     END IF
                                                 ELSE
-                                                    s1 = Control(__UI_Focus).SelectionStart
-                                                    s2 = Control(__UI_Focus).Cursor
-                                                    IF s1 > s2 THEN SWAP s1, s2
-                                                    Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
-                                                    Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
-                                                    Control(__UI_Focus).TextIsSelected = False
-                                                    __UI_SelectedText = ""
-                                                    __UI_SelectionLength = 0
+                                                    IF NOT Control(__UI_Focus).TextIsSelected THEN
+                                                        IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
+                                                            Text(__UI_Focus) = Text(__UI_Focus) + Clip$
+                                                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                                        ELSE
+                                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + Clip$ + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
+                                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(Clip$)
+                                                        END IF
+                                                    ELSE
+                                                        s1 = Control(__UI_Focus).SelectionStart
+                                                        s2 = Control(__UI_Focus).Cursor
+                                                        IF s1 > s2 THEN SWAP s1, s2
+                                                        Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
+                                                        Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
+                                                        Control(__UI_Focus).TextIsSelected = False
+                                                        __UI_SelectedText = ""
+                                                        __UI_SelectionLength = 0
+                                                    END IF
                                                 END IF
                                                 __UI_TextChanged __UI_Focus
                                             END IF
