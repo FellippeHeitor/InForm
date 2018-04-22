@@ -3413,7 +3413,7 @@ SUB __UI_EventDispatcher
                     END SELECT
                 CASE __UI_Type_ListBox, __UI_Type_DropdownList
                     DIM ThisItemTop%, CaptionIndent AS INTEGER
-                    IF NOT Control(__UI_Focus).Disabled THEN
+                    IF NOT Control(__UI_Focus).Disabled AND Control(__UI_Focus).Max > 0 THEN
                         _FONT (Control(__UI_Focus).Font)
                         SELECT EVERYCASE __UI_KeyHit
                             CASE 32 TO 254 'Printable ASCII characters
