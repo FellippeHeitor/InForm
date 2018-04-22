@@ -230,6 +230,16 @@ SUB __UI_Click (id AS LONG)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
             Edited = True
+        CASE "ADDPICTUREBOX", "ADDTEXTBOX", "ADDLISTBOX", "ADDDROPDOWNLIST"
+            Control(__UI_GetID("PropertiesList")).Value = 3
+            __UI_ValueChanged __UI_GetID("PropertiesList")
+        CASE "ADDTRACKBAR", "ADDPROGRESSBAR", "ADDTOGGLESWITCH"
+            Control(__UI_GetID("PropertiesList")).Value = 10
+            __UI_ValueChanged __UI_GetID("PropertiesList")
+        CASE "ADDBUTTON", "ADDLABEL", "ADDCHECKBOX", _
+        "ADDRADIOBUTTON", "ADDFRAME"
+            Control(__UI_GetID("PropertiesList")).Value = 2
+            __UI_ValueChanged __UI_GetID("PropertiesList")
         CASE "STRETCH"
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
