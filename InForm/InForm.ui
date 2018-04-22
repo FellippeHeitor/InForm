@@ -3622,22 +3622,22 @@ SUB __UI_EventDispatcher
                                         IF Control(__UI_Focus).TextIsSelected THEN
                                             __UI_DeleteSelectionMasked
                                         END IF
-                                        DO
-                                            SELECT CASE MID$(Mask(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)
-                                                CASE "0", "9", "#"
-                                                    IF __UI_KeyHit >= 48 AND __UI_KeyHit <= 57 THEN
+                                        IF __UI_KeyHit >= 48 AND __UI_KeyHit <= 57 THEN
+                                            DO
+                                                SELECT CASE MID$(Mask(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)
+                                                    CASE "0", "9", "#"
                                                         MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1) = CHR$(__UI_KeyHit)
                                                         Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                                         EXIT DO
-                                                    END IF
-                                                CASE ELSE
-                                                    IF Control(__UI_Focus).Cursor < LEN(Mask(__UI_Focus)) THEN
-                                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
-                                                    ELSE
-                                                        EXIT DO
-                                                    END IF
-                                            END SELECT
-                                        LOOP
+                                                    CASE ELSE
+                                                        IF Control(__UI_Focus).Cursor < LEN(Mask(__UI_Focus)) THEN
+                                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                                        ELSE
+                                                            EXIT DO
+                                                        END IF
+                                                END SELECT
+                                            LOOP
+                                        END IF
                                     END IF
 
                                     __UI_TextChanged __UI_Focus
