@@ -114,6 +114,8 @@ TYPE __UI_ControlTYPE
     FocusState AS LONG
     LastChange AS DOUBLE
     Redraw AS _BYTE
+    AnchorX AS INTEGER
+    AnchorY AS INTEGER
 END TYPE
 
 TYPE __UI_Types
@@ -808,6 +810,9 @@ SUB __UI_UpdateDisplay
             ELSE
                 ControlState = 1
             END IF
+
+            Control(i).Left = Control(__UI_FormID).Width + Control(i).AnchorX
+            Control(i).Top = Control(__UI_FormID).Height + Control(i).AnchorY
 
             SELECT CASE Control(i).Type
                 CASE __UI_Type_Form
