@@ -182,6 +182,9 @@ SUB __UI_Click (id AS LONG)
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
             SaveSettings
+        CASE "EDITMENUSETDEFAULTBUTTON"
+            SendSignal -6
+            Edited = True
         CASE "OPTIONSMENUSWAPBUTTONS"
             __UI_MouseButtonsSwap = NOT __UI_MouseButtonsSwap
             Control(id).Value = __UI_MouseButtonsSwap
@@ -712,6 +715,9 @@ SUB __UI_BeforeUpdateDisplay
             Control(__UI_GetID("InsertMenuMenuItem")).Disabled = True
         END IF
 
+        Control(__UI_GetID("EditMenuSetDefaultButton")).Disabled = True
+        Control(__UI_GetID("EditMenuRestoreDimensions")).Disabled = True
+
         IF TotalSelected = 0 THEN
             SetCaption __UI_GetID("PropertiesFrame"), "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
             FirstSelected = PreviewFormID
@@ -747,6 +753,13 @@ SUB __UI_BeforeUpdateDisplay
                 Control(__UI_GetID("AlignMenuDistributeV")).Disabled = True
                 Control(__UI_GetID("AlignMenuDistributeH")).Disabled = True
 
+                IF PreviewControls(FirstSelected).Type = __UI_Type_Button THEN
+                    IF PreviewDefaultButtonID <> FirstSelected THEN
+                        Control(__UI_GetID("EditMenuSetDefaultButton")).Disabled = False
+                    END IF
+                ELSEIF PreviewControls(FirstSelected).Type = __UI_Type_PictureBox THEN
+                    Control(__UI_GetID("EditMenuRestoreDimensions")).Disabled = False
+                END IF
             END IF
 
         ELSEIF TotalSelected = 2 THEN

@@ -319,6 +319,9 @@ SUB __UI_BeforeUpdateDisplay
             UndoPointer = 0
             TotalUndoImages = 0
             SendSignal -7 'New form created
+        ELSEIF TempValue = -6 THEN
+            'Set current button as default
+            __UI_DefaultButtonID = __UI_FirstSelectedID
         ELSEIF TempValue = -1 THEN
             DIM FloatValue AS _FLOAT
             'Editor sent property value

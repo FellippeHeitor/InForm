@@ -84,6 +84,14 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCP1252", 218, 18, 0, 64, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Use code page &Windows-1252-"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuSetDefaultButton", 103, 18, 0, 88, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Set as &default button"
+    Control(__UI_NewID).Disabled = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuRestoreDimensions", 103, 18, 0, 88, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Restore &image dimensions-"
+    Control(__UI_NewID).Disabled = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuZOrdering", 103, 18, 0, 88, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "&Z-Ordering"
 
