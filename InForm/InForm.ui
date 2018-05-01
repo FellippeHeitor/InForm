@@ -341,7 +341,7 @@ SUB __UI_Init
     IF __UI_FormID = 0 THEN SYSTEM
 
     SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-    COLOR Control(__UI_FormID).ForeColor,Control(__UI_FormID).BackColor
+    COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
     CLS
     _PRINTSTRING (_WIDTH / 2 - _PRINTWIDTH("Initializing...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2), "Initializing..."
     _SCREENSHOW
@@ -730,41 +730,6 @@ SUB __UI_UpdateDisplay
     NEXT
 
     _DEST 0
-
-    'IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID THEN
-    '    'Draw the alignment grid
-    '    DIM GridX AS INTEGER, GridY AS INTEGER
-
-    '    IF Control(__UI_DraggingID).ParentID > 0 AND Control(__UI_DraggingID).Type <> __UI_Type_MenuItem THEN
-    '        _DEST Control(Control(__UI_DraggingID).ParentID).Canvas
-    '        FOR GridX = 0 TO Control(Control(__UI_DraggingID).ParentID).Width STEP 10
-    '            FOR GridY = 0 TO Control(Control(__UI_DraggingID).ParentID).Height STEP 10
-    '                PSET (GridX, GridY), Control(Control(__UI_DraggingID).ParentID).ForeColor
-    '            NEXT
-    '        NEXT
-    '    ELSE
-    '        IF NOT GridDrawn THEN
-    '            'Draw grid onto main window's canvas
-    '            GridDrawn = True
-    '            'Free the hardware bg image:
-    '            _FREEIMAGE Control(__UI_FormID).Canvas
-    '            'Create a new software one:
-    '            Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-    '            'Draw on it:
-    '            _DEST Control(__UI_FormID).Canvas
-    '            COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
-    '            CLS
-    '            FOR GridX = 0 TO Control(__UI_FormID).Width STEP 10
-    '                FOR GridY = 0 TO Control(__UI_FormID).Height STEP 10
-    '                    PSET (GridX, GridY), Control(__UI_FormID).ForeColor
-    '                NEXT
-    '            NEXT
-    '            'Make it a hardware version of itself:
-    '            _DEST 0
-    '        END IF
-    '    END IF
-    '    _DEST 0
-    'END IF
 
     IF (GridDrawn AND NOT __UI_IsDragging) OR (GridDrawn AND Control(__UI_DraggingID).ParentID > 0) OR __UI_ForceRedraw THEN
         'Restore main window hardware bg
