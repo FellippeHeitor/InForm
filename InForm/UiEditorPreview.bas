@@ -270,6 +270,24 @@ SUB __UI_BeforeUpdateDisplay
             __UI_ForceRedraw = True
         END IF
 
+        IF __UI_FirstSelectedID > 0 THEN
+            IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
+                IF Control(__UI_FirstSelectedID).Height <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
+                   Control(__UI_FirstSelectedID).Width <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                    SendSignal -10
+                    b$ = LTRIM$(STR$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))) + "x" + LTRIM$(STR$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)))
+                    b$ = MKL$(LEN(b$)) + b$
+                    SendData b$, OffsetPropertyValue
+                ELSE
+                    SendSignal -11
+                END IF
+            ELSE
+                SendSignal -11
+            END IF
+        ELSE
+            SendSignal -11
+        END IF
+
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromEditor, b$
         TempValue = CVI(b$)
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromEditor, b$
@@ -322,6 +340,8 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF TempValue = -6 THEN
             'Set current button as default
             __UI_DefaultButtonID = __UI_FirstSelectedID
+        ELSEIF TempValue = -7 THEN
+            __UI_RestoreImageOriginalSize
         ELSEIF TempValue = -1 THEN
             DIM FloatValue AS _FLOAT
             'Editor sent property value

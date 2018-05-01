@@ -185,6 +185,9 @@ SUB __UI_Click (id AS LONG)
         CASE "EDITMENUSETDEFAULTBUTTON"
             SendSignal -6
             Edited = True
+        CASE "EDITMENURESTOREDIMENSIONS"
+            SendSignal -7
+            Edited = True
         CASE "OPTIONSMENUSWAPBUTTONS"
             __UI_MouseButtonsSwap = NOT __UI_MouseButtonsSwap
             Control(id).Value = __UI_MouseButtonsSwap
@@ -588,6 +591,15 @@ SUB __UI_BeforeUpdateDisplay
         b$ = MKI$(__UI_SnapLines)
         PUT #UiEditorFile, OffsetSnapLines, b$
 
+        b$ = SPACE$(4): GET #UiEditorFile, OffsetTotalControlsSelected, b$
+        TotalSelected = CVL(b$)
+        b$ = SPACE$(4): GET #UiEditorFile, OffsetFormID, b$
+        PreviewFormID = CVL(b$)
+        b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
+        FirstSelected = CVL(b$)
+        b$ = SPACE$(4): GET #UiEditorFile, OffsetDefaultButtonID, b$
+        PreviewDefaultButtonID = CVL(b$)
+
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
             'Controls in the editor lose focus when the preview is manipulated
@@ -625,17 +637,22 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -9 THEN
             'User attempted to close the preview form
             __UI_Click __UI_GetID("FileMenuNew")
+        ELSEIF CVI(b$) = -10 THEN
+            'The conditions to enable "Restore image dimensions" in Edit menu have been met
+            Control(__UI_GetID("EditMenuRestoreDimensions")).Disabled = False
+
+            b$ = SPACE$(4)
+            GET #UiEditorFile, OffsetPropertyValue, b$
+            b$ = SPACE$(CVL(b$))
+            GET #UiEditorFile, , b$
+
+            SetCaption __UI_GetID("EditMenuRestoreDimensions"), "Restore &image dimensions (" + b$ + ")-"
+        ELSEIF CVI(b$) = -11 THEN
+            'The conditions to enable "Restore image dimensions" in Edit menu have *NOT* been met
+            Control(__UI_GetID("EditMenuRestoreDimensions")).Disabled = True
+            SetCaption __UI_GetID("EditMenuRestoreDimensions"), "Restore &image dimensions-"
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
-
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetTotalControlsSelected, b$
-        TotalSelected = CVL(b$)
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetFormID, b$
-        PreviewFormID = CVL(b$)
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
-        FirstSelected = CVL(b$)
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetDefaultButtonID, b$
-        PreviewDefaultButtonID = CVL(b$)
 
         IF FirstSelected > UBOUND(PreviewCaptions) THEN GOTO Reload
 
@@ -716,7 +733,6 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         Control(__UI_GetID("EditMenuSetDefaultButton")).Disabled = True
-        Control(__UI_GetID("EditMenuRestoreDimensions")).Disabled = True
 
         IF TotalSelected = 0 THEN
             SetCaption __UI_GetID("PropertiesFrame"), "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
@@ -757,8 +773,6 @@ SUB __UI_BeforeUpdateDisplay
                     IF PreviewDefaultButtonID <> FirstSelected THEN
                         Control(__UI_GetID("EditMenuSetDefaultButton")).Disabled = False
                     END IF
-                ELSEIF PreviewControls(FirstSelected).Type = __UI_Type_PictureBox THEN
-                    Control(__UI_GetID("EditMenuRestoreDimensions")).Disabled = False
                 END IF
             END IF
 
