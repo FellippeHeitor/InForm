@@ -590,6 +590,9 @@ SUB __UI_BeforeUpdateDisplay
             'Controls in the editor lose focus when the preview is manipulated
             IF CVI(b$) = -1 THEN Edited = True
             IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
+            IF CVI(b$) = -1 THEN
+                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+            END IF
             IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
             __UI_ForceRedraw = True
         ELSEIF CVI(b$) = -2 THEN
