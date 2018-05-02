@@ -91,6 +91,7 @@ TYPE __UI_ControlTYPE
     PreviousFieldArea AS LONG
     TextIsSelected AS _BYTE
     Multiline AS _BYTE
+    NumericOnly AS _BYTE
     FirstVisibleLine AS LONG
     PrevFirstVisibleLine AS LONG
     CurrentLine AS LONG
@@ -1287,6 +1288,30 @@ END SUB
 '---------------------------------------------------------------------------------
 FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
     Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
+END FUNCTION
+
+FUNCTION isNumber%% (__a$)
+    'This function adapted from qb64.bas
+    DIM i AS LONG, a AS INTEGER, dp AS _BYTE, a$
+
+    a$ = LTRIM$(RTRIM$(__a$))
+
+    IF LEN(a$) = 0 THEN EXIT FUNCTION
+    FOR i = 1 TO LEN(a$)
+        a = ASC(MID$(a$, i, 1))
+        IF a = 45 THEN
+            IF i <> 1 THEN EXIT FUNCTION
+            _CONTINUE
+        END IF
+        IF a = 46 THEN
+            IF dp = 1 THEN EXIT FUNCTION
+            dp = 1
+            _CONTINUE
+        END IF
+        IF a >= 48 AND a <= 57 THEN _CONTINUE
+        EXIT FUNCTION
+    NEXT
+    isNumber%% = True
 END FUNCTION
 
 SUB __UI_EventDispatcher
@@ -3469,7 +3494,7 @@ SUB __UI_EventDispatcher
                                             FindLF& = INSTR(Clip$, CHR$(10))
                                             IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
                                             IF LEN(Clip$) > 0 THEN
-                                                IF LEN(Mask(__UI_Focus)) THEN
+                                                IF LEN(Mask(__UI_Focus)) > 0 THEN
                                                     'Paste only numbers and only up until the limit of
                                                     'numeric placeholders:
                                                     DIM NumericClip$
@@ -3496,23 +3521,30 @@ SUB __UI_EventDispatcher
                                                         NEXT
                                                     END IF
                                                 ELSE
-                                                    IF NOT Control(__UI_Focus).TextIsSelected THEN
-                                                        IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                                            Text(__UI_Focus) = Text(__UI_Focus) + Clip$
-                                                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                                    IF Control(__UI_Focus).NumericOnly THEN
+                                                        'Paste only if clipboard$ contains a number
+                                                        IF NOT isNumber(Clip$) THEN Clip$ = ""
+                                                    END IF
+
+                                                    IF LEN(Clip$) THEN
+                                                        IF NOT Control(__UI_Focus).TextIsSelected THEN
+                                                            IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
+                                                                Text(__UI_Focus) = Text(__UI_Focus) + Clip$
+                                                                Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                                            ELSE
+                                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + Clip$ + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
+                                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(Clip$)
+                                                            END IF
                                                         ELSE
-                                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + Clip$ + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
-                                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(Clip$)
+                                                            s1 = Control(__UI_Focus).SelectionStart
+                                                            s2 = Control(__UI_Focus).Cursor
+                                                            IF s1 > s2 THEN SWAP s1, s2
+                                                            Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
+                                                            Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
+                                                            Control(__UI_Focus).TextIsSelected = False
+                                                            __UI_SelectedText = ""
+                                                            __UI_SelectionLength = 0
                                                         END IF
-                                                    ELSE
-                                                        s1 = Control(__UI_Focus).SelectionStart
-                                                        s2 = Control(__UI_Focus).Cursor
-                                                        IF s1 > s2 THEN SWAP s1, s2
-                                                        Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
-                                                        Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
-                                                        Control(__UI_Focus).TextIsSelected = False
-                                                        __UI_SelectedText = ""
-                                                        __UI_SelectionLength = 0
                                                     END IF
                                                 END IF
                                                 __UI_TextChanged __UI_Focus
@@ -3543,6 +3575,19 @@ SUB __UI_EventDispatcher
                                         Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                         Control(__UI_Focus).SelectionStart = 0
                                         Control(__UI_Focus).TextIsSelected = True
+                                        __UI_KeyHit = 0
+                                    END IF
+                                END IF
+
+                                IF Control(__UI_Focus).NumericOnly THEN
+                                    IF __UI_KeyHit = 45 THEN
+                                        IF Control(__UI_Focus).Cursor > 0 OR INSTR(Text(__UI_Focus), "-") > 0 THEN
+                                            __UI_KeyHit = 0
+                                        END IF
+                                    ELSEIF __UI_KeyHit = 46 THEN
+                                        IF INSTR(Text(__UI_Focus), ".") > 0 THEN __UI_KeyHit = 0
+                                        IF Control(__UI_Focus).Cursor = 0 AND LEFT$(Text(__UI_Focus), 1) = "-" THEN __UI_KeyHit = 0
+                                    ELSEIF __UI_KeyHit < 48 OR __UI_KeyHit > 57 THEN
                                         __UI_KeyHit = 0
                                     END IF
                                 END IF
@@ -3592,6 +3637,18 @@ SUB __UI_EventDispatcher
                                                         END IF
                                                 END SELECT
                                             LOOP
+                                        END IF
+                                    END IF
+
+                                    IF Control(__UI_Focus).NumericOnly = __UI_NumericWithBounds THEN
+                                        'Max and Min properties can be used for NumericOnly textboxes
+                                        'set as .NumericOnly = __UI_NumericWithBounds
+                                        IF VAL(Text(__UI_Focus)) < Control(__UI_Focus).Min THEN
+                                            Text(__UI_Focus) = LTRIM$(STR$(Control(__UI_Focus).Min))
+                                        END IF
+
+                                        IF VAL(Text(__UI_Focus)) > Control(__UI_Focus).Max THEN
+                                            Text(__UI_Focus) = LTRIM$(STR$(Control(__UI_Focus).Max))
                                         END IF
                                     END IF
 
@@ -5936,6 +5993,10 @@ FUNCTION __UI_Right%%: __UI_Right%% = 2: END FUNCTION
 FUNCTION __UI_Top%%: __UI_Top%% = 0: END FUNCTION
 FUNCTION __UI_Middle%%: __UI_Middle%% = 1: END FUNCTION
 FUNCTION __UI_Bottom%%: __UI_Bottom%% = 2: END FUNCTION
+
+'Textbox controls
+FUNCTION __UI_NumericWithoutBounds%%: __UI_NumericWithoutBounds%% = 1: END FUNCTION
+FUNCTION __UI_NumericWithBounds%%: __UI_NumericWithBounds%% = 2: END FUNCTION
 
 'Messagebox constants
 FUNCTION MsgBox_OkOnly%%: MsgBox_OkOnly%% = 0: END FUNCTION
