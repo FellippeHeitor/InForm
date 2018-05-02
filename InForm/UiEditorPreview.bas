@@ -58,6 +58,7 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
+
 '$include:'InForm.ui'
 '$include:'xp.uitheme'
 '$include:'UiEditorPreview.frm'
@@ -134,7 +135,7 @@ SUB __UI_BeforeUpdateDisplay
             NewWindowTop = CVI(b$)
 
             IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
-                _SCREENMOVE NewWindowLeft + 610, NewWindowTop
+                _SCREENMOVE NewWindowLeft + 612, NewWindowTop
             END IF
         $END IF
 
@@ -786,6 +787,14 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 34 'Encoding
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     Control(__UI_FormID).Encoding = CVL(b$)
+                CASE 35 'Mask
+                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Mask(i) = b$
+                        END IF
+                    NEXT
                 CASE 201 TO 210
                     'Alignment commands
                     __UI_DesignModeAlignCommand = TempValue
@@ -1174,6 +1183,12 @@ SUB LoadPreview
                     CASE -35
                         __UI_DefaultButtonID = TempValue
                         IF LogFileLoad THEN PRINT #LogFileNum, "DEFAULT BUTTON"
+                    CASE -36
+                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                        b$ = SPACE$(CVL(b$))
+                        GET #BinaryFileNum, , b$
+                        Mask(TempValue) = b$
+                        IF LogFileLoad THEN PRINT #LogFileNum, "MASK:" + Mask(TempValue)
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
@@ -1581,6 +1596,13 @@ SUB SavePreview
                 PUT #BinFileNum, , b$
                 PUT #BinFileNum, , Text(i)
             END IF
+
+            IF LEN(Mask(i)) > 0 THEN
+                b$ = MKI$(-36) + MKL$(LEN(Text(i))) '-3 indicates a text
+                PUT #BinFileNum, , b$
+                PUT #BinFileNum, , Text(i)
+            END IF
+
             IF Control(i).TransparentColor > 0 THEN
                 b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, Control(i).TransparentColor)
                 PUT #BinFileNum, , b$
