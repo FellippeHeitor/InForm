@@ -162,7 +162,10 @@ CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
 CONST OffsetMouseSwapped = 41
 CONST OffsetDefaultButtonID = 43
-CONST OffsetPropertyValue = 47
+CONST OffsetOriginalImageWidth = 47
+CONST OffsetOriginalImageHeight = 49
+CONST OffsetPropertyValue = 51
+
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -758,12 +761,12 @@ SUB __UI_BeforeUpdateDisplay
             'The conditions to enable "Restore image dimensions" in Edit menu have been met
             Control(EditMenuRestoreDimensions).Disabled = False
 
-            b$ = SPACE$(4)
-            GET #UiEditorFile, OffsetPropertyValue, b$
-            b$ = SPACE$(CVL(b$))
-            GET #UiEditorFile, , b$
+            b$ = SPACE$(2)
+            GET #UiEditorFile, OffsetOriginalImageWidth, b$
+            c$ = SPACE$(2)
+            GET #UiEditorFile, OffsetOriginalImageHeight, c$
 
-            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + b$ + ")-"
+            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(CVI(b$))) + "x" + LTRIM$(STR$(CVI(c$))) + ")-"
         ELSEIF CVI(b$) = -11 THEN
             'The conditions to enable "Restore image dimensions" in Edit menu have *NOT* been met
             Control(EditMenuRestoreDimensions).Disabled = True

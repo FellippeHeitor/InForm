@@ -17,7 +17,9 @@ CONST OffsetSnapLines = 37
 CONST OffsetPropertyChanged = 39
 CONST OffsetMouseSwapped = 41
 CONST OffsetDefaultButtonID = 43
-CONST OffsetPropertyValue = 47
+CONST OffsetOriginalImageWidth = 47
+CONST OffsetOriginalImageHeight = 49
+CONST OffsetPropertyValue = 51
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
@@ -275,10 +277,11 @@ SUB __UI_BeforeUpdateDisplay
             IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
                 IF Control(__UI_FirstSelectedID).Height <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
                    Control(__UI_FirstSelectedID).Width <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                    b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
+                    SendData b$, OffsetOriginalImageWidth
+                    b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
+                    SendData b$, OffsetOriginalImageHeight
                     SendSignal -10
-                    b$ = LTRIM$(STR$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))) + "x" + LTRIM$(STR$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)))
-                    b$ = MKL$(LEN(b$)) + b$
-                    SendData b$, OffsetPropertyValue
                 ELSE
                     SendSignal -11
                 END IF
