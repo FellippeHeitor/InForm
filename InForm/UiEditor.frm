@@ -6,29 +6,29 @@ SUB __UI_LoadForm
 
     DIM __UI_NewID AS LONG
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 532, 0, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 555, 0, 0, 0)
     SetCaption __UI_NewID, UiEditorTitle$
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12, "")
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 36, 20, 8, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 34, 22, 8, 0, 0)
     SetCaption __UI_NewID, "&File"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "EditMenu", 37, 20, 44, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "EditMenu", 36, 22, 42, 0, 0)
     SetCaption __UI_NewID, "&Edit"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 42, 20, 81, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "ViewMenu", 41, 22, 78, 0, 0)
     SetCaption __UI_NewID, "&View"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "InsertMenu", 47, 20, 123, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "InsertMenu", 45, 22, 119, 0, 0)
     SetCaption __UI_NewID, "&Insert"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "AlignMenu", 43, 20, 170, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "AlignMenu", 44, 22, 164, 0, 0)
     SetCaption __UI_NewID, "&Align"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "OptionsMenu", 59, 20, 213, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "OptionsMenu", 58, 22, 208, 0, 0)
     SetCaption __UI_NewID, "&Options"
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 42, 20, 549, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "HelpMenu", 41, 22, 550, 0, 0)
     SetCaption __UI_NewID, "&Help"
     Control(__UI_NewID).Align = __UI_Right
 
@@ -37,7 +37,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 12
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ColorMixer", 579, 175, 10, 348, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ColorMixer", 579, 175, 10, 371, 0)
     SetCaption __UI_NewID, "Color mixer"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 8
@@ -52,11 +52,11 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 4
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlProperties", 366, 240, 10, 93, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlProperties", 366, 263, 10, 93, 0)
     SetCaption __UI_NewID, "Control properties: Main form"
     Control(__UI_NewID).HasBorder = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlToggles", 206, 240, 381, 93, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlToggles", 206, 263, 381, 93, 0)
     SetCaption __UI_NewID, "Control toggles"
     Control(__UI_NewID).HasBorder = True
 
@@ -225,12 +225,6 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddToggleSwitch", 22, 22, 340, 10, __UI_GetID("Toolbox"))
     Control(__UI_NewID).CanHaveFocus = True
 
-    '__UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "PropertyUpdateStatus", 16, 16, 440, 109, 0)
-    'Control(__UI_NewID).Stretch = True
-    'Control(__UI_NewID).BackStyle = __UI_Transparent
-    'Control(__UI_NewID).Align = __UI_Center
-    'Control(__UI_NewID).VAlign = __UI_Middle
-
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "NameLB", 120, 23, 10, 10, __UI_GetID("ControlProperties"))
     SetCaption __UI_NewID, "Name"
     Control(__UI_NewID).HasBorder = True
@@ -310,6 +304,12 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Max = 40
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    
+    '__UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "PropertyUpdateStatus", 16, 16, 338, 10, __UI_GetID("ControlProperties"))
+    'Control(__UI_NewID).Stretch = True
+    'Control(__UI_NewID).BackStyle = __UI_Transparent
+    'Control(__UI_NewID).Align = __UI_Center
+    'Control(__UI_NewID).VAlign = __UI_Middle
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "CaptionTB", 230, 23, 129, 32, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
@@ -376,47 +376,47 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 15, 10, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 12, 12, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Stretch"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "HasBorder", 181, 20, 15, 30, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "HasBorder", 181, 20, 12, 34, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Has border"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowPercentage", 181, 20, 15, 50, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowPercentage", 181, 20, 12, 56, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Show percentage"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "PasswordMaskCB", 181, 20, 15, 70, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "PasswordMaskCB", 181, 20, 12, 78, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Password mask"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "WordWrap", 181, 20, 15, 90, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "WordWrap", 181, 20, 12, 100, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Word wrap"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CanHaveFocus", 181, 20, 15, 110, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CanHaveFocus", 181, 20, 12, 122, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Can have focus"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Disabled", 181, 20, 15, 130, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Disabled", 181, 20, 12, 144, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Disabled"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Transparent", 181, 20, 15, 150, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Transparent", 181, 20, 12, 166, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Transparent"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Hidden", 181, 20, 15, 170, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Hidden", 181, 20, 12, 188, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Hidden"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CenteredWindow", 181, 20, 15, 190, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CenteredWindow", 181, 20, 12, 210, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Centered window"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Resizable", 181, 20, 15, 210, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Resizable", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Resizable"
     Control(__UI_NewID).CanHaveFocus = True
 
@@ -465,7 +465,7 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Red", 330, 40, 191, 20, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).Max = 255
     Control(__UI_NewID).CanHaveFocus = True
-    Control(__UI_NewID).Interval = 1
+    Control(__UI_NewID).Interval = 5
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "RedValue", 36, 23, 530, 20, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).BorderColor = _RGB32(255, 0, 0)
@@ -475,7 +475,7 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Green", 330, 40, 191, 70, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).Max = 255
     Control(__UI_NewID).CanHaveFocus = True
-    Control(__UI_NewID).Interval = 1
+    Control(__UI_NewID).Interval = 5
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "GreenValue", 36, 23, 530, 70, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).BorderColor = _RGB32(0, 180, 0)
@@ -485,14 +485,14 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Blue", 330, 40, 191, 117, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).Max = 255
     Control(__UI_NewID).CanHaveFocus = True
-    Control(__UI_NewID).Interval = 1
+    Control(__UI_NewID).Interval = 5
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "BlueValue", 36, 23, 530, 117, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).BorderColor = _RGB32(0, 0, 255)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "DialogBG", 598, 532,-600,-600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "DialogBG", 600, 555, -600, -600, 0)
     Control(__UI_NewID).Stretch = True
     Control(__UI_NewID).Align = __UI_Center
     Control(__UI_NewID).VAlign = __UI_Middle
