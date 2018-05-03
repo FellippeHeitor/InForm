@@ -133,7 +133,7 @@ DIM SHARED MaskTB AS LONG
 DIM SHARED MaskLB AS LONG
 
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
-DIM SHARED PreviewFormID AS LONG
+DIM SHARED PreviewFormID AS LONG, CurrentlyEditingProperty AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
@@ -655,18 +655,23 @@ SUB SendNewRGB
     DIM b$, NewColor AS _UNSIGNED LONG
     NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
     b$ = _MK$(_UNSIGNED LONG, NewColor)
-    'SendData b$, Control(ColorPropertiesListID).Value + 22
+    SendData b$, Control(ColorPropertiesList).Value + 22
 END SUB
 
-FUNCTION FocusInPropertyBox%%
-    DIM i AS LONG
-    FOR i = 1 TO UBOUND(InputBox)
-        IF __UI_Focus = InputBox(i).ID THEN FocusInPropertyBox%% = True: EXIT FUNCTION
-    NEXT
+FUNCTION PropertyFullySelected%% (id AS LONG)
+    PropertyFullySelected%% = Control(id).TextIsSelected AND _
+                              Control(id).SelectionStart = 0 AND _
+                              Control(id).Cursor = LEN(Text(id))
 END FUNCTION
 
+SUB SelectPropertyFully (id AS LONG)
+    Control(id).TextIsSelected = True
+    Control(id).SelectionStart = 0
+    Control(id).Cursor = LEN(Text(id))
+END SUB
+
 SUB __UI_BeforeUpdateDisplay
-    DIM b$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
+    DIM b$, c$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
     DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
 
@@ -851,9 +856,9 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         Control(EditMenuSetDefaultButton).Disabled = True
+        SetCaption ControlProperties, "Control properties:"
 
         IF TotalSelected = 0 THEN
-            SetCaption ControlProperties, "Control properties: " + RTRIM$(PreviewControls(PreviewFormID).Name)
             FirstSelected = PreviewFormID
 
             Control(AlignMenuAlignLeft).Disabled = True
@@ -869,8 +874,6 @@ SUB __UI_BeforeUpdateDisplay
 
         ELSEIF TotalSelected = 1 THEN
             IF FirstSelected > 0 AND FirstSelected <= UBOUND(PreviewControls) THEN
-                SetCaption ControlProperties, "Control properties: " + RTRIM$(PreviewControls(FirstSelected).Name)
-
                 Control(AlignMenuAlignLeft).Disabled = True
                 Control(AlignMenuAlignRight).Disabled = True
                 Control(AlignMenuAlignTops).Disabled = True
@@ -930,96 +933,65 @@ SUB __UI_BeforeUpdateDisplay
             Control(InputBox(i).ID).Disabled = False
             Control(InputBox(i).ID).Hidden = False
             Control(InputBox(i).LabelID).Hidden = False
+            Control(InputBox(i).ID).Width = 230
         NEXT
 
-        IF FirstSelected > 0 AND FocusInPropertyBox = False THEN
-            'Control(PropertyValue).Width = 250
-            Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name)
-            Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
-            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
-            ELSE
-                Text(TextTB) = PreviewTexts(FirstSelected)
+        IF FirstSelected > 0 THEN
+            IF __UI_Focus <> NameTB OR PropertyFullySelected(NameTB) THEN Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name): SelectPropertyFully NameTB
+            IF __UI_Focus <> CaptionTB OR PropertyFullySelected(CaptionTB) THEN Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0): SelectPropertyFully CaptionTB
+            IF __UI_Focus <> TextTB OR PropertyFullySelected(TextTB) THEN
+                IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
+                    Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
+                ELSE
+                    Text(TextTB) = PreviewTexts(FirstSelected)
+                END IF
+                SelectPropertyFully TextTB
             END IF
-            Text(MaskTB) = PreviewMasks(FirstSelected)
-            Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
-            Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
-            Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
-            Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
-            IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                Text(FontTB) = PreviewFonts(FirstSelected)
-            ELSE
-                Text(FontTB) = PreviewFonts(PreviewFormID)
+            IF __UI_Focus <> MaskTB OR PropertyFullySelected(MaskTB) THEN Text(MaskTB) = PreviewMasks(FirstSelected): SelectPropertyFully MaskTB
+            IF __UI_Focus <> TopTB OR PropertyFullySelected(TopTB) THEN Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)): SelectPropertyFully TopTB
+            IF __UI_Focus <> LeftTB OR PropertyFullySelected(LeftTB) THEN Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)): SelectPropertyFully LeftTB
+            IF __UI_Focus <> WidthTB OR PropertyFullySelected(WidthTB) THEN Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)): SelectPropertyFully WidthTB
+            IF __UI_Focus <> HeightTB OR PropertyFullySelected(HeightTB) THEN Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)): SelectPropertyFully HeightTB
+            IF __UI_Focus <> FontTB OR PropertyFullySelected(FontTB) THEN
+                IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                    Text(FontTB) = PreviewFonts(FirstSelected)
+                ELSE
+                    Text(FontTB) = PreviewFonts(PreviewFormID)
+                END IF
+                SelectPropertyFully FontTB
             END IF
             ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
-            Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
-            Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
-            Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
-            Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
-            Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
-            Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
+            IF __UI_Focus <> TooltipTB OR PropertyFullySelected(TooltipTB) THEN Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0): SelectPropertyFully TooltipTB
+            IF __UI_Focus <> ValueTB OR PropertyFullySelected(ValueTB) THEN Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)): SelectPropertyFully ValueTB
+            IF __UI_Focus <> MinTB OR PropertyFullySelected(MinTB) THEN Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)): SelectPropertyFully MinTB
+            IF __UI_Focus <> MaxTB OR PropertyFullySelected(MaxTB) THEN Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)): SelectPropertyFully MaxTB
+            IF __UI_Focus <> IntervalTB OR PropertyFullySelected(IntervalTB) THEN Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)): SelectPropertyFully IntervalTB
+            IF __UI_Focus <> PaddingTB OR PropertyFullySelected(PaddingTB) THEN Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)): SelectPropertyFully PaddingTB
             'Control(PropertyUpdateStatus).Hidden = True
-        ELSEIF FirstSelected > 0 THEN
-            __UI_CursorAdjustments __UI_Focus
-            DIM PropertyAccept AS _BYTE
-            SELECT CASE __UI_Focus
-                CASE NameTB
-                    IF LCASE$(Text(NameTB)) = LCASE$(RTRIM$(PreviewControls(FirstSelected).Name)) THEN PropertyAccept = True
-                CASE CaptionTB
-                    IF Replace(Text(CaptionTB), "\n", CHR$(10), False, 0) = PreviewCaptions(FirstSelected) THEN PropertyAccept = True
-                CASE TextTB
-                    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                        IF Replace(Text(TextTB), "\n", CHR$(13), False, 0) = PreviewTexts(FirstSelected) THEN PropertyAccept = True
-                    ELSE
-                        IF Text(TextTB) = PreviewTexts(FirstSelected) THEN PropertyAccept = True
-                    END IF
-                CASE MaskTB
-                    IF Text(MaskTB) = PreviewMasks(FirstSelected) THEN PropertyAccept = True
-                CASE TopTB
-                    IF Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN PropertyAccept = True
-                CASE LeftTB
-                    IF Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN PropertyAccept = True
-                CASE WidthTB
-                    IF Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN PropertyAccept = True
-                CASE HeightTB
-                    IF Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN PropertyAccept = True
-                CASE FontTB
-                    IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                        IF LCASE$(Text(FontTB)) = LCASE$(PreviewFonts(FirstSelected)) THEN PropertyAccept = True
-                    ELSE
-                        IF LCASE$(Text(FontTB)) = LCASE$(PreviewFonts(PreviewFormID)) THEN PropertyAccept = True
-                    END IF
-                CASE TooltipTB
-                    IF Replace(Text(TooltipTB), "\n", CHR$(10), False, 0) = PreviewTips(FirstSelected) THEN PropertyAccept = True
-                CASE ValueTB
-                    IF Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN PropertyAccept = True
-                CASE MinTB
-                    IF Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN PropertyAccept = True
-                CASE MaxTB
-                    IF Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN PropertyAccept = True
-                CASE IntervalTB
-                    IF Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN PropertyAccept = True
-                CASE PaddingTB
-                    IF Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN PropertyAccept = True
-            END SELECT
-            'Control(PropertyValue).Width = 225
-            'Control(PropertyUpdateStatusID).Hidden = False
-            '_DEST Control(PropertyUpdateStatusID).HelperCanvas
-            'CLS , _RGBA32(0, 0, 0, 0)
-            'IF PropertyAccept AND LEN(RTRIM$(Text(PropertyValue))) > 0 THEN
-            '    _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
-            '    ToolTip(PropertyUpdateStatus) = "The property value entered was accepted"
-            'ELSEIF LEN(RTRIM$(Text(PropertyValue))) > 0 THEN
-            '    IF TIMER - LastKeyPress > .5 THEN
-            '        _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
-            '        ToolTip(PropertyUpdateStatus) = "Property value not accepted"
-            '    ELSE
-            '        _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 32)-STEP(15, 15)
-            '        ToolTip(PropertyUpdateStatus) = ""
-            '    END IF
-            'END IF
-            '_DEST 0
-            'Control(PropertyUpdateStatus).PreviousValue = 0 'Force update
+
+            'DIM PropertyAccept AS _BYTE
+            'SELECT CASE __UI_Focus
+            '    CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB
+            '        Control(__UI_Focus).Width = 205
+            '        Control(PropertyUpdateStatus).Top = Control(__UI_Focus).Top + 3
+            '        Control(PropertyUpdateStatus).Hidden = False
+            '        _DEST Control(PropertyUpdateStatus).HelperCanvas
+            '        CLS , _RGBA32(0, 0, 0, 0)
+            '        IF PropertyAccept AND LEN(RTRIM$(Text(__UI_Focus))) > 0 THEN
+            '            _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
+            '            ToolTip(PropertyUpdateStatus) = "Property value accepted"
+            '        ELSEIF LEN(RTRIM$(Text(__UI_Focus))) > 0 THEN
+            '            IF TIMER - LastKeyPress > .5 THEN
+            '                _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
+            '                ToolTip(PropertyUpdateStatus) = "Property value not accepted"
+            '            ELSE
+            '                _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 32)-STEP(15, 15)
+            '                ToolTip(PropertyUpdateStatus) = ""
+            '            END IF
+            '        END IF
+            '        _DEST 0
+            '        Control(PropertyUpdateStatus).Redraw = True
+            'END SELECT
         END IF
 
         Control(TextTB).Max = 0
@@ -1109,7 +1081,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE NameTB, TextTB, TopTB, LeftTB, WidthTB, HeightTB, TooltipTB
+                            CASE NameTB, TextTB, TopTB, LeftTB, WidthTB, HeightTB, TooltipTB, AlignOptions, VAlignOptions
                                 Control(InputBox(i).ID).Disabled = False
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = True
@@ -1157,7 +1129,7 @@ SUB __UI_BeforeUpdateDisplay
                                 Control(InputBox(i).ID).Disabled = False
                         END SELECT
                     NEXT
-                CASE __UI_Type_CheckBox, __UI_Type_RadioButton
+                CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ToggleSwitch
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
@@ -1227,6 +1199,8 @@ SUB __UI_BeforeUpdateDisplay
                 END SELECT
             NEXT
         END IF
+
+        IF TotalSelected > 1 THEN Control(NameTB).Disabled = True
 
         DIM LastTopForInputBox AS INTEGER
         LastTopForInputBox = -12
@@ -1634,6 +1608,8 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
+    STATIC LastInputBoxEdited AS LONG, LastText$
+
     LastKeyPress = TIMER
     SELECT CASE id
         CASE FileNameTextBox
@@ -1641,7 +1617,45 @@ SUB __UI_KeyPress (id AS LONG)
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
             END IF
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB
-            Edited = True
+            IF LastInputBoxEdited <> id THEN
+                LastInputBoxEdited = id
+                LastText$ = Text(id)
+            END IF
+
+            IF LastText$ <> Text(id) THEN CurrentlyEditingProperty = id ELSE CurrentlyEditingProperty = 0
+
+            IF __UI_KeyHit = 13 THEN
+                IF __UI_Focus = id THEN
+                    'Send the preview the new property value
+                    DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
+                    STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
+
+                    IF PreviousValue$ <> Text(id) OR PreviousControl <> FirstSelected OR PreviousProperty <> id THEN
+                        PreviousValue$ = Text(id)
+                        PreviousControl = FirstSelected
+                        PreviousProperty = id
+                        TempValue = GetPropertySignal(id)
+                        SELECT CASE TempValue
+                            CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
+                                b$ = MKL$(LEN(Text(id))) + Text(id)
+                            CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
+                                b$ = MKI$(VAL(Text(id)))
+                            CASE 10, 11, 12, 13 'Value, min, max, interval
+                                b$ = _MK$(_FLOAT, VAL(Text(id)))
+                        END SELECT
+                        SendData b$, TempValue
+                        IF LEN(Text(id)) THEN
+                            SelectPropertyFully id
+                        END IF
+                    END IF
+                END IF
+                Edited = True
+            ELSEIF __UI_KeyHit = 27 THEN
+                IF LEN(Text(id)) > 0 AND LEN(LastText$) > 0 AND Text(id) <> LastText$ THEN
+                    Text(id) = LastText$
+                    SelectPropertyFully id
+                END IF
+            END IF
         CASE AlignOptions
             Edited = True
         CASE VAlignOptions
@@ -1658,28 +1672,6 @@ END FUNCTION
 
 SUB __UI_TextChanged (id AS LONG)
     SELECT EVERYCASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB
-            IF __UI_Focus = id THEN
-                'Send the preview the new property value
-                DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
-                STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
-
-                IF PreviousValue$ <> Text(id) OR PreviousControl <> FirstSelected OR PreviousProperty <> id THEN
-                    PreviousValue$ = Text(id)
-                    PreviousControl = FirstSelected
-                    PreviousProperty = id
-                    TempValue = GetPropertySignal(id)
-                    SELECT CASE TempValue
-                        CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
-                            b$ = MKL$(LEN(Text(id))) + Text(id)
-                        CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
-                            b$ = MKI$(VAL(Text(id)))
-                        CASE 10, 11, 12, 13 'Value, min, max, interval
-                            b$ = _MK$(_FLOAT, VAL(Text(id)))
-                    END SELECT
-                    SendData b$, TempValue
-                END IF
-            END IF
         CASE RedValue, GreenValue, BlueValue
             IF VAL(Text(id)) > 255 THEN Text(id) = "255"
             DIM TempID AS LONG
