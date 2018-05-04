@@ -71,6 +71,7 @@ TYPE __UI_ControlTYPE
     Min AS _FLOAT
     Max AS _FLOAT
     Interval AS _FLOAT
+    MinInterval AS _FLOAT
     HotKey AS INTEGER
     HotKeyOffset AS INTEGER
     HotKeyPosition AS INTEGER
@@ -807,32 +808,8 @@ SUB __UI_UpdateDisplay
                     'Text boxes
                     'IF Control(i).InputViewStart = 0 THEN Control(i).InputViewStart = 1
 
-                    IF Control(i).TextIsSelected THEN
-                        DIM s1 AS LONG, s2 AS LONG
-                        DIM ss1 AS LONG, ss2 AS LONG
-
-                        s1 = Control(i).SelectionStart
-                        s2 = Control(i).Cursor
-                        IF s1 > s2 THEN
-                            SWAP s1, s2
-                            IF Control(i).InputViewStart > 1 THEN
-                                ss1 = s1 - Control(i).InputViewStart + 1
-                            ELSE
-                                ss1 = s1
-                            END IF
-                            ss2 = s2 - s1
-                            IF ss1 + ss2 > Control(__UI_Focus).FieldArea THEN ss2 = Control(__UI_Focus).FieldArea - ss1
-                        ELSE
-                            ss1 = s1
-                            ss2 = s2 - s1
-                            IF ss1 < Control(i).InputViewStart THEN ss1 = 0: ss2 = s2 - Control(i).InputViewStart + 1
-                            IF ss1 > Control(i).InputViewStart THEN ss1 = ss1 - Control(i).InputViewStart + 1: ss2 = s2 - s1
-                        END IF
-
-                        __UI_SelectedText = MID$(Text(i), s1 + 1, s2 - s1)
-                        __UI_SelectionLength = LEN(__UI_SelectedText)
-                    END IF
-
+                    DIM ss1 AS LONG, ss2 AS LONG
+                    __UI_FillSelectedText ss1, ss2
                     __UI_StateHasChanged = False
                     __UI_DrawTextBox Control(i), ControlState, ss1, ss2
                     IF __UI_StateHasChanged THEN __UI_TextChanged i
@@ -1498,6 +1475,14 @@ SUB __UI_EventDispatcher
                 IF Control(__UI_FocusSearch).CanHaveFocus AND NOT Control(__UI_FocusSearch).Disabled THEN
                     IF __UI_Focus <> __UI_FocusSearch THEN __UI_FocusOut __UI_Focus
                     __UI_Focus = __UI_FocusSearch
+                    IF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline = False THEN
+                        IF LEN(Text(__UI_Focus)) > 0 THEN
+                            'Single-line textbox contents are selected when first focused.
+                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                            Control(__UI_Focus).SelectionStart = 0
+                            Control(__UI_Focus).TextIsSelected = True
+                        END IF
+                    END IF
                     __UI_FocusIn __UI_Focus
                     EXIT DO
                 END IF
@@ -1836,8 +1821,7 @@ SUB __UI_EventDispatcher
                         ELSE
                             STATIC WholeWordSelection AS _BYTE, WholeWordCursor AS LONG, WholeWordSelStart AS LONG
                             Control(__UI_Focus).TextIsSelected = False
-                            __UI_SelectedText = ""
-                            __UI_SelectionLength = 0
+                            __UI_FillSelectedText 0, 0
                             WholeWordSelection = False
                             WholeWordCursor = 0
                             WholeWordSelStart = 0
@@ -1916,8 +1900,7 @@ SUB __UI_EventDispatcher
                                 ELSE
                                     IF TIMER - JustSelectedAWord# > .3 THEN
                                         Control(__UI_Focus).TextIsSelected = False
-                                        __UI_SelectedText = ""
-                                        __UI_SelectionLength = 0
+                                        __UI_FillSelectedText 0, 0
 
                                         'Print the text offscreen just to fill the right variables
                                         __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
@@ -2301,6 +2284,7 @@ SUB __UI_EventDispatcher
                         END IF
 
                         ProcessHotkey:
+                        __UI_FillSelectedText 0, 0
                         IF UCASE$(LEFT$(Control(__UI_HoveringID).Name, 16)) = "__UI_PREVIEWMENU" THEN __UI_KeyPress 216
                         SELECT CASE UCASE$(RTRIM$(Control(__UI_HoveringID).Name))
                             CASE "__UI_TEXTMENUCUT"
@@ -3245,14 +3229,22 @@ SUB __UI_EventDispatcher
                     SELECT CASE __UI_KeyHit
                         CASE 19200 'Left
                             IF Control(__UI_Focus).Value > Control(__UI_Focus).Min THEN
-                                Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).Interval
+                                IF __UI_CtrlIsDown THEN
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).MinInterval
+                                ELSE
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).Interval
+                                END IF
                                 IF Control(__UI_Focus).Value < Control(__UI_Focus).Min THEN _
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Min
                                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 19712 'Right
                             IF Control(__UI_Focus).Value < Control(__UI_Focus).Max THEN
-                                Control(__UI_Focus).Value = Control(__UI_Focus).Value + Control(__UI_Focus).Interval
+                                IF __UI_CtrlIsDown THEN
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Value + Control(__UI_Focus).MinInterval
+                                ELSE
+                                    Control(__UI_Focus).Value = Control(__UI_Focus).Value + Control(__UI_Focus).Interval
+                                END IF
                                 IF Control(__UI_Focus).Value > Control(__UI_Focus).Max THEN _
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Max
                                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
@@ -3542,8 +3534,7 @@ SUB __UI_EventDispatcher
                                                             Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
                                                             Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
                                                             Control(__UI_Focus).TextIsSelected = False
-                                                            __UI_SelectedText = ""
-                                                            __UI_SelectionLength = 0
+                                                            __UI_FillSelectedText 0, 0
                                                         END IF
                                                     END IF
                                                 END IF
@@ -3558,11 +3549,13 @@ SUB __UI_EventDispatcher
                                     END IF
                                 ELSEIF __UI_KeyHit = ASC("c") OR __UI_KeyHit = ASC("C") THEN 'Copy selection to clipboard (Ctrl+C)
                                     IF __UI_CtrlIsDown THEN
+                                        __UI_FillSelectedText 0, 0
                                         IF LEN(__UI_SelectedText) > 0 THEN _CLIPBOARD$ = __UI_SelectedText
                                         __UI_KeyHit = 0
                                     END IF
                                 ELSEIF __UI_KeyHit = ASC("x") OR __UI_KeyHit = ASC("X") THEN 'Cut selection to clipboard (Ctrl+X)
                                     IF __UI_CtrlIsDown THEN
+                                        __UI_FillSelectedText 0, 0
                                         IF LEN(__UI_SelectedText) > 0 THEN
                                             _CLIPBOARD$ = __UI_SelectedText
                                             __UI_DeleteSelection
@@ -4435,6 +4428,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     IF ControlType = __UI_Type_TrackBar THEN
         Control(NextSlot).Max = 10
+        Control(NextSlot).Interval = 1
+        Control(NextSlot).MinInterval = 1
         Control(NextSlot).Height = 40
     END IF
 
@@ -4761,9 +4756,42 @@ SUB __UI_CheckSelection (id)
             END IF
         ELSE
             Control(id).TextIsSelected = False
-            __UI_SelectedText = ""
-            __UI_SelectionLength = 0
+            __UI_FillSelectedText 0, 0
         END IF
+    END IF
+END SUB
+
+SUB __UI_FillSelectedText(__ss1 AS LONG, __ss2 AS LONG)
+    DIM i AS LONG
+    i = __UI_Focus
+    __UI_SelectedText = ""
+    __UI_SelectionLength = 0
+    IF Control(i).Type = __UI_Type_TextBox AND Control(i).TextIsSelected THEN
+        DIM s1 AS LONG, s2 AS LONG
+        DIM ss1 AS LONG, ss2 AS LONG
+
+        s1 = Control(i).SelectionStart
+        s2 = Control(i).Cursor
+        IF s1 > s2 THEN
+            SWAP s1, s2
+            IF Control(i).InputViewStart > 1 THEN
+                ss1 = s1 - Control(i).InputViewStart + 1
+            ELSE
+                ss1 = s1
+            END IF
+            ss2 = s2 - s1
+            IF ss1 + ss2 > Control(i).FieldArea THEN ss2 = Control(i).FieldArea - ss1
+        ELSE
+            ss1 = s1
+            ss2 = s2 - s1
+            IF ss1 < Control(i).InputViewStart THEN ss1 = 0: ss2 = s2 - Control(i).InputViewStart + 1
+            IF ss1 > Control(i).InputViewStart THEN ss1 = ss1 - Control(i).InputViewStart + 1: ss2 = s2 - s1
+        END IF
+
+        __UI_SelectedText = MID$(Text(i), s1 + 1, s2 - s1)
+        __UI_SelectionLength = LEN(__UI_SelectedText)
+        __ss1 = ss1
+        __ss2 = ss2
     END IF
 END SUB
 
@@ -4777,8 +4805,7 @@ SUB __UI_DeleteSelection
         IF s1 > s2 THEN SWAP s1, s2
         Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + MID$(Text(__UI_Focus), s2 + 1)
         Control(__UI_Focus).TextIsSelected = False
-        __UI_SelectedText = ""
-        __UI_SelectionLength = 0
+        __UI_FillSelectedText 0, 0
         Control(__UI_Focus).Cursor = s1
     END IF
 END SUB
@@ -4792,8 +4819,7 @@ SUB __UI_DeleteSelectionMasked
     IF s1 > s2 THEN SWAP s1, s2
     MID$(Text(__UI_Focus), s1 + 1, s2 - s1) = MID$(__UI_EmptyMask$(__UI_Focus), s1 + 1, s2 - s1)
     Control(__UI_Focus).TextIsSelected = False
-    __UI_SelectedText = ""
-    __UI_SelectionLength = 0
+    __UI_FillSelectedText 0, 0
     Control(__UI_Focus).Cursor = s1
 END SUB
 
