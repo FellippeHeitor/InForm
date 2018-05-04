@@ -471,6 +471,9 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BorderColor = _RGB32(255, 0, 0)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
+    Control(__UI_NewID).Min = 0
+    Control(__UI_NewID).Max = 255
 
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Green", 330, 40, 191, 70, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).Max = 255
@@ -481,6 +484,9 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BorderColor = _RGB32(0, 180, 0)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
+    Control(__UI_NewID).Min = 0
+    Control(__UI_NewID).Max = 255
 
     __UI_NewID = __UI_NewControl(__UI_Type_TrackBar, "Blue", 330, 40, 191, 117, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).Max = 255
@@ -491,6 +497,9 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BorderColor = _RGB32(0, 0, 255)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
+    Control(__UI_NewID).Min = 0
+    Control(__UI_NewID).Max = 255
 
     __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "DialogBG", 600, 555, -600, -600, 0)
     Control(__UI_NewID).Stretch = True

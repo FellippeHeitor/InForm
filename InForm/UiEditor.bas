@@ -1612,6 +1612,18 @@ SUB __UI_KeyPress (id AS LONG)
 
     LastKeyPress = TIMER
     SELECT CASE id
+        CASE RedValue, GreenValue, BlueValue
+            IF __UI_KeyHit = 18432 THEN
+                IF VAL(Text(id)) < 255 THEN
+                    Text(id) = LTRIM$(STR$(VAL(Text(id)) + 1))
+                END IF
+                SelectPropertyFully id
+            ELSEIF __UI_KeyHit = 20480 THEN
+                IF VAL(Text(id)) > 0 THEN
+                    Text(id) = LTRIM$(STR$(VAL(Text(id)) - 1))
+                END IF
+                SelectPropertyFully id
+            END IF
         CASE FileNameTextBox
             IF OpenDialogOpen THEN
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
