@@ -1056,7 +1056,7 @@ SUB LoadPreview
                             LoadImage Control(TempValue), Text(TempValue)
                         ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
                             IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
-                            ExeIcon = IconPreview&(b$)
+                            ExeIcon = IconPreview&(Text(TempValue))
                             IF ExeIcon < -1 THEN
                                 _ICON ExeIcon
                             END IF
@@ -1476,7 +1476,7 @@ SUB LoadPreviewText
                         LoadImage Control(TempValue), Text(TempValue)
                     ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
                         IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
-                        ExeIcon = IconPreview&(b$)
+                        ExeIcon = IconPreview&(Text(TempValue))
                         IF ExeIcon < -1 THEN
                             _ICON ExeIcon
                         END IF
