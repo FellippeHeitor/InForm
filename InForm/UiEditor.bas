@@ -6275,8 +6275,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             SELECT EVERYCASE i
                 CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
                 CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
-                CASE 2: PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
-                CASE 3: PRINT #TextFileNum, "SUB __UI_BeforeUnload"
+                CASE 2
+                    PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
+                    PRINT #TextFileNum, "    'This event occurs at approximately 30 frames per second."
+                    PRINT #TextFileNum, "    'You can change the update frequency by calling SetFrameRate DesiredRate%"
+                CASE 3
+                    PRINT #TextFileNum, "SUB __UI_BeforeUnload"
+                    PRINT #TextFileNum, "    'If you set __UI_UnloadSignal = False here you can"
+                    PRINT #TextFileNum, "    'cancel the user's request to close."
                 CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
                 CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
                 CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
@@ -6284,7 +6290,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 8: PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
                 CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
                 CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
-                CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
+                CASE 11
+                    PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
+                    PRINT #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit"
+                    PRINT #TextFileNum, "    'You can change it and even cancel it by making it = 0"
                 CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
                 CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
                 CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
@@ -6329,10 +6338,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     NEXT
                     PRINT #TextFileNum, "    END SELECT"
 
-                CASE 13 'Dropdown list, List box and Track bar
+                CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
                     PRINT #TextFileNum, "    SELECT CASE id"
                     FOR Dummy = 1 TO UBOUND(PreviewControls)
-                        IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar) THEN
+                        IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
                             PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
                             PRINT #TextFileNum,
                         END IF

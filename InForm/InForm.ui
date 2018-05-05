@@ -2125,7 +2125,7 @@ SUB __UI_EventDispatcher
                         IF Control(__UI_HoveringID).Value > Control(__UI_HoveringID).Max THEN
                             Control(__UI_HoveringID).Value = Control(__UI_HoveringID).Max
                         END IF
-                        IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_MouseDownOnID
+                        'IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_MouseDownOnID
                     END IF
                 END IF
             END IF
@@ -2134,7 +2134,7 @@ SUB __UI_EventDispatcher
                 Control(__UI_PreviousMouseDownOnID).Value = __UI_MAP((__UI_MouseLeft - (Control(Control(__UI_PreviousMouseDownOnID).ParentID).Left + Control(__UI_PreviousMouseDownOnID).Left)), 0, Control(__UI_PreviousMouseDownOnID).Width, Control(__UI_PreviousMouseDownOnID).Min, Control(__UI_PreviousMouseDownOnID).Max)
                 IF Control(__UI_PreviousMouseDownOnID).Value > Control(__UI_PreviousMouseDownOnID).Max THEN Control(__UI_PreviousMouseDownOnID).Value = Control(__UI_PreviousMouseDownOnID).Max
                 IF Control(__UI_PreviousMouseDownOnID).Value < Control(__UI_PreviousMouseDownOnID).Min THEN Control(__UI_PreviousMouseDownOnID).Value = Control(__UI_PreviousMouseDownOnID).Min
-                IF Control(__UI_PreviousMouseDownOnID).PreviousValue <> Control(__UI_PreviousMouseDownOnID).Value THEN __UI_ValueChanged __UI_PreviousMouseDownOnID
+                'IF Control(__UI_PreviousMouseDownOnID).PreviousValue <> Control(__UI_PreviousMouseDownOnID).Value THEN __UI_ValueChanged __UI_PreviousMouseDownOnID
             END IF
 
         END IF
@@ -2173,6 +2173,7 @@ SUB __UI_EventDispatcher
                             SetRadioButtonValue __UI_HoveringID
                         CASE __UI_Type_CheckBox, __UI_Type_ToggleSwitch
                             Control(__UI_HoveringID).Value = NOT Control(__UI_HoveringID).Value
+                            __UI_ValueChanged __UI_HoveringID
                             Control(__UI_HoveringID).LastChange = TIMER
                         CASE __UI_Type_TextBox
                             DIM TempNewCursor AS LONG
@@ -3116,6 +3117,7 @@ SUB __UI_EventDispatcher
                                         IF Control(i).CanHaveFocus THEN __UI_Focus = Control(i).ID
                                         Control(i).Value = NOT Control(i).Value
                                         __UI_Click Control(i).ID
+                                        __UI_ValueChanged Control(i).ID
                                     CASE __UI_Type_Frame
                                         'Find the first children in this frame that can have focus
                                         FOR j = i + 1 TO UBOUND(Control)
@@ -3225,7 +3227,7 @@ SUB __UI_EventDispatcher
                                 END IF
                                 IF Control(__UI_Focus).Value < Control(__UI_Focus).Min THEN _
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Min
-                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                'IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 19712 'Right
                             IF Control(__UI_Focus).Value < Control(__UI_Focus).Max THEN
@@ -3236,14 +3238,14 @@ SUB __UI_EventDispatcher
                                 END IF
                                 IF Control(__UI_Focus).Value > Control(__UI_Focus).Max THEN _
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Max
-                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                'IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                             END IF
                         CASE 18176 'Home
                             Control(__UI_Focus).Value = Control(__UI_Focus).Min
-                            IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                            'IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                         CASE 20224 'End
                             Control(__UI_Focus).Value = Control(__UI_Focus).Max
-                            IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                            'IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
                     END SELECT
                 CASE __UI_Type_MenuBar
                     SELECT CASE __UI_KeyHit
@@ -3340,6 +3342,7 @@ SUB __UI_EventDispatcher
                                     ELSEIF Control(__UI_KeyDownOnID).Type = __UI_Type_CheckBox OR _
                                            Control(__UI_KeyDownOnID).Type = __UI_Type_ToggleSwitch THEN
                                         Control(__UI_KeyDownOnID).Value = NOT Control(__UI_KeyDownOnID).Value
+                                        __UI_ValueChanged __UI_KeyDownOnID
                                         Control(__UI_KeyDownOnID).LastChange = TIMER
                                     END IF
                                     __UI_KeyDownOnID = 0
@@ -4723,16 +4726,20 @@ FUNCTION __UI_SpecialCharsToCHR$ (Text$)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-SUB SetRadioButtonValue (id)
+SUB SetRadioButtonValue (id AS LONG)
     'Radio buttons will change value of others in the same group
     DIM i AS LONG
 
     FOR i = 1 TO UBOUND(Control)
         IF Control(i).Type = __UI_Type_RadioButton AND Control(i).ParentID = Control(id).ParentID THEN
-            Control(i).Value = False
+            IF Control(i).Value THEN
+                Control(i).Value = False
+                __UI_ValueChanged i
+            END IF
         END IF
     NEXT
     Control(id).Value = True
+    __UI_ValueChanged id
 END SUB
 
 '---------------------------------------------------------------------------------
