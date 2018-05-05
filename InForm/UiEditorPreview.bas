@@ -564,7 +564,7 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
-                            IF Control(i).Type = __UI_Type_CheckBox OR Control(i).Type = __UI_Type_MenuItem THEN
+                            IF Control(i).Type = __UI_Type_CheckBox OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_ToggleSwitch THEN
                                 IF _CV(_FLOAT, b$) <> 0 THEN
                                     Control(i).Value = True
                                 ELSE

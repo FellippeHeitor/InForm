@@ -3871,9 +3871,9 @@ SUB __UI_EventDispatcher
             CASE ASC("V"), ASC("v")
                 IF __UI_CtrlIsDown THEN
                     ControlPaste:
-                    __UI_Click 0 'Force the preview to inform it was edited
                     Clip$ = _CLIPBOARD$
                     IF Clip$ = "InForm" + CHR$(1) THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
                         DIM PasteID AS LONG, ThisControl AS LONG, FirstToBeSelected AS LONG
                         DIM TempCanvas AS LONG, TempTop AS INTEGER, TempLeft AS INTEGER
                         DIM TempName$, OriginalIndex$, c$
