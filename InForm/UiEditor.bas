@@ -144,6 +144,7 @@ TYPE newInputBox
     ID AS LONG
     LabelID AS LONG
     Signal AS INTEGER
+    LastEdited AS SINGLE
 END TYPE
 
 CONST OffsetEditorPID = 1
@@ -948,11 +949,17 @@ SUB __UI_BeforeUpdateDisplay
             IF __UI_Focus = InputBox(i).ID THEN
                 Control(InputBox(i).ID).Height = 22
                 Control(InputBox(i).ID).BorderColor = _RGB32(0, 0, 0)
+                Control(InputBox(i).ID).HasBorder = 1
             ELSE
                 Control(InputBox(i).ID).Height = 23
                 Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                Control(InputBox(i).ID).HasBorder = True
             END IF
         NEXT
+
+        DIM ShadeOfGreen AS _UNSIGNED LONG, ShadeOfRed AS _UNSIGNED LONG
+        ShadeOfGreen = _RGB32(28, 150, 50)
+        ShadeOfRed = _RGB32(233, 44, 0)
 
         IF FirstSelected > 0 THEN
             IF __UI_Focus <> NameTB THEN
@@ -960,9 +967,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(NameTB) THEN
                     IF Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -971,9 +982,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(CaptionTB) THEN
                     IF Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -987,9 +1002,13 @@ SUB __UI_BeforeUpdateDisplay
                 IF PropertyFullySelected(TextTB) THEN
                     IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewCaptions(FirstSelected), CHR$(10), "\n", False, 0)) OR _
                        ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -998,9 +1017,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(MaskTB) THEN
                     IF Text(MaskTB) = PreviewMasks(FirstSelected) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1009,9 +1032,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(TopTB) THEN
                     IF Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1020,9 +1047,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(LeftTB) THEN
                     IF Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1031,9 +1062,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(WidthTB) THEN
                     IF Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1042,9 +1077,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(HeightTB) THEN
                     IF Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1057,9 +1096,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(FontTB) THEN
                     IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1068,9 +1111,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(FontTB) THEN
                     IF Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1079,9 +1126,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(ValueTB) THEN
                     IF Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1090,9 +1141,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(MinTB) THEN
                     IF Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1101,9 +1156,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(MaxTB) THEN
                     IF Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1112,9 +1171,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(IntervalTB) THEN
                     IF Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1123,9 +1186,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(MinIntervalTB) THEN
                     IF Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1134,9 +1201,13 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 IF PropertyFullySelected(PaddingTB) THEN
                     IF Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN
-                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        ELSE
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                        END IF
                     END IF
                 END IF
             END IF
@@ -1808,6 +1879,7 @@ SUB __UI_KeyPress (id AS LONG)
                         IF LEN(Text(id)) THEN
                             SelectPropertyFully id
                         END IF
+                        InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
                     END IF
                 END IF
                 Edited = True
@@ -1830,6 +1902,13 @@ FUNCTION GetPropertySignal& (id AS LONG)
     DIM i AS LONG
     FOR i = 1 TO UBOUND(InputBox)
         IF InputBox(i).ID = id THEN GetPropertySignal& = InputBox(i).Signal: EXIT FUNCTION
+    NEXT
+END FUNCTION
+
+FUNCTION GetInputBoxFromID& (id AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO UBOUND(InputBox)
+        IF InputBox(i).ID = id THEN GetInputBoxFromID& = i: EXIT FUNCTION
     NEXT
 END FUNCTION
 

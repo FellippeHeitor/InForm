@@ -1476,12 +1476,10 @@ SUB __UI_EventDispatcher
                     IF __UI_Focus <> __UI_FocusSearch THEN __UI_FocusOut __UI_Focus
                     __UI_Focus = __UI_FocusSearch
                     IF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline = False THEN
-                        IF LEN(Text(__UI_Focus)) > 0 THEN
-                            'Single-line textbox contents are selected when first focused.
-                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                            Control(__UI_Focus).SelectionStart = 0
-                            Control(__UI_Focus).TextIsSelected = True
-                        END IF
+                        'Single-line textbox contents are selected when first focused.
+                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                        Control(__UI_Focus).SelectionStart = 0
+                        Control(__UI_Focus).TextIsSelected = True
                     END IF
                     __UI_FocusIn __UI_Focus
                     EXIT DO

@@ -380,6 +380,32 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TextAlignLB", 120, 23, 10, 340, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Horizontal align"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "AlignOptions", 230, 23, 129, 340, __UI_GetID("ControlProperties"))
+    AddItem __UI_NewID, "Left"
+    AddItem __UI_NewID, "Center"
+    AddItem __UI_NewID, "Right"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).Value = 1
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "VerticalAlignLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Vertical align"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "VAlignOptions", 230, 23, 129, 362, __UI_GetID("ControlProperties"))
+    AddItem __UI_NewID, "Top"
+    AddItem __UI_NewID, "Middle"
+    AddItem __UI_NewID, "Bottom"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).Value = 1
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 12, 12, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Stretch"
     Control(__UI_NewID).CanHaveFocus = True
@@ -422,32 +448,6 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Resizable", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Resizable"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TextAlignLB", 120, 23, 10, 340, __UI_GetID("ControlProperties"))
-    SetCaption __UI_NewID, "Text align"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).VAlign = __UI_Middle
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "AlignOptions", 230, 23, 129, 340, __UI_GetID("ControlProperties"))
-    AddItem __UI_NewID, "Left"
-    AddItem __UI_NewID, "Center"
-    AddItem __UI_NewID, "Right"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 1
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "VerticalAlignLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
-    SetCaption __UI_NewID, "Vertical align"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).VAlign = __UI_Middle
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "VAlignOptions", 230, 23, 129, 362, __UI_GetID("ControlProperties"))
-    AddItem __UI_NewID, "Top"
-    AddItem __UI_NewID, "Middle"
-    AddItem __UI_NewID, "Bottom"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 1
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))

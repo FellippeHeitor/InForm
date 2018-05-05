@@ -406,7 +406,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         DIM i AS SINGLE
 
         CaptionIndent = 0
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             CaptionIndent = 5
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
@@ -906,8 +906,12 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             END IF
         END IF
 
-        IF This.HasBorder THEN
+        IF This.HasBorder = True THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+        ELSEIF This.HasBorder > 0 THEN
+            FOR i = 0 TO This.HasBorder
+                LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+            NEXT
         END IF
         '------
 
@@ -1016,7 +1020,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             END IF
         END IF
 
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------
@@ -1190,7 +1194,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         CaptionIndent = 0
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             CaptionIndent = 5
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
@@ -1600,7 +1604,7 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             _PUTIMAGE (TheX, TheY), This.HelperCanvas, This.Canvas
         END IF
 
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------
