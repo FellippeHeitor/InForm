@@ -294,6 +294,11 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Interval"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).VAlign = __UI_Middle
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "MinIntervalLB", 120, 23, 10, 296, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "MinInterval"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "PaddingLeftrightLB", 120, 23, 10, 318, __UI_GetID("ControlProperties"))
     SetCaption __UI_NewID, "Padding (left/right)"
@@ -367,6 +372,11 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "IntervalTB", 230, 23, 129, 296, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).NumericOnly = True
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).CanHaveFocus = True
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "MinIntervalTB", 230, 23, 129, 296, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).NumericOnly = True
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
@@ -684,6 +694,7 @@ SUB __UI_AssignIDs
     MinLB = __UI_GetID("MinLB")
     MaxLB = __UI_GetID("MaxLB")
     IntervalLB = __UI_GetID("IntervalLB")
+    MinIntervalLB = __UI_GetID("MinIntervalLB")
     PaddingLeftrightLB = __UI_GetID("PaddingLeftrightLB")
     NameTB = __UI_GetID("NameTB")
     CaptionTB = __UI_GetID("CaptionTB")
@@ -698,6 +709,7 @@ SUB __UI_AssignIDs
     MinTB = __UI_GetID("MinTB")
     MaxTB = __UI_GetID("MaxTB")
     IntervalTB = __UI_GetID("IntervalTB")
+    MinIntervalTB = __UI_GetID("MinIntervalTB")
     PaddingTB = __UI_GetID("PaddingTB")
     MaskTB = __UI_GetID("MaskTB")
     MaskLB = __UI_GetID("MaskLB")

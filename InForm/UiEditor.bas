@@ -114,6 +114,7 @@ DIM SHARED ValueLB AS LONG
 DIM SHARED MinLB AS LONG
 DIM SHARED MaxLB AS LONG
 DIM SHARED IntervalLB AS LONG
+DIM SHARED MinIntervalLB AS LONG
 DIM SHARED PaddingLeftrightLB AS LONG
 DIM SHARED NameTB AS LONG
 DIM SHARED CaptionTB AS LONG
@@ -128,6 +129,7 @@ DIM SHARED ValueTB AS LONG
 DIM SHARED MinTB AS LONG
 DIM SHARED MaxTB AS LONG
 DIM SHARED IntervalTB AS LONG
+DIM SHARED MinIntervalTB AS LONG
 DIM SHARED PaddingTB AS LONG
 DIM SHARED MaskTB AS LONG
 DIM SHARED MaskLB AS LONG
@@ -966,6 +968,7 @@ SUB __UI_BeforeUpdateDisplay
             IF __UI_Focus <> MinTB OR PropertyFullySelected(MinTB) THEN Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)): SelectPropertyFully MinTB
             IF __UI_Focus <> MaxTB OR PropertyFullySelected(MaxTB) THEN Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)): SelectPropertyFully MaxTB
             IF __UI_Focus <> IntervalTB OR PropertyFullySelected(IntervalTB) THEN Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)): SelectPropertyFully IntervalTB
+            IF __UI_Focus <> MinIntervalTB OR PropertyFullySelected(MinIntervalTB) THEN Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)): SelectPropertyFully MinIntervalTB
             IF __UI_Focus <> PaddingTB OR PropertyFullySelected(PaddingTB) THEN Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)): SelectPropertyFully PaddingTB
             'Control(PropertyUpdateStatus).Hidden = True
 
@@ -1041,6 +1044,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(MinTB).Disabled = True
                     Control(MaxTB).Disabled = True
                     Control(IntervalTB).Disabled = True
+                    Control(MinIntervalTB).Disabled = True
                     Control(PaddingTB).Disabled = True
                 CASE __UI_Type_MenuBar, __UI_Type_MenuItem
                     Control(Disabled).Disabled = False
@@ -1112,7 +1116,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(PasswordMaskCB).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions
+                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1123,7 +1127,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_Button
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions
+                            CASE ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1133,7 +1137,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions
+                            CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1142,7 +1146,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_ProgressBar
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions
+                            CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1162,7 +1166,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE CaptionTB, MinTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions
+                            CASE CaptionTB, MinTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1359,6 +1363,7 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = MinTB: InputBox(i).LabelID = MinLB: InputBox(i).Signal = 11
     i = i + 1: InputBox(i).ID = MaxTB: InputBox(i).LabelID = MaxLB: InputBox(i).Signal = 12
     i = i + 1: InputBox(i).ID = IntervalTB: InputBox(i).LabelID = IntervalLB: InputBox(i).Signal = 13
+    i = i + 1: InputBox(i).ID = MinIntervalTB: InputBox(i).LabelID = MinIntervalLB: InputBox(i).Signal = 36
     i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31
     i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
@@ -1628,7 +1633,7 @@ SUB __UI_KeyPress (id AS LONG)
             IF OpenDialogOpen THEN
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
             END IF
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
             IF LastInputBoxEdited <> id THEN
                 LastInputBoxEdited = id
                 LastText$ = Text(id)
@@ -1652,7 +1657,7 @@ SUB __UI_KeyPress (id AS LONG)
                                 b$ = MKL$(LEN(Text(id))) + Text(id)
                             CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
                                 b$ = MKI$(VAL(Text(id)))
-                            CASE 10, 11, 12, 13 'Value, min, max, interval
+                            CASE 10, 11, 12, 13, 36 'Value, min, max, interval, mininterval
                                 b$ = _MK$(_FLOAT, VAL(Text(id)))
                         END SELECT
                         SendData b$, TempValue
@@ -5649,6 +5654,9 @@ SUB LoadPreview
                         b$ = SPACE$(CVL(b$))
                         GET #BinaryFileNum, , b$
                         PreviewMasks(Dummy) = b$
+                    CASE -37
+                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                        PreviewControls(Dummy).MinInterval = _CV(_FLOAT, b$)
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -6022,6 +6030,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).Interval THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
+                END IF
+                IF PreviewControls(i).MinInterval THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).MinInterval = " + LTRIM$(STR$(PreviewControls(i).MinInterval))
                 END IF
                 IF PreviewControls(i).WordWrap THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).WordWrap = True"

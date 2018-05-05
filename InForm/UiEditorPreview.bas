@@ -798,6 +798,13 @@ SUB __UI_BeforeUpdateDisplay
                             Mask(i) = b$
                         END IF
                     NEXT
+                CASE 36 'MinInterval
+                    b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).MinInterval = _CV(_FLOAT, b$)
+                        END IF
+                    NEXT
                 CASE 201 TO 210
                     'Alignment commands
                     __UI_DesignModeAlignCommand = TempValue
@@ -1192,6 +1199,10 @@ SUB LoadPreview
                         GET #BinaryFileNum, , b$
                         Mask(TempValue) = b$
                         IF LogFileLoad THEN PRINT #LogFileNum, "MASK:" + Mask(TempValue)
+                    CASE -37
+                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                        Control(TempValue).MinInterval = _CV(_FLOAT, b$)
+                        IF LogFileLoad THEN PRINT #LogFileNum, "MININTERVAL="; Control(TempValue).MinInterval
                     CASE -1 'new control
                         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                         EXIT DO
@@ -1401,6 +1412,9 @@ SUB LoadPreviewText
                             Control(TempValue).CenteredWindow = (DummyText$ = "True")
                         CASE "ContextMenuID"
                         CASE "Interval"
+                            Control(TempValue).Interval = VAL(DummyText$)
+                        CASE "MinInterval"
+                            Control(TempValue).MinInterval = VAL(DummyText$)
                         CASE "WordWrap"
                             Control(TempValue).WordWrap = (DummyText$ = "True")
                         CASE "TransparentColor"
@@ -1727,6 +1741,9 @@ SUB SavePreview
             END IF
             IF Control(i).Interval THEN
                 b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval): PUT #BinFileNum, , b$
+            END IF
+            IF Control(i).MinInterval THEN
+                b$ = MKI$(-37) + _MK$(_FLOAT, Control(i).MinInterval): PUT #BinFileNum, , b$
             END IF
             IF Control(i).WordWrap THEN
                 b$ = MKI$(-27): PUT #BinFileNum, , b$
