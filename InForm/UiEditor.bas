@@ -530,7 +530,7 @@ SUB __UI_Click (id AS LONG)
             'Refresh the file list control's contents
             DIM TotalFiles%
             IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
-            Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
+            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
 
@@ -556,51 +556,62 @@ SUB __UI_Click (id AS LONG)
             __UI_ForceRedraw = True
         CASE "OPENBT"
             OpenFile:
-            DIM FileToOpen$, FreeFileNum AS INTEGER
-            FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
-            IF _FILEEXISTS(FileToOpen$) THEN
-                FreeFileNum = FREEFILE
-                OPEN "InForm/UiEditor.dat" FOR BINARY AS #FreeFileNum
-                'Send the data first, then the signal
-                b$ = MKI$(LEN(FileToOpen$)) + FileToOpen$
-                PUT #FreeFileNum, OffsetPropertyValue, b$
-                CLOSE #FreeFileNum
+            IF OpenDialogOpen THEN
+                DIM FileToOpen$, FreeFileNum AS INTEGER
+                FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
+                IF _FILEEXISTS(FileToOpen$) THEN
+                    FreeFileNum = FREEFILE
+                    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FreeFileNum
+                    'Send the data first, then the signal
+                    b$ = MKI$(LEN(FileToOpen$)) + FileToOpen$
+                    PUT #FreeFileNum, OffsetPropertyValue, b$
+                    CLOSE #FreeFileNum
 
-                SendSignal -4
+                    SendSignal -4
 
-                Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
-                Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
-                OpenDialogOpen = False
-                __UI_Focus = 0
-            ELSE
-                Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
+                    Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
+                    Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
+                    Control(FileList).FirstVisibleLine = 1
+                    Control(FileList).InputViewStart = 1
+                    Control(FileList).Value = 0
+                    Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+                    Control(DirList).FirstVisibleLine = 1
+                    Control(DirList).InputViewStart = 1
+                    Control(DirList).Value = 0
+                    Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
+                    OpenDialogOpen = False
+                    __UI_Focus = 0
+                ELSE
+                    Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
+                    Control(FileList).Value = 0
+                END IF
             END IF
         CASE "FILELIST"
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
+            Control(DirList).Value = 0
             IF Control(FileList).HoveringVScrollbarButton = 0 AND LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
                 GOTO OpenFile
             END IF
         CASE "DIRLIST"
             Text(FileNameTextBox) = GetItem(DirList, Control(DirList).Value)
+            Control(FileList).Value = 0
             IF LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
                 CurrentPath$ = idezchangepath(CurrentPath$, Text(FileNameTextBox))
                 Caption(PathLB) = "Path: " + CurrentPath$
                 Text(DirList) = idezpathlist$(CurrentPath$, TotalFiles%)
                 Control(DirList).Max = TotalFiles%
                 Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
+                Control(DirList).Value = 0
                 GOTO ReloadList
             END IF
         CASE "SHOWONLYFRMBINFILESCB"
             ReloadList:
-            IF Control(ShowOnlyFrmbinFilesCB).Value THEN
-                Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
-                Control(FileList).Max = TotalFiles%
-                Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
-            ELSE
-                Text(FileList) = idezfilelist$(CurrentPath$, 1, TotalFiles%)
-                Control(FileList).Max = TotalFiles%
-                Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
-            END IF
+            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, TotalFiles%)
+            Control(FileList).Max = TotalFiles%
+            Control(FileList).FirstVisibleLine = 1
+            Control(FileList).InputViewStart = 1
+            Control(FileList).Value = 0
+            Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
         CASE "EDITMENUUNDO"
             b$ = MKI$(0)
             SendData b$, 214
