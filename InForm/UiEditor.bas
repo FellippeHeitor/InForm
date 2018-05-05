@@ -62,7 +62,6 @@ DIM SHARED AddProgressBar AS LONG
 DIM SHARED AddPictureBox AS LONG
 DIM SHARED AddFrame AS LONG
 DIM SHARED AddToggleSwitch AS LONG
-'DIM SHARED PropertyUpdateStatus AS LONG
 DIM SHARED Stretch AS LONG
 DIM SHARED HasBorder AS LONG
 DIM SHARED ShowPercentage AS LONG
@@ -137,7 +136,7 @@ DIM SHARED MaskLB AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, CurrentlyEditingProperty AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
-DIM SHARED PropertyUpdateStatusImage AS LONG, LastKeyPress AS DOUBLE
+DIM SHARED LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 
@@ -946,66 +945,201 @@ SUB __UI_BeforeUpdateDisplay
             Control(InputBox(i).ID).Disabled = False
             Control(InputBox(i).ID).Hidden = False
             Control(InputBox(i).LabelID).Hidden = False
-            Control(InputBox(i).ID).Width = 230
+            IF __UI_Focus = InputBox(i).ID THEN
+                Control(InputBox(i).ID).Height = 22
+                Control(InputBox(i).ID).BorderColor = _RGB32(0, 0, 0)
+            ELSE
+                Control(InputBox(i).ID).Height = 23
+                Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+            END IF
         NEXT
 
         IF FirstSelected > 0 THEN
-            IF __UI_Focus <> NameTB OR PropertyFullySelected(NameTB) THEN Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name): SelectPropertyFully NameTB
-            IF __UI_Focus <> CaptionTB OR PropertyFullySelected(CaptionTB) THEN Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0): SelectPropertyFully CaptionTB
-            IF __UI_Focus <> TextTB OR PropertyFullySelected(TextTB) THEN
+            IF __UI_Focus <> NameTB THEN
+                Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name)
+            ELSE
+                IF PropertyFullySelected(NameTB) THEN
+                    IF Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> CaptionTB THEN
+                Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
+            ELSE
+                IF PropertyFullySelected(CaptionTB) THEN
+                    IF Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> TextTB THEN
                 IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
                     Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
                 ELSE
                     Text(TextTB) = PreviewTexts(FirstSelected)
                 END IF
-                SelectPropertyFully TextTB
+            ELSE
+                IF PropertyFullySelected(TextTB) THEN
+                    IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewCaptions(FirstSelected), CHR$(10), "\n", False, 0)) OR _
+                       ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
             END IF
-            IF __UI_Focus <> MaskTB OR PropertyFullySelected(MaskTB) THEN Text(MaskTB) = PreviewMasks(FirstSelected): SelectPropertyFully MaskTB
-            IF __UI_Focus <> TopTB OR PropertyFullySelected(TopTB) THEN Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)): SelectPropertyFully TopTB
-            IF __UI_Focus <> LeftTB OR PropertyFullySelected(LeftTB) THEN Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)): SelectPropertyFully LeftTB
-            IF __UI_Focus <> WidthTB OR PropertyFullySelected(WidthTB) THEN Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)): SelectPropertyFully WidthTB
-            IF __UI_Focus <> HeightTB OR PropertyFullySelected(HeightTB) THEN Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)): SelectPropertyFully HeightTB
-            IF __UI_Focus <> FontTB OR PropertyFullySelected(FontTB) THEN
+            IF __UI_Focus <> MaskTB THEN
+                Text(MaskTB) = PreviewMasks(FirstSelected)
+            ELSE
+                IF PropertyFullySelected(MaskTB) THEN
+                    IF Text(MaskTB) = PreviewMasks(FirstSelected) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> TopTB THEN
+                Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
+            ELSE
+                IF PropertyFullySelected(TopTB) THEN
+                    IF Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> LeftTB THEN
+                Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
+            ELSE
+                IF PropertyFullySelected(LeftTB) THEN
+                    IF Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> WidthTB THEN
+                Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
+            ELSE
+                IF PropertyFullySelected(WidthTB) THEN
+                    IF Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> HeightTB THEN
+                Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
+            ELSE
+                IF PropertyFullySelected(HeightTB) THEN
+                    IF Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> FontTB THEN
                 IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
                     Text(FontTB) = PreviewFonts(FirstSelected)
                 ELSE
                     Text(FontTB) = PreviewFonts(PreviewFormID)
                 END IF
-                SelectPropertyFully FontTB
+            ELSE
+                IF PropertyFullySelected(FontTB) THEN
+                    IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
             END IF
-            ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
-            IF __UI_Focus <> TooltipTB OR PropertyFullySelected(TooltipTB) THEN Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0): SelectPropertyFully TooltipTB
-            IF __UI_Focus <> ValueTB OR PropertyFullySelected(ValueTB) THEN Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)): SelectPropertyFully ValueTB
-            IF __UI_Focus <> MinTB OR PropertyFullySelected(MinTB) THEN Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)): SelectPropertyFully MinTB
-            IF __UI_Focus <> MaxTB OR PropertyFullySelected(MaxTB) THEN Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)): SelectPropertyFully MaxTB
-            IF __UI_Focus <> IntervalTB OR PropertyFullySelected(IntervalTB) THEN Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)): SelectPropertyFully IntervalTB
-            IF __UI_Focus <> MinIntervalTB OR PropertyFullySelected(MinIntervalTB) THEN Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)): SelectPropertyFully MinIntervalTB
-            IF __UI_Focus <> PaddingTB OR PropertyFullySelected(PaddingTB) THEN Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)): SelectPropertyFully PaddingTB
-            'Control(PropertyUpdateStatus).Hidden = True
-
-            'DIM PropertyAccept AS _BYTE
-            'SELECT CASE __UI_Focus
-            '    CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB
-            '        Control(__UI_Focus).Width = 205
-            '        Control(PropertyUpdateStatus).Top = Control(__UI_Focus).Top + 3
-            '        Control(PropertyUpdateStatus).Hidden = False
-            '        _DEST Control(PropertyUpdateStatus).HelperCanvas
-            '        CLS , _RGBA32(0, 0, 0, 0)
-            '        IF PropertyAccept AND LEN(RTRIM$(Text(__UI_Focus))) > 0 THEN
-            '            _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 0)-STEP(15, 15)
-            '            ToolTip(PropertyUpdateStatus) = "Property value accepted"
-            '        ELSEIF LEN(RTRIM$(Text(__UI_Focus))) > 0 THEN
-            '            IF TIMER - LastKeyPress > .5 THEN
-            '                _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 16)-STEP(15, 15)
-            '                ToolTip(PropertyUpdateStatus) = "Property value not accepted"
-            '            ELSE
-            '                _PUTIMAGE (0, 0), PropertyUpdateStatusImage, , (0, 32)-STEP(15, 15)
-            '                ToolTip(PropertyUpdateStatus) = ""
-            '            END IF
-            '        END IF
-            '        _DEST 0
-            '        Control(PropertyUpdateStatus).Redraw = True
-            'END SELECT
+            IF __UI_Focus <> TooltipTB THEN
+                Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
+            ELSE
+                IF PropertyFullySelected(FontTB) THEN
+                    IF Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> ValueTB THEN
+                Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
+            ELSE
+                IF PropertyFullySelected(ValueTB) THEN
+                    IF Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> MinTB THEN
+                Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
+            ELSE
+                IF PropertyFullySelected(MinTB) THEN
+                    IF Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> MaxTB THEN
+                Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
+            ELSE
+                IF PropertyFullySelected(MaxTB) THEN
+                    IF Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> IntervalTB THEN
+                Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
+            ELSE
+                IF PropertyFullySelected(IntervalTB) THEN
+                    IF Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> MinIntervalTB THEN
+                Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval))
+            ELSE
+                IF PropertyFullySelected(MinIntervalTB) THEN
+                    IF Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
+            IF __UI_Focus <> PaddingTB THEN
+                Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
+            ELSE
+                IF PropertyFullySelected(PaddingTB) THEN
+                    IF Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN
+                        Control(__UI_Focus).BorderColor = _RGB32(0, 255, 0)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = _RGB32(255, 0, 0)
+                    END IF
+                END IF
+            END IF
         END IF
 
         Control(TextTB).Max = 0
@@ -1380,6 +1514,8 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
 
+    ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
+
     'LoadFontList
 
     'Load toolbox images:
@@ -1417,9 +1553,6 @@ SUB __UI_OnLoad
     LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
     LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
     _DEST prevDest
-
-    'PropertyUpdateStatusImage = LoadEditorImage("oknowait.bmp")
-    '__UI_ClearColor PropertyUpdateStatusImage, 0, 0
 
     Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
 
@@ -1678,6 +1811,8 @@ SUB __UI_KeyPress (id AS LONG)
                     END IF
                 END IF
                 Edited = True
+            ELSEIF __UI_KeyHit = 32 THEN
+                IF id = NameTB THEN __UI_KeyHit = 0
             ELSEIF __UI_KeyHit = 27 THEN
                 IF LEN(Text(id)) > 0 AND LEN(LastText$) > 0 AND Text(id) <> LastText$ THEN
                     Text(id) = LastText$
@@ -5251,49 +5386,6 @@ FUNCTION EditorImageData$ (FileName$)
             A$ = A$ + "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
             A$ = A$ + "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
             A$ = A$ + "000000000000000000000000%%00"
-        CASE "oknowait.bmp"
-            A$ = MKI$(16) + MKI$(48)
-            A$ = A$ + "0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000"
-            A$ = A$ + "o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o7013l?000`o0000o3000l?000`o0000o3000l?000`o0000o300"
-            A$ = A$ + "0l?000`o0000o3000l?000`o0000o[`7Gl??OJgoB@D<o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?0"
-            A$ = A$ + "00`o0000oWP7Fl_?PNgoN1LUoK5_@n?40ibo0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000oS@7ElO>I>go"
-            A$ = A$ + "GUkSoKe]>n_Egjho<5kQoS09Il?000`o0000oC05>l?2[hao0000o3000l?000`o0000oO`6Clo<Dffo>5;Rok4\6n_C`Jho=mJQ"
-            A$ = A$ + "ocAJ;m_07D`o0000oG`5@lO:9>fooTZOo_`>Yl?000`o0000oKP6Cl?;>Nfo5U:PoG4ZnmOAXjgo4MZOo[QI9m_07D`o0000oC`5"
-            A$ = A$ + "@l?95neol4jMo_cWfm_=OBgo;\C:oGP6Bl_98:fol0jMo_cWfmo>OJgojhIMoOaH5m_07D`o0000o3000lO2c<bo^8iJo7CU^mO<"
-            A$ = A$ + "EjfoaDYKokRU]mO84jeobHiKo7CU^mO<Ejfoa@IKo?1H2m_07D`o0000o3000l?000`o0000o_`?\lO99:foX`HIoS2SUm?:<Ffo"
-            A$ = A$ + "X`HIoS2SUm?:<FfoW\8Io3AGolO06@`o0000o3000l?000`o0000o3000l?000`o9dC:ocAPKmo74feoO@HGoo1QMmo74feoN<HG"
-            A$ = A$ + "og@FmlO06@`o0000o3000l?000`o0000o3000l?000`o0000o3000lo1kLboEX7EoK1OFm_5lIeoF`GEoW`EklO06@`o0000o300"
-            A$ = A$ + "0l?000`o0000o3000l?000`o0000o3000l?000`o0000oG@>Vlo3dmdo?DgCoO@Ehl?06@`o0000o3000l?000`o0000o3000l?0"
-            A$ = A$ + "00`o0000o3000l?000`o0000o3000l?000`o3Dc8oG`Cdl?05<`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o"
-            A$ = A$ + "0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000"
-            A$ = A$ + "o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o300"
-            A$ = A$ + "0l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o00`0o300:m?06`io0XPao3P28o?0"
-            A$ = A$ + "6hio000Co3003l?000`o0000o3000l?000`o0000o3000l?000`o00P9o3@2mn?0:\no0<@ko300Zo?00Pno0<0jo3P2Vo?09dko"
-            A$ = A$ + "000:o3000l?000`o0000o3000l?000`o000:o3P2Go?00hno00@ko300]o?00hno00@ko300[o?00Dno000ho3P2@o?00Tbo0000"
-            A$ = A$ + "o3000l?000`o00@1o3`13o?00hno000ko300\o?00`no000ko300\o?00`no000ko300Wo?00dmo0L`^o3005l?000`o0000o3`0"
-            A$ = A$ + "Bm?01hno00Pjo300Xo?00Pno000jo300Xo?00Pno000jo300Xo?00Pno00`ho3@0Io?030eo0000o3000l?030jo00`jo300To?0"
-            A$ = A$ + "0@no000io300To?00@no000io300To?00@no000io300To?00Tmo0<PTo3000l?000`o04`_o300Uo?000noC>YloWJZeoOZYFoo"
-            A$ = A$ + "YVJmoWJZeoOZYFooYVJmo?iTbo?000no00Pfo3@0[n?000`o0000o3000o?004no000goc=gjooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooo?gL[oo000go300Ho?00\jo0000o3000l?00Ljo000ho300HoOXQ2oojZ;mo[[^do_^jBoojZ;mo[[^do_^jBooQ6:lo300"
-            A$ = A$ + "Ho?00@mo000Uo3000l?000`o00PHo300Ro?00@mo000eo300Do?00@mo000eo300Do?00@mo000eo300Do?00@mo00`co300Fm?0"
-            A$ = A$ + "00`o0000o3007l?00hlo000fo300@o?000mo000do300@o?000mo000do300@o?000mo00`co300in?00H`o0000o3000l?000`o"
-            A$ = A$ + "000=o300Io?00@mo00@co300<o?00`lo000co300<o?00`lo00@co3007o?00dbo0000o3000l?000`o0000o3000l?00lbo000`"
-            A$ = A$ + "o300Fo?000mo00@co300<o?00dlo00Pco300cn?00Tbo0000o3000l?000`o0000o3000l?000`o0000o3003l?00`do00`So300"
-            A$ = A$ + "Zn?00Tjo00PRo3006m?00<`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?0"
-            A$ = A$ + "00`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o"
-            A$ = A$ + "0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000"
-            A$ = A$ + "o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o300"
-            A$ = A$ + "0l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?0"
-            A$ = A$ + "00`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o"
-            A$ = A$ + "0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o[ZYWn_ZVNjo0000o3000l?000`oZJjYo[ZYWn?000`o0000"
-            A$ = A$ + "o3000l_ZVNjoZJjYo3000l?000`o0000o[ZYWn_ZVNjoZJjYo[ZYWn?000`oZJjYo[ZYWn_ZVNjoZJjYo3000l_ZVNjoZJjYo[ZY"
-            A$ = A$ + "Wn_ZVNjo0000o3000l_ZVNjoZJjYo[ZYWn_ZVNjo0000o[ZYWn_ZVNjoZJjYo[ZYWn?000`oZJjYo[ZYWn_ZVNjoZJjYo3000l?0"
-            A$ = A$ + "00`o0000o[ZYWn_ZVNjo0000o3000l?000`oZJjYo[ZYWn?000`o0000o3000l_ZVNjoZJjYo3000l?000`o0000o3000l?000`o"
-            A$ = A$ + "0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000"
-            A$ = A$ + "o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o300"
-            A$ = A$ + "0l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?0"
-            A$ = A$ + "00`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o"
-            A$ = A$ + "0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o0000o3000l?000`o%%%0"
         CASE "commoncontrols.bmp"
             A$ = MKI$(16) + MKI$(176)
             A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_emfjo<ZE:"

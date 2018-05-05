@@ -310,12 +310,6 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
     
-    '__UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "PropertyUpdateStatus", 16, 16, 338, 10, __UI_GetID("ControlProperties"))
-    'Control(__UI_NewID).Stretch = True
-    'Control(__UI_NewID).BackStyle = __UI_Transparent
-    'Control(__UI_NewID).Align = __UI_Center
-    'Control(__UI_NewID).VAlign = __UI_Middle
-
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "CaptionTB", 230, 23, 129, 32, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
@@ -642,7 +636,6 @@ SUB __UI_AssignIDs
     AddPictureBox = __UI_GetID("AddPictureBox")
     AddFrame = __UI_GetID("AddFrame")
     AddToggleSwitch = __UI_GetID("AddToggleSwitch")
-    'PropertyUpdateStatus = __UI_GetID("PropertyUpdateStatus")
     Stretch = __UI_GetID("Stretch")
     HasBorder = __UI_GetID("HasBorder")
     ShowPercentage = __UI_GetID("ShowPercentage")
