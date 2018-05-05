@@ -1325,20 +1325,11 @@ SUB __UI_EventDispatcher
         ContainerOffsetTop = Control(Control(__UI_HoveringID).ParentID).Top
     END IF
 
-    $IF WIN THEN
-        'Alt+F4 - Windows
-        IF ((_KEYDOWN(100308) OR _KEYDOWN(100307)) AND __UI_KeyHit = -15872) OR __UI_ExitTriggered THEN
-            __UI_UnloadSignal = True
-            __UI_BeforeUnload
-            IF __UI_UnloadSignal THEN SYSTEM
-        END IF
-    $ELSE
-        IF __UI_ExitTriggered THEN
+    IF __UI_ExitTriggered THEN
         __UI_UnloadSignal = True
         __UI_BeforeUnload
         IF __UI_UnloadSignal THEN SYSTEM
-        END IF
-    $END IF
+    END IF
 
     'Have we had a resize?
     IF __UI_HasResized THEN __UI_FormResized: __UI_HasResized = False
