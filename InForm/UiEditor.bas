@@ -134,11 +134,12 @@ DIM SHARED MaskTB AS LONG
 DIM SHARED MaskLB AS LONG
 
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
-DIM SHARED PreviewFormID AS LONG, CurrentlyEditingProperty AS LONG
+DIM SHARED PreviewFormID AS LONG
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
+DIM SHARED RevertEdit AS _BYTE
 
 TYPE newInputBox
     ID AS LONG
@@ -961,15 +962,21 @@ SUB __UI_BeforeUpdateDisplay
         ShadeOfGreen = _RGB32(28, 150, 50)
         ShadeOfRed = _RGB32(233, 44, 0)
 
+        CONST PropertyUpdateDelay = .1
+
         IF FirstSelected > 0 THEN
-            IF __UI_Focus <> NameTB THEN
+            DIM ThisInputBox AS LONG
+            ThisInputBox = GetInputBoxFromID(__UI_Focus)
+
+            IF __UI_Focus <> NameTB OR (__UI_Focus = NameTB AND RevertEdit = True) THEN
                 Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name)
-            ELSE
+                IF (__UI_Focus = NameTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = NameTB THEN
                 IF PropertyFullySelected(NameTB) THEN
                     IF Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -977,14 +984,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> CaptionTB THEN
+            IF __UI_Focus <> CaptionTB OR (__UI_Focus = CaptionTB AND RevertEdit = True) THEN
                 Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
-            ELSE
+                IF (__UI_Focus = CaptionTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = CaptionTB THEN
                 IF PropertyFullySelected(CaptionTB) THEN
                     IF Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -992,19 +1000,20 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> TextTB THEN
+            IF __UI_Focus <> TextTB OR (__UI_Focus = TextTB AND RevertEdit = True) THEN
                 IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
                     Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
                 ELSE
                     Text(TextTB) = PreviewTexts(FirstSelected)
                 END IF
-            ELSE
+                IF (__UI_Focus = TextTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = TextTB THEN
                 IF PropertyFullySelected(TextTB) THEN
                     IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewCaptions(FirstSelected), CHR$(10), "\n", False, 0)) OR _
                        ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1012,14 +1021,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> MaskTB THEN
+            IF __UI_Focus <> MaskTB OR (__UI_Focus = MaskTB AND RevertEdit = True) THEN
                 Text(MaskTB) = PreviewMasks(FirstSelected)
-            ELSE
+                IF (__UI_Focus = MaskTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = MaskTB THEN
                 IF PropertyFullySelected(MaskTB) THEN
                     IF Text(MaskTB) = PreviewMasks(FirstSelected) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1027,14 +1037,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> TopTB THEN
+            IF __UI_Focus <> TopTB OR (__UI_Focus = TopTB AND RevertEdit = True) THEN
                 Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
-            ELSE
+                IF (__UI_Focus = TopTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = TopTB THEN
                 IF PropertyFullySelected(TopTB) THEN
                     IF Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1042,14 +1053,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> LeftTB THEN
+            IF __UI_Focus <> LeftTB OR (__UI_Focus = LeftTB AND RevertEdit = True) THEN
                 Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
-            ELSE
+                IF (__UI_Focus = LeftTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = LeftTB THEN
                 IF PropertyFullySelected(LeftTB) THEN
                     IF Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1057,14 +1069,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> WidthTB THEN
+            IF __UI_Focus <> WidthTB OR (__UI_Focus = WidthTB AND RevertEdit = True) THEN
                 Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
-            ELSE
+                IF (__UI_Focus = WidthTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = WidthTB THEN
                 IF PropertyFullySelected(WidthTB) THEN
                     IF Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1072,14 +1085,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> HeightTB THEN
+            IF __UI_Focus <> HeightTB OR (__UI_Focus = HeightTB AND RevertEdit = True) THEN
                 Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
-            ELSE
+                IF (__UI_Focus = HeightTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = HeightTB THEN
                 IF PropertyFullySelected(HeightTB) THEN
                     IF Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1087,18 +1101,19 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> FontTB THEN
+            IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
                 IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
                     Text(FontTB) = PreviewFonts(FirstSelected)
                 ELSE
                     Text(FontTB) = PreviewFonts(PreviewFormID)
                 END IF
-            ELSE
+                IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = FontTB THEN
                 IF PropertyFullySelected(FontTB) THEN
                     IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1106,14 +1121,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> TooltipTB THEN
+            IF __UI_Focus <> TooltipTB OR (__UI_Focus = TooltipTB AND RevertEdit = True) THEN
                 Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
-            ELSE
+                IF (__UI_Focus = TooltipTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = TooltipTB THEN
                 IF PropertyFullySelected(FontTB) THEN
                     IF Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1121,14 +1137,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> ValueTB THEN
+            IF __UI_Focus <> ValueTB OR (__UI_Focus = ValueTB AND RevertEdit = True) THEN
                 Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
-            ELSE
+                IF (__UI_Focus = ValueTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = ValueTB THEN
                 IF PropertyFullySelected(ValueTB) THEN
                     IF Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1136,14 +1153,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> MinTB THEN
+            IF __UI_Focus <> MinTB OR (__UI_Focus = MinTB AND RevertEdit = True) THEN
                 Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
-            ELSE
+                IF (__UI_Focus = MinTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = MinTB THEN
                 IF PropertyFullySelected(MinTB) THEN
                     IF Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1151,14 +1169,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> MaxTB THEN
+            IF __UI_Focus <> MaxTB OR (__UI_Focus = MaxTB AND RevertEdit = True) THEN
                 Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
-            ELSE
+                IF (__UI_Focus = MaxTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = MaxTB THEN
                 IF PropertyFullySelected(MaxTB) THEN
                     IF Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1166,14 +1185,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> IntervalTB THEN
+            IF __UI_Focus <> IntervalTB OR (__UI_Focus = IntervalTB AND RevertEdit = True) THEN
                 Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
-            ELSE
+                IF (__UI_Focus = IntervalTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = IntervalTB THEN
                 IF PropertyFullySelected(IntervalTB) THEN
                     IF Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1181,14 +1201,14 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> MinIntervalTB THEN
+            IF __UI_Focus <> MinIntervalTB OR (__UI_Focus = MinIntervalTB AND RevertEdit = True) THEN
                 Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval))
-            ELSE
+            ELSEIF __UI_Focus = MinIntervalTB THEN
                 IF PropertyFullySelected(MinIntervalTB) THEN
                     IF Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1196,14 +1216,15 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> PaddingTB THEN
+            IF __UI_Focus <> PaddingTB OR (__UI_Focus = PaddingTB AND RevertEdit = True) THEN
                 Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
-            ELSE
+                IF (__UI_Focus = PaddingTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = PaddingTB THEN
                 IF PropertyFullySelected(PaddingTB) THEN
                     IF Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN
                         Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited < .3 THEN
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
                             Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
                             Control(__UI_Focus).BorderColor = ShadeOfRed
@@ -1828,8 +1849,6 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
-    STATIC LastInputBoxEdited AS LONG, LastText$
-
     LastKeyPress = TIMER
     SELECT CASE id
         CASE RedValue, GreenValue, BlueValue
@@ -1849,13 +1868,6 @@ SUB __UI_KeyPress (id AS LONG)
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
             END IF
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
-            IF LastInputBoxEdited <> id THEN
-                LastInputBoxEdited = id
-                LastText$ = Text(id)
-            END IF
-
-            IF LastText$ <> Text(id) THEN CurrentlyEditingProperty = id ELSE CurrentlyEditingProperty = 0
-
             IF __UI_KeyHit = 13 THEN
                 IF __UI_Focus = id THEN
                     'Send the preview the new property value
@@ -1876,9 +1888,7 @@ SUB __UI_KeyPress (id AS LONG)
                                 b$ = _MK$(_FLOAT, VAL(Text(id)))
                         END SELECT
                         SendData b$, TempValue
-                        IF LEN(Text(id)) THEN
-                            SelectPropertyFully id
-                        END IF
+                        SelectPropertyFully id
                         InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
                     END IF
                 END IF
@@ -1886,10 +1896,7 @@ SUB __UI_KeyPress (id AS LONG)
             ELSEIF __UI_KeyHit = 32 THEN
                 IF id = NameTB THEN __UI_KeyHit = 0
             ELSEIF __UI_KeyHit = 27 THEN
-                IF LEN(Text(id)) > 0 AND LEN(LastText$) > 0 AND Text(id) <> LastText$ THEN
-                    Text(id) = LastText$
-                    SelectPropertyFully id
-                END IF
+                RevertEdit = True
             END IF
         CASE AlignOptions
             Edited = True
