@@ -165,7 +165,7 @@ DIM SHARED __UI_AltIsDown AS _BYTE, __UI_ShowHotKeys AS _BYTE, __UI_AltCombo$
 DIM SHARED __UI_LastMouseClick AS DOUBLE, __UI_MouseDownOnScrollbar AS DOUBLE
 DIM SHARED __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
 DIM SHARED __UI_DefaultButtonID AS LONG
-DIM SHARED __UI_KeyHit AS LONG
+DIM SHARED __UI_KeyHit AS LONG, __UI_KeepFocus AS _BYTE
 DIM SHARED __UI_Focus AS LONG, __UI_PreviousFocus AS LONG, __UI_KeyboardFocus AS _BYTE
 DIM SHARED __UI_HoveringID AS LONG, __UI_LastHoveringID AS LONG, __UI_BelowHoveringID AS LONG
 DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
@@ -1464,15 +1464,17 @@ SUB __UI_EventDispatcher
                 END IF
 
                 IF Control(__UI_FocusSearch).CanHaveFocus AND NOT Control(__UI_FocusSearch).Disabled THEN
-                    IF __UI_Focus <> __UI_FocusSearch THEN __UI_FocusOut __UI_Focus
-                    __UI_Focus = __UI_FocusSearch
-                    IF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline = False THEN
-                        'Single-line textbox contents are selected when first focused.
-                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                        Control(__UI_Focus).SelectionStart = 0
-                        Control(__UI_Focus).TextIsSelected = True
+                    IF __UI_Focus <> __UI_FocusSearch THEN __UI_KeepFocus = False: __UI_FocusOut __UI_Focus
+                    IF __UI_KeepFocus = False THEN
+                        __UI_Focus = __UI_FocusSearch
+                        IF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline = False THEN
+                            'Single-line textbox contents are selected when first focused.
+                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                            Control(__UI_Focus).SelectionStart = 0
+                            Control(__UI_Focus).TextIsSelected = True
+                        END IF
+                        __UI_FocusIn __UI_Focus
                     END IF
-                    __UI_FocusIn __UI_Focus
                     EXIT DO
                 END IF
             LOOP
@@ -1763,10 +1765,12 @@ SUB __UI_EventDispatcher
             ELSEIF Control(__UI_HoveringID).CanHaveFocus AND NOT Control(__UI_HoveringID).Disabled THEN
                 STATIC JustEnteredTextBox AS DOUBLE
                 IF __UI_Focus <> __UI_HoveringID THEN
-                    __UI_FocusOut __UI_Focus
-                    __UI_Focus = __UI_HoveringID
-                    IF Control(__UI_Focus).Type = __UI_Type_TextBox THEN JustEnteredTextBox = TIMER
-                    __UI_FocusIn __UI_Focus
+                    __UI_KeepFocus = False: __UI_FocusOut __UI_Focus
+                    IF __UI_KeepFocus = False THEN
+                        __UI_Focus = __UI_HoveringID
+                        IF Control(__UI_Focus).Type = __UI_Type_TextBox THEN JustEnteredTextBox = TIMER
+                        __UI_FocusIn __UI_Focus
+                    END IF
                 END IF
             ELSE
                 IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenu > 0 AND __UI_HoveringID = __UI_ParentMenu THEN
@@ -1777,8 +1781,8 @@ SUB __UI_EventDispatcher
                 ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuItem THEN
                     'Do nothing until mouseup (click)
                 ELSE
-                    IF __UI_Focus > 0 THEN __UI_FocusOut __UI_Focus
-                    __UI_Focus = 0
+                    IF __UI_Focus > 0 THEN __UI_KeepFocus = False: __UI_FocusOut __UI_Focus
+                    IF __UI_KeepFocus = False THEN __UI_Focus = 0
                 END IF
             END IF
             __UI_MouseIsDown = True
@@ -3372,10 +3376,12 @@ SUB __UI_EventDispatcher
                                     END IF
 
                                     IF Control(__UI_FocusSearch).CanHaveFocus AND NOT Control(__UI_FocusSearch).Disabled AND Control(__UI_Focus).Type = Control(__UI_FocusSearch).Type THEN
-                                        __UI_FocusOut __UI_Focus
-                                        __UI_Focus = __UI_FocusSearch
-                                        __UI_FocusIn __UI_Focus
-                                        IF Control(__UI_FocusSearch).Type = __UI_Type_RadioButton THEN SetRadioButtonValue __UI_Focus
+                                        __UI_KeepFocus = False: __UI_FocusOut __UI_Focus
+                                        IF __UI_KeepFocus = False THEN
+                                            __UI_Focus = __UI_FocusSearch
+                                            __UI_FocusIn __UI_Focus
+                                            IF Control(__UI_FocusSearch).Type = __UI_Type_RadioButton THEN SetRadioButtonValue __UI_Focus
+                                        END IF
                                         EXIT DO
                                     END IF
                                 LOOP
