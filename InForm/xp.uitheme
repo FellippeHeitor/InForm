@@ -1430,11 +1430,11 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             COLOR Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
-        __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+        __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), TempCaption$
         IF This.HotKey > 0 AND (__UI_AltIsDown OR Control(__UI_Focus).Type = __UI_Type_MenuBar OR __UI_DesignMode) THEN
             'Has "hot-key"
             Temp& = __UI_PrintWidth(CHR$(This.HotKey))
-            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
+            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
         END IF
 
         IF __UI_DesignMode THEN
@@ -1443,7 +1443,7 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 COLOR Darken(Control(__UI_FormID).BackColor, 80)
                 _DEST Control(__UI_FormID).Canvas
                 _FONT (This.Font)
-                __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), "Add new"
+                __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), "Add new"
             END IF
         END IF
         '---

@@ -203,7 +203,7 @@ DIM SHARED __UI_SnappedByProximityX AS _BYTE, __UI_SnappedByProximityY AS _BYTE
 DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDistanceFromForm AS INTEGER
-DIM SHARED __UI_FrameRate AS SINGLE
+DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Offset AS INTEGER
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -229,6 +229,8 @@ __UI_Type(18).Name = "ToggleSwitch"
 CONST True = -1, False = 0
 __UI_SnapDistance = 5
 __UI_SnapDistanceFromForm = 10
+__UI_Font8Offset = 5
+__UI_Font16Offset = 3
 
 __UI_ThemeSetup
 __UI_InternalMenus
@@ -247,11 +249,7 @@ RESUME NEXT
 
 '---------------------------------------------------------------------------------
 FUNCTION uspacing&
-    IF _FONT <> 8 THEN
-        uspacing& = falcon_uspacing&
-    ELSE
-        uspacing& = falcon_uspacing& + 3
-    END IF
+    uspacing& = uheight + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -670,8 +668,8 @@ SUB __UI_ProcessInput
             IF __UI_HasMenuBar = True THEN
                 'Add menubar div to main form's canvas
                 _FONT Control(__UI_FormID).Font
-                LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-                LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+                LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+                LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
                 __UI_RefreshMenuBar
             END IF
             _DEST 0
@@ -695,7 +693,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_UpdateDisplay
-    STATIC GridDrawn AS _BYTE, ActiveTipPanel AS LONG
+    STATIC ActiveTipPanel AS LONG
     DIM i AS LONG, TempCaption$, TempColor~&, PrevDest AS LONG, TempParentID AS LONG
     DIM CaptionIndent AS INTEGER, OverlayisVisible AS _BYTE, OverlayReset AS _BYTE
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
@@ -733,9 +731,7 @@ SUB __UI_UpdateDisplay
 
     _DEST 0
 
-    IF (GridDrawn AND NOT __UI_IsDragging) OR (GridDrawn AND Control(__UI_DraggingID).ParentID > 0) OR __UI_ForceRedraw THEN
-        'Restore main window hardware bg
-        GridDrawn = False
+    IF __UI_ForceRedraw THEN 'Restore main window hardware bg
         'Free the hardware bg image:
         _FREEIMAGE Control(__UI_FormID).Canvas
         'Create a new software one:
@@ -746,8 +742,8 @@ SUB __UI_UpdateDisplay
         CLS
         IF __UI_HasMenuBar THEN
             _FONT Control(__UI_FormID).Font
-            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
         END IF
         _DEST 0
     END IF
@@ -4358,7 +4354,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
         END IF
 
         IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
-        Control(NextSlot).Height = uspacing& + 5
+        Control(NextSlot).Height = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5
 
         IF TempCanvas <> 0 THEN
             _DEST PrevDest
@@ -4374,8 +4370,8 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
             CLS
             IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
-            LINE (0, uspacing& + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, uspacing& + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
             _DEST 0
         END IF
     END IF
@@ -5368,7 +5364,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
         IF This.Type = __UI_Type_MenuBar THEN
             Control(__UI_ActiveMenu).Left = This.Left
-            Control(__UI_ActiveMenu).Top = uspacing& + 3
+            Control(__UI_ActiveMenu).Top = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
             __UI_ActiveMenuIsContextMenu = False
         ELSEIF This.Type = __UI_Type_ContextMenu THEN
             Control(__UI_ActiveMenu).Left = __UI_MouseLeft
@@ -5377,8 +5373,8 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         END IF
 
         'Calculate panel's width and position the menu items
-        ItemHeight = uspacing& + 3
-        Control(__UI_ActiveMenu).Height = uspacing& / 4
+        ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+        Control(__UI_ActiveMenu).Height = (((_FONT = 8) * -1) * 3 + falcon_uspacing&) / 4
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ParentID = This.ID AND NOT Control(i).Hidden THEN
                 TotalItems = TotalItems + 1
@@ -5400,7 +5396,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
             END IF
         NEXT
 
-        Control(__UI_ActiveMenu).Height = Control(__UI_ActiveMenu).Height + (uspacing& / 4)
+        Control(__UI_ActiveMenu).Height = Control(__UI_ActiveMenu).Height + (((((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + falcon_uspacing&) / 4)
 
         IF Control(__UI_ActiveMenu).Width = 0 THEN Control(__UI_ActiveMenu).Width = Control(__UI_FormID).Width / 4
 
