@@ -1678,7 +1678,7 @@ SUB __UI_OnLoad
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
 
-    Control(StatusBar).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 80)
+    Control(StatusBar).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
     'LoadFontList
 
     'Load toolbox images:
