@@ -901,6 +901,9 @@ SUB __UI_BeforeUpdateDisplay
         Control(EditMenuSetDefaultButton).Disabled = True
         SetCaption ControlProperties, "Control properties:"
 
+        Caption(AlignMenuAlignCenterV) = "Center Vertically (group)"
+        Caption(AlignMenuAlignCenterH) = "Center Horizontally (group)-"
+
         IF TotalSelected = 0 THEN
             FirstSelected = PreviewFormID
 
@@ -924,6 +927,8 @@ SUB __UI_BeforeUpdateDisplay
                 IF PreviewControls(FirstSelected).Type <> __UI_Type_MenuBar AND PreviewControls(FirstSelected).Type <> __UI_Type_MenuItem THEN
                     Control(AlignMenuAlignCenterV).Disabled = False
                     Control(AlignMenuAlignCenterH).Disabled = False
+                    Caption(AlignMenuAlignCenterV) = "Center Vertically"
+                    Caption(AlignMenuAlignCenterH) = "Center Horizontally-"
                 ELSE
                     Control(AlignMenuAlignCenterV).Disabled = True
                     Control(AlignMenuAlignCenterH).Disabled = True

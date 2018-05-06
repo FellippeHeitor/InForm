@@ -1567,6 +1567,8 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
+                        SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically"
+                        SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally-"
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
@@ -1608,6 +1610,8 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
+                    SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically (group)"
+                    SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally (group)-"
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
@@ -1623,6 +1627,8 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
+                    SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically (group)"
+                    SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally (group)-"
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = False
