@@ -140,6 +140,7 @@ DIM SHARED LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
+DIM SHARED ColorPreviewWord$
 
 TYPE newInputBox
     ID AS LONG
@@ -384,6 +385,8 @@ SUB __UI_Click (id AS LONG)
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
             Edited = True
+        CASE "COLORPREVIEW"
+            _CLIPBOARD$ = ColorPreviewWord$
         CASE "DISABLED"
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
@@ -1636,6 +1639,7 @@ SUB __UI_OnLoad
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
+    ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
 
     'LoadFontList
 
@@ -5924,23 +5928,26 @@ SUB SendSignal (Value AS INTEGER)
 END SUB
 
 SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
-    DIM PreviewWord$
     _DEST Control(ColorPreview).HelperCanvas
     _FONT Control(ColorPreview).Font
     IF Attribute = 5 THEN
         CLS , BackColor
         LINE (20, 20)-STEP(_WIDTH - 41, _HEIGHT - 41), ForeColor, B
         LINE (21, 21)-STEP(_WIDTH - 43, _HEIGHT - 43), ForeColor, B
+        ColorPreviewWord$ = "#" + MID$(HEX$(ForeColor), 3)
+        COLOR ForeColor, BackColor
+        _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), ColorPreviewWord$
     ELSE
         CLS , BackColor
         COLOR ForeColor, BackColor
         SELECT CASE Attribute
             CASE 1, 3
-                PreviewWord$ = "FG: #" + MID$(HEX$(ForeColor), 3)
+                ColorPreviewWord$ = "FG: #" + MID$(HEX$(ForeColor), 3)
             CASE 2, 4
-                PreviewWord$ = "BG: #" + MID$(HEX$(BackColor), 3)
+                ColorPreviewWord$ = "BG: #" + MID$(HEX$(BackColor), 3)
         END SELECT
-        _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(PreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), PreviewWord$
+        _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), ColorPreviewWord$
+        ColorPreviewWord$ = MID$(ColorPreviewWord$, 5)
     END IF
     _DEST 0
     Control(ColorPreview).Redraw = True 'Force update
