@@ -93,11 +93,11 @@ SUB AutoSizeLabel (this AS __UI_ControlTYPE)
     DIM tempFont AS LONG, tempCenter AS INTEGER
     tempFont = _FONT
     _FONT this.Font
-    IF this.WordWrap = False AND (this.Height = 23 OR this.Height = uheight) THEN
+    IF this.WordWrap = False AND (this.Height = 23 OR this.Height = uheight + 6) THEN
         this.Width = __UI_PrintWidth(Caption(this.ID))
-        IF this.Height <> uheight THEN
+        IF this.Height <> uheight + 6 THEN
             tempCenter = this.Top + this.Height / 2
-            this.Height = uheight
+            this.Height = uheight + 6
             this.Top = tempCenter - this.Height / 2
         END IF
         this.Redraw = True
