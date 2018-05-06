@@ -517,35 +517,30 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     DIM NewFontFile AS STRING
-                    DIM NewFontSize AS INTEGER, NewFontParameters AS STRING
+                    DIM NewFontSize AS INTEGER
                     DIM FindSep AS INTEGER, TotalSep AS INTEGER
 
                     'Parse b$ into Font data
-                    FindSep = INSTR(b$, "*")
+                    FindSep = INSTR(b$, ",")
                     IF FindSep THEN TotalSep = TotalSep + 1
                     NewFontFile = LEFT$(b$, FindSep - 1)
                     b$ = MID$(b$, FindSep + 1)
 
-                    FindSep = INSTR(b$, "*")
-                    IF FindSep THEN TotalSep = TotalSep + 1
-                    NewFontParameters = LEFT$(b$, FindSep - 1)
-                    b$ = MID$(b$, FindSep + 1)
-
                     NewFontSize = VAL(b$)
 
-                    IF TotalSep = 2 AND NewFontSize > 0 THEN
+                    IF TotalSep = 1 AND NewFontSize > 0 THEN
                         IF __UI_TotalSelectedControls > 0 THEN
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).ControlIsSelected THEN
-                                    Control(i).Font = SetFont(NewFontFile, NewFontSize, NewFontParameters)
+                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
                                 END IF
                             NEXT
                         ELSE
-                            Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize, NewFontParameters)
+                            Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize)
                             DIM MustRedrawMenus AS _BYTE
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                                    Control(i).Font = SetFont(NewFontFile, NewFontSize, NewFontParameters)
+                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
                                     MustRedrawMenus = True
                                 END IF
                             NEXT
@@ -1069,20 +1064,17 @@ SUB LoadPreview
                         IF LogFileLoad THEN PRINT #LogFileNum, "FONT:";
                         DIM FontSetup$, FindSep AS INTEGER
                         DIM NewFontName AS STRING, NewFontFile AS STRING
-                        DIM NewFontSize AS INTEGER, NewFontAttributes AS STRING
+                        DIM NewFontSize AS INTEGER
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
                         IF LogFileLoad THEN PRINT #LogFileNum, FontSetup$
 
-                        FindSep = INSTR(FontSetup$, "*")
+                        FindSep = INSTR(FontSetup$, ",")
                         NewFontFile = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
-
-                        FindSep = INSTR(FontSetup$, "*")
-                        NewFontAttributes = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
                         NewFontSize = VAL(FontSetup$)
 
-                        Control(TempValue).Font = SetFont(NewFontFile, NewFontSize, NewFontAttributes)
+                        Control(TempValue).Font = SetFont(NewFontFile, NewFontSize)
                     CASE -6 'ForeColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         Control(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
@@ -1330,13 +1322,12 @@ SUB LoadPreviewText
                             Control(TempValue).Stretch = (DummyText$ = "True")
                         CASE "Font"
                             DIM NewFontFile AS STRING
-                            DIM NewFontSize AS INTEGER, NewFontAttributes AS STRING
+                            DIM NewFontSize AS INTEGER
 
                             IF LEFT$(DummyText$, 8) = "SetFont(" THEN
                                 NewFontFile = nextParameter(DummyText$)
                                 NewFontSize = VAL(nextParameter(DummyText$))
-                                NewFontAttributes = nextParameter(DummyText$)
-                                Control(TempValue).Font = SetFont(NewFontFile, NewFontSize, NewFontAttributes)
+                                Control(TempValue).Font = SetFont(NewFontFile, NewFontSize)
                             END IF
                         CASE "ForeColor"
                             IF LEFT$(DummyText$, 6) = "_RGB32" THEN
@@ -1633,12 +1624,12 @@ SUB SavePreview
                 IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                     'Internal fonts
                     SaveInternalFont:
-                    FontSetup$ = "**" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
+                    FontSetup$ = "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 ELSE
                     SaveExternalFont:
-                    FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "*" + Caption(__UI_GetFontID(Control(i).Font)) + "*" + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
+                    FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
                     PUT #BinFileNum, , b$
                 END IF

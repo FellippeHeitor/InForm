@@ -6196,19 +6196,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 'Fonts
                 IF LEN(PreviewFonts(i)) > 0 THEN
-                    DIM NewFontParameters AS STRING
                     FontSetup$ = PreviewFonts(i)
 
                     'Parse FontSetup$ into Font variables
-                    FindSep = INSTR(FontSetup$, "*")
+                    FindSep = INSTR(FontSetup$, ",")
                     NewFontFile = LEFT$(FontSetup$, FindSep - 1)
                     FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
-                    FindSep = INSTR(FontSetup$, "*")
-                    NewFontParameters = LEFT$(FontSetup$, FindSep - 1)
-                    FontSetup$ = MID$(FontSetup$, FindSep + 1)
-
-                    FontSetup$ = "SetFont(" + CHR$(34) + NewFontFile + CHR$(34) + ", " + FontSetup$ + ", " + CHR$(34) + NewFontParameters + CHR$(34) + ")"
+                    FontSetup$ = "SetFont(" + CHR$(34) + NewFontFile + CHR$(34) + ", " + FontSetup$ + ")"
                     PRINT #TextFileNum, "    Control(__UI_NewID).Font = " + FontSetup$
                 END IF
                 'Colors are saved only if they differ from the theme's defaults
@@ -6351,7 +6346,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
                 CASE 11
                     PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
-                    PRINT #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit"
+                    PRINT #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit."
                     PRINT #TextFileNum, "    'You can change it and even cancel it by making it = 0"
                 CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
                 CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"

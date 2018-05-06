@@ -259,7 +259,7 @@ SUB __UI_InternalMenus
     'Internal "design mode" context menu. -------------------------------------------
     DIM __UI_NewID AS LONG
     __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_PreviewMenu", 0, 0, 0, 0, 0)
-    Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf",12,"")
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     'Hotkeys used:
     'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Z
@@ -353,7 +353,7 @@ SUB __UI_Init
     _TITLE "InForm"
     IF Control(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
 
-    IF Control(__UI_FormID).Font = 0 THEN Control(__UI_FormID).Font = SetFont("", 8, "")
+    IF Control(__UI_FormID).Font = 0 THEN Control(__UI_FormID).Font = SetFont("", 8)
 
     IF Caption(__UI_FormID) = "" THEN Caption(__UI_FormID) = RTRIM$(Control(__UI_FormID).Name)
 
@@ -4159,8 +4159,8 @@ FUNCTION __UI_GetFontID (FontHandle&)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontAttributes AS STRING)
-    DIM NextSlot AS LONG, i AS LONG, Temp$, NewFontAttributes AS STRING
+FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER)
+    DIM NextSlot AS LONG, i AS LONG, Temp$
     DIM NewFontFile AS STRING, PassedFontFile AS STRING, FindSep AS LONG
     DIM TotalPassedFonts AS LONG
     REDIM PassedFonts(10) AS STRING
@@ -4185,7 +4185,7 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontA
         'If the passed font is already loaded, we'll just return its handle
         FOR NextSlot = 1 TO UBOUND(Control)
             IF Control(NextSlot).Type = __UI_Type_Font THEN
-                IF (UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize AND UCASE$(Caption(NextSlot)) = UCASE$(NewFontAttributes) THEN
+                IF (UCASE$(ToolTip(NextSlot)) = UCASE$(__NewFontFile)) AND Control(NextSlot).Max = NewFontSize THEN
                     SetFont& = Control(NextSlot).Value
                     EXIT FUNCTION
                 END IF
@@ -4246,34 +4246,10 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER, TempNewFontA
         END IF
         SetFont& = Control(NextSlot).Value
     ELSE
-        'Parse attributes
-        IF INSTR(UCASE$(TempNewFontAttributes), "MONOSPACE") THEN NewFontAttributes = "MONOSPACE"
-        IF INSTR(UCASE$(TempNewFontAttributes), "BOLD") THEN
-            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
-            NewFontAttributes = NewFontAttributes + "BOLD"
-        END IF
-        IF INSTR(UCASE$(TempNewFontAttributes), "ITALIC") THEN
-            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
-            NewFontAttributes = NewFontAttributes + "ITALIC"
-        END IF
-        IF INSTR(UCASE$(TempNewFontAttributes), "UNDERLINE") THEN
-            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
-            NewFontAttributes = NewFontAttributes + "UNDERLINE"
-        END IF
-        IF INSTR(UCASE$(TempNewFontAttributes), "UNICODE") THEN
-            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
-            NewFontAttributes = NewFontAttributes + "UNICODE"
-        END IF
-        IF INSTR(UCASE$(TempNewFontAttributes), "DONTBLEND") THEN
-            IF LEN(NewFontAttributes) > 0 THEN NewFontAttributes = NewFontAttributes + ","
-            NewFontAttributes = NewFontAttributes + "DONTBLEND"
-        END IF
-
-        Control(NextSlot).Value = _LOADFONT(NewFontFile, NewFontSize, NewFontAttributes)
+        Control(NextSlot).Value = _LOADFONT(NewFontFile, NewFontSize)
         Control(NextSlot).Max = NewFontSize
         Text(NextSlot) = NewFontFile
         ToolTip(NextSlot) = __NewFontFile 'save the original string passed
-        Caption(NextSlot) = UCASE$(NewFontAttributes)
 
         SetFont& = Control(NextSlot).Value
 
