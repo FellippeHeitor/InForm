@@ -4,6 +4,7 @@ $EXEICON:'.\resources\InForm.ico'
 
 'Controls
 DIM SHARED UiEditor AS LONG
+DIM SHARED StatusBar AS LONG
 DIM SHARED FileMenu AS LONG
 DIM SHARED EditMenu AS LONG
 DIM SHARED ViewMenu AS LONG
@@ -147,6 +148,7 @@ TYPE newInputBox
     LabelID AS LONG
     Signal AS INTEGER
     LastEdited AS SINGLE
+    Sent AS _BYTE
 END TYPE
 
 CONST OffsetEditorPID = 1
@@ -180,6 +182,7 @@ REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
+REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
 'DIM SHARED FontList.Names AS STRING
@@ -466,6 +469,7 @@ SUB __UI_Click (id AS LONG)
             SYSTEM
         CASE "EDITMENUZORDERING"
             'Fill the list:
+            Caption(StatusBar) = "Select controls and use the up/down arrow buttons to edit z-ordering..."
             DIM j AS LONG, i AS LONG
             STATIC Moving AS _BYTE
             REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
@@ -485,6 +489,7 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
         CASE "CLOSEZORDERINGBT"
+            Caption(StatusBar) = "Ready."
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(ZOrdering).Left = -600: Control(ZOrdering).Top = -600
             __UI_Focus = 0
@@ -541,6 +546,7 @@ SUB __UI_Click (id AS LONG)
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
             Control(OpenFrame).Left = 68: Control(OpenFrame).Top = 122
             OpenDialogOpen = True
+            Caption(StatusBar) = "Select a form file to load..."
             __UI_Focus = FileNameTextBox
             IF LEN(Text(FileNameTextBox)) > 0 THEN
                 Control(FileNameTextBox).SelectionStart = 0
@@ -553,6 +559,7 @@ SUB __UI_Click (id AS LONG)
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
             OpenDialogOpen = False
+            Caption(StatusBar) = "Ready."
             'Show the preview
             SendSignal -3
 
@@ -584,6 +591,7 @@ SUB __UI_Click (id AS LONG)
                     Control(DirList).Value = 0
                     Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
                     OpenDialogOpen = False
+                    Caption(StatusBar) = "Ready."
                     __UI_Focus = 0
                 ELSE
                     Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
@@ -649,16 +657,38 @@ SUB __UI_MouseLeave (id AS LONG)
 END SUB
 
 SUB __UI_FocusIn (id AS LONG)
-    IF id = FileNameTextBox AND OpenDialogOpen = False THEN __UI_Focus = AddButton
-    IF id = CloseZOrderingBT AND ZOrderingDialogOpen = False THEN __UI_Focus = BlueValue
+    SELECT CASE id
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+            DIM ThisInputBox AS LONG
+            ThisInputBox = GetInputBoxFromID(id)
+            InputBoxText(ThisInputBox) = Text(id)
+            InputBox(ThisInputBox).Sent = False
+            Caption(StatusBar) = "Editing property"
+        CASE FileNameTextBox
+            IF OpenDialogOpen = False THEN __UI_Focus = AddButton
+        CASE CloseZOrderingBT
+            IF ZOrderingDialogOpen = False THEN __UI_Focus = BlueValue
+    END SELECT
 END SUB
 
 SUB __UI_FocusOut (id AS LONG)
+    SELECT CASE id
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+            DIM ThisInputBox AS LONG
+            ThisInputBox = GetInputBoxFromID(id)
+            IF InputBoxText(ThisInputBox) <> Text(id) AND InputBox(ThisInputBox).Sent = False THEN
+                __UI_KeepFocus = True
+                Caption(StatusBar) = "Hit ENTER to confirm new property value or ESC to cancel changes..."
+            ELSE
+                Caption(StatusBar) = "Ready."
+            END IF
+    END SELECT
 END SUB
 
 SUB __UI_MouseDown (id AS LONG)
     SELECT CASE id
         CASE Red, Green, Blue
+            Caption(StatusBar) = "Color picker active. Release to apply the new values..."
             DIM TempID AS LONG
             SELECT CASE Control(ColorPropertiesList).Value
                 CASE 1
@@ -690,6 +720,7 @@ SUB __UI_MouseUp (id AS LONG)
         CASE Red, Green, Blue
             'Compose a new color and send it to the preview
             SendNewRGB
+            Caption(StatusBar) = "Color changed."
             Edited = True
     END SELECT
 END SUB
@@ -1642,10 +1673,12 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
+    REDIM InputBoxText(1 TO i) AS STRING
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
 
+    Control(StatusBar).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 80)
     'LoadFontList
 
     'Load toolbox images:
@@ -1872,6 +1905,8 @@ SUB __UI_OnLoad
 
     TIMER(CheckPreviewTimer) ON
 
+    __UI_RefreshMenuBar
+
     EXIT SUB
     UiEditorPreviewNotFound:
     i = MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", MsgBox_OkOnly + MsgBox_Critical)
@@ -1913,6 +1948,7 @@ SUB __UI_KeyPress (id AS LONG)
                 SendNewRGB
                 SelectPropertyFully id
             END IF
+            Caption(StatusBar) = "Color changed."
         CASE FileNameTextBox
             IF OpenDialogOpen THEN
                 IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
@@ -1940,13 +1976,19 @@ SUB __UI_KeyPress (id AS LONG)
                         SendData b$, TempValue
                         SelectPropertyFully id
                         InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
+                        InputBox(GetInputBoxFromID(id)).Sent = True
+                        Caption(StatusBar) = "Ready."
                     END IF
                 END IF
                 Edited = True
             ELSEIF __UI_KeyHit = 32 THEN
-                IF id = NameTB THEN __UI_KeyHit = 0
+                IF id = NameTB THEN
+                    __UI_KeyHit = 0
+                    Caption(StatusBar) = "Control names cannot contain spaces"
+                END IF
             ELSEIF __UI_KeyHit = 27 THEN
                 RevertEdit = True
+                Caption(StatusBar) = "Previous property value restored."
             END IF
         CASE AlignOptions
             Edited = True
@@ -6341,7 +6383,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
                 CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
                 CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
-                CASE 8: PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
+                CASE 8
+                    PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
+                    PRINT #TextFileNum, "    'This event occurs right before a control loses focus."
+                    PRINT #TextFileNum, "    'To prevent a control from losing focus, set __UI_KeepFocus = True below."
                 CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
                 CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
                 CASE 11

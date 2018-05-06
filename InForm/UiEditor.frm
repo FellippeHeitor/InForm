@@ -6,9 +6,14 @@ SUB __UI_LoadForm
 
     DIM __UI_NewID AS LONG
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 555, 0, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 578, 0, 0, 0)
     SetCaption __UI_NewID, UiEditorTitle$
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "StatusBar", 600, 23, 0, 555, 0)
+    SetCaption __UI_NewID, "Ready."
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuBar, "FileMenu", 34, 22, 8, 0, 0)
     SetCaption __UI_NewID, "&File"
@@ -580,6 +585,7 @@ END SUB
 
 SUB __UI_AssignIDs
     UiEditor = __UI_GetID("UiEditor")
+    StatusBar = __UI_GetID("StatusBar")
     FileMenu = __UI_GetID("FileMenu")
     EditMenu = __UI_GetID("EditMenu")
     ViewMenu = __UI_GetID("ViewMenu")
