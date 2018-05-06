@@ -474,7 +474,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "RedValue", 36, 23, 530, 20, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).BorderColor = _RGB32(255, 0, 0)
-    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).HasBorder = 1
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
     Control(__UI_NewID).Min = 0
@@ -487,7 +487,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "GreenValue", 36, 23, 530, 70, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).BorderColor = _RGB32(0, 180, 0)
-    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).HasBorder = 1
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
     Control(__UI_NewID).Min = 0
@@ -500,7 +500,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "BlueValue", 36, 23, 530, 117, __UI_GetID("ColorMixer"))
     Control(__UI_NewID).BorderColor = _RGB32(0, 0, 255)
-    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).HasBorder = 1
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
     Control(__UI_NewID).Min = 0
