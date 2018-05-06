@@ -139,7 +139,7 @@ DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameContr
 DIM SHARED LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
-DIM SHARED RevertEdit AS _BYTE
+DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 
 TYPE newInputBox
     ID AS LONG
@@ -654,6 +654,32 @@ SUB __UI_FocusOut (id AS LONG)
 END SUB
 
 SUB __UI_MouseDown (id AS LONG)
+    SELECT CASE id
+        CASE Red, Green, Blue
+            DIM TempID AS LONG
+            SELECT CASE Control(ColorPropertiesList).Value
+                CASE 1
+                    OldColor = PreviewControls(FirstSelected).ForeColor
+                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).ForeColor
+                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 1)
+                CASE 2
+                    OldColor = PreviewControls(FirstSelected).BackColor
+                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).BackColor
+                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 2)
+                CASE 3
+                    OldColor = PreviewControls(FirstSelected).SelectedForeColor
+                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).SelectedForeColor
+                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 3)
+                CASE 4
+                    OldColor = PreviewControls(FirstSelected).SelectedBackColor
+                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).SelectedBackColor
+                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 4)
+                CASE 5
+                    OldColor = PreviewControls(FirstSelected).BorderColor
+                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).BorderColor
+                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 5)
+            END SELECT
+    END SELECT
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
@@ -1852,15 +1878,27 @@ SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
     SELECT CASE id
         CASE RedValue, GreenValue, BlueValue
+            DIM TempID AS LONG
             IF __UI_KeyHit = 18432 THEN
                 IF VAL(Text(id)) < 255 THEN
                     Text(id) = LTRIM$(STR$(VAL(Text(id)) + 1))
                 END IF
                 SelectPropertyFully id
+                TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
+                Control(TempID).Value = VAL(Text(id))
+                SendNewRGB
             ELSEIF __UI_KeyHit = 20480 THEN
                 IF VAL(Text(id)) > 0 THEN
                     Text(id) = LTRIM$(STR$(VAL(Text(id)) - 1))
                 END IF
+                SelectPropertyFully id
+                TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
+                Control(TempID).Value = VAL(Text(id))
+                SendNewRGB
+            ELSEIF __UI_KeyHit = 13 THEN
+                TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
+                Control(TempID).Value = VAL(Text(id))
+                SendNewRGB
                 SelectPropertyFully id
             END IF
         CASE FileNameTextBox
@@ -1920,13 +1958,11 @@ FUNCTION GetInputBoxFromID& (id AS LONG)
 END FUNCTION
 
 SUB __UI_TextChanged (id AS LONG)
-    SELECT EVERYCASE id
+    SELECT CASE id
         CASE RedValue, GreenValue, BlueValue
-            IF VAL(Text(id)) > 255 THEN Text(id) = "255"
             DIM TempID AS LONG
             TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
             Control(TempID).Value = VAL(Text(id))
-            SendNewRGB
     END SELECT
 END SUB
 
@@ -1946,10 +1982,10 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE Blue
             Text(BlueValue) = LTRIM$(STR$(INT(Control(Blue).Value)))
         CASE Red, Green, Blue
-            'Compose a new color and send it to the preview
+            'Compose a new color and preview it
             DIM NewColor AS _UNSIGNED LONG
             NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
-            QuickColorPreview NewColor
+            IF __UI_MouseDownOnID = id THEN QuickColorPreview NewColor
         CASE ControlList
             Control(UpBT).Disabled = False
             Control(DownBT).Disabled = False
@@ -5888,24 +5924,27 @@ SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackCol
     DIM PreviewWord$
     _DEST Control(ColorPreview).HelperCanvas
     _FONT Control(ColorPreview).Font
-    PreviewWord$ = "Preview"
-    IF Control(ColorPropertiesList).Value = 5 THEN
+    IF Attribute = 5 THEN
         CLS , BackColor
         LINE (20, 20)-STEP(_WIDTH - 41, _HEIGHT - 41), ForeColor, B
+        LINE (21, 21)-STEP(_WIDTH - 43, _HEIGHT - 43), ForeColor, B
     ELSE
         CLS , BackColor
         COLOR ForeColor, BackColor
+        PreviewWord$ = "Preview"
         _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(PreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), PreviewWord$
     END IF
     _DEST 0
-    Control(ColorPreview).PreviousValue = 0 'Force update
+    Control(ColorPreview).Redraw = True 'Force update
 END SUB
 
 SUB QuickColorPreview (ThisColor AS _UNSIGNED LONG)
     _DEST Control(ColorPreview).HelperCanvas
-    CLS , ThisColor
+    CLS , __UI_DefaultColor(__UI_Type_Form, 2)
+    LINE (0, 0)-STEP(_WIDTH, _HEIGHT / 2), ThisColor, BF
+    LINE (0, _HEIGHT / 2)-STEP(_WIDTH, _HEIGHT / 2), OldColor, BF
     _DEST 0
-    Control(ColorPreview).PreviousValue = 0 'Force update
+    Control(ColorPreview).Redraw = True 'Force update
 END SUB
 
 SUB CheckPreview
