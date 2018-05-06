@@ -338,6 +338,8 @@ SUB __UI_BeforeUpdateDisplay
             CLOSE #FileToLoad
 
             LoadPreview
+            LoadDefaultFonts
+
             UndoPointer = 0
             TotalUndoImages = 0
             SendSignal -7 'New form created
@@ -912,7 +914,7 @@ SUB __UI_FormResized
 END SUB
 
 SUB __UI_OnLoad
-
+    LoadDefaultFonts
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
@@ -2049,3 +2051,21 @@ SUB RestoreRedoImage
     LoadPreview
 END SUB
 
+
+SUB LoadDefaultFonts
+    IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
+        Control(__UI_FormID).Font = SetFont("segoeui.ttf", 12)
+    END IF
+    IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
+        Control(__UI_FormID).Font = SetFont("arial.ttf", 12)
+    END IF
+    IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
+        Control(__UI_FormID).Font = SetFont("cour.ttf", 12)
+    END IF
+    IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
+        Control(__UI_FormID).Font = SetFont("/Library/Fonts/Arial.ttf", 12)
+    END IF
+    IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
+        Control(__UI_FormID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12)
+    END IF
+END SUB
