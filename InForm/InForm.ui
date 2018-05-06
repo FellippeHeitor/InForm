@@ -3572,7 +3572,7 @@ SUB __UI_EventDispatcher
 
                                 IF Control(__UI_Focus).NumericOnly THEN
                                     IF __UI_KeyHit = 45 THEN
-                                        IF Control(__UI_Focus).Cursor > 0 OR INSTR(Text(__UI_Focus), "-") > 0 THEN
+                                        IF (Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).TextIsSelected = False) OR INSTR(Text(__UI_Focus), "-") > 0 THEN
                                             __UI_KeyHit = 0
                                         END IF
                                     ELSEIF __UI_KeyHit = 46 THEN
