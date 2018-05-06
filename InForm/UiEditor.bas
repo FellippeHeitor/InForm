@@ -1541,10 +1541,13 @@ SUB __UI_BeforeUpdateDisplay
         IF Control(ColorPreview).HelperCanvas = 0 THEN
             Control(ColorPreview).HelperCanvas = _NEWIMAGE(Control(ColorPreview).Width, Control(ColorPreview).Height, 32)
         END IF
+
         STATIC PrevPreviewForeColor AS _UNSIGNED LONG, PrevPreviewBackColor AS _UNSIGNED LONG
-        IF PrevPreviewForeColor <> ThisColor OR PrevPreviewBackColor <> ThisBackColor THEN
+        STATIC PrevColorPropertiesListValue AS _BYTE
+        IF PrevPreviewForeColor <> ThisColor OR PrevPreviewBackColor <> ThisBackColor OR PrevColorPropertiesListValue <> Control(ColorPropertiesList).Value THEN
             PrevPreviewForeColor = ThisColor
             PrevPreviewBackColor = ThisBackColor
+            PrevColorPropertiesListValue = Control(ColorPropertiesList).Value
             UpdateColorPreview Control(ColorPropertiesList).Value, ThisColor, ThisBackColor
         END IF
 
@@ -5931,7 +5934,12 @@ SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackCol
     ELSE
         CLS , BackColor
         COLOR ForeColor, BackColor
-        PreviewWord$ = "Preview"
+        SELECT CASE Attribute
+            CASE 1, 3
+                PreviewWord$ = "FG: #" + MID$(HEX$(ForeColor), 3)
+            CASE 2, 4
+                PreviewWord$ = "BG: #" + MID$(HEX$(BackColor), 3)
+        END SELECT
         _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(PreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), PreviewWord$
     END IF
     _DEST 0
