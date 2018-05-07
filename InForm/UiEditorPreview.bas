@@ -93,11 +93,11 @@ SUB AutoSizeLabel (this AS __UI_ControlTYPE)
     DIM tempFont AS LONG, tempCenter AS INTEGER
     tempFont = _FONT
     _FONT this.Font
-    IF this.WordWrap = False AND (this.Height = 23 OR this.Height = uheight + 6) THEN
+    IF this.WordWrap = False AND (this.Height = 23 OR this.Height = uspacing + 6) THEN
         this.Width = __UI_PrintWidth(Caption(this.ID))
-        IF this.Height <> uheight + 6 THEN
+        IF this.Height <> uspacing + 6 THEN
             tempCenter = this.Top + this.Height / 2
-            this.Height = uheight + 6
+            this.Height = uspacing + 6
             this.Top = tempCenter - this.Height / 2
         END IF
         this.Redraw = True
@@ -535,6 +535,18 @@ SUB __UI_BeforeUpdateDisplay
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).ControlIsSelected THEN
                                     Control(i).Font = SetFont(NewFontFile, NewFontSize)
+                                    DIM tempFont AS LONG
+                                    tempFont = _FONT
+                                    _FONT Control(i).Font
+                                    SELECT CASE Control(i).Type
+                                        CASE __UI_Type_Label
+                                            IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6: AutoSizeLabel Control(i)
+                                        CASE __UI_Type_TextBox
+                                            IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6
+                                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
+                                            Control(i).Height = uspacing + 6
+                                    END SELECT
+                                    _FONT tempFont
                                 END IF
                             NEXT
                         ELSE
