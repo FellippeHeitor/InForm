@@ -655,11 +655,26 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
         _PUTIMAGE (This.Width - 4, 10), ControlImage_Track, , (3, 0)-STEP(1, 4)
 
         'Interval ticks
+        DIM IntervalSize AS INTEGER, MinIntervalSize AS INTEGER
+        MinIntervalSize = 2
+
         LINE (5, 30)-STEP(0, 3), This.BorderColor
         IF This.Interval = 0 THEN This.Interval = 1
+
+        IF This.MinInterval > This.Interval THEN
+            This.MinInterval = 0
+        ELSEIF This.MinInterval < This.Interval AND This.MinInterval > 0 THEN
+            FOR i = This.Min TO This.Max STEP This.MinInterval
+                LINE (__UI_MAP(i, This.Min, This.Max, 5, This.Width - 6), 30)-STEP(0, MinIntervalSize), This.BorderColor
+            NEXT i
+        ENDIF
+
+        IF This.MinInterval > 0 THEN IntervalSize = 5 ELSE IntervalSize = 2
+
         FOR i = This.Min TO This.Max STEP This.Interval
-            LINE (__UI_MAP(i, This.Min, This.Max, 5, This.Width - 6), 30)-STEP(0, 2), This.BorderColor
+            LINE (__UI_MAP(i, This.Min, This.Max, 5, This.Width - 6), 30)-STEP(0, IntervalSize), This.BorderColor
         NEXT i
+
         LINE (5 + (This.Width - SliderWidth), 30)-STEP(0, 3), This.BorderColor
 
         'Draw slider

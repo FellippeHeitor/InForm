@@ -797,6 +797,9 @@ SUB __UI_UpdateDisplay
                     __UI_DrawProgressBar Control(i), ControlState
                 CASE __UI_Type_TrackBar
                     'Track bars
+                    Control(i).Value = _ROUND(Control(i).Value)
+                    Control(i).Interval = _ROUND(Control(i).Interval)
+                    Control(i).MinInterval = _ROUND(Control(i).MinInterval)
                     __UI_StateHasChanged = False
                     __UI_DrawTrackBar Control(i), ControlState
                     IF __UI_StateHasChanged THEN __UI_ValueChanged i
@@ -3227,7 +3230,11 @@ SUB __UI_EventDispatcher
                         CASE 19200 'Left
                             IF Control(__UI_Focus).Value > Control(__UI_Focus).Min THEN
                                 IF __UI_CtrlIsDown THEN
-                                    Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).MinInterval
+                                    IF Control(__UI_Focus).MinInterval > 0 AND Control(__UI_Focus).MinInterval < Control(__UI_Focus).Interval THEN
+                                        Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).MinInterval
+                                    ELSE
+                                        Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).Interval
+                                    END IF
                                 ELSE
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).Interval
                                 END IF
@@ -4405,7 +4412,6 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     IF ControlType = __UI_Type_TrackBar THEN
         Control(NextSlot).Max = 10
         Control(NextSlot).Interval = 1
-        Control(NextSlot).MinInterval = 1
         Control(NextSlot).Height = 40
     END IF
 
