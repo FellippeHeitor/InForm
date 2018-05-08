@@ -34,6 +34,10 @@ CHDIR ".."
 
 CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL]5cno760cEfI_EFMYi2MdIf?Q9GJQaV;dAWIol2CY9VLQ9GN_HdK^AgL_4TLY56K^@7MVmCB^IdKbef;bEfL_EWLSEfL_hdKdmFC_ifK]8EIWE7KQ9W;dAWIo<fKe9W;dAWIZXB<b00o%%%0"
 
+'SavePreview parameters:
+CONST InDisk = 1
+CONST InClipboard = 2
+
 DIM i AS LONG
 DIM SHARED AlphaNumeric(255)
 FOR i = 48 TO 57: AlphaNumeric(i) = -1: NEXT
@@ -111,7 +115,7 @@ SUB __UI_BeforeUpdateDisplay
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
 
-    SavePreview
+    SavePreview InDisk
 
     b$ = MKL$(UiPreviewPID)
     SendData b$, OffsetPreviewPID
@@ -322,7 +326,7 @@ SUB __UI_BeforeUpdateDisplay
             IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
                 LoadPreviewText
             ELSE
-                LoadPreview
+                LoadPreview InDisk
             END IF
             UndoPointer = 0
             TotalUndoImages = 0
@@ -337,7 +341,7 @@ SUB __UI_BeforeUpdateDisplay
             PUT #FileToLoad, 1, a$
             CLOSE #FileToLoad
 
-            LoadPreview
+            LoadPreview InDisk
             LoadDefaultFonts
 
             UndoPointer = 0
@@ -905,7 +909,7 @@ SUB __UI_BeforeInit
         IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
             LoadPreviewText
         ELSE
-            LoadPreview
+            LoadPreview InDisk
         END IF
     END IF
 END SUB
@@ -937,6 +941,10 @@ SUB __UI_KeyPress (id AS LONG)
             RestoreRedoImage
         CASE 216
             SaveUndoImage
+        CASE 217 'Copy selected controls to clipboard
+            SavePreview InClipboard
+        CASE 218 'Restore selected controls from clipboard
+            LoadPreview InClipboard
     END SELECT
 END SUB
 
@@ -967,31 +975,52 @@ FUNCTION Unpack$ (PackedData$)
     Unpack$ = btemp$
 END FUNCTION
 
-SUB LoadPreview
+FUNCTION ReadSequential$ (Txt$, Bytes%)
+    ReadSequential$ = LEFT$(Txt$, Bytes%)
+    Txt$ = MID$(Txt$, Bytes% + 1)
+END FUNCTION
+
+SUB LoadPreview (Destination AS _BYTE)
     DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
     DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, TempValue AS LONG
-    DIM Dummy AS LONG
+    DIM Dummy AS LONG, Disk AS _BYTE, Clip$, FirstToBeSelected AS LONG
     DIM BinaryFileNum AS INTEGER, LogFileNum AS INTEGER
 
     CONST LogFileLoad = False
 
-    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") = 0 THEN
+    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") = 0 AND Destination = InDisk THEN
         EXIT SUB
-    ELSE
+    END IF
+
+    IF Destination = InDisk THEN
+        Disk = True
         BinaryFileNum = FREEFILE
         OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
+    END IF
 
-        LogFileNum = FREEFILE
-        IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #LogFileNum
+    LogFileNum = FREEFILE
+    IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #LogFileNum
+
+    IF Disk THEN
         b$ = SPACE$(7): GET #BinaryFileNum, 1, b$
-        IF b$ <> "InForm" + CHR$(1) THEN
-            GOTO LoadError
-            EXIT SUB
-        END IF
-        IF LogFileLoad THEN PRINT #LogFileNum, "FOUND INFORM+1"
-        __UI_AutoRefresh = False
+    ELSE
+        Clip$ = _CLIPBOARD$
+        Clip$ = Replace(Clip$, CHR$(250), CHR$(0), False, 0)
+        b$ = ReadSequential$(Clip$, 7)
+    END IF
+
+    IF b$ <> "InForm" + CHR$(1) THEN
+        GOTO LoadError
+        EXIT SUB
+    END IF
+
+    IF LogFileLoad THEN PRINT #LogFileNum, "FOUND INFORM+1"
+
+    __UI_AutoRefresh = False
+
+    IF Disk THEN
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
                 __UI_DestroyControl Control(i)
@@ -1009,230 +1038,265 @@ SUB LoadPreview
         REDIM ToolTip(1 TO CVL(b$)) AS STRING
         REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
         REDIM _PRESERVE Control(0 TO CVL(b$)) AS __UI_ControlTYPE
-        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL:" + STR$(CVI(b$))
-        IF CVI(b$) <> -1 THEN GOTO LoadError
-        DO
-            b$ = SPACE$(4): GET #BinaryFileNum, , b$
-            Dummy = CVL(b$)
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewType = CVI(b$)
-            IF LogFileLoad THEN PRINT #LogFileNum, "TYPE:" + STR$(CVI(b$))
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            b$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , b$
-            NewName = b$
-            IF LogFileLoad THEN PRINT #LogFileNum, "NAME:" + NewName
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewWidth = CVI(b$)
-            IF LogFileLoad THEN PRINT #LogFileNum, "WIDTH:" + STR$(CVI(b$))
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewHeight = CVI(b$)
-            IF LogFileLoad THEN PRINT #LogFileNum, "HEIGHT:" + STR$(CVI(b$))
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewLeft = CVI(b$)
-            IF LogFileLoad THEN PRINT #LogFileNum, "LEFT:" + STR$(CVI(b$))
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewTop = CVI(b$)
-            IF LogFileLoad THEN PRINT #LogFileNum, "TOP:" + STR$(CVI(b$))
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            IF CVI(b$) > 0 THEN
-                NewParentID = SPACE$(CVI(b$)): GET #BinaryFileNum, , NewParentID
-                IF LogFileLoad THEN PRINT #LogFileNum, "PARENT:" + NewParentID
-            ELSE
-                NewParentID = ""
-                IF LogFileLoad THEN PRINT #LogFileNum, "PARENT: ORPHAN/CONTAINER"
-            END IF
+    ELSE
+        FOR i = 1 TO UBOUND(Control)
+            Control(i).ControlIsSelected = False
+        NEXT
 
-            TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
-            IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
+        __UI_TotalSelectedControls = 0
+    END IF
 
-            DO 'read properties
-                b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                IF LogFileLoad THEN PRINT #LogFileNum, "PROPERTY:" + STR$(CVI(b$)) + " :";
-                SELECT CASE CVI(b$)
-                    CASE -2 'Caption
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        SetCaption TempValue, b$
-                        IF LogFileLoad THEN PRINT #LogFileNum, "CAPTION:" + Caption(TempValue)
-                    CASE -3 'Text
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        Text(TempValue) = b$
-                        IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
-                            LoadImage Control(TempValue), Text(TempValue)
-                        ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
-                            IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
-                            ExeIcon = IconPreview&(Text(TempValue))
-                            IF ExeIcon < -1 THEN
-                                _ICON ExeIcon
-                            END IF
+    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+    IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL:" + STR$(CVI(b$))
+    IF CVI(b$) <> -1 THEN GOTO LoadError
+    DO
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+        Dummy = CVL(b$)
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        NewType = CVI(b$)
+        IF LogFileLoad THEN PRINT #LogFileNum, "TYPE:" + STR$(CVI(b$))
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, CVI(b$)) ELSE b$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , b$
+        NewName = b$
+        IF LogFileLoad THEN PRINT #LogFileNum, "NAME:" + NewName
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        NewWidth = CVI(b$)
+        IF LogFileLoad THEN PRINT #LogFileNum, "WIDTH:" + STR$(CVI(b$))
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        NewHeight = CVI(b$)
+        IF LogFileLoad THEN PRINT #LogFileNum, "HEIGHT:" + STR$(CVI(b$))
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        NewLeft = CVI(b$)
+        IF NOT Disk THEN NewLeft = NewLeft + 20
+        IF LogFileLoad THEN PRINT #LogFileNum, "LEFT:" + STR$(CVI(b$))
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        NewTop = CVI(b$)
+        IF NOT Disk THEN NewTop = NewTop + 20
+        IF LogFileLoad THEN PRINT #LogFileNum, "TOP:" + STR$(CVI(b$))
+        IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+        IF CVI(b$) > 0 THEN
+            IF NOT Disk THEN NewParentID = ReadSequential$(Clip$, CVI(b$)) ELSE NewParentID = SPACE$(CVI(b$)): GET #BinaryFileNum, , NewParentID
+            IF LogFileLoad THEN PRINT #LogFileNum, "PARENT:" + NewParentID
+        ELSE
+            NewParentID = ""
+            IF LogFileLoad THEN PRINT #LogFileNum, "PARENT: ORPHAN/CONTAINER"
+        END IF
+
+        IF NOT Disk THEN
+            'Change control's name in case this form already has one with the same name
+            DIM TempName$, c$, OriginalIndex$
+            DO WHILE __UI_GetID(NewName) > 0
+                TempName$ = RTRIM$(NewName)
+                c$ = RIGHT$(TempName$, 1)
+                IF ASC(c$) >= 48 AND ASC(c$) <= 57 THEN
+                    'Update this control's name by the ID # assigned to it, if any
+                    OriginalIndex$ = c$
+                    TempName$ = LEFT$(TempName$, LEN(TempName$) - 1)
+                    DO
+                        c$ = RIGHT$(TempName$, 1)
+                        IF ASC(c$) >= 48 AND ASC(c$) <= 57 THEN
+                            OriginalIndex$ = c$ + OriginalIndex$
+                            TempName$ = LEFT$(TempName$, LEN(TempName$) - 1)
+                            IF LEN(TempName$) = 0 THEN EXIT DO
+                        ELSE
+                            EXIT DO
                         END IF
-                        IF LogFileLoad THEN PRINT #LogFileNum, "TEXT:" + Text(TempValue)
-                    CASE -4 'Stretch
-                        Control(TempValue).Stretch = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "STRETCH"
-                    CASE -5 'Font
-                        IF LogFileLoad THEN PRINT #LogFileNum, "FONT:";
-                        DIM FontSetup$, FindSep AS INTEGER
-                        DIM NewFontName AS STRING, NewFontFile AS STRING
-                        DIM NewFontSize AS INTEGER
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
-                        IF LogFileLoad THEN PRINT #LogFileNum, FontSetup$
-
-                        FindSep = INSTR(FontSetup$, ",")
-                        NewFontFile = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
-
-                        NewFontSize = VAL(FontSetup$)
-
-                        Control(TempValue).Font = SetFont(NewFontFile, NewFontSize)
-                    CASE -6 'ForeColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "FORECOLOR"
-                    CASE -7 'BackColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).BackColor = _CV(_UNSIGNED LONG, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "BACKCOLOR"
-                    CASE -8 'SelectedForeColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "SELECTEDFORECOLOR"
-                    CASE -9 'SelectedBackColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "SELECTEDBACKCOLOR"
-                    CASE -10 'BorderColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).BorderColor = _CV(_UNSIGNED LONG, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "BORDERCOLOR"
-                    CASE -11
-                        Control(TempValue).BackStyle = __UI_Transparent
-                        IF LogFileLoad THEN PRINT #LogFileNum, "BACKSTYLE:TRANSPARENT"
-                    CASE -12
-                        Control(TempValue).HasBorder = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "HASBORDER"
-                    CASE -13
-                        b$ = SPACE$(1): GET #BinaryFileNum, , b$
-                        Control(TempValue).Align = _CV(_BYTE, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "ALIGN="; Control(TempValue).Align
-                    CASE -14
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        Control(TempValue).Value = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "VALUE="; Control(TempValue).Value
-                    CASE -15
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        Control(TempValue).Min = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "MIN="; Control(TempValue).Min
-                    CASE -16
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        Control(TempValue).Max = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "MAX="; Control(TempValue).Max
-                    CASE -17
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        Control(TempValue).HotKey = CVI(b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "HOTKEY="; Control(TempValue).HotKey; "("; CHR$(Control(TempValue).HotKey); ")"
-                    CASE -18
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        Control(TempValue).HotKeyOffset = CVI(b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "HOTKEYOFFSET="; Control(TempValue).HotKeyOffset
-                    CASE -19
-                        Control(TempValue).ShowPercentage = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "SHOWPERCENTAGE"
-                    CASE -20
-                        Control(TempValue).CanHaveFocus = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "CANHAVEFOCUS"
-                    CASE -21
-                        Control(TempValue).Disabled = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "DISABLED"
-                    CASE -22
-                        Control(TempValue).Hidden = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "HIDDEN"
-                    CASE -23
-                        Control(TempValue).CenteredWindow = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "CENTEREDWINDOW"
-                    CASE -24 'Tips
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        ToolTip(TempValue) = b$
-                        IF LogFileLoad THEN PRINT #LogFileNum, "TIP: "; ToolTip(TempValue)
-                    CASE -25
-                        DIM ContextMenuName AS STRING
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        ContextMenuName = SPACE$(CVI(b$)): GET #BinaryFileNum, , ContextMenuName
-                        Control(TempValue).ContextMenuID = __UI_GetID(ContextMenuName)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "CONTEXTMENU:"; ContextMenuName
-                    CASE -26
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        Control(TempValue).Interval = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "INTERVAL="; Control(TempValue).Interval
-                    CASE -27
-                        Control(TempValue).WordWrap = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "WORDWRAP"
-                    CASE -28
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).TransparentColor = _CV(_UNSIGNED LONG, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "TRANSPARENTCOLOR"
-                        __UI_ClearColor Control(TempValue).HelperCanvas, Control(TempValue).TransparentColor, -1
-                    CASE -29
-                        Control(TempValue).CanResize = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "CANRESIZE"
-                    CASE -31
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        Control(TempValue).Padding = CVI(b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "PADDING" + STR$(CVI(b$))
-                    CASE -32
-                        b$ = SPACE$(1): GET #BinaryFileNum, , b$
-                        Control(TempValue).VAlign = _CV(_BYTE, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "VALIGN="; Control(TempValue).VAlign
-                    CASE -33
-                        Control(TempValue).PasswordField = True
-                        IF LogFileLoad THEN PRINT #LogFileNum, "PASSWORDFIELD"
-                    CASE -34
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        Control(TempValue).Encoding = CVL(b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "ENCODING="; Control(TempValue).Encoding
-                    CASE -35
-                        __UI_DefaultButtonID = TempValue
-                        IF LogFileLoad THEN PRINT #LogFileNum, "DEFAULT BUTTON"
-                    CASE -36
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        Mask(TempValue) = b$
-                        IF LogFileLoad THEN PRINT #LogFileNum, "MASK:" + Mask(TempValue)
-                    CASE -37
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        Control(TempValue).MinInterval = _CV(_FLOAT, b$)
-                        IF LogFileLoad THEN PRINT #LogFileNum, "MININTERVAL="; Control(TempValue).MinInterval
-                    CASE -1 'new control
-                        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
-                        EXIT DO
-                    CASE -1024
-                        IF LogFileLoad THEN PRINT #LogFileNum, "READ END OF FILE: -1024"
-                        __UI_EOF = True
-                        EXIT DO
-                    CASE ELSE
-                        IF LogFileLoad THEN PRINT #LogFileNum, "UNKNOWN PROPERTY ="; CVI(b$)
-                        EXIT DO
-                END SELECT
+                    LOOP
+                ELSE
+                    OriginalIndex$ = "1"
+                END IF
+                NewName = TempName$ + LTRIM$(STR$(VAL(OriginalIndex$) + 1))
             LOOP
-        LOOP UNTIL __UI_EOF
-        CLOSE #BinaryFileNum
-        IF LogFileLoad THEN CLOSE #LogFileNum
-        __UI_AutoRefresh = True
-        EXIT SUB
+        END IF
 
-        LoadError:
+        TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
+        IF NOT Disk THEN
+            Control(TempValue).ControlIsSelected = True
+            __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+            IF __UI_TotalSelectedControls = 1 THEN FirstToBeSelected = TempValue
+        END IF
+        IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
+
+        DO 'read properties
+            IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+            IF LogFileLoad THEN PRINT #LogFileNum, "PROPERTY:" + STR$(CVI(b$)) + " :";
+            SELECT CASE CVI(b$)
+                CASE -2 'Caption
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, CVL(b$)) ELSE b$ = SPACE$(CVL(b$)): GET #BinaryFileNum, , b$
+                    SetCaption TempValue, b$
+                    IF LogFileLoad THEN PRINT #LogFileNum, "CAPTION:" + Caption(TempValue)
+                CASE -3 'Text
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, CVL(b$)) ELSE b$ = SPACE$(CVL(b$)): GET #BinaryFileNum, , b$
+                    Text(TempValue) = b$
+                    IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
+                        LoadImage Control(TempValue), Text(TempValue)
+                    ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
+                        IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
+                        ExeIcon = IconPreview&(Text(TempValue))
+                        IF ExeIcon < -1 THEN
+                            _ICON ExeIcon
+                        END IF
+                    END IF
+                    IF LogFileLoad THEN PRINT #LogFileNum, "TEXT:" + Text(TempValue)
+                CASE -4 'Stretch
+                    Control(TempValue).Stretch = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "STRETCH"
+                CASE -5 'Font
+                    IF LogFileLoad THEN PRINT #LogFileNum, "FONT:";
+                    DIM FontSetup$, FindSep AS INTEGER
+                    DIM NewFontName AS STRING, NewFontFile AS STRING
+                    DIM NewFontSize AS INTEGER
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN FontSetup$ = ReadSequential$(Clip$, CVI(b$)) ELSE FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
+                    IF LogFileLoad THEN PRINT #LogFileNum, FontSetup$
+
+                    FindSep = INSTR(FontSetup$, ",")
+                    NewFontFile = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
+
+                    NewFontSize = VAL(FontSetup$)
+
+                    Control(TempValue).Font = SetFont(NewFontFile, NewFontSize)
+                CASE -6 'ForeColor
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "FORECOLOR"
+                CASE -7 'BackColor
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).BackColor = _CV(_UNSIGNED LONG, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "BACKCOLOR"
+                CASE -8 'SelectedForeColor
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "SELECTEDFORECOLOR"
+                CASE -9 'SelectedBackColor
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "SELECTEDBACKCOLOR"
+                CASE -10 'BorderColor
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).BorderColor = _CV(_UNSIGNED LONG, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "BORDERCOLOR"
+                CASE -11
+                    Control(TempValue).BackStyle = __UI_Transparent
+                    IF LogFileLoad THEN PRINT #LogFileNum, "BACKSTYLE:TRANSPARENT"
+                CASE -12
+                    Control(TempValue).HasBorder = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "HASBORDER"
+                CASE -13
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 1) ELSE b$ = SPACE$(1): GET #BinaryFileNum, , b$
+                    Control(TempValue).Align = _CV(_BYTE, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "ALIGN="; Control(TempValue).Align
+                CASE -14
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, LEN(FloatValue)) ELSE b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                    Control(TempValue).Value = _CV(_FLOAT, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "VALUE="; Control(TempValue).Value
+                CASE -15
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, LEN(FloatValue)) ELSE b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                    Control(TempValue).Min = _CV(_FLOAT, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "MIN="; Control(TempValue).Min
+                CASE -16
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, LEN(FloatValue)) ELSE b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                    Control(TempValue).Max = _CV(_FLOAT, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "MAX="; Control(TempValue).Max
+                CASE -19
+                    Control(TempValue).ShowPercentage = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "SHOWPERCENTAGE"
+                CASE -20
+                    Control(TempValue).CanHaveFocus = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "CANHAVEFOCUS"
+                CASE -21
+                    Control(TempValue).Disabled = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "DISABLED"
+                CASE -22
+                    Control(TempValue).Hidden = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "HIDDEN"
+                CASE -23
+                    Control(TempValue).CenteredWindow = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "CENTEREDWINDOW"
+                CASE -24 'Tips
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, CVL(b$)) ELSE b$ = SPACE$(CVL(b$)): GET #BinaryFileNum, , b$
+                    ToolTip(TempValue) = b$
+                    IF LogFileLoad THEN PRINT #LogFileNum, "TIP: "; ToolTip(TempValue)
+                CASE -25
+                    DIM ContextMenuName AS STRING
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN ContextMenuName = ReadSequential$(Clip$, CVI(b$)) ELSE ContextMenuName = SPACE$(CVI(b$)): GET #BinaryFileNum, , ContextMenuName
+                    Control(TempValue).ContextMenuID = __UI_GetID(ContextMenuName)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "CONTEXTMENU:"; ContextMenuName
+                CASE -26
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, LEN(FloatValue)) ELSE b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                    Control(TempValue).Interval = _CV(_FLOAT, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "INTERVAL="; Control(TempValue).Interval
+                CASE -27
+                    Control(TempValue).WordWrap = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "WORDWRAP"
+                CASE -28
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).TransparentColor = _CV(_UNSIGNED LONG, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "TRANSPARENTCOLOR"
+                    __UI_ClearColor Control(TempValue).HelperCanvas, Control(TempValue).TransparentColor, -1
+                CASE -29
+                    Control(TempValue).CanResize = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "CANRESIZE"
+                CASE -31
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    Control(TempValue).Padding = CVI(b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "PADDING" + STR$(CVI(b$))
+                CASE -32
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 1) ELSE b$ = SPACE$(1): GET #BinaryFileNum, , b$
+                    Control(TempValue).VAlign = _CV(_BYTE, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "VALIGN="; Control(TempValue).VAlign
+                CASE -33
+                    Control(TempValue).PasswordField = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "PASSWORDFIELD"
+                CASE -34
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    Control(TempValue).Encoding = CVL(b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "ENCODING="; Control(TempValue).Encoding
+                CASE -35
+                    __UI_DefaultButtonID = TempValue
+                    IF LogFileLoad THEN PRINT #LogFileNum, "DEFAULT BUTTON"
+                CASE -36
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, CVL(b$)) ELSE b$ = SPACE$(CVL(b$)): GET #BinaryFileNum, , b$
+                    Mask(TempValue) = b$
+                    IF LogFileLoad THEN PRINT #LogFileNum, "MASK:" + Mask(TempValue)
+                CASE -37
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, LEN(FloatValue)) ELSE b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
+                    Control(TempValue).MinInterval = _CV(_FLOAT, b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "MININTERVAL="; Control(TempValue).MinInterval
+                CASE -1 'new control
+                    IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
+                    EXIT DO
+                CASE -1024
+                    IF LogFileLoad THEN PRINT #LogFileNum, "READ END OF FILE: -1024"
+                    __UI_EOF = True
+                    EXIT DO
+                CASE ELSE
+                    IF LogFileLoad THEN PRINT #LogFileNum, "UNKNOWN PROPERTY ="; CVI(b$)
+                    EXIT DO
+            END SELECT
+        LOOP
+    LOOP UNTIL __UI_EOF
+    IF Disk THEN CLOSE #BinaryFileNum
+    IF LogFileLoad THEN CLOSE #LogFileNum
+    IF NOT Disk THEN
+        __UI_FirstSelectedID = FirstToBeSelected
+        __UI_ForceRedraw = True
+    END IF
+    __UI_AutoRefresh = True
+    EXIT SUB
+
+    LoadError:
+    IF Disk THEN
         CLOSE #BinaryFileNum
         KILL "InForm/UiEditorPreview.frmbin"
-        __UI_AutoRefresh = True
-        EXIT SUB
     END IF
+    IF LogFileLoad THEN CLOSE #LogFileNum
+    __UI_AutoRefresh = True
 END SUB
 
 SUB LoadPreviewText
@@ -1561,14 +1625,20 @@ FUNCTION removeQuotation$ (__text$)
     removeQuotation$ = text$
 END FUNCTION
 
-SUB SavePreview
+SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
+    DIM Clip$, Disk AS _BYTE
 
     CONST Debug = False
 
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    IF Destination = InDisk THEN
+        Disk = True
+        BinFileNum = FREEFILE
+        OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    ELSE
+        IF __UI_TotalSelectedControls = 0 THEN EXIT SUB
+    END IF
 
     IF Debug THEN
         TxtFileNum = FREEFILE
@@ -1576,10 +1646,18 @@ SUB SavePreview
     END IF
 
     b$ = "InForm" + CHR$(1)
-    PUT #BinFileNum, 1, b$
-    b$ = MKL$(UBOUND(Control))
-    PUT #BinFileNum, , b$
+    IF Disk THEN
+        PUT #BinFileNum, 1, b$
+        b$ = MKL$(UBOUND(Control))
+        PUT #BinFileNum, , b$
+    ELSE
+        Clip$ = b$
+    END IF
     FOR i = 1 TO UBOUND(Control)
+        IF Destination = InClipboard THEN
+            IF Control(i).ControlIsSelected = False THEN _CONTINUE
+        END IF
+
         IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 AND LEFT$(RTRIM$(Control(i).Name), 5) <> "__UI_" THEN
             IF Debug THEN
                 PRINT #TxtFileNum, Control(i).ID,
@@ -1594,7 +1672,12 @@ SUB SavePreview
             ELSE
                 b$ = b$ + MKI$(0)
             END IF
-            PUT #BinFileNum, , b$
+
+            IF Disk THEN
+                PUT #BinFileNum, , b$
+            ELSE
+                Clip$ = Clip$ + b$
+            END IF
 
             IF LEN(Caption(i)) > 0 THEN
                 IF Control(i).HotKeyPosition > 0 THEN
@@ -1603,49 +1686,74 @@ SUB SavePreview
                     a$ = Caption(i)
                 END IF
                 b$ = MKI$(-2) + MKL$(LEN(a$)) '-2 indicates a caption
-                PUT #BinFileNum, , b$
-                PUT #BinFileNum, , a$
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                    PUT #BinFileNum, , a$
+                ELSE
+                    Clip$ = Clip$ + b$ + a$
+                END IF
             END IF
 
             IF LEN(ToolTip(i)) > 0 THEN
                 b$ = MKI$(-24) + MKL$(LEN(ToolTip(i))) '-24 indicates a tip
-                PUT #BinFileNum, , b$
-                PUT #BinFileNum, , ToolTip(i)
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                    PUT #BinFileNum, , ToolTip(i)
+                ELSE
+                    Clip$ = Clip$ + b$ + ToolTip(i)
+                END IF
             END IF
 
             IF LEN(Text(i)) > 0 THEN
                 b$ = MKI$(-3) + MKL$(LEN(Text(i))) '-3 indicates a text
-                PUT #BinFileNum, , b$
-                PUT #BinFileNum, , Text(i)
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                    PUT #BinFileNum, , Text(i)
+                ELSE
+                    Clip$ = Clip$ + b$ + Text(i)
+                END IF
             END IF
 
             IF LEN(Mask(i)) > 0 THEN
-                b$ = MKI$(-36) + MKL$(LEN(Text(i))) '-3 indicates a text
-                PUT #BinFileNum, , b$
-                PUT #BinFileNum, , Text(i)
+                b$ = MKI$(-36) + MKL$(LEN(Mask(i))) '-36 indicates a mask
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                    PUT #BinFileNum, , Mask(i)
+                ELSE
+                    Clip$ = Clip$ + b$ + Mask(i)
+                END IF
             END IF
 
             IF Control(i).TransparentColor > 0 THEN
                 b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, Control(i).TransparentColor)
-                PUT #BinFileNum, , b$
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
             END IF
+
             IF Control(i).Stretch THEN
                 b$ = MKI$(-4)
-                PUT #BinFileNum, , b$
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
             END IF
             'Inheritable properties won't be saved if they are the same as the parent's
-            IF Control(i).Type = __UI_Type_Form THEN
+            IF Control(i).Type = __UI_Type_Form OR Destination = InClipboard THEN
                 IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
                     'Internal fonts
                     SaveInternalFont:
                     FontSetup$ = "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
-                    PUT #BinFileNum, , b$
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 ELSE
                     SaveExternalFont:
                     FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
-                    PUT #BinFileNum, , b$
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
             ELSE
                 IF Control(i).ParentID > 0 THEN
@@ -1669,104 +1777,122 @@ SUB SavePreview
             'Colors are saved only if they differ from the theme's defaults
             IF Control(i).ForeColor <> __UI_DefaultColor(Control(i).Type, 1) THEN
                 b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, Control(i).ForeColor)
-                PUT #BinFileNum, , b$
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).BackColor <> __UI_DefaultColor(Control(i).Type, 2) THEN
                 b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, Control(i).BackColor)
-                PUT #BinFileNum, , b$
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).SelectedForeColor <> __UI_DefaultColor(Control(i).Type, 3) THEN
                 b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, Control(i).SelectedForeColor)
-                PUT #BinFileNum, , b$
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).SelectedBackColor <> __UI_DefaultColor(Control(i).Type, 4) THEN
                 b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, Control(i).SelectedBackColor)
-                PUT #BinFileNum, , b$
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).BorderColor <> __UI_DefaultColor(Control(i).Type, 5) THEN
                 b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, Control(i).BorderColor)
-                PUT #BinFileNum, , b$
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).BackStyle = __UI_Transparent THEN
-                b$ = MKI$(-11): PUT #BinFileNum, , b$
+                b$ = MKI$(-11)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).HasBorder THEN
-                b$ = MKI$(-12): PUT #BinFileNum, , b$
+                b$ = MKI$(-12)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Align = __UI_Center THEN
-                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #BinFileNum, , b$
+                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             ELSEIF Control(i).Align = __UI_Right THEN
-                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align): PUT #BinFileNum, , b$
+                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).VAlign = __UI_Middle THEN
-                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign): PUT #BinFileNum, , b$
+                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             ELSEIF Control(i).VAlign = __UI_Bottom THEN
-                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign): PUT #BinFileNum, , b$
+                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).PasswordField = True THEN
-                b$ = MKI$(-33): PUT #BinFileNum, , b$
+                b$ = MKI$(-33)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Encoding > 0 THEN
-                b$ = MKI$(-34) + MKL$(Control(i).Encoding): PUT #BinFileNum, , b$
+                b$ = MKI$(-34) + MKL$(Control(i).Encoding)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Value <> 0 THEN
-                b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value): PUT #BinFileNum, , b$
+                b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Min <> 0 THEN
-                b$ = MKI$(-15) + _MK$(_FLOAT, Control(i).Min): PUT #BinFileNum, , b$
+                b$ = MKI$(-15) + _MK$(_FLOAT, Control(i).Min)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Max <> 0 THEN
-                b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max): PUT #BinFileNum, , b$
+                b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE ELSE Clip$ = Clip$ + b$
             END IF
-            'IF Control(i).HotKey <> 0 THEN
-            '    b$ = MKI$(-17) + MKI$(Control(i).HotKey): PUT #BinFileNum, , b$
-            'END IF
-            'IF Control(i).HotKeyOffset <> 0 THEN
-            '    b$ = MKI$(-18) + MKI$(Control(i).HotKeyOffset): PUT #BinFileNum, , b$
-            'END IF
             IF Control(i).ShowPercentage THEN
-                b$ = MKI$(-19): PUT #BinFileNum, , b$
+                b$ = MKI$(-19)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).CanHaveFocus THEN
-                b$ = MKI$(-20): PUT #BinFileNum, , b$
+                b$ = MKI$(-20)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Disabled THEN
-                b$ = MKI$(-21): PUT #BinFileNum, , b$
+                b$ = MKI$(-21)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).Hidden THEN
-                b$ = MKI$(-22): PUT #BinFileNum, , b$
+                b$ = MKI$(-22)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).CenteredWindow THEN
-                b$ = MKI$(-23): PUT #BinFileNum, , b$
+                b$ = MKI$(-23)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).ContextMenuID THEN
                 IF LEFT$(Control(Control(i).ContextMenuID).Name, 9) <> "__UI_Text" AND LEFT$(Control(Control(i).ContextMenuID).Name, 16) <> "__UI_PreviewMenu" THEN
-                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(Control(Control(i).ContextMenuID).Name))) + RTRIM$(Control(Control(i).ContextMenuID).Name): PUT #BinFileNum, , b$
+                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(Control(Control(i).ContextMenuID).Name))) + RTRIM$(Control(Control(i).ContextMenuID).Name)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
             END IF
             IF Control(i).Interval THEN
-                b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval): PUT #BinFileNum, , b$
+                b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).MinInterval THEN
-                b$ = MKI$(-37) + _MK$(_FLOAT, Control(i).MinInterval): PUT #BinFileNum, , b$
+                b$ = MKI$(-37) + _MK$(_FLOAT, Control(i).MinInterval)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).WordWrap THEN
-                b$ = MKI$(-27): PUT #BinFileNum, , b$
+                b$ = MKI$(-27)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).CanResize AND Control(i).Type = __UI_Type_Form THEN
-                b$ = MKI$(-29): PUT #BinFileNum, , b$
+                b$ = MKI$(-29)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
-            'IF Control(i).HotKey > 0 THEN
-            '    b$ = MKI$(-30) + MKI$(Control(i).HotKeyPosition): PUT #BinFileNum, , b$
-            'END IF
             IF Control(i).Padding > 0 THEN
-                b$ = MKI$(-31) + MKI$(Control(i).Padding): PUT #BinFileNum, , b$
+                b$ = MKI$(-31) + MKI$(Control(i).Padding)
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
-
         END IF
     NEXT
-    b$ = MKI$(-1024): PUT #BinFileNum, , b$ 'end of file
-    CLOSE #BinFileNum
+    b$ = MKI$(-1024) 'end of file
+    IF Disk THEN
+        PUT #BinFileNum, , b$
+        CLOSE #BinFileNum
+    ELSE
+        Clip$ = Clip$ + b$
+        _CLIPBOARD$ = Replace(Clip$, CHR$(0), CHR$(250), False, 0)
+    END IF
     IF Debug THEN CLOSE #TxtFileNum
 END SUB
 
@@ -2029,7 +2155,7 @@ SUB RestoreUndoImage
     PUT #BinFileNum, 1, a$
     CLOSE #BinFileNum
 
-    LoadPreview
+    LoadPreview InDisk
 END SUB
 
 SUB RestoreRedoImage
@@ -2060,7 +2186,7 @@ SUB RestoreRedoImage
     PUT #BinFileNum, 1, a$
     CLOSE #BinFileNum
 
-    LoadPreview
+    LoadPreview InDisk
 END SUB
 
 

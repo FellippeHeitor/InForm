@@ -1640,7 +1640,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 END IF
 
-                IF _CLIPBOARD$ = "InForm" + CHR$(1) THEN
+                IF LEFT$(_CLIPBOARD$, 7) = "InForm" + CHR$(1) THEN
                     Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = False
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = True
@@ -3865,99 +3865,17 @@ SUB __UI_EventDispatcher
             CASE ASC("C"), ASC("c")
                 IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
                     ControlCopy:
-                    DIM CopyDone AS _BYTE
-                    ControlClipboard$ = MKL$(__UI_TotalSelectedControls)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
-                            ControlClipboard$ = ControlClipboard$ + MKL$(i)
-                            CopyDone = True
-                        END IF
-                    NEXT
-                    IF CopyDone THEN _CLIPBOARD$ = "InForm" + CHR$(1)
+                    __UI_KeyPress 217
                 END IF
             CASE ASC("V"), ASC("v")
                 IF __UI_CtrlIsDown THEN
                     ControlPaste:
                     Clip$ = _CLIPBOARD$
-                    IF Clip$ = "InForm" + CHR$(1) THEN
+                    IF LEFT$(Clip$, 7) = "InForm" + CHR$(1) THEN
+                        __UI_KeyPress 216
+                        __UI_KeyPress 218
                         __UI_Click 0 'Force the preview to inform it was edited
-                        DIM PasteID AS LONG, ThisControl AS LONG, FirstToBeSelected AS LONG
-                        DIM TempCanvas AS LONG, TempTop AS INTEGER, TempLeft AS INTEGER
-                        DIM TempName$, OriginalIndex$, c$
-
-                        j = CVL(MID$(ControlClipboard$, 1, 4))
-
-                        IF __UI_TotalSelectedControls = 1 THEN
-                            TempTop = Control(__UI_FirstSelectedID).Top + 20
-                            TempLeft = Control(__UI_FirstSelectedID).Left + 20
-                        ELSE
-                            TempTop = -1
-                            TempLeft = -1
-                        END IF
-
-                        FOR i = 1 TO UBOUND(Control)
-                            Control(i).ControlIsSelected = False
-                        NEXT
-
-                        __UI_AutoRefresh = False
-                        _DELAY .1
-                        Clip$ = MID$(ControlClipboard$, 5)
-                        FOR i = 1 TO j
-                            ThisControl = CVL(MID$(Clip$, (i * 4 - 3), 4))
-                            IF Control(ThisControl).ID > 0 AND Control(ThisControl).Type <> __UI_Type_Frame THEN
-                                PasteID = __UI_NewControl(Control(ThisControl).Type, "", Control(ThisControl).Width, Control(ThisControl).Height, 0, 0, 0)
-                                TempCanvas = Control(PasteID).Canvas
-                                Control(PasteID) = Control(ThisControl)
-                                Control(PasteID).ID = 0
-                                DO WHILE __UI_GetID(Control(PasteID).Name) > 0
-                                    TempName$ = RTRIM$(Control(PasteID).Name)
-                                    c$ = RIGHT$(TempName$, 1)
-                                    IF ASC(c$) >= 48 AND ASC(c$) <= 57 THEN
-                                        'Update this control's name by the ID # assigned to it, if any
-                                        OriginalIndex$ = c$
-                                        TempName$ = LEFT$(TempName$, LEN(TempName$) - 1)
-                                        DO
-                                            c$ = RIGHT$(TempName$, 1)
-                                            IF ASC(c$) >= 48 AND ASC(c$) <= 57 THEN
-                                                OriginalIndex$ = c$ + OriginalIndex$
-                                                TempName$ = LEFT$(TempName$, LEN(TempName$) - 1)
-                                                IF LEN(TempName$) = 0 THEN EXIT DO
-                                            ELSE
-                                                EXIT DO
-                                            END IF
-                                        LOOP
-                                    ELSE
-                                        OriginalIndex$ = "1"
-                                    END IF
-                                    Control(PasteID).Name = TempName$ + LTRIM$(STR$(VAL(OriginalIndex$) + 1))
-                                LOOP
-                                Control(PasteID).ID = PasteID
-                                Control(PasteID).ParentID = 0
-                                Caption(PasteID) = Caption(ThisControl)
-                                Text(PasteID) = Text(ThisControl)
-                                ToolTip(PasteID) = ToolTip(ThisControl)
-                                Control(PasteID).Canvas = TempCanvas
-                                IF Control(ThisControl).HelperCanvas <> 0 THEN
-                                    Control(PasteID).HelperCanvas = _COPYIMAGE(Control(ThisControl).HelperCanvas, 32)
-                                END IF
-                                IF j = 1 AND TempTop + TempLeft >= 0 THEN
-                                    Control(PasteID).Top = TempTop
-                                    Control(PasteID).Left = TempLeft
-                                ELSE
-                                    Control(PasteID).Top = Control(PasteID).Top + 20
-                                    Control(PasteID).Left = Control(PasteID).Left + 20
-                                END IF
-                                Control(PasteID).ControlIsSelected = True
-
-                                IF i = 1 THEN FirstToBeSelected = PasteID
-                            END IF
-                        NEXT
-                        __UI_TotalSelectedControls = j
-                        __UI_FirstSelectedID =  FirstToBeSelected
-                        __UI_ForceRedraw = True
-                        __UI_AutoRefresh = True
                     END IF
-                    __UI_KeyPress 216
                 END IF
             CASE 21248 'Delete
                 ControlDelete:
