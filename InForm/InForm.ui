@@ -260,7 +260,7 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Z
+    'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Y, Z
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
     ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
@@ -293,10 +293,13 @@ SUB __UI_InternalMenus
     SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally (group)-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDistributeV", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption __UI_GetID("__UI_PreviewMenuDistributeV"), "Distribute Ver&tically"
+    SetCaption __UI_GetID("__UI_PreviewMenuDistributeV"), "Distribute Verticall&y"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuDistributeH", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuDistributeH"), "Distribute Hori&zontally-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuCut", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuCut"), "Cu&t"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuCopy", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuCopy"), "&Copy"
@@ -1556,6 +1559,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuCut")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
@@ -1602,6 +1606,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuCut")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
@@ -1617,6 +1622,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuCut")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
@@ -1634,6 +1640,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuDistributeV")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuDistributeH")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuCut")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
@@ -1647,6 +1654,7 @@ SUB __UI_EventDispatcher
                 END IF
 
                 IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
+                    Control(__UI_GetID("__UI_PreviewMenuCut")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                 END IF
 
@@ -2577,6 +2585,7 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE UCASE$("__UI_PreviewMenuSetDefaultButton")
                                 __UI_DefaultButtonID = __UI_FirstSelectedID
+                            CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
                             CASE "__UI_PREVIEWMENUDELETE": GOTO ControlDelete
@@ -3862,6 +3871,13 @@ SUB __UI_EventDispatcher
                         NEXT
                     END IF
                 END IF
+            CASE ASC("X"), ASC("x")
+                IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
+                    ControlCut:
+                    __UI_KeyPress 217
+                    __UI_Click 0 'Force the preview to inform it was edited
+                    GOTO ControlDelete
+                END IF
             CASE ASC("C"), ASC("c")
                 IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
                     ControlCopy:
@@ -3872,13 +3888,13 @@ SUB __UI_EventDispatcher
                     ControlPaste:
                     Clip$ = _CLIPBOARD$
                     IF LEFT$(Clip$, 7) = "InForm" + CHR$(1) THEN
-                        __UI_KeyPress 216
                         __UI_KeyPress 218
                         __UI_Click 0 'Force the preview to inform it was edited
                     END IF
                 END IF
             CASE 21248 'Delete
                 ControlDelete:
+                __UI_KeyPress 216
                 FOR i = UBOUND(Control) TO 1 STEP -1
                     IF Control(i).ControlIsSelected THEN
                         __UI_Click 0 'Force the preview to inform it was edited
@@ -3910,7 +3926,6 @@ SUB __UI_EventDispatcher
                         __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
                     END IF
                 NEXT
-                __UI_KeyPress 216
             CASE 19200 'Left arrow key
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
