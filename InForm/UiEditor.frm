@@ -88,6 +88,22 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuRedo", 78, 18, 0, 22, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "&Redo-"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCut", 78, 18, 0, 22, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Cu&t"
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCopy", 78, 18, 0, 22, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "&Copy"
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuPaste", 78, 18, 0, 22, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "&Paste"
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuDelete", 78, 18, 0, 22, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "&Delete-"
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuSelectAll", 78, 18, 0, 22, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Select &all-"
+    
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCP437", 182, 18, 0, 46, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Use code page OEM-437"
 
@@ -605,6 +621,11 @@ SUB __UI_AssignIDs
     FileMenuExit = __UI_GetID("FileMenuExit")
     EditMenuUndo = __UI_GetID("EditMenuUndo")
     EditMenuRedo = __UI_GetID("EditMenuRedo")
+    EditMenuCut = __UI_GetID("EditMenuCut")
+    EditMenuCopy = __UI_GetID("EditMenuCopy")
+    EditMenuPaste = __UI_GetID("EditMenuPaste")
+    EditMenuDelete = __UI_GetID("EditMenuDelete")
+    EditMenuSelectAll = __UI_GetID("EditMenuSelectAll")
     EditMenuCP437 = __UI_GetID("EditMenuCP437")
     EditMenuCP1252 = __UI_GetID("EditMenuCP1252")
     EditMenuSetDefaultButton = __UI_GetID("EditMenuSetDefaultButton")

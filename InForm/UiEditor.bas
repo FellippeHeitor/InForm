@@ -25,6 +25,11 @@ DIM SHARED FileMenuSaveFrm AS LONG
 DIM SHARED FileMenuExit AS LONG
 DIM SHARED EditMenuUndo AS LONG
 DIM SHARED EditMenuRedo AS LONG
+DIM SHARED EditMenuCut AS LONG
+DIM SHARED EditMenuCopy AS LONG
+DIM SHARED EditMenuPaste AS LONG
+DIM SHARED EditMenuDelete AS LONG
+DIM SHARED EditMenuSelectAll AS LONG
 DIM SHARED EditMenuCP437 AS LONG
 DIM SHARED EditMenuCP1252 AS LONG
 DIM SHARED EditMenuSetDefaultButton AS LONG
@@ -288,135 +293,135 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
     STATIC LastClick#, LastClickedID AS LONG
 
-    SELECT EVERYCASE UCASE$(RTRIM$(Control(id).Name))
-        CASE "ALIGNMENUALIGNLEFT": Dummy = 201
-        CASE "ALIGNMENUALIGNRIGHT": Dummy = 202
-        CASE "ALIGNMENUALIGNTOPS": Dummy = 203
-        CASE "ALIGNMENUALIGNBOTTOMS": Dummy = 204
-        CASE "ALIGNMENUALIGNCENTERSV": Dummy = 205
-        CASE "ALIGNMENUALIGNCENTERSH": Dummy = 206
-        CASE "ALIGNMENUALIGNCENTERV": Dummy = 207
-        CASE "ALIGNMENUALIGNCENTERH": Dummy = 208
-        CASE "ALIGNMENUDISTRIBUTEV": Dummy = 209
-        CASE "ALIGNMENUDISTRIBUTEH": Dummy = 210
-    CASE "ALIGNMENUALIGNLEFT", "ALIGNMENUALIGNRIGHT", "ALIGNMENUALIGNTOPS", _
-    "ALIGNMENUALIGNBOTTOMS", "ALIGNMENUALIGNCENTERSV", "ALIGNMENUALIGNCENTERSH", _
-    "ALIGNMENUALIGNCENTERV", "ALIGNMENUALIGNCENTERH", "ALIGNMENUDISTRIBUTEV", _
-    "ALIGNMENUDISTRIBUTEH"
+    SELECT EVERYCASE id
+        CASE AlignMenuAlignLeft: Dummy = 201
+        CASE AlignMenuAlignRight: Dummy = 202
+        CASE AlignMenuAlignTops: Dummy = 203
+        CASE AlignMenuAlignBottoms: Dummy = 204
+        CASE AlignMenuAlignCentersV: Dummy = 205
+        CASE AlignMenuAlignCentersH: Dummy = 206
+        CASE AlignMenuAlignCenterV: Dummy = 207
+        CASE AlignMenuAlignCenterH: Dummy = 208
+        CASE AlignMenuDistributeV: Dummy = 209
+        CASE AlignMenuDistributeH: Dummy = 210
+        CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops
+        CASE AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH
+        CASE AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV
+        CASE AlignMenuDistributeH
             b$ = MKI$(0)
             SendData b$, Dummy
             Edited = True
-        CASE "OPTIONSMENUAUTONAME"
+        CASE OptionsMenuAutoName
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
             SaveSettings
-        CASE "EDITMENUSETDEFAULTBUTTON"
+        CASE EditMenuSetDefaultButton
             SendSignal -6
             Edited = True
-        CASE "EDITMENURESTOREDIMENSIONS"
+        CASE EditMenuRestoreDimensions
             SendSignal -7
             Edited = True
-        CASE "OPTIONSMENUSWAPBUTTONS"
+        CASE OptionsMenuSwapButtons
             __UI_MouseButtonsSwap = NOT __UI_MouseButtonsSwap
             Control(id).Value = __UI_MouseButtonsSwap
             SaveSettings
-        CASE "OPTIONSMENUSNAPLINES"
+        CASE OptionsMenuSnapLines
             __UI_SnapLines = NOT __UI_SnapLines
             Control(id).Value = __UI_SnapLines
             SaveSettings
-        CASE "INSERTMENUMENUBAR"
+        CASE InsertMenuMenuBar
             UiEditorFile = FREEFILE
             OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuBar)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
             Edited = True
-        CASE "INSERTMENUMENUITEM"
+        CASE InsertMenuMenuItem
             UiEditorFile = FREEFILE
             OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(__UI_Type_MenuItem)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
             Edited = True
-        CASE "VIEWMENUPREVIEWDETACH"
+        CASE ViewMenuPreviewDetach
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
             SaveSettings
-        CASE "ADDBUTTON": Dummy = __UI_Type_Button
-        CASE "ADDLABEL": Dummy = __UI_Type_Label
-        CASE "ADDTEXTBOX": Dummy = __UI_Type_TextBox
-        CASE "ADDCHECKBOX": Dummy = __UI_Type_CheckBox
-        CASE "ADDRADIOBUTTON": Dummy = __UI_Type_RadioButton
-        CASE "ADDLISTBOX": Dummy = __UI_Type_ListBox
-        CASE "ADDDROPDOWNLIST": Dummy = __UI_Type_DropdownList
-        CASE "ADDTRACKBAR": Dummy = __UI_Type_TrackBar
-        CASE "ADDPROGRESSBAR": Dummy = __UI_Type_ProgressBar
-        CASE "ADDPICTUREBOX": Dummy = __UI_Type_PictureBox
-        CASE "ADDFRAME": Dummy = __UI_Type_Frame
-        CASE "ADDTOGGLESWITCH": Dummy = __UI_Type_ToggleSwitch
-    CASE "ADDBUTTON", "ADDLABEL", "ADDTEXTBOX", "ADDCHECKBOX", _
-    "ADDRADIOBUTTON", "ADDLISTBOX", "ADDDROPDOWNLIST", _
-    "ADDTRACKBAR", "ADDPROGRESSBAR", "ADDPICTUREBOX", "ADDFRAME", _
-    "ADDTOGGLESWITCH"
+        CASE AddButton: Dummy = __UI_Type_Button
+        CASE AddLabel: Dummy = __UI_Type_Label
+        CASE AddTextBox: Dummy = __UI_Type_TextBox
+        CASE AddCheckBox: Dummy = __UI_Type_CheckBox
+        CASE AddRadioButton: Dummy = __UI_Type_RadioButton
+        CASE AddListBox: Dummy = __UI_Type_ListBox
+        CASE AddDropdownList: Dummy = __UI_Type_DropdownList
+        CASE AddTrackBar: Dummy = __UI_Type_TrackBar
+        CASE AddProgressBar: Dummy = __UI_Type_ProgressBar
+        CASE AddPictureBox: Dummy = __UI_Type_PictureBox
+        CASE AddFrame: Dummy = __UI_Type_Frame
+        CASE AddToggleSwitch: Dummy = __UI_Type_ToggleSwitch
+        CASE AddButton, AddLabel, AddTextBox, AddCheckBox, _
+             AddRadioButton, AddListBox, AddDropdownList, _
+             AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
+             AddToggleSwitch
             UiEditorFile = FREEFILE
             OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = MKI$(Dummy)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
             Edited = True
-        CASE "STRETCH"
+        CASE Stretch
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
             Edited = True
-        CASE "HASBORDER"
+        CASE HasBorder
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
             Edited = True
-        CASE "TRANSPARENT"
+        CASE Transparent
             b$ = MKI$(Control(Transparent).Value)
             SendData b$, 28
             Edited = True
-        CASE "SHOWPERCENTAGE"
+        CASE ShowPercentage
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
             Edited = True
-        CASE "WORDWRAP"
+        CASE WordWrap
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
             Edited = True
-        CASE "CANHAVEFOCUS"
+        CASE CanHaveFocus
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
             Edited = True
-        CASE "COLORPREVIEW"
+        CASE ColorPreview
             _CLIPBOARD$ = ColorPreviewWord$
-        CASE "DISABLED"
+        CASE Disabled
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
             Edited = True
-        CASE "HIDDEN"
+        CASE Hidden
             b$ = MKI$(Control(id).Value)
             SendData b$, 20
             Edited = True
-        CASE "CENTEREDWINDOW"
+        CASE CenteredWindow
             b$ = MKI$(Control(id).Value)
             SendData b$, 21
             Edited = True
-        CASE "RESIZABLE"
+        CASE Resizable
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
             Edited = True
-        CASE "PASSWORDMASKCB"
+        CASE PasswordMaskCB
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
             Edited = True
-        CASE "VIEWMENUPREVIEW"
+        CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
             $ELSE
                 SHELL _DONTWAIT "./InForm/UiEditorPreview"
             $END IF
-        CASE "VIEWMENULOADEDFONTS"
+        CASE ViewMenuLoadedFonts
             DIM Temp$
             FOR Dummy = 1 TO UBOUND(PreviewFonts)
                 IF LEN(PreviewFonts(Dummy)) THEN
@@ -429,7 +434,7 @@ SUB __UI_Click (id AS LONG)
             ELSE
                 Answer = MessageBox("There are no fonts loaded.", "", MsgBox_OkOnly + MsgBox_Critical)
             END IF
-        CASE "FILEMENUNEW"
+        CASE FileMenuNew
             IF Edited THEN
                 $IF WIN THEN
                     Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
@@ -445,15 +450,15 @@ SUB __UI_Click (id AS LONG)
 
             SendSignal -5
             Edited = False
-        CASE "FILEMENUSAVEFRM"
+        CASE FileMenuSaveFrm
             SaveForm True, True
-        CASE "FILEMENUSAVE"
+        CASE FileMenuSave
             SaveForm True, False
-        CASE "HELPMENUABOUT"
+        CASE HelpMenuAbout
             Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
-        CASE "HELPMENUHELP"
+        CASE HelpMenuHelp
             Answer = MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", MsgBox_OkOnly + MsgBox_Information)
-        CASE "FILEMENUEXIT"
+        CASE FileMenuExit
             IF Edited THEN
                 $IF WIN THEN
                     Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
@@ -467,7 +472,7 @@ SUB __UI_Click (id AS LONG)
                 END IF
             END IF
             SYSTEM
-        CASE "EDITMENUZORDERING"
+        CASE EditMenuZOrdering
             'Fill the list:
             Caption(StatusBar) = "Select controls and use the up/down arrow buttons to edit z-ordering..."
             DIM j AS LONG, i AS LONG
@@ -488,13 +493,13 @@ SUB __UI_Click (id AS LONG)
             Control(ZOrdering).Left = 68: Control(ZOrdering).Top = 122
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
-        CASE "CLOSEZORDERINGBT"
+        CASE CloseZOrderingBT
             Caption(StatusBar) = "Ready."
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(ZOrdering).Left = -600: Control(ZOrdering).Top = -600
             __UI_Focus = 0
             ZOrderingDialogOpen = False
-        CASE "UPBT"
+        CASE UpBT
             DIM PrevListValue AS LONG
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
@@ -507,7 +512,7 @@ SUB __UI_Click (id AS LONG)
             Control(ControlList).Value = PrevListValue - 1
             __UI_Focus = ControlList
             __UI_ValueChanged ControlList
-        CASE "DOWNBT"
+        CASE DownBT
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
@@ -519,7 +524,7 @@ SUB __UI_Click (id AS LONG)
             Control(ControlList).Value = PrevListValue + 1
             __UI_Focus = ControlList
             __UI_ValueChanged ControlList
-        CASE "FILEMENUOPEN"
+        CASE FileMenuOpen
             IF Edited THEN
                 $IF WIN THEN
                     Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
@@ -554,7 +559,7 @@ SUB __UI_Click (id AS LONG)
                 Control(FileNameTextBox).TextIsSelected = True
             END IF
             __UI_ForceRedraw = True
-        CASE "CANCELBT"
+        CASE CancelBT
             Text(FileNameTextBox) = ""
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
@@ -565,7 +570,7 @@ SUB __UI_Click (id AS LONG)
 
             __UI_Focus = 0
             __UI_ForceRedraw = True
-        CASE "OPENBT"
+        CASE OpenBT
             OpenFile:
             IF OpenDialogOpen THEN
                 DIM FileToOpen$, FreeFileNum AS INTEGER
@@ -598,13 +603,13 @@ SUB __UI_Click (id AS LONG)
                     Control(FileList).Value = 0
                 END IF
             END IF
-        CASE "FILELIST"
+        CASE FileList
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
             Control(DirList).Value = 0
             IF Control(FileList).HoveringVScrollbarButton = 0 AND LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
                 GOTO OpenFile
             END IF
-        CASE "DIRLIST"
+        CASE DirList
             Text(FileNameTextBox) = GetItem(DirList, Control(DirList).Value)
             Control(FileList).Value = 0
             IF LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
@@ -616,7 +621,7 @@ SUB __UI_Click (id AS LONG)
                 Control(DirList).Value = 0
                 GOTO ReloadList
             END IF
-        CASE "SHOWONLYFRMBINFILESCB"
+        CASE ShowOnlyFrmbinFilesCB
             ReloadList:
             Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
@@ -624,23 +629,41 @@ SUB __UI_Click (id AS LONG)
             Control(FileList).InputViewStart = 1
             Control(FileList).Value = 0
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
-        CASE "EDITMENUUNDO"
+        CASE EditMenuUndo
             b$ = MKI$(0)
             SendData b$, 214
             Edited = True
-        CASE "EDITMENUREDO"
+        CASE EditMenuRedo
             b$ = MKI$(0)
             SendData b$, 215
             Edited = True
-        CASE "EDITMENUCP437"
+        CASE EditMenuCopy
+            b$ = MKI$(0)
+            SendData b$, 217
+        CASE EditMenuPaste
+            b$ = MKI$(0)
+            SendData b$, 218
+            Edited = True
+        CASE EditMenuCut
+            b$ = MKI$(0)
+            SendData b$, 219
+            Edited = True
+        CASE EditMenuDelete
+            b$ = MKI$(0)
+            SendData b$, 220
+            Edited = True
+        CASE EditMenuSelectAll
+            b$ = MKI$(0)
+            SendData b$, 221
+        CASE EditMenuCP437
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
             Edited = True
-        CASE "EDITMENUCP1252"
+        CASE EditMenuCP1252
             b$ = MKL$(1252)
             SendData b$, 34 'Encoding
             Edited = True
-        CASE "VIEWMENUSHOWPOSITIONANDSIZE"
+        CASE ViewMenuShowPositionAndSize
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
@@ -935,8 +958,17 @@ SUB __UI_BeforeUpdateDisplay
         Caption(AlignMenuAlignCenterV) = "Center Vertically (group)"
         Caption(AlignMenuAlignCenterH) = "Center Horizontally (group)-"
 
+        Control(EditMenuPaste).Disabled = True
+        IF LEFT$(_CLIPBOARD$, 7) = "InForm" + CHR$(1) THEN
+            Control(EditMenuPaste).Disabled = False
+        END IF
+
         IF TotalSelected = 0 THEN
             FirstSelected = PreviewFormID
+
+            Control(EditMenuCut).Disabled = True
+            Control(EditMenuCopy).Disabled = True
+            Control(EditMenuDelete).Disabled = True
 
             Control(AlignMenuAlignLeft).Disabled = True
             Control(AlignMenuAlignRight).Disabled = True
@@ -951,6 +983,10 @@ SUB __UI_BeforeUpdateDisplay
 
         ELSEIF TotalSelected = 1 THEN
             IF FirstSelected > 0 AND FirstSelected <= UBOUND(PreviewControls) THEN
+                Control(EditMenuCut).Disabled = False
+                Control(EditMenuCopy).Disabled = False
+                Control(EditMenuDelete).Disabled = False
+
                 Control(AlignMenuAlignLeft).Disabled = True
                 Control(AlignMenuAlignRight).Disabled = True
                 Control(AlignMenuAlignTops).Disabled = True
@@ -979,6 +1015,10 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF TotalSelected = 2 THEN
             SetCaption ControlProperties, "Control properties: (multiple selection)"
 
+            Control(EditMenuCut).Disabled = False
+            Control(EditMenuCopy).Disabled = False
+            Control(EditMenuDelete).Disabled = False
+
             Control(AlignMenuAlignLeft).Disabled = False
             Control(AlignMenuAlignRight).Disabled = False
             Control(AlignMenuAlignTops).Disabled = False
@@ -992,6 +1032,10 @@ SUB __UI_BeforeUpdateDisplay
 
         ELSE
             SetCaption ControlProperties, "Control properties: (multiple selection)"
+
+            Control(EditMenuCut).Disabled = False
+            Control(EditMenuCopy).Disabled = False
+            Control(EditMenuDelete).Disabled = False
 
             Control(AlignMenuAlignLeft).Disabled = False
             Control(AlignMenuAlignRight).Disabled = False

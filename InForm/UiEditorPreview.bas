@@ -34,6 +34,29 @@ CHDIR ".."
 
 CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL]5cno760cEfI_EFMYi2MdIf?Q9GJQaV;dAWIol2CY9VLQ9GN_HdK^AgL_4TLY56K^@7MVmCB^IdKbef;bEfL_EWLSEfL_hdKdmFC_ifK]8EIWE7KQ9W;dAWIo<fKe9W;dAWIZXB<b00o%%%0"
 
+'Signals sent from Editor to Preview:
+'   201 = Align Left
+'   202 = Align Right
+'   203 = Align Tops
+'   204 = Align Bottoms
+'   205 = Align Centers Vertically
+'   206 = Align Center Horizontally
+'   207 = Align Center Vertically (to form)
+'   208 = Align Center Horizontally (to form)
+'   209 = Align Distribute Vertically
+'   210 = Align Distribute Horizontally
+'   211 = Move control up (z-ordering)
+'   212 = Move control down (z-ordering)
+'   213 = Select specific control
+'   214 = Undo
+'   215 = Redo
+'   216 = Save state for undo
+'   217 = Copy selected controls to clipboard
+'   218 = Paste selected controls from clipboard
+'   219 = Cut to clipboard
+'   220 = Delete selected controls
+'   221 = Select all controls
+
 'SavePreview parameters:
 CONST InDisk = 1
 CONST InClipboard = 2
@@ -357,7 +380,10 @@ SUB __UI_BeforeUpdateDisplay
             'Editor sent property value
             b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyChanged, b$
             TempValue = CVI(b$)
-            IF TempValue <> 213 AND TempValue <> 214 AND TempValue <> 215 THEN SaveUndoImage 'Select, undo, redo signals
+            IF TempValue <> 213 AND TempValue <> 214 AND TempValue <> 215 AND TempValue <> 217 AND TempValue <> 221 THEN
+                'Save undo image except for select, undo, redo, copy and select all signals
+                SaveUndoImage
+            END IF
             SELECT CASE TempValue
                 CASE 1 'Name
                     b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
@@ -857,12 +883,8 @@ SUB __UI_BeforeUpdateDisplay
                     NEXT
 
                     IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
-                CASE 214
-                    'Undo
-                    RestoreUndoImage
-                CASE 215
-                    'Redo
-                    RestoreRedoImage
+                CASE 214 TO 221
+                    __UI_KeyPress TempValue
             END SELECT
             __UI_ForceRedraw = True
         END IF
@@ -945,7 +967,80 @@ SUB __UI_KeyPress (id AS LONG)
             SavePreview InClipboard
         CASE 218 'Restore selected controls from clipboard
             LoadPreview InClipboard
+        CASE 219 'Cut selected controls to clipboard
+            SavePreview InClipboard
+            DeleteSelectedControls
+        CASE 220 'Delete selected controls
+            DeleteSelectedControls
+        CASE 221 'Select all controls
+            SelectAllControls
     END SELECT
+END SUB
+
+SUB SelectAllControls
+    DIM i AS LONG
+    IF __UI_TotalSelectedControls = 1 AND Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+        DIM ThisContainer AS LONG
+        ThisContainer = Control(__UI_FirstSelectedID).ID
+        Control(__UI_FirstSelectedID).ControlIsSelected = False
+        __UI_TotalSelectedControls = 0
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
+                IF Control(i).ID > 0 AND Control(i).ParentID = ThisContainer THEN
+                    Control(i).ControlIsSelected = True
+                    __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+                    IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = Control(i).ID
+                END IF
+            END IF
+        NEXT
+    ELSE
+        __UI_TotalSelectedControls = 0
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
+                IF Control(i).ID > 0 AND Control(i).ParentID = 0 THEN
+                    Control(i).ControlIsSelected = True
+                    __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+                    IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = Control(i).ID
+                END IF
+            END IF
+        NEXT
+    END IF
+END SUB
+
+SUB DeleteSelectedControls
+    DIM i AS LONG, j AS LONG, didDelete AS _BYTE
+    FOR i = UBOUND(Control) TO 1 STEP -1
+        IF Control(i).ControlIsSelected THEN
+            IF Control(i).Type = __UI_Type_Frame THEN
+                'Remove controls from container before deleting it
+                FOR j = 1 TO UBOUND(Control)
+                    IF Control(j).ParentID = Control(i).ID THEN
+                        Control(j).ParentID = 0
+                        Control(j).Top = Control(j).Top + Control(i).Top
+                        Control(j).Left = Control(j).Left + Control(i).Left
+                    END IF
+                NEXT
+            END IF
+            IF Control(i).Type = __UI_Type_MenuBar THEN
+                DIM MustRefreshMenuBar AS _BYTE
+                MustRefreshMenuBar = True
+                FOR j = 1 TO UBOUND(Control)
+                    IF Control(j).ParentID = i THEN
+                        __UI_DestroyControl Control(j)
+                    END IF
+                NEXT
+            END IF
+            IF __UI_ActiveMenu > 0 AND __UI_ParentMenu = Control(i).ID THEN
+                __UI_DestroyControl Control(__UI_ActiveMenu)
+            END IF
+            __UI_DestroyControl Control(i)
+            IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
+            __UI_ForceRedraw = True
+            __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
+            didDelete = True
+        END IF
+    NEXT
+    IF didDelete THEN __UI_Click 0 'Force the preview to inform it was edited
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
