@@ -69,7 +69,7 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&New"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuOpen", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    SetCaption __UI_NewID, "Open...-"
+    SetCaption __UI_NewID, "&Open...-"
     ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
@@ -77,7 +77,7 @@ SUB __UI_LoadForm
     ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property" + CHR$(10) + "Only the .frm file will be updated."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSaveFrm", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    SetCaption __UI_NewID, "&Save form only-"
+    SetCaption __UI_NewID, "Save &form only-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "E&xit"
@@ -115,7 +115,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuRestoreDimensions", 103, 18, 0, 88, __UI_GetID("EditMenu"))
-    SetCaption __UI_NewID, "Restore image dimensions-"
+    SetCaption __UI_NewID, "Restore &image dimensions-"
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuZOrdering", 103, 18, 0, 88, __UI_GetID("EditMenu"))
@@ -139,11 +139,11 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Menu &Bar"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuItem", 101, 18, 0, 22, __UI_GetID("InsertMenu"))
-    SetCaption __UI_NewID, "Menu Item"
-    ToolTip(__UI_NewID) = "Automatically snap control's edges to other controls, for easy aligning. Can be temporarily bypassed by holding Ctrl."
+    SetCaption __UI_NewID, "Menu &Item"
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSnapLines", 128, 18, 0, 4, __UI_GetID("AlignMenu"))
+    ToolTip(__UI_NewID) = "Automatically snap control's edges to other controls, for easy aligning. Can be temporarily bypassed by holding Ctrl."
     SetCaption __UI_NewID, "&Snap to edges-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignLeft", 94, 18, 0, 28, __UI_GetID("AlignMenu"))
@@ -175,7 +175,6 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuDistributeH", 163, 18, 0, 202, __UI_GetID("AlignMenu"))
     SetCaption __UI_NewID, "Distribute Hori&zontally"
-    ToolTip(__UI_NewID) = "Automatically set control names based on caption and type"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuAutoName", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
     $IF WIN THEN

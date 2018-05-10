@@ -138,6 +138,8 @@ SUB __UI_BeforeUpdateDisplay
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
 
+    IF __UI_TotalSelectedControls < 0 THEN __UI_TotalSelectedControls = 0
+
     SavePreview InDisk
 
     b$ = MKL$(UiPreviewPID)
@@ -1040,7 +1042,10 @@ SUB DeleteSelectedControls
             didDelete = True
         END IF
     NEXT
-    IF didDelete THEN __UI_Click 0 'Force the preview to inform it was edited
+    IF didDelete THEN
+        IF __UI_TotalSelectedControls > 0 THEN __UI_TotalSelectedControls = 0
+        __UI_Click 0 'Force the preview to inform it was edited
+    END IF
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
@@ -1141,6 +1146,7 @@ SUB LoadPreview (Destination AS _BYTE)
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, TempValue AS LONG
     DIM Dummy AS LONG, Disk AS _BYTE, Clip$, FirstToBeSelected AS LONG
     DIM BinaryFileNum AS INTEGER, LogFileNum AS INTEGER
+    DIM CorruptedData AS _BYTE
 
     CONST LogFileLoad = False
 
@@ -1159,14 +1165,17 @@ SUB LoadPreview (Destination AS _BYTE)
 
     IF Disk THEN
         b$ = SPACE$(7): GET #BinaryFileNum, 1, b$
+        IF b$ <> "InForm" + CHR$(1) THEN
+            GOTO LoadError
+            EXIT SUB
+        END IF
     ELSE
         Clip$ = _CLIPBOARD$
-        b$ = ReadSequential$(Clip$, 7)
-    END IF
-
-    IF b$ <> "InForm" + CHR$(1) THEN
-        GOTO LoadError
-        EXIT SUB
+        b$ = ReadSequential$(Clip$, LEN(__UI_ClipboardCheck$))
+        IF b$ <> __UI_ClipboardCheck$ THEN
+            GOTO LoadError
+            EXIT SUB
+        END IF
     END IF
 
     IF LogFileLoad THEN PRINT #LogFileNum, "FOUND INFORM+1"
@@ -1197,7 +1206,26 @@ SUB LoadPreview (Destination AS _BYTE)
         NEXT
 
         __UI_TotalSelectedControls = 0
-        Clip$ = Unpack$(Clip$)
+
+        'Clip$ = "InForm" + CHR$(10) + CHR$(10)
+        'Clip$ = Clip$ + "BEGIN CONTROL DATA" + CHR$(10)
+        'Clip$ = Clip$ + STRING$(60, "-") + CHR$(10)
+        'Clip$ = Clip$ + HEX$(LEN(b$)) + CHR$(10)
+        'Clip$ = Clip$ + b$ + CHR$(10)
+        'Clip$ = Clip$ + STRING$(60, "-") + CHR$(10)
+        'Clip$ = Clip$ + "END CONTROL DATA"
+
+        DIM ClipLen$
+        DO
+            a$ = ReadSequential$(Clip$, 1)
+            IF a$ = CHR$(10) THEN EXIT DO
+            IF a$ = "" THEN GOTO LoadError
+            ClipLen$ = ClipLen$ + a$
+        LOOP
+
+        b$ = ReadSequential$(Clip$, VAL("&H" + ClipLen$))
+        b$ = Replace$(b$, CHR$(10), "", False, 0)
+        Clip$ = Unpack$(b$)
     END IF
 
     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
@@ -1264,6 +1292,7 @@ SUB LoadPreview (Destination AS _BYTE)
         END IF
 
         TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
+
         IF NOT Disk THEN
             Control(TempValue).ControlIsSelected = True
             __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
@@ -1431,6 +1460,8 @@ SUB LoadPreview (Destination AS _BYTE)
                     EXIT DO
                 CASE ELSE
                     IF LogFileLoad THEN PRINT #LogFileNum, "UNKNOWN PROPERTY ="; CVI(b$)
+                    __UI_EOF = True 'Stop reading if corrupted data is found
+                    CorruptedData = True
                     EXIT DO
             END SELECT
         LOOP
@@ -1438,7 +1469,12 @@ SUB LoadPreview (Destination AS _BYTE)
     IF Disk THEN CLOSE #BinaryFileNum
     IF LogFileLoad THEN CLOSE #LogFileNum
     IF NOT Disk THEN
-        __UI_FirstSelectedID = FirstToBeSelected
+        IF NOT CorruptedData THEN
+            __UI_FirstSelectedID = FirstToBeSelected
+        ELSE
+            __UI_DestroyControl Control(TempValue)
+            __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
+        END IF
         __UI_ForceRedraw = True
     END IF
     __UI_AutoRefresh = True
@@ -1454,7 +1490,7 @@ SUB LoadPreview (Destination AS _BYTE)
 END SUB
 
 SUB LoadPreviewText
-    DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
+    DIM b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
     DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, TempValue AS LONG
@@ -2044,7 +2080,26 @@ SUB SavePreview (Destination AS _BYTE)
         CLOSE #BinFileNum
     ELSE
         Clip$ = Clip$ + b$
-        Clip$ = "InForm" + CHR$(1) + Pack$(Clip$)
+        b$ = Pack$(Clip$)
+
+        IF LEN(b$) > 60 THEN
+            a$ = ""
+            DO
+                a$ = a$ + LEFT$(b$, 60) + CHR$(10)
+                b$ = MID$(b$, 61)
+                IF LEN(b$) <= 60 THEN
+                    a$ = a$ + b$
+                    b$ = a$
+                    EXIT DO
+                END IF
+            LOOP
+        END IF
+
+        Clip$ = __UI_ClipboardCheck$
+        Clip$ = Clip$ + HEX$(LEN(b$)) + CHR$(10)
+        Clip$ = Clip$ + b$ + CHR$(10)
+        Clip$ = Clip$ + STRING$(60, "-") + CHR$(10)
+        Clip$ = Clip$ + "END CONTROL DATA"
         _CLIPBOARD$ = Clip$
     END IF
     IF Debug THEN CLOSE #TxtFileNum

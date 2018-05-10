@@ -177,7 +177,6 @@ CONST OffsetOriginalImageWidth = 47
 CONST OffsetOriginalImageHeight = 49
 CONST OffsetPropertyValue = 51
 
-
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
 REDIM SHARED PreviewMasks(0) AS STRING
@@ -959,7 +958,7 @@ SUB __UI_BeforeUpdateDisplay
         Caption(AlignMenuAlignCenterH) = "Center Horizontally (group)-"
 
         Control(EditMenuPaste).Disabled = True
-        IF LEFT$(_CLIPBOARD$, 7) = "InForm" + CHR$(1) THEN
+        IF LEFT$(_CLIPBOARD$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
             Control(EditMenuPaste).Disabled = False
         END IF
 
