@@ -892,7 +892,7 @@ SUB __UI_BeforeUpdateDisplay
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
             Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
-            SetCaption FileMenuSaveFrm, "&Save form only ('" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm')-"
+            SetCaption FileMenuSaveFrm, "Save &form only ('" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm')-"
         END IF
 
         IF Edited THEN

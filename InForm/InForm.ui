@@ -4380,7 +4380,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB SetCaption (ThisID AS LONG, TempCaption$)
-    DIM i AS LONG, FindSep%, NewCaption$, UsedList$, TempKey AS _UNSIGNED _BYTE
+    DIM i AS LONG, FindSep%, NewCaption$, FindEscape%
     DIM PrevFont AS LONG, TempCanvas AS LONG, PrevDest AS LONG
 
     IF ThisID = 0 THEN EXIT SUB
@@ -4388,42 +4388,51 @@ SUB SetCaption (ThisID AS LONG, TempCaption$)
     NewCaption$ = TempCaption$
 
     'Parse for hotkey markers
-    FindSep% = INSTR(NewCaption$, "&")
+    StartSearchForSep:
+    FindSep% = INSTR(FindSep% + 1, NewCaption$, "&")
     IF FindSep% > 0 AND FindSep% < LEN(NewCaption$) THEN
-        FOR i = 1 TO UBOUND(Control)
-            'Check if this hot key isn't already assigned to another control
-            IF Control(i).HotKey > 0 AND Control(i).Type <> __UI_Type_MenuItem THEN
-                UsedList$ = UsedList$ + CHR$(Control(i).HotKey)
+        IF FindSep% > 1 THEN
+            IF ASC(NewCaption$, FindSep% - 1) = 92 THEN
+                '\& doesnt count as a hot key marker as the backslash
+                'serves as an escape character
+                GOTO StartSearchForSep
             END IF
-        NEXT
-
-        NewCaption$ = LEFT$(NewCaption$, FindSep% - 1) + MID$(NewCaption$, FindSep% + 1)
-        TempKey = ASC(UCASE$(NewCaption$), FindSep%)
-        IF INSTR(UsedList$, CHR$(TempKey)) = 0 THEN
-            Control(ThisID).HotKey = TempKey
-            Control(ThisID).HotKeyPosition = FindSep%
-
-            PrevFont = _FONT
-
-            IF _PIXELSIZE = 0 THEN
-                'Temporarily create a 32bit screen for proper font handling, in case
-                'we're still at form setup (SCREEN 0)
-                TempCanvas = _NEWIMAGE(10, 10, 32)
-                PrevDest = _DEST
-                _DEST TempCanvas
-            END IF
-
-            _FONT (Control(ThisID).Font)
-            Control(ThisID).HotKeyOffset = __UI_PrintWidth(LEFT$(NewCaption$, FindSep% - 1))
-
-            IF TempCanvas <> 0 THEN
-                _DEST PrevDest
-                _FREEIMAGE TempCanvas
-            END IF
-            _FONT PrevFont
-        ELSE
-            Control(ThisID).HotKey = 0
         END IF
+        NewCaption$ = LEFT$(NewCaption$, FindSep% - 1) + MID$(NewCaption$, FindSep% + 1)
+        Control(ThisID).HotKey = ASC(UCASE$(NewCaption$), FindSep%)
+        Control(ThisID).HotKeyPosition = FindSep%
+
+        FindEscape% = INSTR(NewCaption$, "\&")
+        DO WHILE FindEscape% > 0
+            IF FindEscape% < FindSep% THEN
+                FindSep% = FindSep% - 1
+            END IF
+            NewCaption$ = LEFT$(NewCaption$, FindEscape% - 1) + MID$(NewCaption$, FindEscape% + 1)
+            FindEscape% = INSTR(NewCaption$, "\&")
+        LOOP
+
+        PrevFont = _FONT
+
+        IF _PIXELSIZE = 0 THEN
+            'Temporarily create a 32bit screen for proper font handling, in case
+            'we're still at form setup (SCREEN 0)
+            TempCanvas = _NEWIMAGE(10, 10, 32)
+            PrevDest = _DEST
+            _DEST TempCanvas
+        END IF
+
+        _FONT (Control(ThisID).Font)
+        IF FindSep% = 1 THEN
+            Control(ThisID).HotKeyOffset = 0
+        ELSE
+            Control(ThisID).HotKeyOffset = __UI_PrintWidth(LEFT$(NewCaption$, FindSep% - 1))
+        END IF
+
+        IF TempCanvas <> 0 THEN
+            _DEST PrevDest
+            _FREEIMAGE TempCanvas
+        END IF
+        _FONT PrevFont
     ELSE
         Control(ThisID).HotKey = 0
     END IF
