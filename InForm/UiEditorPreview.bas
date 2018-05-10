@@ -1049,8 +1049,67 @@ END SUB
 SUB __UI_ValueChanged (id AS LONG)
 END SUB
 
+FUNCTION Pack$ (__DataIn$)
+    'Adapted from:
+    '==================
+    ' BASFILE.BAS v0.10
+    '==================
+    'Coded by Dav for QB64 (c) 2009
+    'http://www.qbasicnews.com/dav/qb64.php
+    DIM DataIn$, OriginalLength AS LONG
+    DIM a$, BC&, LL&, DataOut$
+    DIM T%, B&, c$, g$
+    DIM B$
+
+    DataIn$ = __DataIn$
+    OriginalLength = LEN(DataIn$)
+    DO
+        a$ = ReadSequential(DataIn$, 3)
+        BC& = BC& + 3: LL& = LL& + 4
+        GOSUB Encode
+        DataOut$ = DataOut$ + a$
+        IF OriginalLength - BC& < 3 THEN
+            a$ = ReadSequential(DataIn$, OriginalLength - BC&)
+            GOSUB Encode
+            B$ = a$
+            SELECT CASE LEN(B$)
+                CASE 1: a$ = "%%%" + B$
+                CASE 2: a$ = "%%" + B$
+                CASE 3: a$ = "%" + B$
+            END SELECT
+            DataOut$ = DataOut$ + a$
+            EXIT DO
+        END IF
+    LOOP
+
+    Pack$ = DataOut$
+    EXIT FUNCTION
+
+    Encode:
+    FOR T% = LEN(a$) TO 1 STEP -1
+        B& = B& * 256 + ASC(MID$(a$, T%))
+    NEXT
+
+    c$ = ""
+    FOR T% = 1 TO LEN(a$) + 1
+        g$ = CHR$(48 + (B& AND 63)): B& = B& \ 64
+        'If < and > are here, replace them with # and *
+        'Just so there's no HTML tag problems with forums.
+        'They'll be restored during the decoding process..
+        'IF g$ = "<" THEN g$ = "#"
+        'IF g$ = ">" THEN g$ = "*"
+        c$ = c$ + g$
+    NEXT
+    a$ = c$
+    RETURN
+END FUNCTION
+
 FUNCTION Unpack$ (PackedData$)
-    'Adapted from Dav's BIN2BAS
+    'Adapted from:
+    '==================
+    ' BASFILE.BAS v0.10
+    '==================
+    'Coded by Dav for QB64 (c) 2009
     'http://www.qbasicnews.com/dav/qb64.php
     DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
 
@@ -1102,7 +1161,6 @@ SUB LoadPreview (Destination AS _BYTE)
         b$ = SPACE$(7): GET #BinaryFileNum, 1, b$
     ELSE
         Clip$ = _CLIPBOARD$
-        Clip$ = Replace(Clip$, CHR$(250), CHR$(0), False, 0)
         b$ = ReadSequential$(Clip$, 7)
     END IF
 
@@ -1139,6 +1197,7 @@ SUB LoadPreview (Destination AS _BYTE)
         NEXT
 
         __UI_TotalSelectedControls = 0
+        Clip$ = Unpack$(Clip$)
     END IF
 
     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
@@ -1745,9 +1804,8 @@ SUB SavePreview (Destination AS _BYTE)
         PUT #BinFileNum, 1, b$
         b$ = MKL$(UBOUND(Control))
         PUT #BinFileNum, , b$
-    ELSE
-        Clip$ = b$
     END IF
+
     FOR i = 1 TO UBOUND(Control)
         IF Destination = InClipboard THEN
             IF Control(i).ControlIsSelected = False THEN _CONTINUE
@@ -1986,7 +2044,8 @@ SUB SavePreview (Destination AS _BYTE)
         CLOSE #BinFileNum
     ELSE
         Clip$ = Clip$ + b$
-        _CLIPBOARD$ = Replace(Clip$, CHR$(0), CHR$(250), False, 0)
+        Clip$ = "InForm" + CHR$(1) + Pack$(Clip$)
+        _CLIPBOARD$ = Clip$
     END IF
     IF Debug THEN CLOSE #TxtFileNum
 END SUB
