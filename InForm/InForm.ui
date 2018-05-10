@@ -4422,10 +4422,10 @@ SUB SetCaption (ThisID AS LONG, TempCaption$)
         END IF
 
         _FONT (Control(ThisID).Font)
-        IF FindSep% = 1 THEN
+        IF Control(ThisID).HotKeyPosition = 1 THEN
             Control(ThisID).HotKeyOffset = 0
         ELSE
-            Control(ThisID).HotKeyOffset = __UI_PrintWidth(LEFT$(NewCaption$, FindSep% - 1))
+            Control(ThisID).HotKeyOffset = __UI_PrintWidth(LEFT$(NewCaption$, Control(ThisID).HotKeyPosition - 1))
         END IF
 
         IF TempCanvas <> 0 THEN

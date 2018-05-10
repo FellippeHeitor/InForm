@@ -578,6 +578,13 @@ SUB __UI_BeforeUpdateDisplay
                                         CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
                                             Control(i).Height = uspacing + 6
                                     END SELECT
+                                    IF Control(i).HotKey > 0 THEN
+                                        IF Control(i).HotKeyPosition = 1 THEN
+                                            Control(i).HotKeyOffset = 0
+                                        ELSE
+                                            Control(i).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(i), Control(i).HotKeyPosition - 1))
+                                        END IF
+                                    END IF
                                     _FONT tempFont
                                 END IF
                             NEXT

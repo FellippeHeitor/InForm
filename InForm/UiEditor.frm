@@ -195,7 +195,7 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&What's all this?-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuAbout", 84, 18, 0, 28, __UI_GetID("HelpMenu"))
-    SetCaption __UI_NewID, "About..."
+    SetCaption __UI_NewID, "&About..."
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddButton", 22, 22, 10, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New button"

@@ -244,7 +244,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionTopFirstLine + uheight&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionTopFirstLine + uspacing&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
             TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
@@ -270,7 +270,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, (TextTop% + (uspacing& \ 2)))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, (TextTop% + uspacing&))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         END IF
 
