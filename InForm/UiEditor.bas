@@ -1757,12 +1757,106 @@ SUB __UI_OnLoad
     i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddPictureBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
     Control(AddFrame).HelperCanvas = _NEWIMAGE(16, 16, 32)
     i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddFrame).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddToggleSwitch).HelperCanvas = _NEWIMAGE(16, 16, 32)
+
+    'Draw ToggleSwitch icon
     prevDest = _DEST
+    Control(AddToggleSwitch).HelperCanvas = _NEWIMAGE(16, 16, 32)
     _DEST Control(AddToggleSwitch).HelperCanvas
     LINE (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
     LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
     LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
+
+    'Draw Align menu icons
+    Control(AlignMenuAlignLeft).HelperCanvas = _NEWIMAGE(48, 16, 32)
+    _DEST Control(AlignMenuAlignLeft).HelperCanvas
+    'Normal state
+    LINE (0, 0)-(1, 16), _RGB32(105, 105, 105), BF
+    LINE (3, 2)-(14, 7), _RGB32(255, 255, 255), BF
+    LINE (3, 2)-(14, 7), _RGB32(105, 105, 105), B
+    LINE (3, 10)-(10, 14), _RGB32(105, 105, 105), BF
+    'Hovered
+    LINE (16, 0)-STEP(1, 16), _RGB32(255, 255, 255), BF
+    LINE (19, 2)-STEP(11, 5), _RGB32(105, 105, 105), BF
+    LINE (19, 2)-STEP(11, 5), _RGB32(255, 255, 255), B
+    LINE (19, 10)-STEP(7, 4), _RGB32(255, 255, 255), BF
+    'Disabled
+    LINE (32, 0)-STEP(1, 16), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (35, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (35, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), B
+    LINE (35, 10)-STEP(7, 4), Darken(Control(__UI_FormID).BackColor, 80), BF
+
+    Control(AlignMenuAlignRight).HelperCanvas = _NEWIMAGE(48, 16, 32)
+    _DEST Control(AlignMenuAlignRight).HelperCanvas
+    'Normal state
+    LINE (14, 0)-STEP(1, 16), _RGB32(105, 105, 105), BF
+    LINE (1, 2)-STEP(11, 5), _RGB32(255, 255, 255), BF
+    LINE (1, 2)-STEP(11, 5), _RGB32(105, 105, 105), B
+    LINE (5, 10)-STEP(7, 4), _RGB32(105, 105, 105), BF
+    'Hovered
+    LINE (14 + 16, 0)-STEP(1, 16), _RGB32(255, 255, 255), BF
+    LINE (1 + 16, 2)-STEP(11, 5), _RGB32(105, 105, 105), BF
+    LINE (1 + 16, 2)-STEP(11, 5), _RGB32(255, 255, 255), B
+    LINE (5 + 16, 10)-STEP(7, 4), _RGB32(255, 255, 255), BF
+    'Disabled
+    LINE (14 + 32, 0)-STEP(1, 16), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (1 + 32, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (1 + 32, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), B
+    LINE (5 + 32, 10)-STEP(7, 4), Darken(Control(__UI_FormID).BackColor, 80), BF
+
+    Control(AlignMenuAlignTops).HelperCanvas = _NEWIMAGE(48, 16, 32)
+    _DEST Control(AlignMenuAlignTops).HelperCanvas
+    'Normal
+    LINE (0, 0)-STEP(16, 1), _RGB32(105, 105, 105), BF
+    LINE (2, 3)-STEP(5, 11), _RGB32(255, 255, 255), BF
+    LINE (2, 3)-STEP(4, 11), _RGB32(105, 105, 105), B
+    LINE (9, 3)-STEP(4, 7), _RGB32(105, 105, 105), BF
+    'Hovered
+    LINE (0 + 16, 0)-STEP(16, 1), _RGB32(255, 255, 255), BF
+    LINE (2 + 16, 3)-STEP(5, 11), _RGB32(105, 105, 105), BF
+    LINE (2 + 16, 3)-STEP(4, 11), _RGB32(255, 255, 255), B
+    LINE (9 + 16, 3)-STEP(4, 7), _RGB32(255, 255, 255), BF
+    'Disabled
+    LINE (0 + 32, 0)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 3)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 3)-STEP(4, 11), Darken(Control(__UI_FormID).BackColor, 80), B
+    LINE (9 + 32, 3)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
+
+    Control(AlignMenuAlignBottoms).HelperCanvas = _NEWIMAGE(48, 16, 32)
+    _DEST Control(AlignMenuAlignBottoms).HelperCanvas
+    'Normal
+    LINE (0, 14)-STEP(16, 1), _RGB32(105, 105, 105), BF
+    LINE (2, 1)-STEP(5, 11), _RGB32(255, 255, 255), BF
+    LINE (2, 1)-STEP(5, 11), _RGB32(105, 105, 105), B
+    LINE (9, 5)-STEP(4, 7), _RGB32(105, 105, 105), BF
+    'Hovered
+    LINE (0 + 16, 14)-STEP(16, 1), _RGB32(255, 255, 255), BF
+    LINE (2 + 16, 1)-STEP(5, 11), _RGB32(105, 105, 105), BF
+    LINE (2 + 16, 1)-STEP(5, 11), _RGB32(255, 255, 255), B
+    LINE (9 + 16, 5)-STEP(4, 7), _RGB32(255, 255, 255), BF
+    'Disabled
+    LINE (0 + 32, 14)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 1)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 1)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
+    LINE (9 + 32, 5)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
+
+    Control(AlignMenuAlignCentersV).HelperCanvas = _NEWIMAGE(48, 16, 32)
+    _DEST Control(AlignMenuAlignCentersV).HelperCanvas
+    'Normal
+    LINE (0, 7)-STEP(16, 1), _RGB32(105, 105, 105), BF
+    LINE (2, 2)-STEP(5, 11), _RGB32(255, 255, 255), BF
+    LINE (2, 2)-STEP(5, 11), _RGB32(105, 105, 105), B
+    LINE (9, 4)-STEP(4, 7), _RGB32(105, 105, 105), BF
+    'Hovered
+    LINE (0 + 16, 7)-STEP(16, 1), _RGB32(255, 255, 255), BF
+    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(105, 105, 105), BF
+    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(255, 255, 255), B
+    LINE (9 + 16, 4)-STEP(4, 7), _RGB32(255, 255, 255), BF
+    'Disabled
+    LINE (0 + 32, 7)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
+    LINE (9 + 32, 4)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
+
     _DEST prevDest
 
     Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
@@ -1782,6 +1876,11 @@ SUB __UI_OnLoad
     Text(AddFrame) = "."
     Text(FileMenuSave) = "."
     Text(AddToggleSwitch) = "."
+    Text(AlignMenuAlignLeft) = "."
+    Text(AlignMenuAlignRight) = "."
+    Text(AlignMenuAlignTops) = "."
+    Text(AlignMenuAlignBottoms) = "."
+    Text(AlignMenuAlignCentersV) = "."
 
     _FREEIMAGE CommControls
 
