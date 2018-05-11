@@ -40,7 +40,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 '   203 = Align Tops
 '   204 = Align Bottoms
 '   205 = Align Centers Vertically
-'   206 = Align Center Horizontally
+'   206 = Align Centers Horizontally
 '   207 = Align Center Vertically (to form)
 '   208 = Align Center Horizontally (to form)
 '   209 = Align Distribute Vertically
@@ -855,8 +855,7 @@ SUB __UI_BeforeUpdateDisplay
                     NEXT
                 CASE 201 TO 210
                     'Alignment commands
-                    __UI_DesignModeAlignCommand = TempValue
-                    __UI_HasInput = True
+                    DoAlign TempValue
                 CASE 211, 212 'Z-Ordering -> Move up/down
                     DIM tID1 AS LONG, tID2 AS LONG
                     a$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, a$
@@ -966,6 +965,8 @@ END SUB
 
 SUB __UI_KeyPress (id AS LONG)
     SELECT CASE id
+        CASE 201 TO 210
+            DoAlign id
         CASE 214
             RestoreUndoImage
         CASE 215
@@ -983,6 +984,279 @@ SUB __UI_KeyPress (id AS LONG)
             DeleteSelectedControls
         CASE 221 'Select all controls
             SelectAllControls
+    END SELECT
+END SUB
+
+SUB DoAlign (AlignMode AS INTEGER)
+    DIM i AS LONG
+    DIM LeftMost AS INTEGER
+    DIM RightMost AS INTEGER
+    DIM TopMost AS INTEGER, BottomMost AS INTEGER, SelectionHeight AS INTEGER
+    DIM TopDifference AS INTEGER, NewTopMost AS INTEGER
+    DIM SelectionWidth AS INTEGER
+    DIM LeftDifference AS INTEGER, NewLeftMost AS INTEGER
+    DIM FindTops AS INTEGER
+    DIM FindLefts AS INTEGER, NextControlToDistribute AS LONG
+    DIM TotalSpace AS INTEGER, BinSize AS INTEGER
+
+    SELECT CASE AlignMode
+        CASE 201 'Lefts
+            IF __UI_TotalSelectedControls > 1 THEN
+                LeftMost = Control(__UI_FormID).Width
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Left < LeftMost THEN LeftMost = Control(i).Left
+                    END IF
+                NEXT
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Left = LeftMost
+                    END IF
+                NEXT
+            END IF
+        CASE 202 'Rights
+            IF __UI_TotalSelectedControls > 1 THEN
+                RightMost = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Left + Control(i).Width - 1 > RightMost THEN RightMost = Control(i).Left + Control(i).Width - 1
+                    END IF
+                NEXT
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Left = RightMost - (Control(i).Width - 1)
+                    END IF
+                NEXT
+            END IF
+        CASE 203 'Tops
+            IF __UI_TotalSelectedControls > 1 THEN
+                TopMost = Control(__UI_FormID).Height
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Top < TopMost THEN TopMost = Control(i).Top
+                    END IF
+                NEXT
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Top = TopMost
+                    END IF
+                NEXT
+            END IF
+        CASE 204 'Bottoms
+            IF __UI_TotalSelectedControls > 1 THEN
+                BottomMost = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Top + Control(i).Height - 1 > BottomMost THEN BottomMost = Control(i).Top + Control(i).Height - 1
+                    END IF
+                NEXT
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Top = BottomMost - (Control(i).Height - 1)
+                    END IF
+                NEXT
+            END IF
+        CASE 205 'Centers vertically
+            IF __UI_TotalSelectedControls > 1 THEN
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    TopMost = Control(__UI_FormID).Height
+                ELSE
+                    TopMost = Control(Control(__UI_FirstSelectedID).ParentID).Height
+                END IF
+                BottomMost = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Top < TopMost THEN TopMost = Control(i).Top
+                        IF Control(i).Top + Control(i).Height - 1 > BottomMost THEN BottomMost = Control(i).Top + Control(i).Height - 1
+                    END IF
+                NEXT
+                SelectionHeight = BottomMost - TopMost
+                NewTopMost = TopMost + SelectionHeight / 2
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Top = NewTopMost - Control(i).Height / 2
+                    END IF
+                NEXT
+            END IF
+        CASE 206 'Centers horizontally
+            IF __UI_TotalSelectedControls > 1 THEN
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    LeftMost = Control(__UI_FormID).Width
+                ELSE
+                    LeftMost = Control(Control(__UI_FirstSelectedID).ParentID).Width
+                END IF
+                RightMost = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Left < LeftMost THEN LeftMost = Control(i).Left
+                        IF Control(i).Left + Control(i).Width - 1 > RightMost THEN RightMost = Control(i).Left + Control(i).Width - 1
+                    END IF
+                NEXT
+                SelectionWidth = RightMost - LeftMost
+                NewLeftMost = LeftMost + SelectionWidth / 2
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Left = NewLeftMost - Control(i).Width / 2
+                    END IF
+                NEXT
+            END IF
+        CASE 207 'Center vertically to form
+            IF __UI_TotalSelectedControls = 1 THEN
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    Control(__UI_FirstSelectedID).Top = Control(__UI_FormID).Height / 2 - Control(__UI_FirstSelectedID).Height / 2
+                ELSE
+                    Control(__UI_FirstSelectedID).Top = Control(Control(__UI_FirstSelectedID).ParentID).Height / 2 - Control(__UI_FirstSelectedID).Height / 2
+                END IF
+            ELSEIF __UI_TotalSelectedControls > 1 THEN
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    TopMost = Control(__UI_FormID).Height
+                ELSE
+                    TopMost = Control(Control(__UI_FirstSelectedID).ParentID).Height
+                END IF
+                BottomMost = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        IF Control(i).Top < TopMost THEN TopMost = Control(i).Top
+                        IF Control(i).Top + Control(i).Height - 1 > BottomMost THEN BottomMost = Control(i).Top + Control(i).Height - 1
+                    END IF
+                NEXT
+                SelectionHeight = BottomMost - TopMost
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    NewTopMost = Control(__UI_FormID).Height / 2 - SelectionHeight / 2
+                ELSE
+                    NewTopMost = Control(Control(__UI_FirstSelectedID).ParentID).Height / 2 - SelectionHeight / 2
+                END IF
+                TopDifference = TopMost - NewTopMost
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Top = Control(i).Top - TopDifference
+                    END IF
+                NEXT
+            END IF
+        CASE 208 'Center horizontally to form
+            IF __UI_TotalSelectedControls = 1 THEN
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    Control(__UI_FirstSelectedID).Left = Control(__UI_FormID).Width / 2 - Control(__UI_FirstSelectedID).Width / 2
+                ELSE
+                    Control(__UI_FirstSelectedID).Left = Control(Control(__UI_FirstSelectedID).ParentID).Width / 2 - Control(__UI_FirstSelectedID).Width / 2
+                END IF
+            ELSEIF __UI_TotalSelectedControls > 1 THEN
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    LeftMost = Control(__UI_FormID).Width
+                ELSE
+                    LeftMost = Control(Control(__UI_FirstSelectedID).ParentID).Width
+                END IF
+                RightMost = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Left < LeftMost THEN LeftMost = Control(i).Left
+                        IF Control(i).Left + Control(i).Width - 1 > RightMost THEN RightMost = Control(i).Left + Control(i).Width - 1
+                    END IF
+                NEXT
+                SelectionWidth = RightMost - LeftMost
+                IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
+                    NewLeftMost = Control(__UI_FormID).Width / 2 - SelectionWidth / 2
+                ELSE
+                    NewLeftMost = Control(Control(__UI_FirstSelectedID).ParentID).Width / 2 - SelectionWidth / 2
+                END IF
+                LeftDifference = LeftMost - NewLeftMost
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        __UI_Click 0 'Force the preview to inform it was edited
+                        Control(i).Left = Control(i).Left - LeftDifference
+                    END IF
+                NEXT
+            END IF
+        CASE 209 'Distribute vertically
+            'Build a sublist containing the selected controls in the order they
+            'are currently placed vertically:
+
+            REDIM SubList(1 TO __UI_TotalSelectedControls) AS LONG
+            __UI_AutoRefresh = False
+            FOR FindTops = 0 TO Control(__UI_FormID).Height - 1
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected AND Control(i).Top = FindTops THEN
+                        IF NextControlToDistribute > 0 THEN
+                            IF SubList(NextControlToDistribute) <> i THEN
+                                NextControlToDistribute = NextControlToDistribute + 1
+                                SubList(NextControlToDistribute) = i
+                                EXIT FOR
+                            END IF
+                        ELSE
+                            NextControlToDistribute = NextControlToDistribute + 1
+                            SubList(NextControlToDistribute) = i
+                            EXIT FOR
+                        END IF
+                    END IF
+                NEXT
+                IF NextControlToDistribute = __UI_TotalSelectedControls THEN EXIT FOR
+            NEXT
+
+            TotalSpace = (Control(SubList(__UI_TotalSelectedControls)).Top + Control(SubList(__UI_TotalSelectedControls)).Height) - Control(SubList(1)).Top
+            FOR i = 1 TO __UI_TotalSelectedControls
+                TotalSpace = TotalSpace - Control(SubList(i)).Height
+            NEXT
+
+            BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
+            FindTops = Control(SubList(1)).Top - BinSize
+            FOR i = 1 TO __UI_TotalSelectedControls
+                __UI_Click 0 'Force the preview to inform it was edited
+                FindTops = FindTops + BinSize
+                Control(SubList(i)).Top = FindTops
+                FindTops = FindTops + Control(SubList(i)).Height
+            NEXT
+
+            __UI_AutoRefresh = True
+            __UI_ForceRedraw = True
+        CASE 210 'Distribute horizontally
+            'Build a sublist containing the selected controls in the order they
+            'are currently placed horizontally:
+
+            REDIM SubList(1 TO __UI_TotalSelectedControls) AS LONG
+            __UI_AutoRefresh = False
+            FOR FindLefts = 0 TO Control(__UI_FormID).Width - 1
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected AND Control(i).Left = FindLefts THEN
+                        IF NextControlToDistribute > 0 THEN
+                            IF SubList(NextControlToDistribute) <> i THEN
+                                NextControlToDistribute = NextControlToDistribute + 1
+                                SubList(NextControlToDistribute) = i
+                                EXIT FOR
+                            END IF
+                        ELSE
+                            NextControlToDistribute = NextControlToDistribute + 1
+                            SubList(NextControlToDistribute) = i
+                            EXIT FOR
+                        END IF
+                    END IF
+                NEXT
+                IF NextControlToDistribute = __UI_TotalSelectedControls THEN EXIT FOR
+            NEXT
+
+            TotalSpace = (Control(SubList(__UI_TotalSelectedControls)).Left + Control(SubList(__UI_TotalSelectedControls)).Width) - Control(SubList(1)).Left
+            FOR i = 1 TO __UI_TotalSelectedControls
+                TotalSpace = TotalSpace - Control(SubList(i)).Width
+            NEXT
+
+            BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
+            FindLefts = Control(SubList(1)).Left - BinSize
+            FOR i = 1 TO __UI_TotalSelectedControls
+                __UI_Click 0 'Force the preview to inform it was edited
+                FindLefts = FindLefts + BinSize
+                Control(SubList(i)).Left = FindLefts
+                FindLefts = FindLefts + Control(SubList(i)).Width
+            NEXT
+
+            __UI_AutoRefresh = True
+            __UI_ForceRedraw = True
     END SELECT
 END SUB
 
