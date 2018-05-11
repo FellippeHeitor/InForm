@@ -1113,6 +1113,11 @@ SUB __UI_BeforeUpdateDisplay
                     Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
                 ELSE
                     Text(TextTB) = PreviewTexts(FirstSelected)
+                    IF LEN(PreviewMasks(FirstSelected)) > 0 AND PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
+                        Mask(TextTB) = PreviewMasks(FirstSelected)
+                    ELSE
+                        Mask(TextTB) = ""
+                    END IF
                 END IF
                 IF (__UI_Focus = TextTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
             ELSEIF __UI_Focus = TextTB THEN
@@ -1461,7 +1466,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(PasswordMaskCB).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
+                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False

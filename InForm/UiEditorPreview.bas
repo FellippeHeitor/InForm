@@ -844,6 +844,7 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Mask(i) = b$
+                            Text(i) = ""
                         END IF
                     NEXT
                 CASE 36 'MinInterval
