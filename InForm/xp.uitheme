@@ -1550,10 +1550,31 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                     'Does this menu item have a helper canvas (icon)?
                     DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
                     IF Control(i).HelperCanvas < -1 AND LEN(Text(Control(i).ID)) > 0 THEN
-                        'Icon will be to the left of caption
-                        IconHeight = 16
-                        IconWidth = _WIDTH(Control(i).HelperCanvas) * IconHeight / _HEIGHT(Control(i).HelperCanvas)
-                        _PUTIMAGE (3, Control(i).Top + Control(i).Height / 2 - IconHeight / 2)-STEP(IconWidth - 1, IconHeight - 1), Control(i).HelperCanvas
+                        IF _HEIGHT(Control(i).HelperCanvas) = 16 AND _WIDTH(Control(i).HelperCanvas) MOD 16 = 0 THEN
+                            'If the HelperCanvas is 16px in height and either 16, 32 or 48px in width,
+                            'we assume that we have icons for Hover and Disabled states.
+                            SELECT CASE CheckMarkIndex
+                                CASE 1 'normal
+                                    _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(0, 0)-STEP(15, 15)
+                                CASE 2 'hovered/selected
+                                    IF _WIDTH(Control(i).HelperCanvas) >= 32 THEN
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(16, 0)-STEP(15, 15)
+                                    ELSE
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(0, 0)-STEP(15, 15)
+                                    END IF
+                                CASE 3 'disabled
+                                    IF _WIDTH(Control(i).HelperCanvas) >= 48 THEN
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(32, 0)-STEP(15, 15)
+                                    ELSE
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(0, 0)-STEP(15, 15)
+                                    END IF
+                            END SELECT
+                        ELSE
+                            'Icon will be to the left of caption
+                            IconHeight = 16
+                            IconWidth = _WIDTH(Control(i).HelperCanvas) * IconHeight / _HEIGHT(Control(i).HelperCanvas)
+                            _PUTIMAGE (3, Control(i).Top + Control(i).Height / 2 - IconHeight / 2)-STEP(IconWidth - 1, IconHeight - 1), Control(i).HelperCanvas
+                        END IF
                     END IF
                 END IF
 
