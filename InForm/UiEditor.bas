@@ -303,10 +303,10 @@ SUB __UI_Click (id AS LONG)
         CASE AlignMenuAlignCenterH: Dummy = 208
         CASE AlignMenuDistributeV: Dummy = 209
         CASE AlignMenuDistributeH: Dummy = 210
-        CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops
-        CASE AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH
-        CASE AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV
-        CASE AlignMenuDistributeH
+        CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops, _
+             AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH, _
+             AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV, _
+             AlignMenuDistributeH
             b$ = MKI$(0)
             SendData b$, Dummy
             Edited = True
