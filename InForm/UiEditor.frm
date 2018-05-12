@@ -115,7 +115,11 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuRestoreDimensions", 103, 18, 0, 88, __UI_GetID("EditMenu"))
-    SetCaption __UI_NewID, "Restore &image dimensions-"
+    SetCaption __UI_NewID, "Restore &image dimensions"
+    Control(__UI_NewID).Disabled = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuAllowMinMax", 103, 18, 0, 88, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Allow .Min/.Ma&x bounds-"
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuZOrdering", 103, 18, 0, 88, __UI_GetID("EditMenu"))
@@ -201,47 +205,51 @@ SUB __UI_LoadForm
     ToolTip(__UI_NewID) = "New button"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddLabel", 22, 22, 40, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddLabel", 22, 22, 39, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New label"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTextBox", 22, 22, 70, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTextBox", 22, 22, 68, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New text box"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddCheckBox", 22, 22, 100, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddNumericBox", 22, 22, 97, 10, __UI_GetID("Toolbox"))
+    ToolTip(__UI_NewID) = "New numeric input box"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddCheckBox", 22, 22, 126, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New check box"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddRadioButton", 22, 22, 130, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddRadioButton", 22, 22, 155, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New radio button"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddListBox", 22, 22, 160, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddListBox", 22, 22, 184, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New list box"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddDropdownList", 22, 22, 190, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddDropdownList", 22, 22, 213, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New drop-down list box"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTrackBar", 22, 22, 220, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTrackBar", 22, 22, 242, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New track bar/slider"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddProgressBar", 22, 22, 250, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddProgressBar", 22, 22, 271, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New progress bar"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddPictureBox", 22, 22, 280, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddPictureBox", 22, 22, 300, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New picture box"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddFrame", 22, 22, 310, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddFrame", 22, 22, 329, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New frame"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddToggleSwitch", 22, 22, 340, 10, __UI_GetID("Toolbox"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddToggleSwitch", 22, 22, 358, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New toggle switch"
     Control(__UI_NewID).CanHaveFocus = True
 
@@ -629,6 +637,7 @@ SUB __UI_AssignIDs
     EditMenuCP1252 = __UI_GetID("EditMenuCP1252")
     EditMenuSetDefaultButton = __UI_GetID("EditMenuSetDefaultButton")
     EditMenuRestoreDimensions = __UI_GetID("EditMenuRestoreDimensions")
+    EditMenuAllowMinMax = __UI_GetID("EditMenuAllowMinMax")
     EditMenuZOrdering = __UI_GetID("EditMenuZOrdering")
     ViewMenuPreviewDetach = __UI_GetID("ViewMenuPreviewDetach")
     ViewMenuShowPositionAndSize = __UI_GetID("ViewMenuShowPositionAndSize")
@@ -654,6 +663,7 @@ SUB __UI_AssignIDs
     AddButton = __UI_GetID("AddButton")
     AddLabel = __UI_GetID("AddLabel")
     AddTextBox = __UI_GetID("AddTextBox")
+    AddNumericBox = __UI_GetID("AddNumericBox")
     AddCheckBox = __UI_GetID("AddCheckBox")
     AddRadioButton = __UI_GetID("AddRadioButton")
     AddListBox = __UI_GetID("AddListBox")

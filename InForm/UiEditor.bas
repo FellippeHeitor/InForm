@@ -34,6 +34,7 @@ DIM SHARED EditMenuCP437 AS LONG
 DIM SHARED EditMenuCP1252 AS LONG
 DIM SHARED EditMenuSetDefaultButton AS LONG
 DIM SHARED EditMenuRestoreDimensions AS LONG
+DIM SHARED EditMenuAllowMinMax AS LONG
 DIM SHARED EditMenuZOrdering AS LONG
 DIM SHARED ViewMenuPreviewDetach AS LONG
 DIM SHARED ViewMenuShowPositionAndSize AS LONG
@@ -59,6 +60,7 @@ DIM SHARED HelpMenuAbout AS LONG
 DIM SHARED AddButton AS LONG
 DIM SHARED AddLabel AS LONG
 DIM SHARED AddTextBox AS LONG
+DIM SHARED AddNumericBox AS LONG
 DIM SHARED AddCheckBox AS LONG
 DIM SHARED AddRadioButton AS LONG
 DIM SHARED AddListBox AS LONG
@@ -368,6 +370,10 @@ SUB __UI_Click (id AS LONG)
             PUT #UiEditorFile, OffsetNewControl, b$
             CLOSE #UiEditorFile
             Edited = True
+        CASE AddNumericBox
+            b$ = MKI$(0)
+            SendData b$, 222
+            Edited = True
         CASE Stretch
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
@@ -654,6 +660,9 @@ SUB __UI_Click (id AS LONG)
         CASE EditMenuSelectAll
             b$ = MKI$(0)
             SendData b$, 221
+        CASE EditMenuAllowMinMax
+            b$ = MKI$(0)
+            SendData b$, 223
         CASE EditMenuCP437
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
@@ -867,11 +876,25 @@ SUB __UI_BeforeUpdateDisplay
             c$ = SPACE$(2)
             GET #UiEditorFile, OffsetOriginalImageHeight, c$
 
-            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(CVI(b$))) + "x" + LTRIM$(STR$(CVI(c$))) + ")-"
+            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(CVI(b$))) + "x" + LTRIM$(STR$(CVI(c$))) + ")"
         ELSEIF CVI(b$) = -11 THEN
             'The conditions to enable "Restore image dimensions" in Edit menu have *NOT* been met
             Control(EditMenuRestoreDimensions).Disabled = True
-            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions-"
+            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
+        ELSEIF CVI(b$) = -12 THEN
+            'The conditions to enable "Allow .min/.max bounds" in Edit menu have been met
+            'Value = False
+            Control(EditMenuAllowMinMax).Disabled = False
+            Control(EditMenuAllowMinMax).Value = False
+        ELSEIF CVI(b$) = -13 THEN
+            'The conditions to enable "Allow .min/.max bounds" in Edit menu have been met
+            'Value = True
+            Control(EditMenuRestoreDimensions).Disabled = False
+            Control(EditMenuAllowMinMax).Value = True
+        ELSEIF CVI(b$) = -14 THEN
+            'The conditions to enable "Allow .min/.max bounds" in Edit menu have *NOT* been met
+            Control(EditMenuRestoreDimensions).Disabled = True
+            Control(EditMenuAllowMinMax).Value = False
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 
@@ -1008,6 +1031,14 @@ SUB __UI_BeforeUpdateDisplay
                     IF PreviewDefaultButtonID <> FirstSelected THEN
                         Control(EditMenuSetDefaultButton).Disabled = False
                     END IF
+                ELSEIF PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
+                    IF PreviewControls(FirstSelected).NumericOnly = True THEN
+                        Control(EditMenuSetDefaultButton).Disabled = False
+                        Control(EditMenuSetDefaultButton).Value = False
+                    ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
+                        Control(EditMenuSetDefaultButton).Disabled = False
+                        Control(EditMenuSetDefaultButton).Value = True
+                    END IF
                 END IF
             END IF
 
@@ -1121,6 +1152,7 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
                 IF (__UI_Focus = TextTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
             ELSEIF __UI_Focus = TextTB THEN
+                Control(TextTB).NumericOnly = PreviewControls(FirstSelected).NumericOnly
                 IF PropertyFullySelected(TextTB) THEN
                     IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewCaptions(FirstSelected), CHR$(10), "\n", False, 0)) OR _
                        ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
@@ -1348,8 +1380,10 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         Control(TextTB).Max = 0
+        Control(TextTB).Min = 0
         IF PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND __UI_Focus = TextTB THEN
             Control(TextTB).Max = PreviewControls(FirstSelected).Max
+            Control(TextTB).Min = PreviewControls(FirstSelected).Min
         END IF
 
         'Update checkboxes:
@@ -1463,15 +1497,35 @@ SUB __UI_BeforeUpdateDisplay
                     NEXT
                 CASE __UI_Type_TextBox
                     Control(Transparent).Disabled = False
-                    Control(PasswordMaskCB).Disabled = False
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
-                                Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
-                                Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
+                    Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False)
+                    IF PreviewControls(FirstSelected).NumericOnly = True THEN
+                        FOR i = 1 TO UBOUND(InputBox)
+                            SELECT CASE InputBox(i).ID
+                                CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
+                                    Control(InputBox(i).ID).Disabled = True
+                                CASE ELSE
+                                    Control(InputBox(i).ID).Disabled = False
+                            END SELECT
+                        NEXT
+                    ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
+                        FOR i = 1 TO UBOUND(InputBox)
+                            SELECT CASE InputBox(i).ID
+                                CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
+                                    Control(InputBox(i).ID).Disabled = True
+                                CASE ELSE
+                                    Control(InputBox(i).ID).Disabled = False
+                            END SELECT
+                        NEXT
+                    ELSE
+                        FOR i = 1 TO UBOUND(InputBox)
+                            SELECT CASE InputBox(i).ID
+                                CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
+                                    Control(InputBox(i).ID).Disabled = True
+                                CASE ELSE
+                                    Control(InputBox(i).ID).Disabled = False
+                            END SELECT
+                        NEXT
+                    END IF
                 CASE __UI_Type_Button, __UI_Type_MenuItem
                     Caption(TextLB) = "Image file"
                 CASE __UI_Type_Button
@@ -1766,6 +1820,15 @@ SUB __UI_OnLoad
     LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
     LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
 
+    'Draw AddNumericBox icon
+    Control(AddNumericBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    _DEST Control(AddNumericBox).HelperCanvas
+    _FONT 8
+    LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
+    LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
+    COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
+    _PRINTSTRING (5, 5), "#"
+
     'Draw Align menu icons
     Control(AlignMenuAlignLeft).HelperCanvas = _NEWIMAGE(48, 16, 32)
     _DEST Control(AlignMenuAlignLeft).HelperCanvas
@@ -1866,6 +1929,7 @@ SUB __UI_OnLoad
     Text(AddButton) = "."
     Text(AddLabel) = "."
     Text(AddTextBox) = "."
+    Text(AddNumericBox) = "."
     Text(AddCheckBox) = "."
     Text(AddRadioButton) = "."
     Text(AddListBox) = "."
@@ -6083,6 +6147,10 @@ SUB LoadPreview
                     CASE -37
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).MinInterval = _CV(_FLOAT, b$)
+                    CASE -38
+                        PreviewControls(Dummy).NumericOnly = True
+                    CASE -39
+                        PreviewControls(Dummy).NumericOnly = __UI_NumericWithBounds
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -6437,8 +6505,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
                 END IF
                 IF PreviewControls(i).Max <> 0 THEN
-    IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
-    PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
+                    IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
+                    PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
                         PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
                     END IF
                 END IF
@@ -6477,6 +6545,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).Encoding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTRIM$(STR$(PreviewControls(i).Encoding))
+                END IF
+                IF PreviewControls(i).NumericOnly = True THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).NumericOnly = True"
+                ELSEIF PreviewControls(i).NumericOnly = __UI_NumericWithBounds THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds"
                 END IF
                 PRINT #TextFileNum,
             END IF

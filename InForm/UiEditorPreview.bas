@@ -56,6 +56,8 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 '   219 = Cut to clipboard
 '   220 = Delete selected controls
 '   221 = Select all controls
+'   222 = Add new textbox with the .NumericOnly property set to true
+'   223 = Switch .NumericOnly between True/__UI_NumericWithBounds
 
 'SavePreview parameters:
 CONST InDisk = 1
@@ -228,20 +230,22 @@ SUB __UI_BeforeUpdateDisplay
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewControl, b$
         TempValue = CVI(b$)
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewControl, b$
+
+        IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+            ThisContainer = Control(__UI_FirstSelectedID).ParentID
+            TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
+            TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
+        ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+            ThisContainer = Control(__UI_FirstSelectedID).ID
+            TempWidth = Control(__UI_FirstSelectedID).Width
+            TempHeight = Control(__UI_FirstSelectedID).Height
+        ELSE
+            TempWidth = Control(__UI_FormID).Width
+            TempHeight = Control(__UI_FormID).Height
+        END IF
+
         IF TempValue > 0 THEN
             SaveUndoImage
-            IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
-                ThisContainer = Control(__UI_FirstSelectedID).ParentID
-                TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
-                TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
-            ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-                ThisContainer = Control(__UI_FirstSelectedID).ID
-                TempWidth = Control(__UI_FirstSelectedID).Width
-                TempHeight = Control(__UI_FirstSelectedID).Height
-            ELSE
-                TempWidth = Control(__UI_FormID).Width
-                TempHeight = Control(__UI_FormID).Height
-            END IF
             SELECT CASE TempValue
                 CASE __UI_Type_Button
                     TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
@@ -317,8 +321,22 @@ SUB __UI_BeforeUpdateDisplay
             ELSE
                 SendSignal -11
             END IF
+
+            IF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox AND Control(__UI_FirstSelectedID).NumericOnly <> False THEN
+                IF Control(__UI_FirstSelectedID).NumericOnly = True THEN
+                    SendSignal -12
+                ELSEIF Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds THEN
+                    SendSignal -13
+                ELSE
+                    SendSignal -14
+                END IF
+            ELSE
+                SendSignal -11
+            END IF
+
         ELSE
             SendSignal -11
+            SendSignal -14
         END IF
 
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromEditor, b$
@@ -393,12 +411,6 @@ SUB __UI_BeforeUpdateDisplay
                     IF __UI_TotalSelectedControls = 1 THEN
                         Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
                     ELSEIF __UI_TotalSelectedControls = 0 THEN
-                        'IF __UI_GetID(b$) > 0 AND __UI_GetID(b$) <> __UI_FormID THEN
-                        '    DO
-                        '        b$ = b$ + "_"
-                        '        IF __UI_GetID(b$) = 0 THEN EXIT DO
-                        '    LOOP
-                        'END IF
                         Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
                     END IF
                 CASE 2 'Caption
@@ -894,6 +906,25 @@ SUB __UI_BeforeUpdateDisplay
                     IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
                 CASE 214 TO 221
                     __UI_KeyPress TempValue
+                CASE 222 'New textbox control with the NumericOnly property set to true
+                    SaveUndoImage
+                    TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
+                    Control(TempValue).Name = "Numeric" + Control(TempValue).Name
+                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                    Control(TempValue).NumericOnly = True
+
+                    IF __UI_ActiveMenu > 0 THEN
+                        __UI_DestroyControl Control(__UI_ActiveMenu)
+                    END IF
+                    FOR i = 1 TO UBOUND(Control)
+                        Control(i).ControlIsSelected = False
+                    NEXT
+                    Control(TempValue).ControlIsSelected = True
+                    __UI_TotalSelectedControls = 1
+                    __UI_FirstSelectedID = TempValue
+                    __UI_ForceRedraw = True
+                CASE 223
+                    AlternateNumericOnlyProperty
             END SELECT
             __UI_ForceRedraw = True
         END IF
@@ -985,7 +1016,19 @@ SUB __UI_KeyPress (id AS LONG)
             DeleteSelectedControls
         CASE 221 'Select all controls
             SelectAllControls
+        CASE 223
+            AlternateNumericOnlyProperty
     END SELECT
+END SUB
+
+SUB AlternateNumericOnlyProperty
+    IF Control(__UI_FirstSelectedID).NumericOnly = True THEN
+        Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds
+        SendSignal -1
+    ELSEIF Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds THEN
+        Control(__UI_FirstSelectedID).NumericOnly = True
+        SendSignal -1
+    END IF
 END SUB
 
 SUB DoAlign (AlignMode AS INTEGER)
@@ -1733,6 +1776,10 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, LEN(FloatValue)) ELSE b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
                     Control(TempValue).MinInterval = _CV(_FLOAT, b$)
                     IF LogFileLoad THEN PRINT #LogFileNum, "MININTERVAL="; Control(TempValue).MinInterval
+                CASE -38
+                    Control(TempValue).NumericOnly = True
+                CASE -39
+                    Control(TempValue).NumericOnly = __UI_NumericWithBounds
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -1982,6 +2029,12 @@ SUB LoadPreviewText
                             Control(TempValue).PasswordField = (DummyText$ = "True")
                         CASE "Encoding"
                             Control(TempValue).Encoding = VAL(DummyText$)
+                        CASE "NumericOnly"
+                            IF DummyText$ = "True" THEN
+                                Control(TempValue).NumericOnly = True
+                            ELSEIF DummyText$ = "__UI_NumericWithBounds" THEN
+                                Control(TempValue).NumericOnly = __UI_NumericWithBounds
+                            END IF
                     END SELECT
                 ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
                     __UI_DefaultButtonID = TempValue
@@ -2022,6 +2075,10 @@ SUB LoadPreviewText
                             _ICON ExeIcon
                         END IF
                     END IF
+                ELSEIF LEFT$(b$, 19) = "Mask(__UI_NewID) = " THEN
+                    'Mask
+                    DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
+                    Mask(TempValue) = removeQuotation$(DummyText$)
                 ELSEIF INSTR(b$, "__UI_NewControl") > 0 THEN
                     'New Control
                     EXIT DO
@@ -2354,6 +2411,23 @@ SUB SavePreview (Destination AS _BYTE)
                 b$ = MKI$(-31) + MKI$(Control(i).Padding)
                 IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
+            IF Control(i).NumericOnly = True THEN
+                b$ = MKI$(-38)
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
+            END IF
+            IF Control(i).NumericOnly = __UI_NumericWithBounds THEN
+                b$ = MKI$(-39)
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
+            END IF
+
         END IF
     NEXT
     b$ = MKI$(-1024) 'end of file

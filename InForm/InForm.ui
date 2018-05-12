@@ -262,13 +262,16 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, Y, Z
+    'A, B, C, D, E, G, H, I, L, O, P, R, S, T, V, X, Y, Z
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
     ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuImageOriginalSize", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNumericOnly", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuNumericOnly"), "Allow .Min/.Ma&x bounds-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuAlignLeft"), "Align &Left"
@@ -1548,6 +1551,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = True
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
@@ -1573,6 +1577,17 @@ SUB __UI_EventDispatcher
                         END IF
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
+                    END IF
+                    IF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
+                        IF Control(__UI_FirstSelectedID).NumericOnly = True THEN
+                            Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = False
+                            Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Value = False
+                        ELSEIF Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds THEN
+                            Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = False
+                            Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Value = True
+                        END IF
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                     END IF
                     IF Control(__UI_FirstSelectedID).Type = __UI_Type_Button THEN
                         IF __UI_FirstSelectedID <> __UI_DefaultButtonID THEN
@@ -1612,6 +1627,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
@@ -1630,6 +1646,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                 END IF
 
                 IF LEFT$(_CLIPBOARD$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
@@ -2322,6 +2339,8 @@ SUB __UI_EventDispatcher
                                 IF LEN(Text(__UI_FirstSelectedID)) THEN
                                     __UI_RestoreImageOriginalSize
                                 END IF
+                            CASE UCASE$("__UI_PreviewMenuNumericOnly")
+                                __UI_KeyPress 223
                             CASE UCASE$("__UI_PreviewMenuSetDefaultButton")
                                 __UI_DefaultButtonID = __UI_FirstSelectedID
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
@@ -5632,7 +5651,7 @@ FUNCTION __UI_Middle%%: __UI_Middle%% = 1: END FUNCTION
 FUNCTION __UI_Bottom%%: __UI_Bottom%% = 2: END FUNCTION
 
 'Textbox controls
-FUNCTION __UI_NumericWithoutBounds%%: __UI_NumericWithoutBounds%% = 1: END FUNCTION
+FUNCTION __UI_NumericWithoutBounds%%: __UI_NumericWithoutBounds%% = True: END FUNCTION
 FUNCTION __UI_NumericWithBounds%%: __UI_NumericWithBounds%% = 2: END FUNCTION
 
 'Messagebox constants
