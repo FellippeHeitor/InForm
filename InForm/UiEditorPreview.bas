@@ -853,6 +853,7 @@ SUB __UI_BeforeUpdateDisplay
                         IF Control(i).ControlIsSelected THEN
                             Mask(i) = b$
                             Text(i) = ""
+                            IF LEN(Mask(i)) THEN Control(i).Max = 0
                         END IF
                     NEXT
                 CASE 36 'MinInterval
