@@ -651,6 +651,7 @@ SUB __UI_BeforeUpdateDisplay
                             Control(i).Max = _CV(_FLOAT, b$)
                             IF Control(i).Type = __UI_Type_TextBox THEN
                                 Text(i) = LEFT$(Text(i), INT(Control(i).Max))
+                                IF LEN(Mask(i)) > 0 THEN Mask(i) = ""
                             END IF
                         END IF
                     NEXT
