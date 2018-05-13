@@ -722,7 +722,10 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        __UI_TempMask(This.ID) = Mask(This.ID)
+        IF Mask(This.ID) <> __UI_TempMask(This.ID) THEN
+            __UI_TempMask(This.ID) = Mask(This.ID)
+            Text(This.ID) = __UI_EmptyMask(This.ID)
+        END IF
         IF __UI_TempTexts(This.ID) <> Text(This.ID) THEN
             __UI_StateHasChanged = True
             __UI_TempTexts(This.ID) = Text(This.ID)
