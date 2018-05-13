@@ -148,7 +148,7 @@ DIM SHARED LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
-DIM SHARED ColorPreviewWord$
+DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 
 TYPE newInputBox
     ID AS LONG
@@ -710,6 +710,7 @@ SUB __UI_FocusOut (id AS LONG)
             IF InputBoxText(ThisInputBox) <> Text(id) AND InputBox(ThisInputBox).Sent = False THEN
                 __UI_KeepFocus = True
                 Caption(StatusBar) = "Hit ENTER to confirm new property value or ESC to cancel changes..."
+                BlinkStatusBar = TIMER
             ELSE
                 Caption(StatusBar) = "Ready."
             END IF
@@ -780,6 +781,22 @@ SUB __UI_BeforeUpdateDisplay
     DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
     DIM OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
+
+    STATIC LastChange AS SINGLE
+    IF TIMER - BlinkStatusBar < 1 THEN
+        IF TIMER - LastChange > .2 THEN
+            IF Control(StatusBar).BackColor = StatusBarBackColor THEN
+                Control(StatusBar).BackColor = _RGB32(222, 194, 127)
+            ELSE
+                Control(StatusBar).BackColor = StatusBarBackColor
+            END IF
+            Control(StatusBar).Redraw = True
+            LastChange = TIMER
+        END IF
+    ELSE
+        Control(StatusBar).BackColor = StatusBarBackColor
+        Control(StatusBar).Redraw = True
+    END IF
 
     IF NOT MidRead THEN
         MidRead = True
@@ -1775,7 +1792,8 @@ SUB __UI_OnLoad
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
 
-    Control(StatusBar).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
+    StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
+    Control(StatusBar).BackColor = StatusBarBackColor
     'LoadFontList
 
     'Load toolbox images:
@@ -2181,6 +2199,7 @@ SUB __UI_KeyPress (id AS LONG)
                         END SELECT
                         SendData b$, TempValue
                         SelectPropertyFully id
+                        InputBoxText(GetInputBoxFromID(id)) = Text(id)
                         InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
                         InputBox(GetInputBoxFromID(id)).Sent = True
                         Caption(StatusBar) = "Ready."
@@ -2191,10 +2210,14 @@ SUB __UI_KeyPress (id AS LONG)
                 IF id = NameTB THEN
                     __UI_KeyHit = 0
                     Caption(StatusBar) = "Control names cannot contain spaces"
+                ELSE
+                    InputBox(GetInputBoxFromID(id)).Sent = False
                 END IF
             ELSEIF __UI_KeyHit = 27 THEN
                 RevertEdit = True
                 Caption(StatusBar) = "Previous property value restored."
+            ELSE
+                InputBox(GetInputBoxFromID(id)).Sent = False
             END IF
         CASE AlignOptions
             Edited = True
