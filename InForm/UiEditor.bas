@@ -882,18 +882,6 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -9 THEN
             'User attempted to close the preview form
             __UI_Click FileMenuNew
-        ELSEIF CVI(b$) = -12 THEN
-            'The conditions to enable "Allow .min/.max bounds" in Edit menu have been met
-            'Value = False
-            Control(EditMenuAllowMinMax).Disabled = False
-            Control(EditMenuAllowMinMax).Value = False
-        ELSEIF CVI(b$) = -13 THEN
-            'The conditions to enable "Allow .min/.max bounds" in Edit menu have been met
-            'Value = True
-            Control(EditMenuAllowMinMax).Value = True
-        ELSEIF CVI(b$) = -14 THEN
-            'The conditions to enable "Allow .min/.max bounds" in Edit menu have *NOT* been met
-            Control(EditMenuAllowMinMax).Value = False
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
 
@@ -974,8 +962,9 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         Control(EditMenuSetDefaultButton).Disabled = True
+        Control(EditMenuAllowMinMax).Disabled = True
+        Control(EditMenuAllowMinMax).Value = False
         SetCaption ControlProperties, "Control properties:"
-
         Caption(AlignMenuAlignCenterV) = "Center Vertically (group)"
         Caption(AlignMenuAlignCenterH) = "Center Horizontally (group)-"
 
@@ -1032,11 +1021,11 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 ELSEIF PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
                     IF PreviewControls(FirstSelected).NumericOnly = True THEN
-                        Control(EditMenuSetDefaultButton).Disabled = False
-                        Control(EditMenuSetDefaultButton).Value = False
+                        Control(EditMenuAllowMinMax).Disabled = False
+                        Control(EditMenuAllowMinMax).Value = False
                     ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
-                        Control(EditMenuSetDefaultButton).Disabled = False
-                        Control(EditMenuSetDefaultButton).Value = True
+                        Control(EditMenuAllowMinMax).Disabled = False
+                        Control(EditMenuAllowMinMax).Value = True
                     END IF
                 END IF
             END IF
@@ -1495,8 +1484,14 @@ SUB __UI_BeforeUpdateDisplay
                         END SELECT
                     NEXT
                 CASE __UI_Type_TextBox
+                    STATIC PreviousNumericState AS _BYTE
                     Control(Transparent).Disabled = False
                     Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False)
+                    Caption(MaxLB) = "Max"
+                    IF PreviousNumericState <> PreviewControls(FirstSelected).NumericOnly THEN
+                        PreviousNumericState = PreviewControls(FirstSelected).NumericOnly
+                        __UI_ForceRedraw = True
+                    END IF
                     IF PreviewControls(FirstSelected).NumericOnly = True THEN
                         FOR i = 1 TO UBOUND(InputBox)
                             SELECT CASE InputBox(i).ID
@@ -1516,6 +1511,7 @@ SUB __UI_BeforeUpdateDisplay
                             END SELECT
                         NEXT
                     ELSE
+                        Caption(MaxLB) = "Max length"
                         FOR i = 1 TO UBOUND(InputBox)
                             SELECT CASE InputBox(i).ID
                                 CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
@@ -1595,7 +1591,7 @@ SUB __UI_BeforeUpdateDisplay
             'Properties relative to the form
             Control(CenteredWindow).Disabled = False
             Control(Resizable).Disabled = False
-            Caption(TextLB) = "Icon"
+            Caption(TextLB) = "Icon file"
 
             FOR i = 1 TO UBOUND(InputBox)
                 SELECT CASE InputBox(i).ID

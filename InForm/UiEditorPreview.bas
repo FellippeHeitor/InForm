@@ -908,6 +908,8 @@ SUB __UI_BeforeUpdateDisplay
                     Control(TempValue).Name = "Numeric" + Control(TempValue).Name
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                     Control(TempValue).NumericOnly = True
+                    Control(TempValue).Min = -32768
+                    Control(TempValue).Max = 32767
 
                     IF __UI_ActiveMenu > 0 THEN
                         __UI_DestroyControl Control(__UI_ActiveMenu)
@@ -1020,10 +1022,13 @@ END SUB
 SUB AlternateNumericOnlyProperty
     IF Control(__UI_FirstSelectedID).NumericOnly = True THEN
         Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds
-        SendSignal -1
+        IF VAL(Text(__UI_FirstSelectedID)) > Control(__UI_FirstSelectedID).Max THEN
+            Text(__UI_FirstSelectedID) = LTRIM$(STR$(Control(__UI_FirstSelectedID).Max))
+        ELSEIF VAL(Text(__UI_FirstSelectedID)) < Control(__UI_FirstSelectedID).Min THEN
+            Text(__UI_FirstSelectedID) = LTRIM$(STR$(Control(__UI_FirstSelectedID).Min))
+        END IF
     ELSEIF Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds THEN
         Control(__UI_FirstSelectedID).NumericOnly = True
-        SendSignal -1
     END IF
 END SUB
 
@@ -2359,7 +2364,7 @@ SUB SavePreview (Destination AS _BYTE)
             END IF
             IF Control(i).Max <> 0 THEN
                 b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE ELSE Clip$ = Clip$ + b$
+                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
             END IF
             IF Control(i).ShowPercentage THEN
                 b$ = MKI$(-19)

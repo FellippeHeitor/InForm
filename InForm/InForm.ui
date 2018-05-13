@@ -1597,9 +1597,12 @@ SUB __UI_EventDispatcher
                         ELSEIF Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds THEN
                             Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = False
                             Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Value = True
+                        ELSE
+                            Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                         END IF
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
+                        Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Value = False
                     END IF
                     IF Control(__UI_FirstSelectedID).Type = __UI_Type_Button THEN
                         IF __UI_FirstSelectedID <> __UI_DefaultButtonID THEN
