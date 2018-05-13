@@ -308,18 +308,14 @@ SUB __UI_BeforeUpdateDisplay
 
         IF __UI_FirstSelectedID > 0 THEN
             IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
-                IF Control(__UI_FirstSelectedID).Height <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
-                   Control(__UI_FirstSelectedID).Width <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
-                    b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
-                    SendData b$, OffsetOriginalImageWidth
-                    b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
-                    SendData b$, OffsetOriginalImageHeight
-                    SendSignal -10
-                ELSE
-                    SendSignal -11
-                END IF
+                b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
+                SendData b$, OffsetOriginalImageWidth
+                b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
+                SendData b$, OffsetOriginalImageHeight
             ELSE
-                SendSignal -11
+                b$ = MKI$(0)
+                SendData b$, OffsetOriginalImageWidth
+                SendData b$, OffsetOriginalImageHeight
             END IF
 
             IF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox AND Control(__UI_FirstSelectedID).NumericOnly <> False THEN

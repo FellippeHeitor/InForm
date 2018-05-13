@@ -779,6 +779,7 @@ SUB __UI_BeforeUpdateDisplay
     DIM b$, c$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
     DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
+    DIM OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
 
     IF NOT MidRead THEN
         MidRead = True
@@ -829,6 +830,20 @@ SUB __UI_BeforeUpdateDisplay
         FirstSelected = CVL(b$)
         b$ = SPACE$(4): GET #UiEditorFile, OffsetDefaultButtonID, b$
         PreviewDefaultButtonID = CVL(b$)
+        b$ = SPACE$(2): GET #UiEditorFile, OffsetOriginalImageWidth, b$
+        OriginalImageWidth = CVI(b$)
+        b$ = SPACE$(2): GET #UiEditorFile, OffsetOriginalImageHeight, b$
+        OriginalImageHeight = CVI(b$)
+
+        Control(EditMenuRestoreDimensions).Disabled = True
+        SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
+        IF TotalSelected = 1 AND PreviewControls(FirstSelected).Type = __UI_Type_PictureBox AND OriginalImageWidth > 0 AND OriginalImageHeight > 0 THEN
+            IF PreviewControls(FirstSelected).Height <> OriginalImageHeight OR _
+               PreviewControls(FirstSelected).Width <> OriginalImageWidth THEN
+                Control(EditMenuRestoreDimensions).Disabled = False
+                SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(OriginalImageWidth)) + "x" + LTRIM$(STR$(OriginalImageHeight)) + ")"
+            END IF
+        END IF
 
         b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
         IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
@@ -867,20 +882,6 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -9 THEN
             'User attempted to close the preview form
             __UI_Click FileMenuNew
-        ELSEIF CVI(b$) = -10 THEN
-            'The conditions to enable "Restore image dimensions" in Edit menu have been met
-            Control(EditMenuRestoreDimensions).Disabled = False
-
-            b$ = SPACE$(2)
-            GET #UiEditorFile, OffsetOriginalImageWidth, b$
-            c$ = SPACE$(2)
-            GET #UiEditorFile, OffsetOriginalImageHeight, c$
-
-            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(CVI(b$))) + "x" + LTRIM$(STR$(CVI(c$))) + ")"
-        ELSEIF CVI(b$) = -11 THEN
-            'The conditions to enable "Restore image dimensions" in Edit menu have *NOT* been met
-            Control(EditMenuRestoreDimensions).Disabled = True
-            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
         ELSEIF CVI(b$) = -12 THEN
             'The conditions to enable "Allow .min/.max bounds" in Edit menu have been met
             'Value = False
@@ -889,11 +890,9 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -13 THEN
             'The conditions to enable "Allow .min/.max bounds" in Edit menu have been met
             'Value = True
-            Control(EditMenuRestoreDimensions).Disabled = False
             Control(EditMenuAllowMinMax).Value = True
         ELSEIF CVI(b$) = -14 THEN
             'The conditions to enable "Allow .min/.max bounds" in Edit menu have *NOT* been met
-            Control(EditMenuRestoreDimensions).Disabled = True
             Control(EditMenuAllowMinMax).Value = False
         END IF
         b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
