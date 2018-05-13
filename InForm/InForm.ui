@@ -319,6 +319,7 @@ SUB __UI_InternalMenus
     SetCaption __UI_GetID("__UI_PreviewMenuSelect"), "Select &All"
 END SUB
 
+'---------------------------------------------------------------------------------
 SUB SetFrameRate(FPS AS _UNSIGNED INTEGER)
     IF FPS >= 30 THEN
         __UI_FrameRate = 1 / FPS
@@ -335,6 +336,16 @@ SUB SetFrameRate(FPS AS _UNSIGNED INTEGER)
         __UI_RefreshTimer = _FREETIMER
         ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
         TIMER(__UI_RefreshTimer) ON
+    END IF
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB SetFocus(id AS LONG)
+    __UI_Focus = id
+    IF Control(id).Type = __UI_Type_TextBox THEN
+        Control(id).TextIsSelected = True
+        Control(id).SelectionStart = 0
+        Control(id).Cursor = LEN(Text(id))
     END IF
 END SUB
 
