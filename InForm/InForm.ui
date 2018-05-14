@@ -811,7 +811,9 @@ SUB __UI_UpdateDisplay
                     __UI_DrawRadioButton Control(i), ControlState
                 CASE __UI_Type_CheckBox
                     'Check boxes
+                    __UI_StateHasChanged = False
                     __UI_DrawCheckBox Control(i), ControlState
+                    IF __UI_StateHasChanged THEN __UI_ValueChanged i
                 CASE __UI_Type_ProgressBar
                     'Progress bars
                     __UI_DrawProgressBar Control(i), ControlState
@@ -836,17 +838,23 @@ SUB __UI_UpdateDisplay
                     'List boxes
                     IF Control(i).InputViewStart <= 0 THEN Control(i).InputViewStart = 1
 
+                    __UI_StateHasChanged = False
                     __UI_DrawListBox Control(i), ControlState
+                    IF __UI_StateHasChanged THEN __UI_ValueChanged i
                 CASE __UI_Type_DropdownList
                     'Dropdown lists
 
+                    __UI_StateHasChanged = False
                     __UI_DrawDropdownList Control(i), ControlState
+                    IF __UI_StateHasChanged THEN __UI_ValueChanged i
                 CASE __UI_Type_MenuBar
                     __UI_DrawMenuBar Control(i), ControlState
                 CASE __UI_Type_PictureBox
                     __UI_DrawPictureBox Control(i), ControlState
                 CASE __UI_Type_ToggleSwitch
+                    __UI_StateHasChanged = False
                     __UI_DrawToggleSwitch Control(i), ControlState
+                    IF __UI_StateHasChanged THEN __UI_ValueChanged i
             END SELECT
         END IF
 

@@ -301,7 +301,10 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
@@ -460,7 +463,10 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
@@ -950,7 +956,10 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         This.PreviousInputViewStart = This.InputViewStart
         __UI_TempTexts(This.ID) = Text(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
@@ -1188,7 +1197,10 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         This.PreviousInputViewStart = This.InputViewStart
         __UI_TempTexts(This.ID) = Text(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
