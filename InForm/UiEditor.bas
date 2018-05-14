@@ -1033,8 +1033,11 @@ SUB __UI_BeforeUpdateDisplay
                 Control(AlignMenuDistributeH).Disabled = True
 
                 IF PreviewControls(FirstSelected).Type = __UI_Type_Button THEN
+                    Control(EditMenuSetDefaultButton).Disabled = False
                     IF PreviewDefaultButtonID <> FirstSelected THEN
-                        Control(EditMenuSetDefaultButton).Disabled = False
+                        Control(EditMenuSetDefaultButton).Value = False
+                    ELSE
+                        Control(EditMenuSetDefaultButton).Value = True
                     END IF
                 ELSEIF PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
                     IF PreviewControls(FirstSelected).NumericOnly = True THEN

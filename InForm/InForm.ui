@@ -1607,12 +1607,10 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_FirstSelectedID).Type = __UI_Type_Button THEN
                         IF __UI_FirstSelectedID <> __UI_DefaultButtonID THEN
                             Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = False
-                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Disabled = False
-                            SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Value = False
                         ELSE
                             Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = False
-                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Disabled = True
-                            SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "This is the default button-"
+                            Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Value = True
                         END IF
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
@@ -2357,7 +2355,11 @@ SUB __UI_EventDispatcher
                             CASE UCASE$("__UI_PreviewMenuNumericOnly")
                                 __UI_KeyPress 223
                             CASE UCASE$("__UI_PreviewMenuSetDefaultButton")
-                                __UI_DefaultButtonID = __UI_FirstSelectedID
+                                IF __UI_DefaultButtonID = __UI_FirstSelectedID THEN
+                                    __UI_DefaultButtonID = 0
+                                ELSE
+                                    __UI_DefaultButtonID = __UI_FirstSelectedID
+                                END IF
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste

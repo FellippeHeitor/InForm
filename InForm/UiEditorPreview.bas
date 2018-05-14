@@ -388,7 +388,11 @@ SUB __UI_BeforeUpdateDisplay
             SendSignal -7 'New form created
         ELSEIF TempValue = -6 THEN
             'Set current button as default
-            __UI_DefaultButtonID = __UI_FirstSelectedID
+            IF __UI_DefaultButtonID = __UI_FirstSelectedID THEN
+                __UI_DefaultButtonID = 0
+            ELSE
+                __UI_DefaultButtonID = __UI_FirstSelectedID
+            END IF
         ELSEIF TempValue = -7 THEN
             __UI_RestoreImageOriginalSize
         ELSEIF TempValue = -1 THEN
