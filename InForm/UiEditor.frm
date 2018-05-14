@@ -70,14 +70,14 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuOpen", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "&Open...-"
-    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "&Save project"
-    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property" + CHR$(10) + "Only the .frm file will be updated."
+    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSaveFrm", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "Save &form only-"
+    ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property" + CHR$(10) + "Only the .frm file will be updated."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuExit", 56, 18, 0, 40, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "E&xit"
