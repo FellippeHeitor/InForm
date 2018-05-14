@@ -1533,7 +1533,9 @@ SUB LoadPreview (Destination AS _BYTE)
         REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
         REDIM _PRESERVE Control(0 TO CVL(b$)) AS __UI_ControlTYPE
     ELSE
+        DIM ShiftPosition AS _BYTE
         FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ControlIsSelected THEN ShiftPosition = True
             Control(i).ControlIsSelected = False
         NEXT
 
@@ -1581,11 +1583,15 @@ SUB LoadPreview (Destination AS _BYTE)
         IF LogFileLoad THEN PRINT #LogFileNum, "HEIGHT:" + STR$(CVI(b$))
         IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
         NewLeft = CVI(b$)
-        IF NOT Disk THEN NewLeft = NewLeft + 20
         IF LogFileLoad THEN PRINT #LogFileNum, "LEFT:" + STR$(CVI(b$))
         IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
         NewTop = CVI(b$)
-        IF NOT Disk THEN NewTop = NewTop + 20
+        IF NOT Disk THEN
+            IF ShiftPosition THEN
+                NewLeft = NewLeft + 20
+                NewTop = NewTop + 20
+            END IF
+        END IF
         IF LogFileLoad THEN PRINT #LogFileNum, "TOP:" + STR$(CVI(b$))
         IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
         IF CVI(b$) > 0 THEN
