@@ -1219,46 +1219,48 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
 
         DIM TempText$, ThisItem%, FindLF&, ThisItemTop%
 
-        IF LEN(Text(This.ID)) THEN
-            TempText$ = Text(This.ID)
-            ThisItem% = 0
-            DO WHILE LEN(TempText$)
-                ThisItem% = ThisItem% + 1
-                FindLF& = INSTR(TempText$, CHR$(13))
-                IF FindLF& THEN
-                    TempCaption$ = LEFT$(TempText$, FindLF& - 1)
-                    TempText$ = MID$(TempText$, FindLF& + 1)
-                ELSE
-                    TempCaption$ = TempText$
-                    TempText$ = ""
-                END IF
-                IF ThisItem% = This.Value THEN
-                    ThisItemTop% = This.Height \ 2 - uspacing& \ 2 + 1
-
-                    IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
-
-                    IF NOT This.Disabled THEN
-                        COLOR This.ForeColor
+        IF This.Value > 0 THEN
+            IF LEN(Text(This.ID)) THEN
+                TempText$ = Text(This.ID)
+                ThisItem% = 0
+                DO WHILE LEN(TempText$)
+                    ThisItem% = ThisItem% + 1
+                    FindLF& = INSTR(TempText$, CHR$(13))
+                    IF FindLF& THEN
+                        TempCaption$ = LEFT$(TempText$, FindLF& - 1)
+                        TempText$ = MID$(TempText$, FindLF& + 1)
                     ELSE
-                        COLOR Darken(Control(__UI_FormID).BackColor, 80)
+                        TempCaption$ = TempText$
+                        TempText$ = ""
                     END IF
+                    IF ThisItem% = This.Value THEN
+                        ThisItemTop% = This.Height \ 2 - uspacing& \ 2 + 1
 
-                    IF __UI_Focus = This.ID THEN
-                        COLOR This.SelectedForeColor
-                        LINE (CaptionIndent, 3)-STEP(This.Width - CaptionIndent * 2, This.Height - 7), This.SelectedBackColor, BF
+                        IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
+
+                        IF NOT This.Disabled THEN
+                            COLOR This.ForeColor
+                        ELSE
+                            COLOR Darken(Control(__UI_FormID).BackColor, 80)
+                        END IF
+
+                        IF __UI_Focus = This.ID THEN
+                            COLOR This.SelectedForeColor
+                            LINE (CaptionIndent, 3)-STEP(This.Width - CaptionIndent * 2, This.Height - 7), This.SelectedBackColor, BF
+                        END IF
+
+                        SELECT CASE This.Align
+                            CASE __UI_Left
+                                __UI_PrintString CaptionIndent * 2, ThisItemTop%, TempCaption$
+                            CASE __UI_Center
+                                __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$
+                            CASE __UI_Right
+                                __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
+                        END SELECT
+                        EXIT DO
                     END IF
-
-                    SELECT CASE This.Align
-                        CASE __UI_Left
-                            __UI_PrintString CaptionIndent * 2, ThisItemTop%, TempCaption$
-                        CASE __UI_Center
-                            __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$
-                        CASE __UI_Right
-                            __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
-                    END SELECT
-                    EXIT DO
-                END IF
-            LOOP
+                LOOP
+            END IF
         END IF
 
         'Draw "dropdown" button

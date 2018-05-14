@@ -839,7 +839,6 @@ SUB __UI_UpdateDisplay
                     __UI_DrawListBox Control(i), ControlState
                 CASE __UI_Type_DropdownList
                     'Dropdown lists
-                    IF Control(i).Value = 0 THEN Control(i).Value = 1
 
                     __UI_DrawDropdownList Control(i), ControlState
                 CASE __UI_Type_MenuBar
