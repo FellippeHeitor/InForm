@@ -979,6 +979,7 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         Control(EditMenuSetDefaultButton).Disabled = True
+        Control(EditMenuSetDefaultButton).Value = False
         Control(EditMenuAllowMinMax).Disabled = True
         Control(EditMenuAllowMinMax).Value = False
         SetCaption ControlProperties, "Control properties:"
