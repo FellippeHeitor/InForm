@@ -158,6 +158,11 @@ TYPE newInputBox
     Sent AS _BYTE
 END TYPE
 
+TYPE newExistingControl
+    Name AS STRING * 40
+    Status AS _BYTE '0 = Kept, 1 = Renamed, 2 = Deleted, 3 = Added
+END TYPE
+
 CONST OffsetEditorPID = 1
 CONST OffsetPreviewPID = 5
 CONST OffsetWindowLeft = 9
@@ -189,6 +194,7 @@ REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED InputBoxText(1 TO 100) AS STRING
+REDIM SHARED ExistingControls(1 TO 100) AS newExistingControl
 DIM SHARED PreviewDefaultButtonID AS LONG
 
 'DIM SHARED FontList.Names AS STRING
@@ -2016,7 +2022,7 @@ SUB __UI_OnLoad
         Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
         $IF WIN THEN
         $ELSE
-            Control(OPTIONSMENUSWAPBUTTONS).Value = __UI_MouseButtonsSwap
+            Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
         $END IF
     END IF
 
@@ -2036,8 +2042,8 @@ SUB __UI_OnLoad
                     LINE INPUT #FreeFileNum, b$
                     b$ = LTRIM$(RTRIM$(b$))
                     uB$ = UCASE$(b$)
-    IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
-    INSTR(uB$, "$INCLUDE") > 0 THEN
+                    IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
+                    INSTR(uB$, "$INCLUDE") > 0 THEN
                         DIM FirstMark AS INTEGER, SecondMark AS INTEGER
                         FirstMark = INSTR(INSTR(uB$, "$INCLUDE") + 8, uB$, "'")
                         IF FirstMark > 0 THEN
@@ -2142,6 +2148,7 @@ SUB __UI_OnLoad
 
     ShowMessage:
     _DEST 0
+    _FONT Control(__UI_FormID).Font
     CLS , __UI_DefaultColor(__UI_Type_Form, 2)
     COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
     _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), b$
