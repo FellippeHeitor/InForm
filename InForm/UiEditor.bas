@@ -527,7 +527,7 @@ SUB __UI_Click (id AS LONG)
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
 
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
-            Control(OpenFrame).Left = 68: Control(OpenFrame).Top = 122
+            Control(OpenFrame).Left = 18: Control(OpenFrame).Top = 40
             OpenDialogOpen = True
             Caption(StatusBar) = "Select a form file to load..."
             __UI_Focus = FileNameTextBox

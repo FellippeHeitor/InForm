@@ -47,11 +47,10 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 8
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "OpenFrame", 463, 289,-600,-600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "OpenFrame", 563, 497, -600, -600, 0)
     SetCaption __UI_NewID, "Open"
     Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 10
-
+    
     __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ZOrdering", 463, 289,-600,-600, 0)
     SetCaption __UI_NewID, "Z-Ordering"
     Control(__UI_NewID).HasBorder = True
@@ -544,45 +543,45 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "FileNameTextBox", 363, 23, 89, 16, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "FileNameTextBox", 463, 23, 89, 16, __UI_GetID("OpenFrame"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "PathLB", 437, 23, 15, 44, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "PathLB", 535, 23, 15, 44, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Path: C:\QB64"
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "FilesLB", 200, 23, 25, 75, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "FilesLB", 200, 23, 25, 72, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Files:"
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "FileList", 200, 150, 25, 99, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "FileList", 256, 355, 25, 99, __UI_GetID("OpenFrame"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "PathsLB", 200, 23, 242, 75, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "PathsLB", 200, 23, 296, 72, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "&Paths:"
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "DirList", 200, 150, 242, 99, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "DirList", 256, 355, 296, 99, __UI_GetID("OpenFrame"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "OpenBT", 80, 23, 274, 255, __UI_GetID("OpenFrame"))
-    SetCaption __UI_NewID, "Open"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBT", 80, 23, 362, 255, __UI_GetID("OpenFrame"))
-    SetCaption __UI_NewID, "&Cancel"
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 200, 23, 25, 255, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 200, 23, 25, 461, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Show only compatible files"
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).Value = -1
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "OpenBT", 80, 23, 382, 461, __UI_GetID("OpenFrame"))
+    SetCaption __UI_NewID, "Open"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBT", 80, 23, 470, 461, __UI_GetID("OpenFrame"))
+    SetCaption __UI_NewID, "&Cancel"
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 379, 222, 25, 24, __UI_GetID("ZOrdering"))
