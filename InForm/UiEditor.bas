@@ -460,6 +460,7 @@ SUB __UI_Click (id AS LONG)
             END IF
 
             SendSignal -5
+            __UI_Focus = 0
             Edited = False
         CASE FileMenuSaveFrm
             SaveForm True, True

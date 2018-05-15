@@ -385,6 +385,7 @@ SUB __UI_BeforeUpdateDisplay
 
             UndoPointer = 0
             TotalUndoImages = 0
+            _ICON
             SendSignal -7 'New form created
         ELSEIF TempValue = -6 THEN
             'Set current button as default
