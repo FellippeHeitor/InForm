@@ -341,6 +341,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB SetFocus(id AS LONG)
+    IF __UI_Focus = id THEN EXIT SUB
     IF Control(id).CanHaveFocus = False OR Control(id).Hidden = True OR Control(id).Disabled = TRUE THEN EXIT SUB
     __UI_Focus = id
     IF Control(id).Type = __UI_Type_TextBox THEN
