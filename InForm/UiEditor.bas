@@ -1817,7 +1817,7 @@ SUB __UI_OnLoad
     LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
     LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
     COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
-    _PRINTSTRING (5, 5), "#"
+    __UI_PrintString 5, 5, "#"
 
     'Draw Align menu icons
     Control(AlignMenuAlignLeft).HelperCanvas = _NEWIMAGE(48, 16, 32)
@@ -2118,7 +2118,7 @@ SUB __UI_OnLoad
     _FONT Control(__UI_FormID).Font
     CLS , __UI_DefaultColor(__UI_Type_Form, 2)
     COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
-    _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), b$
+    __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, b$
     _DISPLAY
     RETURN
 END SUB
@@ -6194,7 +6194,7 @@ SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackCol
         LINE (21, 21)-STEP(_WIDTH - 43, _HEIGHT - 43), ForeColor, B
         ColorPreviewWord$ = "#" + MID$(HEX$(ForeColor), 3)
         COLOR ForeColor, BackColor
-        _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), ColorPreviewWord$
+        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, ColorPreviewWord$
     ELSE
         CLS , BackColor
         COLOR ForeColor, BackColor
@@ -6204,7 +6204,7 @@ SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackCol
             CASE 2, 4
                 ColorPreviewWord$ = "BG: #" + MID$(HEX$(BackColor), 3)
         END SELECT
-        _PRINTSTRING (_WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2), ColorPreviewWord$
+        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, ColorPreviewWord$
         ColorPreviewWord$ = MID$(ColorPreviewWord$, 5)
     END IF
     _DEST 0

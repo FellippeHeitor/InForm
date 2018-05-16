@@ -365,7 +365,7 @@ SUB __UI_Init
     COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
     CLS
     IF Control(__UI_FormID).Font > 0 THEN _FONT Control(__UI_FormID).Font
-    _PRINTSTRING (_WIDTH / 2 - _PRINTWIDTH("Initializing...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2), "Initializing..."
+    __UI_PrintString _WIDTH / 2 - _PRINTWIDTH("Initializing...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2, "Initializing..."
     _SCREENSHOW
 
     _DELAY .1
