@@ -51,10 +51,9 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Open"
     Control(__UI_NewID).HasBorder = True
     
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ZOrdering", 463, 289,-600,-600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ZOrdering", 563, 497, -600, -600, 0)
     SetCaption __UI_NewID, "Z-Ordering"
     Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 4
 
     __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlProperties", 366, 263, 10, 93, 0)
     SetCaption __UI_NewID, "Control properties: Main form"
@@ -584,22 +583,27 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&Cancel"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 379, 222, 25, 24, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "ZDescriptionLB", 484, 58, 15, 396, __UI_GetID("ZOrdering"))
+    SetCaption __UI_NewID, "Select a control in the list and use the up/down buttons to change the z-ordering/tab order. This affects both the order in which the controls are drawn (in case there are overlaps) and also the tab order for keyboard navigation by your users. "
+    Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).WordWrap = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 485, 376, 15, 15, __UI_GetID("ZOrdering"))
     Control(__UI_NewID).Font = SetFont("cour.ttf", 12)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "UpBT", 40, 42, 413, 84, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "UpBT", 40, 42, 511, 151, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "^"
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).Disabled = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "DownBT", 40, 42, 413, 146, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "DownBT", 40, 42, 511, 213, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "v"
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).Disabled = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CloseZOrderingBT", 80, 23, 192, 255, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CloseZOrderingBT", 80, 23, 242, 460, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "Close"
     Control(__UI_NewID).CanHaveFocus = True
 

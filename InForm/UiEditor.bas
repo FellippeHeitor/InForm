@@ -468,7 +468,7 @@ SUB __UI_Click (id AS LONG)
             NEXT
             IF Moving THEN RETURN
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
-            Control(ZOrdering).Left = 68: Control(ZOrdering).Top = 122
+            Control(ZOrdering).Left = 18: Control(ZOrdering).Top = 40
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
         CASE CloseZOrderingBT
