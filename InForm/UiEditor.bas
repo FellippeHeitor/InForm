@@ -955,7 +955,11 @@ SUB __UI_BeforeUpdateDisplay
         Control(EditMenuSetDefaultButton).Value = False
         Control(EditMenuAllowMinMax).Disabled = True
         Control(EditMenuAllowMinMax).Value = False
-        SetCaption ControlProperties, "Control properties:"
+        IF INSTR(LCASE$(PreviewControls(PreviewFormID).Name), "form") = 0 THEN
+            Caption(ControlProperties) = "Control properties (Form):"
+        ELSE
+            Caption(ControlProperties) = "Control properties:"
+        END IF
         Caption(AlignMenuAlignCenterV) = "Center Vertically (group)"
         Caption(AlignMenuAlignCenterH) = "Center Horizontally (group)-"
 
@@ -988,6 +992,11 @@ SUB __UI_BeforeUpdateDisplay
                 Control(EditMenuCopy).Disabled = False
                 Control(EditMenuDelete).Disabled = False
 
+                IF INSTR(LCASE$(PreviewControls(FirstSelected).Name), LCASE$(RTRIM$(__UI_Type(PreviewControls(FirstSelected).Type).Name))) = 0 THEN
+                    Caption(ControlProperties) = "Control properties (Type = " + RTRIM$(__UI_Type(PreviewControls(FirstSelected).Type).Name) + "):"
+                ELSE
+                    Caption(ControlProperties) = "Control properties:"
+                END IF
                 Control(AlignMenuAlignLeft).Disabled = True
                 Control(AlignMenuAlignRight).Disabled = True
                 Control(AlignMenuAlignTops).Disabled = True
@@ -1017,15 +1026,17 @@ SUB __UI_BeforeUpdateDisplay
                     IF PreviewControls(FirstSelected).NumericOnly = True THEN
                         Control(EditMenuAllowMinMax).Disabled = False
                         Control(EditMenuAllowMinMax).Value = False
+                        IF INSTR(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 THEN Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
                     ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
                         Control(EditMenuAllowMinMax).Disabled = False
                         Control(EditMenuAllowMinMax).Value = True
+                        IF INSTR(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 THEN Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
                     END IF
                 END IF
             END IF
 
         ELSEIF TotalSelected = 2 THEN
-            SetCaption ControlProperties, "Control properties: (multiple selection)"
+            Caption(ControlProperties) = "Control properties: (multiple selection)"
 
             Control(EditMenuCut).Disabled = False
             Control(EditMenuCopy).Disabled = False
