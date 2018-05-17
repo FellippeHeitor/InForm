@@ -452,7 +452,7 @@ SUB __UI_Click (id AS LONG)
             SYSTEM
         CASE EditMenuZOrdering
             'Fill the list:
-            Caption(StatusBar) = "Select controls and use the up/down arrow buttons to edit z-ordering..."
+            Caption(StatusBar) = "Editing z-ordering/tab ordering..."
             DIM j AS LONG, i AS LONG
             STATIC Moving AS _BYTE
             REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
@@ -1817,7 +1817,7 @@ SUB __UI_OnLoad
     LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
     LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
     COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
-    __UI_PrintString 5, 5, "#"
+    __UI_PrintString 5, 3, "#"
 
     'Draw Align menu icons
     Control(AlignMenuAlignLeft).HelperCanvas = _NEWIMAGE(48, 16, 32)
