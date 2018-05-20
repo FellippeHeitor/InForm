@@ -19,7 +19,8 @@ CONST OffsetMouseSwapped = 41
 CONST OffsetDefaultButtonID = 43
 CONST OffsetOriginalImageWidth = 47
 CONST OffsetOriginalImageHeight = 49
-CONST OffsetPropertyValue = 51
+CONST OffsetSelectionRectangle = 51
+CONST OffsetPropertyValue = 53
 
 DIM SHARED UiPreviewPID AS LONG
 DIM SHARED ExeIcon AS LONG
@@ -152,6 +153,9 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
     SendData b$, OffsetMenuPanelIsON
+
+    IF __UI_SelectionRectangle THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
+    SendData b$, OffsetSelectionRectangle
 
     UiEditorFile = FREEFILE
     OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile

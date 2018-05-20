@@ -108,7 +108,7 @@ DIM SHARED MaskTB AS LONG, MaskLB AS LONG
 
 'Other shared variables:
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
-DIM SHARED PreviewFormID AS LONG
+DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED LastKeyPress AS DOUBLE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
@@ -143,7 +143,8 @@ CONST OffsetMouseSwapped = 41
 CONST OffsetDefaultButtonID = 43
 CONST OffsetOriginalImageWidth = 47
 CONST OffsetOriginalImageHeight = 49
-CONST OffsetPropertyValue = 51
+CONST OffsetSelectionRectangle = 51
+CONST OffsetPropertyValue = 53
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -885,6 +886,8 @@ SUB __UI_BeforeUpdateDisplay
         OriginalImageWidth = CVI(b$)
         b$ = SPACE$(2): GET #UiEditorFile, OffsetOriginalImageHeight, b$
         OriginalImageHeight = CVI(b$)
+        b$ = SPACE$(2): GET #UiEditorFile, OffsetSelectionRectangle, b$
+        PreviewSelectionRectangle = CVI(b$)
 
         Control(EditMenuRestoreDimensions).Disabled = True
         SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
@@ -6238,6 +6241,8 @@ END SUB
 
 SUB SendData (b$, Property AS INTEGER)
     DIM FileNum AS INTEGER
+    IF PreviewSelectionRectangle THEN EXIT SUB
+
     FileNum = FREEFILE
     OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
