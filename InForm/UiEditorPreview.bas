@@ -1918,6 +1918,7 @@ SUB LoadPreviewText
 
             TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
             IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
+            IF NewType = __UI_Type_Label THEN Control(TempValue).VAlign = __UI_Top
 
             DO 'read properties
                 DO
