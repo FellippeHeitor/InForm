@@ -260,8 +260,6 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
     STATIC LastClick#, LastClickedID AS LONG
 
-    Caption(StatusBar) = "Ready."
-
     SELECT EVERYCASE id
         CASE AlignMenuAlignLeft: Dummy = 201
         CASE AlignMenuAlignRight: Dummy = 202
@@ -581,7 +579,7 @@ SUB __UI_Click (id AS LONG)
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
             Control(DirList).Value = 0
             IF Control(FileList).HoveringVScrollbarButton = 0 AND LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
-                GOTO OpenFile
+                IF LEN(Text(FileNameTextBox)) > 0 THEN GOTO OpenFile
             END IF
         CASE DirList
             Text(FileNameTextBox) = GetItem(DirList, Control(DirList).Value)
@@ -648,6 +646,7 @@ SUB __UI_Click (id AS LONG)
 
     LastClickedID = id
     LastClick# = TIMER
+    IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
@@ -709,7 +708,7 @@ SUB __UI_MouseEnter (id AS LONG)
         CASE OptionsMenuSwapButtons
             Caption(StatusBar) = "Toggles left/right mouse buttons."
         CASE ELSE
-            IF Control(id).Type = __UI_Type_MenuItem THEN
+            IF Control(id).Type = __UI_Type_MenuItem OR Control(id).Type = __UI_Type_MenuBar THEN
                 Caption(StatusBar) = ""
             END IF
     END SELECT
@@ -827,6 +826,10 @@ SUB __UI_BeforeUpdateDisplay
     ELSE
         Control(StatusBar).BackColor = StatusBarBackColor
         Control(StatusBar).Redraw = True
+    END IF
+
+    IF __UI_Focus = 0 THEN
+        IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
     END IF
 
     IF NOT MidRead THEN
@@ -6524,6 +6527,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).Stretch = True THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = True"
+                ELSE
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = False"
                 END IF
                 'Fonts
                 IF LEN(PreviewFonts(i)) > 0 THEN
