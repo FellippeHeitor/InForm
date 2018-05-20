@@ -3374,12 +3374,25 @@ SUB __UI_EventDispatcher
 
                                 IF Control(__UI_Focus).NumericOnly THEN
                                     IF __UI_KeyHit = 45 THEN
-                                        IF (Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).TextIsSelected = False) OR INSTR(Text(__UI_Focus), "-") > 0 THEN
-                                            __UI_KeyHit = 0
+                                        IF INSTR(Text(__UI_Focus), "-") > 0 THEN
+                                            IF INSTR(__UI_SelectedText, "-") = 0 THEN
+                                                __UI_KeyHit = 0
+                                            END IF
+                                        ELSE
+                                            IF (Control(__UI_Focus).Cursor > 0 AND Control(__UI_Focus).TextIsSelected = False) THEN
+                                                __UI_KeyHit = 0
+                                            END IF
                                         END IF
                                     ELSEIF __UI_KeyHit = 46 THEN
-                                        IF INSTR(Text(__UI_Focus), ".") > 0 THEN __UI_KeyHit = 0
-                                        IF Control(__UI_Focus).Cursor = 0 AND LEFT$(Text(__UI_Focus), 1) = "-" THEN __UI_KeyHit = 0
+                                        IF INSTR(Text(__UI_Focus), ".") > 0 THEN
+                                            IF INSTR(__UI_SelectedText, ".") = 0 THEN
+                                                __UI_KeyHit = 0
+                                            END IF
+                                        ELSE
+                                            IF Control(__UI_Focus).Cursor = 0 AND LEFT$(Text(__UI_Focus), 1) = "-" THEN
+                                                __UI_KeyHit = 0
+                                            END IF
+                                        END IF
                                     ELSEIF __UI_KeyHit < 48 OR __UI_KeyHit > 57 THEN
                                         __UI_KeyHit = 0
                                     END IF
