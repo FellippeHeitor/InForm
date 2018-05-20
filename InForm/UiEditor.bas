@@ -20,9 +20,9 @@ DIM SHARED ControlProperties AS LONG, ControlToggles AS LONG
 'Menu items
 DIM SHARED FileMenuNew AS LONG, FileMenuOpen AS LONG
 DIM SHARED FileMenuSave AS LONG, FileMenuSaveFrm AS LONG
-DIM SHARED FileMenuExit AS LONG, EditMenuUndo AS LONG
+DIM SHARED FileMenuExit AS LONG
 
-DIM SHARED EditMenuRedo AS LONG, EditMenuCut AS LONG
+DIM SHARED EditMenuUndo AS LONG, EditMenuRedo AS LONG, EditMenuCut AS LONG
 DIM SHARED EditMenuCopy AS LONG, EditMenuPaste AS LONG
 DIM SHARED EditMenuDelete AS LONG, EditMenuSelectAll AS LONG
 DIM SHARED EditMenuCP437 AS LONG, EditMenuCP1252 AS LONG
@@ -259,6 +259,8 @@ $END IF
 SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
     STATIC LastClick#, LastClickedID AS LONG
+
+    Caption(StatusBar) = "Ready."
 
     SELECT EVERYCASE id
         CASE AlignMenuAlignLeft: Dummy = 201
@@ -649,6 +651,68 @@ SUB __UI_Click (id AS LONG)
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
+    SELECT CASE id
+        CASE FileMenuNew
+            Caption(StatusBar) = "Creates a new project."
+        CASE FileMenuOpen
+            Caption(StatusBar) = "Loads an existing project from disk."
+        CASE FileMenuExit
+            Caption(StatusBar) = "Exits the editor."
+        CASE FileMenuSave
+            Caption(StatusBar) = "Saves the current project to disk."
+        CASE FileMenuSaveFrm
+            Caption(StatusBar) = "Saves only the current .frm file to disk."
+        CASE FileMenuSave
+            Caption(StatusBar) = "Saves the current project to disk."
+        CASE EditMenuUndo
+            Caption(StatusBar) = "Undoes the last edit."
+        CASE EditMenuRedo
+            Caption(StatusBar) = "Redoes the last undone edit."
+        CASE EditMenuCut
+            Caption(StatusBar) = "Removes the selected controls and copies them to the Clipboard."
+        CASE EditMenuCopy
+            Caption(StatusBar) = "Copies the selected controls to the Clipboard."
+        CASE EditMenuPaste
+            Caption(StatusBar) = "Inserts controls previously cut or copied from the Clipboard."
+        CASE EditMenuDelete
+            Caption(StatusBar) = "Removes the selected controls."
+        CASE EditMenuSelectAll
+            Caption(StatusBar) = "Selects all controls."
+        CASE EditMenuCP437
+            Caption(StatusBar) = "Applies code page 437 to the current form."
+        CASE EditMenuCP1252
+            Caption(StatusBar) = "Applies code page 1252 to the current form."
+        CASE EditMenuSetDefaultButton
+            Caption(StatusBar) = "Makes the currently selected button the default button."
+        CASE EditMenuRestoreDimensions
+            Caption(StatusBar) = "Makes this control have the same dimensions as the loaded image."
+        CASE EditMenuAllowMinMax
+            Caption(StatusBar) = "Enables the .Min and .Max properties for NumericTextBox controls."
+        CASE EditMenuZOrdering
+            Caption(StatusBar) = "Allows you to change tab-order/z-ordering of controls."
+        CASE ViewMenuPreviewDetach
+            Caption(StatusBar) = "Toggles whether the preview form will be moved with the editor."
+        CASE ViewMenuShowPositionAndSize
+            Caption(StatusBar) = "Toggles whether size and position indicators will be shown in the preview."
+        CASE ViewMenuPreview
+            Caption(StatusBar) = "Launches the preview window in case it's been closed accidentaly."
+        CASE ViewMenuLoadedFonts
+            Caption(StatusBar) = "Shows a list of all fonts in use in the current form."
+        CASE InsertMenuMenuBar
+            Caption(StatusBar) = "Inserts a new MenuBar control."
+        CASE InsertMenuMenuItem
+            Caption(StatusBar) = "Inserts a new MenuItem control in the currently selected menu panel."
+        CASE OptionsMenuSnapLines
+            Caption(StatusBar) = "Toggles whether controls edges are automatically snapped to others."
+        CASE OptionsMenuAutoName
+            Caption(StatusBar) = "Automatically sets control names based on caption and type"
+        CASE OptionsMenuSwapButtons
+            Caption(StatusBar) = "Toggles left/right mouse buttons."
+        CASE ELSE
+            IF Control(id).Type = __UI_Type_MenuItem THEN
+                Caption(StatusBar) = ""
+            END IF
+    END SELECT
 END SUB
 
 SUB __UI_MouseLeave (id AS LONG)

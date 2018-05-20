@@ -59,7 +59,7 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Control properties: Main form"
     Control(__UI_NewID).HasBorder = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlToggles", 206, 263, 381, 93, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlToggles", 208, 263, 381, 93, 0)
     SetCaption __UI_NewID, "Control toggles"
     Control(__UI_NewID).HasBorder = True
 
@@ -70,7 +70,7 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&Open...-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    SetCaption __UI_NewID, "&Save project"
+    SetCaption __UI_NewID, "&Save project (.bas + .frm)"
     ToolTip(__UI_NewID) = "File names are automatically taken from your form's name property"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSaveFrm", 91, 18, 0, 22, __UI_GetID("FileMenu"))
@@ -145,7 +145,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSnapLines", 128, 18, 0, 4, __UI_GetID("AlignMenu"))
-    ToolTip(__UI_NewID) = "Automatically snap control's edges to other controls, for easy aligning. Can be temporarily bypassed by holding Ctrl."
+    ToolTip(__UI_NewID) = "Snapping can be temporarily bypassed by holding Ctrl."
     SetCaption __UI_NewID, "&Snap to edges-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "AlignMenuAlignLeft", 94, 18, 0, 28, __UI_GetID("AlignMenu"))
@@ -185,8 +185,7 @@ SUB __UI_LoadForm
         SetCaption __UI_NewID, "&Auto-name controls-"
     $END IF
     Control(__UI_NewID).Value = True
-    ToolTip(__UI_NewID) = "Automatically set control names based on caption and type"
-
+    
     $IF WIN THEN
     $ELSE
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSwapButtons", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
