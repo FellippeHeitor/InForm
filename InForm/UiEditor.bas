@@ -1985,6 +1985,24 @@ SUB __UI_OnLoad
     LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
     LINE (9 + 32, 4)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
 
+    Control(AlignMenuAlignCentersH).HelperCanvas = _NEWIMAGE(48, 16, 32)
+    _DEST Control(AlignMenuAlignCentersH).HelperCanvas
+    'Normal
+    LINE (7, 0)-STEP(1, 16), _RGB32(105, 105, 105), BF
+    LINE (2, 2)-STEP(11, 5), _RGB32(255, 255, 255), BF
+    LINE (2, 2)-STEP(11, 5), _RGB32(105, 105, 105), B
+    LINE (4, 9)-STEP(7, 4), _RGB32(105, 105, 105), BF
+    'Hovered
+    LINE (0 + 16, 7)-STEP(16, 1), _RGB32(255, 255, 255), BF
+    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(105, 105, 105), BF
+    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(255, 255, 255), B
+    LINE (9 + 16, 4)-STEP(4, 7), _RGB32(255, 255, 255), BF
+    'Disabled
+    LINE (0 + 32, 7)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
+    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
+    LINE (9 + 32, 4)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
+
     _DEST prevDest
 
     Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
@@ -2010,6 +2028,7 @@ SUB __UI_OnLoad
     Text(AlignMenuAlignTops) = "."
     Text(AlignMenuAlignBottoms) = "."
     Text(AlignMenuAlignCentersV) = "."
+    Text(AlignMenuAlignCentersH) = "."
 
     _FREEIMAGE CommControls
 
