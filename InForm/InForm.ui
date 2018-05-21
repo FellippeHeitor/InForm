@@ -1753,13 +1753,15 @@ SUB __UI_EventDispatcher
                         END IF
                     END IF
                 ELSEIF _KEYDOWN(100303) OR _KEYDOWN(100304) THEN
-                    IF __UI_TotalSelectedControls = 1 THEN
+                    IF Control(__UI_HoveringID).Type <> __UI_Type_Frame AND Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar THEN
                         'Select all controls in the range between the first
                         'selected and the one being clicked, emulating the
                         'selection rectangle.
-                        __UI_SelectionRectangleLeft = Control(__UI_FirstSelectedID).Left + Control(__UI_FirstSelectedID).Width / 2
-                        __UI_SelectionRectangleTop = Control(__UI_FirstSelectedID).Top + Control(__UI_FirstSelectedID).Height / 2
-                        GOTO DoSelectionRectangle
+                        IF Control(__UI_FirstSelectedID).ParentID = Control(__UI_HoveringID).ParentID THEN
+                            __UI_SelectionRectangleLeft = Control(__UI_FirstSelectedID).Left + Control(__UI_FirstSelectedID).Width / 2
+                            __UI_SelectionRectangleTop = Control(__UI_FirstSelectedID).Top + Control(__UI_FirstSelectedID).Height / 2
+                            GOTO DoSelectionRectangle
+                        END IF
                     END IF
                 ELSE
                     IF Control(__UI_HoveringID).Type = __UI_Type_MenuPanel AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
@@ -2869,22 +2871,51 @@ SUB __UI_EventDispatcher
         DoSelectionRectangle:
         DIM tsmx AS INTEGER, tmx AS INTEGER
         DIM tsmy AS INTEGER, tmy AS INTEGER
+        DIM parentOffsetX AS INTEGER, parentOffsetY AS INTEGER
+        DIM selectingInFrame AS _BYTE, thisParent AS LONG
+
         tsmx = __UI_SelectionRectangleLeft: tmx = __UI_MouseLeft
         tsmy = __UI_SelectionRectangleTop: tmy = __UI_MouseTop
+        parentOffsetX = 0: parentOffsetY = 0
+        selectingInFrame = False
+
         IF tsmx > tmx THEN SWAP tsmx, tmx
         IF tsmy > tmy THEN SWAP tsmy, tmy
         'Check if the selection rectangle intersects with any control
+        IF (_KEYDOWN(100303) OR _KEYDOWN(100304)) AND __UI_FirstSelectedID > 0 AND __UI_SelectionRectangle = False THEN
+            IF Control(__UI_FirstSelectedID).ParentID = Control(__UI_HoveringID).ParentID THEN
+                thisParent = Control(__UI_FirstSelectedID).ParentID
+                parentOffsetX = Control(thisParent).Left
+                parentOffsetY = Control(thisParent).Top
+                selectingInFrame = True
+            END IF
+        END IF
         __UI_TotalSelectedControls = 0
         FOR i = 1 TO UBOUND(Control)
             Control(i).ControlIsSelected = False
-            IF Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).ParentID = 0 THEN
-                IF tsmx < Control(i).Left + Control(i).Width AND _
-                    Control(i).Left < tmx AND _
-                    tsmy < Control(i).Top + Control(i).Height AND _
-                    Control(i).Top < tmy THEN
-                    Control(i).ControlIsSelected = True
-                    __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
-                    IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = i
+            IF Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu THEN
+                IF selectingInFrame THEN
+                    IF Control(i).ParentID = thisParent THEN
+                        IF tsmx < Control(i).Left + Control(i).Width + Control(thisParent).Left AND _
+                            Control(i).Left + Control(thisParent).Left < tmx AND _
+                            tsmy < Control(i).Top + Control(i).Height + Control(thisParent).Top AND _
+                            Control(i).Top + Control(thisParent).Top < tmy THEN
+                            Control(i).ControlIsSelected = True
+                            __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+                            IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = i
+                        END IF
+                    END IF
+                ELSE
+                    IF Control(i).ParentID = 0 THEN
+                        IF tsmx < Control(i).Left + Control(i).Width AND _
+                            Control(i).Left < tmx AND _
+                            tsmy < Control(i).Top + Control(i).Height AND _
+                            Control(i).Top < tmy THEN
+                            Control(i).ControlIsSelected = True
+                            __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+                            IF __UI_TotalSelectedControls = 1 THEN __UI_FirstSelectedID = i
+                        END IF
+                    END IF
                 END IF
             END IF
         NEXT
