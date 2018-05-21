@@ -6776,7 +6776,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".bas" + CHR$(10)
     b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm"
 
-    IF ExitToQB64 THEN
+    IF ExitToQB64 AND NOT SaveOnlyFrm THEN
         $IF WIN THEN
             IF _FILEEXISTS("qb64.exe") THEN
                 b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
