@@ -154,7 +154,7 @@ SUB __UI_BeforeUpdateDisplay
     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
     SendData b$, OffsetMenuPanelIsON
 
-    IF __UI_SelectionRectangle OR __UI_CtrlIsDown THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
+    IF __UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
     SendData b$, OffsetSelectionRectangle
 
     UiEditorFile = FREEFILE
