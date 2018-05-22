@@ -4000,7 +4000,7 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidth AS INTEGER, NewHeight AS INTEGER, NewLeft AS INTEGER, NewTop AS INTEGER, ParentID AS LONG)
     DIM NextSlot AS LONG, i AS LONG, Temp$, PrevDest AS LONG, TempCanvas AS LONG
-    STATIC InternalMenus AS LONG
+    STATIC InternalMenus AS LONG, FirstControl AS _BYTE
 
     IF ControlType = 0 THEN EXIT SUB
     __UI_ExpandControlDrawOrder 1
@@ -4028,14 +4028,19 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     END IF
 
     'Find an empty slot for the new control
-    FOR NextSlot = UBOUND(Control) TO 1 STEP -1
-        IF Control(NextSlot).ID <> 0 THEN
-            NextSlot = NextSlot + 1
-            EXIT FOR
-        ELSE
-            IF NextSlot = 1 THEN NextSlot = UBOUND(Control) + 1: EXIT FOR
-        END IF
-    NEXT
+    IF FirstControl = False THEN
+        NextSlot = 1
+        FirstControl = True
+    ELSE
+        FOR NextSlot = UBOUND(Control) TO 1 STEP -1
+            IF Control(NextSlot).ID <> 0 THEN
+                NextSlot = NextSlot + 1
+                EXIT FOR
+            ELSE
+                IF NextSlot = 1 THEN NextSlot = UBOUND(Control) + 1: EXIT FOR
+            END IF
+        NEXT
+    END IF
 
     ControlDrawOrder(UBOUND(ControlDrawOrder)) = NextSlot
     IF NextSlot = UBOUND(Control) + 1 THEN
