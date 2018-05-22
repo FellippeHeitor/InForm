@@ -395,9 +395,10 @@ SUB __UI_Click (id AS LONG)
             $END IF
         CASE ViewMenuLoadedFonts
             DIM Temp$
+            Temp$ = "These fonts are currently in use in your form:" + CHR$(10)
             FOR Dummy = 1 TO UBOUND(PreviewFonts)
                 IF LEN(PreviewFonts(Dummy)) THEN
-                    IF LEN(Temp$) THEN Temp$ = Temp$ + CHR$(10)
+                    Temp$ = Temp$ + CHR$(10)
                     Temp$ = Temp$ + PreviewFonts(Dummy)
                 END IF
             NEXT
