@@ -94,7 +94,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Does this button have a helper canvas (icon)?
         DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
-        IF This.HelperCanvas < -1 AND LEN(Text(This.ID)) > 0 THEN
+        IF This.HelperCanvas < -1 THEN
             IF LEN(TempCaption$) THEN
                 'Icon will be to the left of caption
                 IconHeight = This.Height - 6
@@ -1566,7 +1566,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 ELSE
                     'Does this menu item have a helper canvas (icon)?
                     DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
-                    IF Control(i).HelperCanvas < -1 AND LEN(Text(Control(i).ID)) > 0 THEN
+                    IF Control(i).HelperCanvas < -1 THEN
                         IF _HEIGHT(Control(i).HelperCanvas) = 16 AND _WIDTH(Control(i).HelperCanvas) MOD 16 = 0 THEN
                             'If the HelperCanvas is 16px in height and either 16, 32 or 48px in width,
                             'we assume that we have icons for Hover and Disabled states.

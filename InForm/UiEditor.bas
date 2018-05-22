@@ -1894,141 +1894,17 @@ SUB __UI_OnLoad
     COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
     __UI_PrintString 5, 3, "#"
 
-    'Draw Align menu icons
-    Control(AlignMenuAlignLeft).HelperCanvas = _NEWIMAGE(48, 16, 32)
-    _DEST Control(AlignMenuAlignLeft).HelperCanvas
-    'Normal state
-    LINE (0, 0)-(1, 16), _RGB32(105, 105, 105), BF
-    LINE (3, 2)-(14, 7), _RGB32(255, 255, 255), BF
-    LINE (3, 2)-(14, 7), _RGB32(105, 105, 105), B
-    LINE (3, 10)-(10, 14), _RGB32(105, 105, 105), BF
-    'Hovered
-    LINE (16, 0)-STEP(1, 16), _RGB32(255, 255, 255), BF
-    LINE (19, 2)-STEP(11, 5), _RGB32(105, 105, 105), BF
-    LINE (19, 2)-STEP(11, 5), _RGB32(255, 255, 255), B
-    LINE (19, 10)-STEP(7, 4), _RGB32(255, 255, 255), BF
-    'Disabled
-    LINE (32, 0)-STEP(1, 16), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (35, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (35, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), B
-    LINE (35, 10)-STEP(7, 4), Darken(Control(__UI_FormID).BackColor, 80), BF
-
-    Control(AlignMenuAlignRight).HelperCanvas = _NEWIMAGE(48, 16, 32)
-    _DEST Control(AlignMenuAlignRight).HelperCanvas
-    'Normal state
-    LINE (14, 0)-STEP(1, 16), _RGB32(105, 105, 105), BF
-    LINE (1, 2)-STEP(11, 5), _RGB32(255, 255, 255), BF
-    LINE (1, 2)-STEP(11, 5), _RGB32(105, 105, 105), B
-    LINE (5, 10)-STEP(7, 4), _RGB32(105, 105, 105), BF
-    'Hovered
-    LINE (14 + 16, 0)-STEP(1, 16), _RGB32(255, 255, 255), BF
-    LINE (1 + 16, 2)-STEP(11, 5), _RGB32(105, 105, 105), BF
-    LINE (1 + 16, 2)-STEP(11, 5), _RGB32(255, 255, 255), B
-    LINE (5 + 16, 10)-STEP(7, 4), _RGB32(255, 255, 255), BF
-    'Disabled
-    LINE (14 + 32, 0)-STEP(1, 16), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (1 + 32, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (1 + 32, 2)-STEP(11, 5), Darken(Control(__UI_FormID).BackColor, 80), B
-    LINE (5 + 32, 10)-STEP(7, 4), Darken(Control(__UI_FormID).BackColor, 80), BF
-
-    Control(AlignMenuAlignTops).HelperCanvas = _NEWIMAGE(48, 16, 32)
-    _DEST Control(AlignMenuAlignTops).HelperCanvas
-    'Normal
-    LINE (0, 0)-STEP(16, 1), _RGB32(105, 105, 105), BF
-    LINE (2, 3)-STEP(5, 11), _RGB32(255, 255, 255), BF
-    LINE (2, 3)-STEP(4, 11), _RGB32(105, 105, 105), B
-    LINE (9, 3)-STEP(4, 7), _RGB32(105, 105, 105), BF
-    'Hovered
-    LINE (0 + 16, 0)-STEP(16, 1), _RGB32(255, 255, 255), BF
-    LINE (2 + 16, 3)-STEP(5, 11), _RGB32(105, 105, 105), BF
-    LINE (2 + 16, 3)-STEP(4, 11), _RGB32(255, 255, 255), B
-    LINE (9 + 16, 3)-STEP(4, 7), _RGB32(255, 255, 255), BF
-    'Disabled
-    LINE (0 + 32, 0)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 3)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 3)-STEP(4, 11), Darken(Control(__UI_FormID).BackColor, 80), B
-    LINE (9 + 32, 3)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
-
-    Control(AlignMenuAlignBottoms).HelperCanvas = _NEWIMAGE(48, 16, 32)
-    _DEST Control(AlignMenuAlignBottoms).HelperCanvas
-    'Normal
-    LINE (0, 14)-STEP(16, 1), _RGB32(105, 105, 105), BF
-    LINE (2, 1)-STEP(5, 11), _RGB32(255, 255, 255), BF
-    LINE (2, 1)-STEP(5, 11), _RGB32(105, 105, 105), B
-    LINE (9, 5)-STEP(4, 7), _RGB32(105, 105, 105), BF
-    'Hovered
-    LINE (0 + 16, 14)-STEP(16, 1), _RGB32(255, 255, 255), BF
-    LINE (2 + 16, 1)-STEP(5, 11), _RGB32(105, 105, 105), BF
-    LINE (2 + 16, 1)-STEP(5, 11), _RGB32(255, 255, 255), B
-    LINE (9 + 16, 5)-STEP(4, 7), _RGB32(255, 255, 255), BF
-    'Disabled
-    LINE (0 + 32, 14)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 1)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 1)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
-    LINE (9 + 32, 5)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
-
-    Control(AlignMenuAlignCentersV).HelperCanvas = _NEWIMAGE(48, 16, 32)
-    _DEST Control(AlignMenuAlignCentersV).HelperCanvas
-    'Normal
-    LINE (0, 7)-STEP(16, 1), _RGB32(105, 105, 105), BF
-    LINE (2, 2)-STEP(5, 11), _RGB32(255, 255, 255), BF
-    LINE (2, 2)-STEP(5, 11), _RGB32(105, 105, 105), B
-    LINE (9, 4)-STEP(4, 7), _RGB32(105, 105, 105), BF
-    'Hovered
-    LINE (0 + 16, 7)-STEP(16, 1), _RGB32(255, 255, 255), BF
-    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(105, 105, 105), BF
-    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(255, 255, 255), B
-    LINE (9 + 16, 4)-STEP(4, 7), _RGB32(255, 255, 255), BF
-    'Disabled
-    LINE (0 + 32, 7)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
-    LINE (9 + 32, 4)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
-
-    Control(AlignMenuAlignCentersH).HelperCanvas = _NEWIMAGE(48, 16, 32)
-    _DEST Control(AlignMenuAlignCentersH).HelperCanvas
-    'Normal
-    LINE (7, 0)-STEP(1, 16), _RGB32(105, 105, 105), BF
-    LINE (2, 2)-STEP(11, 5), _RGB32(255, 255, 255), BF
-    LINE (2, 2)-STEP(11, 5), _RGB32(105, 105, 105), B
-    LINE (4, 9)-STEP(7, 4), _RGB32(105, 105, 105), BF
-    'Hovered
-    LINE (0 + 16, 7)-STEP(16, 1), _RGB32(255, 255, 255), BF
-    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(105, 105, 105), BF
-    LINE (2 + 16, 2)-STEP(5, 11), _RGB32(255, 255, 255), B
-    LINE (9 + 16, 4)-STEP(4, 7), _RGB32(255, 255, 255), BF
-    'Disabled
-    LINE (0 + 32, 7)-STEP(16, 1), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), BF
-    LINE (2 + 32, 2)-STEP(5, 11), Darken(Control(__UI_FormID).BackColor, 80), B
-    LINE (9 + 32, 4)-STEP(4, 7), Darken(Control(__UI_FormID).BackColor, 80), BF
+    'Import Align menu icons from InForm.ui
+    Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas
+    Control(AlignMenuAlignRight).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignRight")).HelperCanvas
+    Control(AlignMenuAlignTops).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignTops")).HelperCanvas
+    Control(AlignMenuAlignBottoms).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).HelperCanvas
+    Control(AlignMenuAlignCentersV).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).HelperCanvas
+    Control(AlignMenuAlignCentersH).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).HelperCanvas
 
     _DEST prevDest
 
     Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
-
-    'Properly loaded helper images assign a file name to the control's text property.
-    'Any text will do for internallly stored images:
-    Text(AddButton) = "."
-    Text(AddLabel) = "."
-    Text(AddTextBox) = "."
-    Text(AddNumericBox) = "."
-    Text(AddCheckBox) = "."
-    Text(AddRadioButton) = "."
-    Text(AddListBox) = "."
-    Text(AddDropdownList) = "."
-    Text(AddTrackBar) = "."
-    Text(AddProgressBar) = "."
-    Text(AddPictureBox) = "."
-    Text(AddFrame) = "."
-    Text(FileMenuSave) = "."
-    Text(AddToggleSwitch) = "."
-    Text(AlignMenuAlignLeft) = "."
-    Text(AlignMenuAlignRight) = "."
-    Text(AlignMenuAlignTops) = "."
-    Text(AlignMenuAlignBottoms) = "."
-    Text(AlignMenuAlignCentersV) = "."
-    Text(AlignMenuAlignCentersH) = "."
 
     _FREEIMAGE CommControls
 
