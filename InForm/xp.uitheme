@@ -1562,7 +1562,11 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
                 IF Control(i).Value = True THEN
                     'Checked menu item
-                    _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, Control(i).Top + Control(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                    IF Control(i).BulletStyle = __UI_Bullet%% THEN
+                        __UI_PrintString __UI_MenuItemOffset \ 2 - __UI_PrintWidth(CHR$(7)) \ 2, Control(i).Top + Control(i).Height \ 2 - uheight \ 2, CHR$(7)
+                    ELSE
+                        _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, Control(i).Top + Control(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                    END IF
                 ELSE
                     'Does this menu item have a helper canvas (icon)?
                     DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER

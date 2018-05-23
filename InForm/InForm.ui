@@ -116,6 +116,7 @@ TYPE __UI_ControlTYPE
     FocusState AS LONG
     LastChange AS DOUBLE
     Redraw AS _BYTE
+    BulletStyle AS _BYTE
 END TYPE
 
 TYPE __UI_Types
@@ -5863,6 +5864,11 @@ FUNCTION __UI_Bottom%%: __UI_Bottom%% = 2: END FUNCTION
 'Textbox controls
 FUNCTION __UI_NumericWithoutBounds%%: __UI_NumericWithoutBounds%% = True: END FUNCTION
 FUNCTION __UI_NumericWithBounds%%: __UI_NumericWithBounds%% = 2: END FUNCTION
+
+'BulletStyle
+FUNCTION __UI_CheckMark%%: __UI_CheckMark%% = 0: END FUNCTION
+FUNCTION __UI_Bullet%%: __UI_Bullet%% = 1: END FUNCTION
+
 
 'Messagebox constants
 FUNCTION MsgBox_OkOnly%%: MsgBox_OkOnly%% = 0: END FUNCTION
