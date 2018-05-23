@@ -1954,15 +1954,16 @@ SUB __UI_OnLoad
             LOOP
         END IF
         CLOSE #FreeFileNum
-        Control(ViewMenuPreviewDetach).Value = PreviewAttached
-        Control(OptionsMenuAutoName).Value = AutoNameControls
-        Control(OptionsMenuSnapLines).Value = __UI_SnapLines
-        Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
         $IF WIN THEN
         $ELSE
             Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
         $END IF
     END IF
+
+    Control(ViewMenuPreviewDetach).Value = PreviewAttached
+    Control(OptionsMenuAutoName).Value = AutoNameControls
+    Control(OptionsMenuSnapLines).Value = __UI_SnapLines
+    Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
     IF _FILEEXISTS("InForm/UiEditorUndo.dat") THEN KILL "InForm/UiEditorUndo.dat"
