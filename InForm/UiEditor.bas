@@ -104,6 +104,7 @@ DIM SHARED ValueTB AS LONG, MinTB AS LONG
 DIM SHARED MaxTB AS LONG, IntervalTB AS LONG
 DIM SHARED MinIntervalTB AS LONG, PaddingTB AS LONG
 DIM SHARED MaskTB AS LONG, MaskLB AS LONG
+DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
 '------------------------------------------------------------------------------
 
 'Other shared variables:
@@ -1456,6 +1457,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(PasswordMaskCB).Value = PreviewControls(FirstSelected).PasswordField
         Control(AlignOptions).Value = PreviewControls(FirstSelected).Align + 1
         Control(VAlignOptions).Value = PreviewControls(FirstSelected).VAlign + 1
+        Control(BulletOptions).Value = PreviewControls(FirstSelected).BulletStyle + 1
         Control(Transparent).Value = PreviewControls(FirstSelected).BackStyle
         Control(Resizable).Value = PreviewControls(FirstSelected).CanResize
 
@@ -1471,6 +1473,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(PasswordMaskCB).Disabled = True
         Control(AlignOptions).Disabled = True
         Control(VAlignOptions).Disabled = True
+        Control(BulletOptions).Disabled = True
         Control(Transparent).Disabled = True
         Caption(TextLB) = "Text"
         Control(Resizable).Disabled = True
@@ -1513,7 +1516,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_MenuItem
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE NameTB, CaptionTB, TextTB, TooltipTB, ValueTB
+                            CASE NameTB, CaptionTB, TextTB, TooltipTB, ValueTB, BulletOptions
                                 Control(InputBox(i).ID).Disabled = False
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = True
@@ -1839,6 +1842,7 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31
     i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
+    i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
     REDIM InputBoxText(1 TO i) AS STRING
 
@@ -2208,6 +2212,9 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE VAlignOptions
             b$ = MKI$(Control(VAlignOptions).Value - 1)
             SendData b$, 32
+        CASE BulletOptions
+            b$ = MKI$(Control(BulletOptions).Value - 1)
+            SendData b$, 37
         CASE Red
             Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
         CASE Green
@@ -6119,6 +6126,10 @@ SUB LoadPreview
                         PreviewControls(Dummy).NumericOnly = True
                     CASE -39
                         PreviewControls(Dummy).NumericOnly = __UI_NumericWithBounds
+                    CASE -40
+                        b$ = SPACE$(2)
+                        GET #BinaryFileNum, , b$
+                        PreviewControls(Dummy).BulletStyle = CVI(b$)
                     CASE -1 'new control
                         EXIT DO
                     CASE -1024
@@ -6531,6 +6542,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).NumericOnly = True"
                 ELSEIF PreviewControls(i).NumericOnly = __UI_NumericWithBounds THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds"
+                END IF
+                IF PreviewControls(i).BulletStyle > 0 THEN
+                    SELECT CASE PreviewControls(i).BulletStyle
+                        CASE __UI_Bullet
+                            PRINT #TextFileNum, "    Control(__UI_NewID).BulletStyle = __UI_Bullet"
+                    END SELECT
                 END IF
                 PRINT #TextFileNum,
             END IF

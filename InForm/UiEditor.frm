@@ -420,6 +420,18 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Value = 1
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "BulletOptionsLB", 120, 23, 10, 340, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Marker style"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "BulletOptions", 230, 23, 129, 340, __UI_GetID("ControlProperties"))
+    AddItem __UI_NewID, "Check mark"
+    AddItem __UI_NewID, "Bullet"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).Value = 1
+    Control(__UI_NewID).CanHaveFocus = True
+    
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "VerticalAlignLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
     SetCaption __UI_NewID, "Vertical align"
     Control(__UI_NewID).HasBorder = True
@@ -748,4 +760,6 @@ SUB __UI_AssignIDs
     MaskTB = __UI_GetID("MaskTB")
     MaskLB = __UI_GetID("MaskLB")
     ControlToggles = __UI_GetID("ControlToggles")
+    BulletOptions = __UI_GetID("BulletOptions")
+    BulletOptionsLB = __UI_GetID("BulletOptionsLB")
 END SUB

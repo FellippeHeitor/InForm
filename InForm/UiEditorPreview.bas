@@ -873,6 +873,13 @@ SUB __UI_BeforeUpdateDisplay
                             Control(i).MinInterval = _CV(_FLOAT, b$)
                         END IF
                     NEXT
+                CASE 37 'BulletStyle
+                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BulletStyle = CVI(b$)
+                        END IF
+                    NEXT
                 CASE 201 TO 210
                     'Alignment commands
                     DoAlign TempValue
@@ -2054,6 +2061,12 @@ SUB LoadPreviewText
                             ELSEIF DummyText$ = "__UI_NumericWithBounds" THEN
                                 Control(TempValue).NumericOnly = __UI_NumericWithBounds
                             END IF
+                        CASE "BulletStyle"
+                            IF DummyText$ = "__UI_CheckMark" THEN
+                                Control(TempValue).BulletStyle = __UI_CheckMark
+                            ELSEIF DummyText$ = "__UI_Bullet" THEN
+                                Control(TempValue).BulletStyle = __UI_Bullet
+                            END IF
                     END SELECT
                 ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
                     __UI_DefaultButtonID = TempValue
@@ -2446,7 +2459,14 @@ SUB SavePreview (Destination AS _BYTE)
                     Clip$ = Clip$ + b$
                 END IF
             END IF
-
+            IF Control(i).BulletStyle = __UI_Bullet THEN
+                b$ = MKI$(-40) + MKI$(Control(i).BulletStyle)
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
+            END IF
         END IF
     NEXT
     b$ = MKI$(-1024) 'end of file
