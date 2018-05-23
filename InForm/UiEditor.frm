@@ -104,11 +104,11 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCP437", 182, 18, 0, 46, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Use code page OEM-437"
-    Control(__UI_NewID).BulletStyle = __UI_Bullet%%
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuCP1252", 218, 18, 0, 64, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Use code page &Windows-1252-"
-    Control(__UI_NewID).BulletStyle = __UI_Bullet%%
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuSetDefaultButton", 103, 18, 0, 88, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Set as &default button"

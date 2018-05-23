@@ -629,13 +629,13 @@ SUB __UI_BeforeUpdateDisplay
                     b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
-                            IF Control(i).Type = __UI_Type_CheckBox OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_ToggleSwitch THEN
+                            IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
                                 IF _CV(_FLOAT, b$) <> 0 THEN
                                     Control(i).Value = True
                                 ELSE
                                     Control(i).Value = False
                                 END IF
-                            ELSEIF Control(i).Type = __UI_Type_RadioButton THEN
+                            ELSEIF Control(i).Type = __UI_Type_RadioButton OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_Bullet) THEN
                                 IF _CV(_FLOAT, b$) <> 0 THEN
                                     SetRadioButtonValue i
                                 ELSE
