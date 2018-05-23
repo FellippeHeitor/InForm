@@ -1491,6 +1491,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(IntervalTB).Disabled = True
                     Control(MinIntervalTB).Disabled = True
                     Control(PaddingTB).Disabled = True
+                    Control(BulletOptions).Disabled = True
                 CASE __UI_Type_MenuBar, __UI_Type_MenuItem
                     Control(Disabled).Disabled = False
                     Control(Hidden).Disabled = False
@@ -1568,7 +1569,7 @@ SUB __UI_BeforeUpdateDisplay
                     IF PreviewControls(FirstSelected).NumericOnly = True THEN
                         FOR i = 1 TO UBOUND(InputBox)
                             SELECT CASE InputBox(i).ID
-                                CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
+                                CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                     Control(InputBox(i).ID).Disabled = True
                                 CASE ELSE
                                     Control(InputBox(i).ID).Disabled = False
@@ -1577,7 +1578,7 @@ SUB __UI_BeforeUpdateDisplay
                     ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
                         FOR i = 1 TO UBOUND(InputBox)
                             SELECT CASE InputBox(i).ID
-                                CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
+                                CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                     Control(InputBox(i).ID).Disabled = True
                                 CASE ELSE
                                     Control(InputBox(i).ID).Disabled = False
@@ -1587,7 +1588,7 @@ SUB __UI_BeforeUpdateDisplay
                         Caption(MaxLB) = "Max length"
                         FOR i = 1 TO UBOUND(InputBox)
                             SELECT CASE InputBox(i).ID
-                                CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB
+                                CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                     Control(InputBox(i).ID).Disabled = True
                                 CASE ELSE
                                     Control(InputBox(i).ID).Disabled = False
@@ -1599,7 +1600,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_Button
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
+                            CASE ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1609,7 +1610,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
+                            CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1618,7 +1619,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_ProgressBar
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
+                            CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1627,7 +1628,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_TrackBar
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions
+                            CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1638,7 +1639,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB
+                            CASE CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
