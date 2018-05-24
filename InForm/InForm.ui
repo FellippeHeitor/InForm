@@ -4581,25 +4581,32 @@ SUB SetRadioButtonValue (id AS LONG)
     'Also works for menus with the .BulletStyle set to __UI_Bullet
     DIM i AS LONG
 
-    FOR i = 1 TO UBOUND(Control)
-        SELECT CASE Control(id).Type
-            CASE __UI_Type_RadioButton
-                IF Control(i).Type = __UI_Type_RadioButton AND Control(i).ParentID = Control(id).ParentID THEN
-                    IF Control(i).Value THEN
-                        Control(i).Value = False
-                        __UI_ValueChanged i
+    IF Control(id).Type = __UI_Type_MenuItem AND Control(id).BulletStyle <> __UI_Bullet THEN
+        Control(id).Value = NOT Control(id).Value
+        EXIT SUB
+    END IF
+
+    IF Control(id).Type = __UI_Type_MenuItem OR Control(id).Type = __UI_Type_RadioButton THEN
+        FOR i = 1 TO UBOUND(Control)
+            SELECT CASE Control(id).Type
+                CASE __UI_Type_RadioButton
+                    IF Control(i).Type = __UI_Type_RadioButton AND Control(i).ParentID = Control(id).ParentID THEN
+                        IF Control(i).Value THEN
+                            Control(i).Value = False
+                            __UI_ValueChanged i
+                        END IF
                     END IF
-                END IF
-            CASE __UI_Type_MenuItem
-                IF Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = Control(id).ParentID THEN
-                    IF Control(i).MenuItemGroup = Control(id).MenuItemGroup THEN
-                        Control(i).Value = False
+                CASE __UI_Type_MenuItem
+                    IF (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_Bullet) AND Control(i).ParentID = Control(id).ParentID THEN
+                        IF Control(i).MenuItemGroup = Control(id).MenuItemGroup THEN
+                            Control(i).Value = False
+                        END IF
                     END IF
-                END IF
-        END SELECT
-    NEXT
-    Control(id).Value = True
-    IF Control(id).Type = __UI_Type_RadioButton THEN __UI_ValueChanged id
+            END SELECT
+        NEXT
+        Control(id).Value = True
+        IF Control(id).Type = __UI_Type_RadioButton THEN __UI_ValueChanged id
+    END IF
 END SUB
 
 '---------------------------------------------------------------------------------
