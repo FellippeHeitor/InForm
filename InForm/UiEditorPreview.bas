@@ -59,6 +59,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 '   221 = Select all controls
 '   222 = Add new textbox with the .NumericOnly property set to true
 '   223 = Switch .NumericOnly between True/__UI_NumericWithBounds
+'   224 = Add new MenuBar control
 
 'SavePreview parameters:
 CONST InDisk = 1
@@ -133,6 +134,33 @@ SUB AutoSizeLabel (this AS __UI_ControlTYPE)
         this.Redraw = True
     END IF
     _FONT tempFont
+END SUB
+
+FUNCTION AddNewMenuBarControl&
+    DIM i AS LONG, TempValue AS LONG
+
+    'Before adding a menu bar item, reset all other menu bar items' alignment
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).Type = __UI_Type_MenuBar THEN
+            Control(i).Align = __UI_Left
+        END IF
+    NEXT
+    TempValue = __UI_NewControl(__UI_Type_MenuBar, "", 0, 0, 0, 0, 0)
+    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+    __UI_RefreshMenuBar
+    __UI_ActivateMenu Control(TempValue), False
+    AddNewMenuBarControl& = TempValue
+END FUNCTION
+
+SUB SelectNewControl (id AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO UBOUND(Control)
+        Control(i).ControlIsSelected = False
+    NEXT
+    Control(id).ControlIsSelected = True
+    __UI_TotalSelectedControls = 1
+    __UI_FirstSelectedID = id
+    __UI_ForceRedraw = True
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -279,16 +307,7 @@ SUB __UI_BeforeUpdateDisplay
                     TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 CASE __UI_Type_MenuBar
-                    'Before adding a menu bar item, reset all other menu bar items' alignment
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).Type = __UI_Type_MenuBar THEN
-                            Control(i).Align = __UI_Left
-                        END IF
-                    NEXT
-                    TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, 0)
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                    __UI_RefreshMenuBar
-                    __UI_ActivateMenu Control(TempValue), False
+                    TempValue = AddNewMenuBarControl
                 CASE __UI_Type_MenuItem
                     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
                         TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
@@ -301,13 +320,7 @@ SUB __UI_BeforeUpdateDisplay
             IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
                 __UI_DestroyControl Control(__UI_ActiveMenu)
             END IF
-            FOR i = 1 TO UBOUND(Control)
-                Control(i).ControlIsSelected = False
-            NEXT
-            Control(TempValue).ControlIsSelected = True
-            __UI_TotalSelectedControls = 1
-            __UI_FirstSelectedID = TempValue
-            __UI_ForceRedraw = True
+            SelectNewControl TempValue
         END IF
 
         IF __UI_FirstSelectedID > 0 THEN
@@ -1034,6 +1047,10 @@ SUB __UI_KeyPress (id AS LONG)
             SelectAllControls
         CASE 223
             AlternateNumericOnlyProperty
+        CASE 224
+            DIM TempID AS LONG
+            TempID = AddNewMenuBarControl
+            SelectNewControl TempID
     END SELECT
 END SUB
 

@@ -1692,6 +1692,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
@@ -1702,7 +1703,9 @@ SUB __UI_EventDispatcher
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
                         SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically"
                         SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally-"
+                        Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
                     END IF
@@ -1750,6 +1753,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
+                    Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
@@ -1769,6 +1773,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                 ELSE
+                    Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
@@ -2511,6 +2516,8 @@ SUB __UI_EventDispatcher
                                 ELSE
                                     __UI_DefaultButtonID = __UI_FirstSelectedID
                                 END IF
+                            CASE UCASE$("__UI_PreviewMenuNewMenuBar")
+                                __UI_KeyPress 224
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
