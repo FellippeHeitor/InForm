@@ -1027,6 +1027,7 @@ END SUB
 SUB __UI_KeyPress (id AS LONG)
     SELECT CASE id
         CASE 201 TO 210
+            SaveUndoImage
             DoAlign id
         CASE 214
             RestoreUndoImage
@@ -1049,6 +1050,7 @@ SUB __UI_KeyPress (id AS LONG)
             AlternateNumericOnlyProperty
         CASE 224
             DIM TempID AS LONG
+            SaveUndoImage
             TempID = AddNewMenuBarControl
             SelectNewControl TempID
     END SELECT
