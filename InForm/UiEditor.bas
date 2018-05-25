@@ -2246,12 +2246,15 @@ SUB __UI_ValueChanged (id AS LONG)
     DIM b$
     SELECT EVERYCASE id
         CASE AlignOptions
+            IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(AlignOptions).Value - 1)
             SendData b$, 22
         CASE VAlignOptions
+            IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(VAlignOptions).Value - 1)
             SendData b$, 32
         CASE BulletOptions
+            IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(BulletOptions).Value - 1)
             SendData b$, 37
         CASE Red
