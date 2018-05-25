@@ -8,7 +8,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 578, 0, 0, 0)
     SetCaption __UI_NewID, UiEditorTitle$
-    Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?/usr/share/fonts/TTF/arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "StatusBar", 600, 23, 0, 555, 0)
     SetCaption __UI_NewID, "Ready."
