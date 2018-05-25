@@ -471,20 +471,21 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_Init
-    DIM i AS LONG
+    DIM i AS LONG, b$
 
     SetFrameRate 30
 
     __UI_BeforeInit
 
+    _SCREENSHOW
+
     IF __UI_FormID = 0 THEN SYSTEM
 
     SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
     COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
-    CLS
     IF Control(__UI_FormID).Font > 0 THEN _FONT Control(__UI_FormID).Font
-    __UI_PrintString _WIDTH / 2 - _PRINTWIDTH("Initializing...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2, "Initializing..."
-    _SCREENSHOW
+    b$ = "Initializing..."
+    GOSUB ShowMessage
 
     _ICON
     _TITLE "InForm"
@@ -534,6 +535,13 @@ SUB __UI_Init
 
     __UI_AutoRefresh = True
     __UI_Loaded = True
+    EXIT SUB
+
+    ShowMessage:
+    CLS
+    __UI_PrintString _WIDTH / 2 - _PRINTWIDTH(b$) / 2, _HEIGHT / 2 - _FONTHEIGHT / 2, b$
+    _DISPLAY
+    RETURN
 END SUB
 
 '---------------------------------------------------------------------------------

@@ -1862,6 +1862,15 @@ SUB __UI_OnLoad
     Control(StatusBar).BackColor = StatusBarBackColor
     'LoadFontList
 
+    b$ = "Loading images..."
+    GOSUB ShowMessage
+
+    'Load splash image:
+    DIM tempIcon AS LONG
+    tempIcon = _LOADIMAGE("./InForm/resources/Application-icon.png", 32)
+
+    GOSUB ShowMessage
+
     'Load toolbox images:
     DIM CommControls AS LONG
     CommControls = LoadEditorImage("commoncontrols.bmp")
@@ -1931,6 +1940,9 @@ SUB __UI_OnLoad
 
     DIM FileToOpen$, FreeFileNum AS INTEGER
 
+    b$ = "Reading settings..."
+    GOSUB ShowMessage
+
     IF _DIREXISTS("InForm") = 0 THEN MKDIR "InForm"
 
     IF _FILEEXISTS("InForm/InForm.ini") THEN
@@ -1981,6 +1993,9 @@ SUB __UI_OnLoad
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
     IF _FILEEXISTS("InForm/UiEditorUndo.dat") THEN KILL "InForm/UiEditorUndo.dat"
     IF _FILEEXISTS("InForm/UiEditor.dat") THEN KILL "InForm/UiEditor.dat"
+
+    b$ = "Parsing command line..."
+    GOSUB ShowMessage
 
     IF _FILEEXISTS(COMMAND$) THEN
         SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
@@ -2038,6 +2053,9 @@ SUB __UI_OnLoad
         END IF
     END IF
 
+    b$ = "Checking Preview component..."
+    GOSUB ShowMessage
+
     $IF WIN THEN
         IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN
             IF _FILEEXISTS("InForm/UiEditorPreview.bas") = 0 THEN
@@ -2049,15 +2067,8 @@ SUB __UI_OnLoad
                 IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
-        b$ = "Launching..."
-        DIM tempIcon AS LONG
-        tempIcon = _LOADIMAGE("./InForm/resources/Application-icon.png", 32)
-        IF tempIcon < -1 THEN
-            _PUTIMAGE (_WIDTH / 2 - _WIDTH(tempIcon) / 2, _HEIGHT / 2 - _HEIGHT(tempIcon) / 2), tempIcon
-            _DISPLAY
-        ELSE
-            GOSUB ShowMessage
-        END IF
+        b$ = "Launching Preview component..."
+        GOSUB ShowMessage
         SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
     $ELSE
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
@@ -2070,7 +2081,7 @@ SUB __UI_OnLoad
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
-        b$ = "Launching..."
+        b$ = "Launching Preview component..."
         GOSUB ShowMessage
         SHELL _DONTWAIT "./InForm/UiEditorPreview"
     $END IF
@@ -2080,6 +2091,9 @@ SUB __UI_OnLoad
     b$ = MKL$(__UI_GetPID)
     PUT #UiEditorFile, OffsetEditorPID, b$
     CLOSE #UiEditorFile
+
+    b$ = "Reading directory..."
+    GOSUB ShowMessage
 
     'Fill "open dialog" listboxes:
     '-------------------------------------------------
@@ -2098,6 +2112,9 @@ SUB __UI_OnLoad
 
     TIMER(CheckPreviewTimer) ON
 
+    b$ = "Done."
+    GOSUB ShowMessage
+
     __UI_RefreshMenuBar
     _FREEIMAGE tempIcon
 
@@ -2107,12 +2124,23 @@ SUB __UI_OnLoad
     SYSTEM
 
     ShowMessage:
+    DIM PreserveDestMessage AS LONG
+    PreserveDestMessage = _DEST
     _DEST 0
     _FONT Control(__UI_FormID).Font
-    CLS , __UI_DefaultColor(__UI_Type_Form, 2)
-    COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
-    __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, b$
+    IF tempIcon < -1 THEN
+        CLS , _RGB32(255, 255, 255)
+        _PUTIMAGE (_WIDTH / 2 - _WIDTH(tempIcon) / 2, _HEIGHT / 2 - _HEIGHT(tempIcon) / 2), tempIcon
+        COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
+        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT / 2 + _HEIGHT(tempIcon) / 2 - _FONTHEIGHT * 2, b$
+        _DISPLAY
+    ELSE
+        CLS , __UI_DefaultColor(__UI_Type_Form, 2)
+        COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
+        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, b$
+    END IF
     _DISPLAY
+    _DEST PreserveDestMessage
     RETURN
 END SUB
 
