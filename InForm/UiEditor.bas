@@ -730,8 +730,16 @@ SUB __UI_FocusIn (id AS LONG)
             Caption(StatusBar) = "Editing property"
         CASE FileNameTextBox
             IF OpenDialogOpen = False THEN __UI_Focus = AddButton
+        CASE ControlList
+            IF OpenDialogOpen THEN __UI_Focus = FileNameTextBox
+        CASE BlueValue
+            IF OpenDialogOpen THEN __UI_Focus = CancelBT
         CASE CloseZOrderingBT
             IF ZOrderingDialogOpen = False THEN __UI_Focus = BlueValue
+        CASE AddButton
+            IF ZOrderingDialogOpen THEN __UI_Focus = ControlList
+        CASE CancelBT
+            IF ZOrderingDialogOpen THEN __UI_Focus = CloseZOrderingBT
     END SELECT
 END SUB
 
@@ -2102,7 +2110,7 @@ END SUB
 
 SUB __UI_KeyPress (id AS LONG)
     LastKeyPress = TIMER
-    SELECT CASE id
+    SELECT EVERYCASE id
         CASE RedValue, GreenValue, BlueValue
             DIM TempID AS LONG
             IF __UI_KeyHit = 18432 THEN
@@ -2130,7 +2138,35 @@ SUB __UI_KeyPress (id AS LONG)
             Caption(StatusBar) = "Color changed."
         CASE FileNameTextBox
             IF OpenDialogOpen THEN
-                IF Control(FileList).Max > 0 THEN __UI_ListBoxSearchItem Control(FileList)
+                IF __UI_KeyHit = 27 THEN
+                    __UI_KeyHit = 0
+                    __UI_Click CancelBT
+                ELSEIF __UI_KeyHit = 13 THEN
+                    __UI_KeyHit = 0
+                    __UI_Click OpenBT
+                ELSEIF __UI_KeyHit = 18432 OR __UI_KeyHit = 20480 THEN
+                    IF Control(FileList).Max > 0 THEN __UI_Focus = FileList
+                ELSE
+                    IF Control(FileList).Max > 0 THEN
+                        SELECT CASE __UI_KeyHit
+                            CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
+                                __UI_ListBoxSearchItem Control(FileList)
+                        END SELECT
+                    END IF
+                END IF
+            END IF
+        CASE FileList, DirList, CancelBT, OpenBT, ShowOnlyFrmbinFilesCB
+            IF __UI_KeyHit = 27 THEN
+                __UI_Click CancelBT
+            END IF
+        CASE FileList
+            IF __UI_KeyHit = 13 THEN
+                __UI_KeyHit = 0
+                __UI_Click OpenBT
+            END IF
+        CASE ControlList, UpBT, DownBT, CloseZOrderingBT
+            IF __UI_KeyHit = 27 THEN
+                __UI_Click CloseZOrderingBT
             END IF
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
             IF __UI_KeyHit = 13 THEN
@@ -2201,6 +2237,8 @@ SUB __UI_TextChanged (id AS LONG)
             DIM TempID AS LONG
             TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
             Control(TempID).Value = VAL(Text(id))
+        CASE FileNameTextBox
+            PreselectFile
     END SELECT
 END SUB
 
@@ -2244,7 +2282,19 @@ SUB __UI_ValueChanged (id AS LONG)
                 b$ = MKL$(0)
             END IF
             SendData b$, 213
+        CASE FileList
+            Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
     END SELECT
+END SUB
+
+SUB PreselectFile
+    DIM b$
+    b$ = GetItem(FileList, Control(FileList).Value)
+    IF LCASE$(Text(FileNameTextBox)) = LCASE$(LEFT$(b$, LEN(Text(FileNameTextBox)))) THEN
+        Text(FileNameTextBox) = Text(FileNameTextBox) + MID$(b$, LEN(Text(FileNameTextBox)) + 1)
+        Control(FileNameTextBox).TextIsSelected = True
+        Control(FileNameTextBox).SelectionStart = LEN(Text(FileNameTextBox))
+    END IF
 END SUB
 
 FUNCTION EditorImageData$ (FileName$)
