@@ -6,6 +6,11 @@ Below is the binary format for exchange of controls data. It is
 used for UiEditorPreview.frmbin, which is read/written to by both
 UiEditor and UiEditorPreview, as well as for clipboard exchange.
 
+This format is used in UiEditor and UiEditorPreview's methods:
+    - LoadPreview
+    - SavePreview
+-----------------------------------------------------------
+    
 InForm + CHR(1)
 LONG UBOUND(Control)
 FOR EACH CONTROL (FORM INCLUDED):
