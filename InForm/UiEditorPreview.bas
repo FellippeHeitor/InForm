@@ -2827,6 +2827,9 @@ SUB LoadDefaultFonts
         Control(__UI_FormID).Font = SetFont("/Library/Fonts/Arial.ttf", 12)
     END IF
     IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
+        Control(__UI_FormID).Font = SetFont("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 12)
+    END IF
+    IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
         Control(__UI_FormID).Font = SetFont("/usr/share/fonts/TTF/arial.ttf", 12)
     END IF
     IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
