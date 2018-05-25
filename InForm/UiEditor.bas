@@ -2050,7 +2050,14 @@ SUB __UI_OnLoad
             END IF
         END IF
         b$ = "Launching..."
-        GOSUB ShowMessage
+        DIM tempIcon AS LONG
+        tempIcon = _LOADIMAGE("./InForm/resources/Application-icon.png", 32)
+        IF tempIcon < -1 THEN
+            _PUTIMAGE (_WIDTH / 2 - _WIDTH(tempIcon) / 2, _HEIGHT / 2 - _HEIGHT(tempIcon) / 2), tempIcon
+            _DISPLAY
+        ELSE
+            GOSUB ShowMessage
+        END IF
         SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
     $ELSE
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
@@ -2092,6 +2099,7 @@ SUB __UI_OnLoad
     TIMER(CheckPreviewTimer) ON
 
     __UI_RefreshMenuBar
+    _FREEIMAGE tempIcon
 
     EXIT SUB
     UiEditorPreviewNotFound:
