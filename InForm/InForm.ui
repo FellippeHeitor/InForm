@@ -486,7 +486,6 @@ SUB __UI_Init
     __UI_PrintString _WIDTH / 2 - _PRINTWIDTH("Initializing...") / 2, _HEIGHT / 2 - _FONTHEIGHT / 2, "Initializing..."
     _SCREENSHOW
 
-    _DELAY .1
     _ICON
     _TITLE "InForm"
     IF Control(__UI_FormID).CenteredWindow THEN _SCREENMOVE _MIDDLE
