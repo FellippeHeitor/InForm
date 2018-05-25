@@ -2441,7 +2441,7 @@ SUB __UI_EventDispatcher
                             __UI_Focus = __UI_PreviousFocus
                             __UI_DestroyControl Control(__UI_ActiveMenu)
                             __UI_ForceRedraw = True
-                            SetRadioButtonValue __UI_HoveringID
+                            IF Control(__UI_HoveringID).BulletStyle = __UI_Bullet THEN SetRadioButtonValue __UI_HoveringID
                     END SELECT
                     __UI_LastMouseClick = TIMER
                     __UI_JustOpenedMenu = False
