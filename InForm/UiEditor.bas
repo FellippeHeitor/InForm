@@ -6124,12 +6124,6 @@ SUB LoadPreview
                     CASE -16
                         b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Max = _CV(_FLOAT, b$)
-                    CASE -17
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).HotKey = CVI(b$)
-                    CASE -18
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).HotKeyOffset = CVI(b$)
                     CASE -19
                         PreviewControls(Dummy).ShowPercentage = True
                     CASE -20
@@ -6152,9 +6146,6 @@ SUB LoadPreview
                         PreviewControls(Dummy).WordWrap = True
                     CASE -29
                         PreviewControls(Dummy).CanResize = True
-                    CASE -30
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).HotKeyPosition = CVI(b$)
                     CASE -31
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).Padding = CVI(b$)
