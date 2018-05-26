@@ -76,6 +76,7 @@ TYPE __UI_ControlTYPE
     HotKeyOffset AS INTEGER
     HotKeyPosition AS INTEGER
     ShowPercentage AS _BYTE
+    AutoScroll AS _BYTE
     InputViewStart AS LONG
     PreviousInputViewStart AS LONG
     LastVisibleItem AS INTEGER
@@ -4828,7 +4829,8 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB AddItem (WhichListBox AS LONG, Item$)
-    DIM ThisID AS LONG
+    DIM ThisID AS LONG, prevFont AS LONG
+    DIM BorderOffset AS INTEGER
 
     ThisID = WhichListBox
     IF Control(ThisID).Type <> __UI_Type_ListBox AND Control(ThisID).Type <> __UI_Type_DropdownList THEN EXIT SUB
@@ -4839,6 +4841,17 @@ SUB AddItem (WhichListBox AS LONG, Item$)
 
     Text(ThisID) = Text(ThisID) + Item$ + CHR$(13)
     Control(ThisID).Max = Control(ThisID).Max + 1
+
+    IF Control(ThisID).AutoScroll THEN
+        prevFont = _FONT
+        BorderOffset = ABS(Control(ThisID).HasBorder) * 5
+
+        _FONT Control(ThisID).Font
+        IF Control(ThisID).Max > FIX((Control(ThisID).Height - BorderOffset) \ uspacing) THEN
+            Control(ThisID).InputViewStart = Control(ThisID).Max - FIX((Control(ThisID).Height - BorderOffset) \ uspacing) + 1
+        END IF
+        _FONT prevFont
+    END IF
     Control(ThisID).LastVisibleItem = 0 'Reset this var so it'll be recalculated
 END SUB
 
