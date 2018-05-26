@@ -5316,6 +5316,9 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         IF SelectFirstItem AND NOT __UI_DesignMode AND TotalItems > 0 THEN
             __UI_Focus = __UI_NextMenuItem(0)
         ELSE
+            IF TotalItems = 0 THEN
+                Control(__UI_ActiveMenu).Width = __UI_MenuItemOffset * 2 + __UI_PrintWidth("Add new")
+            END IF
             __UI_Focus = __UI_ActiveMenu
         END IF
     END IF
