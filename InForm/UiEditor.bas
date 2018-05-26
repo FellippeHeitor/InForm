@@ -1867,7 +1867,7 @@ SUB __UI_OnLoad
 
     'Load splash image:
     DIM tempIcon AS LONG
-    tempIcon = _LOADIMAGE("./InForm/resources/Application-icon.png", 32)
+    tempIcon = _LOADIMAGE("./InForm/resources/Application-icon-128.png", 32)
 
     GOSUB ShowMessage
 
@@ -2116,6 +2116,7 @@ SUB __UI_OnLoad
     GOSUB ShowMessage
 
     __UI_RefreshMenuBar
+    __UI_ForceRedraw = True
     _FREEIMAGE tempIcon
 
     EXIT SUB
@@ -2132,7 +2133,7 @@ SUB __UI_OnLoad
         CLS , _RGB32(255, 255, 255)
         _PUTIMAGE (_WIDTH / 2 - _WIDTH(tempIcon) / 2, _HEIGHT / 2 - _HEIGHT(tempIcon) / 2), tempIcon
         COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
-        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT / 2 + _HEIGHT(tempIcon) / 2 - _FONTHEIGHT * 2, b$
+        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT / 2 + _HEIGHT(tempIcon) / 2 + _FONTHEIGHT, b$
         _DISPLAY
     ELSE
         CLS , __UI_DefaultColor(__UI_Type_Form, 2)
