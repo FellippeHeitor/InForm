@@ -1472,9 +1472,10 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF __UI_DesignMode THEN
             IF This.Left + This.Width = __UI_NewMenuBarTextLeft THEN
                 'Last menu bar item. Next is "Add new"
-                COLOR Darken(Control(__UI_FormID).BackColor, 80)
                 _DEST Control(__UI_FormID).Canvas
+                COLOR Darken(Control(__UI_FormID).BackColor, 80)
                 _FONT (This.Font)
+                LINE (__UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2))-STEP(__UI_PrintWidth("Add new"),(falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset))), Control(__UI_FormID).BackColor, BF
                 __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), "Add new"
             END IF
         END IF
