@@ -1831,38 +1831,7 @@ SUB __UI_OnLoad
     DIM i AS LONG, b$, UiEditorFile AS INTEGER
     DIM prevDest AS LONG
 
-    'Assign InputBox IDs:
-    i = 0
-    i = i + 1: InputBox(i).ID = NameTB: InputBox(i).LabelID = NameLB: InputBox(i).Signal = 1
-    i = i + 1: InputBox(i).ID = CaptionTB: InputBox(i).LabelID = CaptionLB: InputBox(i).Signal = 2
-    i = i + 1: InputBox(i).ID = TextTB: InputBox(i).LabelID = TextLB: InputBox(i).Signal = 3
-    i = i + 1: InputBox(i).ID = MaskTB: InputBox(i).LabelID = MaskLB: InputBox(i).Signal = 35
-    i = i + 1: InputBox(i).ID = TopTB: InputBox(i).LabelID = TopLB: InputBox(i).Signal = 4
-    i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5
-    i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6
-    i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7
-    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
-    i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9
-    i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10
-    i = i + 1: InputBox(i).ID = MinTB: InputBox(i).LabelID = MinLB: InputBox(i).Signal = 11
-    i = i + 1: InputBox(i).ID = MaxTB: InputBox(i).LabelID = MaxLB: InputBox(i).Signal = 12
-    i = i + 1: InputBox(i).ID = IntervalTB: InputBox(i).LabelID = IntervalLB: InputBox(i).Signal = 13
-    i = i + 1: InputBox(i).ID = MinIntervalTB: InputBox(i).LabelID = MinIntervalLB: InputBox(i).Signal = 36
-    i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31
-    i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
-    i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
-    i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
-    REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
-    REDIM InputBoxText(1 TO i) AS STRING
-
-    ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
-    ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
-
-    StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
-    Control(StatusBar).BackColor = StatusBarBackColor
-    'LoadFontList
-
-    b$ = "Loading images..."
+    b$ = "Starting..."
     GOSUB ShowMessage
 
     'Load splash image:
@@ -1870,68 +1839,6 @@ SUB __UI_OnLoad
     tempIcon = _LOADIMAGE("./InForm/resources/Application-icon-128.png", 32)
 
     GOSUB ShowMessage
-
-    'Load toolbox images:
-    DIM CommControls AS LONG
-    CommControls = LoadEditorImage("commoncontrols.bmp")
-    __UI_ClearColor CommControls, 0, 0
-
-    i = 0
-    Control(AddButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddLabel).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddLabel).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddTextBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTextBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddCheckBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddCheckBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddRadioButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddRadioButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddListBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddListBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddDropdownList).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddDropdownList).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddTrackBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTrackBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddProgressBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddProgressBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddPictureBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddPictureBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddFrame).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddFrame).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-
-    'Draw ToggleSwitch icon
-    prevDest = _DEST
-    Control(AddToggleSwitch).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddToggleSwitch).HelperCanvas
-    LINE (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
-    LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
-    LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
-
-    'Draw AddNumericBox icon
-    Control(AddNumericBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddNumericBox).HelperCanvas
-    _FONT 8
-    LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
-    LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
-    COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
-    __UI_PrintString 5, 3, "#"
-
-    'Import Align menu icons from InForm.ui
-    Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas
-    Control(AlignMenuAlignRight).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignRight")).HelperCanvas
-    Control(AlignMenuAlignTops).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignTops")).HelperCanvas
-    Control(AlignMenuAlignBottoms).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).HelperCanvas
-    Control(AlignMenuAlignCentersV).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).HelperCanvas
-    Control(AlignMenuAlignCentersH).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).HelperCanvas
-
-    _DEST prevDest
-
-    Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
-
-    _FREEIMAGE CommControls
-
-    __UI_ForceRedraw = True
 
     PreviewAttached = True
     AutoNameControls = True
@@ -2110,7 +2017,100 @@ SUB __UI_OnLoad
     Caption(PathLB) = "Path: " + CurrentPath$
     '-------------------------------------------------
 
-    TIMER(CheckPreviewTimer) ON
+    'Assign InputBox IDs:
+    i = 0
+    i = i + 1: InputBox(i).ID = NameTB: InputBox(i).LabelID = NameLB: InputBox(i).Signal = 1
+    i = i + 1: InputBox(i).ID = CaptionTB: InputBox(i).LabelID = CaptionLB: InputBox(i).Signal = 2
+    i = i + 1: InputBox(i).ID = TextTB: InputBox(i).LabelID = TextLB: InputBox(i).Signal = 3
+    i = i + 1: InputBox(i).ID = MaskTB: InputBox(i).LabelID = MaskLB: InputBox(i).Signal = 35
+    i = i + 1: InputBox(i).ID = TopTB: InputBox(i).LabelID = TopLB: InputBox(i).Signal = 4
+    i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5
+    i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6
+    i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7
+    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
+    i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9
+    i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10
+    i = i + 1: InputBox(i).ID = MinTB: InputBox(i).LabelID = MinLB: InputBox(i).Signal = 11
+    i = i + 1: InputBox(i).ID = MaxTB: InputBox(i).LabelID = MaxLB: InputBox(i).Signal = 12
+    i = i + 1: InputBox(i).ID = IntervalTB: InputBox(i).LabelID = IntervalLB: InputBox(i).Signal = 13
+    i = i + 1: InputBox(i).ID = MinIntervalTB: InputBox(i).LabelID = MinIntervalLB: InputBox(i).Signal = 36
+    i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31
+    i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
+    i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
+    i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
+    REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
+    REDIM InputBoxText(1 TO i) AS STRING
+
+    ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
+    ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
+
+    StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
+    Control(StatusBar).BackColor = StatusBarBackColor
+
+    'LoadFontList
+
+    b$ = "Loading images..."
+    GOSUB ShowMessage
+
+    'Load toolbox images:
+    DIM CommControls AS LONG
+    CommControls = LoadEditorImage("commoncontrols.bmp")
+    __UI_ClearColor CommControls, 0, 0
+
+    i = 0
+    Control(AddButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddLabel).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddLabel).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddTextBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTextBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddCheckBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddCheckBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddRadioButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddRadioButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddListBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddListBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddDropdownList).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddDropdownList).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddTrackBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTrackBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddProgressBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddProgressBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddPictureBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddPictureBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddFrame).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddFrame).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+
+    'Draw ToggleSwitch icon
+    prevDest = _DEST
+    Control(AddToggleSwitch).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    _DEST Control(AddToggleSwitch).HelperCanvas
+    LINE (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
+    LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
+    LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
+
+    'Draw AddNumericBox icon
+    Control(AddNumericBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    _DEST Control(AddNumericBox).HelperCanvas
+    _FONT 8
+    LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
+    LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
+    COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
+    __UI_PrintString 5, 3, "#"
+
+    'Import Align menu icons from InForm.ui
+    Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas
+    Control(AlignMenuAlignRight).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignRight")).HelperCanvas
+    Control(AlignMenuAlignTops).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignTops")).HelperCanvas
+    Control(AlignMenuAlignBottoms).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).HelperCanvas
+    Control(AlignMenuAlignCentersV).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).HelperCanvas
+    Control(AlignMenuAlignCentersH).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).HelperCanvas
+
+    _DEST prevDest
+
+    Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
+
+    _FREEIMAGE CommControls
 
     b$ = "Done."
     GOSUB ShowMessage
@@ -2118,6 +2118,8 @@ SUB __UI_OnLoad
     __UI_RefreshMenuBar
     __UI_ForceRedraw = True
     _FREEIMAGE tempIcon
+
+    TIMER(CheckPreviewTimer) ON
 
     EXIT SUB
     UiEditorPreviewNotFound:
