@@ -39,10 +39,10 @@ $ELSE
 $END IF
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'InForm/InForm.ui'
-'$INCLUDE:'InForm/xp.uitheme'
+'$INCLUDE:'../InForm.ui'
+'$INCLUDE:'../xp.uitheme'
 '$INCLUDE:'InFormSetup.frm'
-'$INCLUDE:'InForm/ini.bm'
+'$INCLUDE:'../ini.bm'
 
 'Icon:
 'http://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Apps-system-software-update-icon.html

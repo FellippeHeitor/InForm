@@ -5,7 +5,7 @@
 '-----------------------------------------------------------
 SUB __UI_LoadForm
 
-    $EXEICON:'updater.ico'
+    $EXEICON:'./../resources/updater.ico'
 
     DIM __UI_NewID AS LONG
 
