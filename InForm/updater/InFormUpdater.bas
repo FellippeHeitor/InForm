@@ -15,6 +15,16 @@ DIM SHARED RetryBT AS LONG
 DIM SHARED CancelBT AS LONG
 DIM SHARED ActivityIndicator AS LONG
 
+DIM SHARED binaryExtension$, pathAppend$
+
+$IF WIN THEN
+    binaryExtension$ = ".exe"
+    pathAppend$ = ""
+$ELSE
+    binaryExtension$ = ""
+    pathAppend$ = "./"
+$END IF
+
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../InForm.ui'
 '$INCLUDE:'../xp.uitheme'
@@ -28,7 +38,7 @@ END SUB
 
 SUB __UI_OnLoad
     Report "Contacting server"
-    CHDIR ".."
+    CHDIR "../.."
     IF _FILEEXISTS("InFormUpdate.ini") THEN KILL "InFormUpdate.ini"
 END SUB
 
@@ -57,16 +67,16 @@ SUB __UI_BeforeUpdateDisplay STATIC
             END SELECT
         CASE 2 'compare with current version
             IF NextEvent THEN NextEvent = False: Report "Parsing update script..."
-            localVersion$ = ReadSetting("InFormVersion.bas", "", "CONST __UI_Version")
-            localVersionNumber! = VAL(ReadSetting("InFormVersion.bas", "", "CONST __UI_VersionNumber"))
-            localVersionisBeta%% = ReadSetting("InFormVersion.bas", "", "CONST __UI_VersionIsBeta") = "True"
+            localVersion$ = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_Version")
+            localVersionNumber! = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionNumber"))
+            localVersionisBeta%% = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionIsBeta") = "True"
             IF localVersionisBeta%% THEN localBeta$ = " Beta version " ELSE localBeta$ = " "
             Report "Local version:" + localBeta$ + LTRIM$(STR$(localVersionNumber!))
 
             serverVersion$ = ReadSetting("InFormUpdate.ini", "", "version")
             isBeta$ = ReadSetting("InFormUpdate.ini", "", "beta")
-            serverBeta%% = True
-            IF isBeta$ = "true" THEN isBeta$ = " Beta version " ELSE isBeta$ = " "
+            serverBeta%% = False
+            IF isBeta$ = "true" THEN serverBeta%% = True: isBeta$ = " Beta version " ELSE isBeta$ = " "
             Report "Remote version:" + isBeta$ + serverVersion$
 
             IF localVersionisBeta%% THEN
@@ -80,6 +90,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
             END IF
 
             thisFile% = 0
+            baseUrl$ = ReadSetting("InFormUpdate.ini", "", "baseurl")
 
             NextEvent = True: ThisStep = 3
         CASE 3 'download new content
@@ -88,27 +99,37 @@ SUB __UI_BeforeUpdateDisplay STATIC
             IF url$ = "" THEN
                 thisFile% = thisFile% + 1
 
-                url$ = ReadSetting("InFormUpdate.ini", LTRIM$(STR$(thisFile%)), "url")
+                url$ = ReadSetting("InFormUpdate.ini", LTRIM$(STR$(thisFile%)), "filename")
                 IF url$ = "" THEN
                     NextEvent = True: ThisStep = 4: EXIT SUB
                 END IF
-                target$ = ReadSetting("InFormUpdate.ini", LTRIM$(STR$(thisFile%)), "target")
-                IF _DIREXISTS(target$) = 0 THEN MKDIR LEFT$(target$, LEN(target$) - 1)
-                outputFileName$ = target$ + ReadSetting("InFormUpdate.ini", LTRIM$(STR$(thisFile%)), "filename")
+                IF INSTR(url$, "/") > 0 THEN
+                    FOR i = LEN(url$) TO 1 STEP -1
+                        IF ASC(url$, i) = 47 THEN '/
+                            target$ = LEFT$(url$, i)
+                            EXIT FOR
+                        END IF
+                    NEXT
+
+                    IF _DIREXISTS(target$) = 0 THEN MKDIR target$
+                ELSE
+                    target$ = ""
+                END IF
+                outputFileName$ = url$
                 checksum$ = ReadSetting("InFormUpdate.ini", LTRIM$(STR$(thisFile%)), "checksum")
 
                 Report "Downloading " + outputFileName$ + "..."
 
                 IF _FILEEXISTS(outputFileName$) THEN
                     IF ADLER32$(outputFileName$) = checksum$ THEN
-                        Report "Already downloaded, skipping."
+                        Report "No change, skipping."
                         url$ = ""
                     END IF
                 END IF
             END IF
 
             IF LEN(url$) THEN
-                Result$ = Download$(url$, outputFileName$, 30)
+                Result$ = Download$(baseUrl$ + url$, outputFileName$, 30)
             ELSE
                 Result$ = MKI$(0)
             END IF
@@ -134,15 +155,8 @@ SUB __UI_BeforeUpdateDisplay STATIC
                     NextEvent = True
             END SELECT
         CASE 4 'compile UiEditor.bas
-            $IF WIN THEN
-                binaryExtension$ = ".exe"
-                pathAppend$ = ""
-            $ELSE
-                binaryExtension$ = ""
-                pathAppend$ = "./"
-            $END IF
             IF NextEvent THEN NextEvent = False: Report "Compiling UiEditor.bas...": EXIT SUB
-            CHDIR ".."
+            SHELL _HIDE pathAppend$ + "qb64" + binaryExtension$ + " -s:exewithsource=false"
             Result% = SHELL(pathAppend$ + "qb64" + binaryExtension$ + " -x InForm/UiEditor.bas")
             IF Result% > 0 OR _FILEEXISTS(pathAppend$ + "qb64" + binaryExtension$) = 0 THEN
                 Report "Compilation failed."
@@ -165,20 +179,22 @@ SUB __UI_BeforeUpdateDisplay STATIC
             END IF
         CASE 6 'clean up
             IF NextEvent THEN NextEvent = False: Report "Cleaning up...": EXIT SUB
-            CHDIR _STARTDIR$
-            CHDIR ".."
             KILL "InFormUpdate.ini"
+            ThisStep = 8
+            NextEvent = True
         CASE 7 'already up-to-date
             Answer = MessageBox("You already have the latest version.", "", MsgBox_OkOnly + MsgBox_Information)
+            KILL "InFormUpdate.ini"
             SYSTEM
+        CASE 8 'done
+            IF NextEvent THEN NextEvent = False: Report "Update complete.": EXIT SUB
+            Result$ = Download$("", "", 30) 'close client
+            Control(ActivityIndicator).Hidden = True
+            Caption(CancelBT) = "Finish"
         CASE 1 TO 6
             BeginDraw ActivityIndicator
             CLS , __UI_DefaultColor(__UI_Type_Form, 2)
             angle = angle + .05
-            'IF indicatorIncrement = 0 THEN indicatorIncrement = .05: indicatorSize = 1
-            'indicatorSize = indicatorSize + indicatorIncrement
-            'IF indicatorSize >= 5 THEN indicatorIncrement = indicatorIncrement * -1
-            'IF indicatorSize <= 1 THEN indicatorIncrement = indicatorIncrement * -1
             indicatorSize = 2
             IF angle > _PI(2) THEN angle = _PI(2) - angle
             FOR i = 0 TO 360 STEP 90
@@ -187,6 +203,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
             EndDraw ActivityIndicator
         CASE ELSE
             IF NextEvent THEN NextEvent = False: Report "Updated failed."
+            Result$ = Download$("", "", 30)
             Control(RetryBT).Hidden = False
             Control(ActivityIndicator).Hidden = True
     END SELECT
@@ -237,6 +254,11 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
 
     IF url$ <> prevUrl$ THEN
         prevUrl$ = url$
+        a$ = ""
+        IF url$ = "" THEN
+            IF client THEN CLOSE client: client = 0
+            EXIT SUB
+        END IF
         url2$ = url$
         x = INSTR(url2$, "/")
         IF x THEN url2$ = LEFT$(url$, x - 1)
@@ -328,6 +350,15 @@ SUB __UI_Click (id AS LONG)
             Report "Contacting server"
             IF _FILEEXISTS("InFormUpdate.ini") THEN KILL "InFormUpdate.ini"
         CASE CancelBT
+            IF Caption(CancelBT) = "Finish" THEN
+                DIM Answer AS _BYTE
+                IF _FILEEXISTS("UiEditor" + binaryExtension$) THEN
+                    Answer = MessageBox("Launch InForm Designer?", "", MsgBox_YesNo + MsgBox_Question)
+                    IF Answer = MsgBox_Yes THEN
+                        SHELL _DONTWAIT "UiEditor" + binaryExtension$
+                    END IF
+                END IF
+            END IF
             SYSTEM
     END SELECT
 END SUB
