@@ -1922,19 +1922,44 @@ SUB __UI_OnLoad
 
     DIM value$
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Keep preview window attached")
-    IF LEN(value$) THEN PreviewAttached = (value$ = "True") ELSE PreviewAttached = True
+    IF LEN(value$) THEN
+        PreviewAttached = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Keep preview window attached", "True"
+        PreviewAttached = True
+    END IF
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Auto-name controls")
-    IF LEN(value$) THEN AutoNameControls = (value$ = "True") ELSE AutoNameControls = True
+    IF LEN(value$) THEN
+        AutoNameControls = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Auto-name controls", "True"
+        AutoNameControls = True
+    END IF
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Snap to edges")
-    IF LEN(value$) THEN __UI_SnapLines = (value$ = "True") ELSE __UI_SnapLines = True
+    IF LEN(value$) THEN
+        __UI_SnapLines = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Snap to edges", "True"
+        __UI_SnapLines = True
+    END IF
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show position and size")
-    IF LEN(value$) THEN __UI_ShowPositionAndSize = (value$ = "True") ELSE __UI_ShowPositionAndSize = True
+    IF LEN(value$) THEN
+        __UI_ShowPositionAndSize = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", "True"
+        __UI_ShowPositionAndSize = True
+    END IF
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Check for updates")
-    IF LEN(value$) THEN CheckUpdates = (value$ = "True") ELSE CheckUpdates = True
+    IF LEN(value$) THEN
+        CheckUpdates = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", "True"
+        CheckUpdates = True
+    END IF
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
     IF value$ = "True" THEN
