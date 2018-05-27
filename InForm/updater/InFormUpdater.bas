@@ -129,6 +129,9 @@ SUB __UI_BeforeUpdateDisplay STATIC
             END IF
 
             IF LEN(url$) THEN
+                IF INSTR(url$, "updater") > 0 THEN
+                    WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "True"
+                END IF
                 Result$ = Download$(baseUrl$ + url$, outputFileName$, 30)
             ELSE
                 Result$ = MKI$(0)
