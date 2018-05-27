@@ -134,10 +134,17 @@ SUB __UI_BeforeUpdateDisplay STATIC
                     NextEvent = True
             END SELECT
         CASE 4 'compile UiEditor.bas
+            $IF WIN THEN
+                binaryExtension$ = ".exe"
+                pathAppend$ = ""
+            $ELSE
+                binaryExtension$ = ""
+                pathAppend$ = "./"
+            $END IF
             IF NextEvent THEN NextEvent = False: Report "Compiling UiEditor.bas...": EXIT SUB
             CHDIR ".."
-            Result% = SHELL("qb64.exe -x InForm/UiEditor.bas")
-            IF Result% THEN
+            Result% = SHELL(pathAppend$ + "qb64" + binaryExtension$ + " -x InForm/UiEditor.bas")
+            IF Result% > 0 OR _FILEEXISTS(pathAppend$ + "qb64" + binaryExtension$) = 0 THEN
                 Report "Compilation failed."
                 ThisStep = -1
                 NextEvent = True
@@ -147,7 +154,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
             END IF
         CASE 5 'compile UiEditorPreview.bas
             IF NextEvent THEN NextEvent = False: Report "Compiling UiEditorPreview.bas...": EXIT SUB
-            Result% = SHELL("qb64.exe -x InForm/UiEditorPreview.bas -o InForm/UiEditorPreview.exe")
+            Result% = SHELL(pathAppend$ + "qb64" + binaryExtension$ + " -x InForm/UiEditorPreview.bas -o InForm/UiEditorPreview.exe")
             IF Result% THEN
                 Report "Compilation failed."
                 ThisStep = -1
@@ -157,7 +164,10 @@ SUB __UI_BeforeUpdateDisplay STATIC
                 NextEvent = True
             END IF
         CASE 6 'clean up
-            IF NextEvent THEN NextEvent = False: Report "Cleaning up..."
+            IF NextEvent THEN NextEvent = False: Report "Cleaning up...": EXIT SUB
+            CHDIR _STARTDIR$
+            CHDIR ".."
+            KILL "InFormUpdate.ini"
         CASE 7 'already up-to-date
             Answer = MessageBox("You already have the latest version.", "", MsgBox_OkOnly + MsgBox_Information)
             SYSTEM
