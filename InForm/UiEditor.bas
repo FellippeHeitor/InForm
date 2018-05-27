@@ -49,6 +49,7 @@ DIM SHARED AlignMenuDistributeV AS LONG
 DIM SHARED AlignMenuDistributeH AS LONG
 
 DIM SHARED OptionsMenuAutoName AS LONG, OptionsMenuSwapButtons AS LONG
+DIM SHARED OptionsMenuCheckUpdates AS LONG
 
 DIM SHARED HelpMenuHelp AS LONG, HelpMenuAbout AS LONG
 
@@ -111,7 +112,7 @@ DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
-DIM SHARED LastKeyPress AS DOUBLE
+DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
@@ -253,9 +254,11 @@ $ELSE
     END DECLARE
 $END IF
 
+'$include:'ini.bi'
 '$include:'InForm.ui'
 '$include:'xp.uitheme'
 '$include:'UiEditor.frm'
+'$include:'ini.bm'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
@@ -283,6 +286,10 @@ SUB __UI_Click (id AS LONG)
         CASE OptionsMenuAutoName
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
+            SaveSettings
+        CASE OptionsMenuCheckUpdates
+            CheckUpdates = NOT CheckUpdates
+            Control(id).Value = CheckUpdates
             SaveSettings
         CASE EditMenuSetDefaultButton
             SendSignal -6
@@ -820,8 +827,9 @@ END SUB
 SUB __UI_BeforeUpdateDisplay
     DIM b$, c$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
     DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
-    STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
     DIM OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
+    STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
+    STATIC CheckUpdateDone AS _BYTE
 
     STATIC LastChange AS SINGLE
     IF TIMER - BlinkStatusBar < 1 THEN
@@ -841,6 +849,67 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_Focus = 0 THEN
         IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
+    END IF
+
+    IF CheckUpdates THEN
+        IF CheckUpdateDone = False THEN
+            STATIC ThisStep AS INTEGER
+            DIM Result$
+            IF ThisStep = 0 THEN ThisStep = 1
+
+            SELECT EVERYCASE ThisStep
+                CASE 1 'check availability
+                    Result$ = Download$("www.qb64.org/inform/update/latest.ini", "InForm/InFormUpdate.ini", 30)
+                    SELECT CASE CVI(LEFT$(Result$, 2))
+                        CASE 1 'Success
+                            ThisStep = 2
+                        CASE 2, 3 'Can't reach server / Timeout
+                            CheckUpdateDone = True
+                    END SELECT
+                CASE 2 'compare with current version
+                    DIM localVersionNumber!, localVersionIsBeta%%
+                    STATIC serverVersion$, isBeta$, serverBeta%%
+
+                    localVersionNumber! = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionNumber"))
+                    localVersionIsBeta%% = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionIsBeta") = "True"
+
+                    serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
+                    isBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")
+                    IF isBeta$ = "true" THEN isBeta$ = "Beta version " ELSE isBeta$ = ""
+                    serverBeta%% = True
+
+                    IF localVersionIsBeta%% THEN
+                        IF serverBeta%% AND VAL(serverVersion$) <= localVersionNumber! THEN
+                            CheckUpdateDone = True
+                        END IF
+                    ELSE
+                        IF VAL(serverVersion$) <= localVersionNumber! THEN
+                            CheckUpdateDone = True
+                        END IF
+                    END IF
+
+                    ThisStep = 3
+                    EXIT SUB
+                CASE 3 'An update is available.
+                    Result$ = Download$("", "", 30) 'close connection
+                    CheckUpdateDone = True
+                    DIM binaryExtension$
+                    $IF WIN THEN
+                        binaryExtension$ = ".exe"
+                    $ELSE
+                        binaryExtension$ = ""
+                    $END IF
+                    IF _FILEEXISTS("InForm/updater/InFormUpdater" + binaryExtension$) THEN
+                        _DELAY .2
+                        b$ = "A new version of InForm is available\n\nCurrent version: " + __UI_Version + "\n" + "New version: " + isBeta$ + serverVersion$ + "\n\n" + "Update now?"
+                        Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
+                        IF Answer = MsgBox_Yes THEN
+                            SHELL _DONTWAIT "InForm/updater/InFormUpdater" + binaryExtension$
+                            SYSTEM
+                        END IF
+                    END IF
+            END SELECT
+        END IF
     END IF
 
     IF NOT MidRead THEN
@@ -1813,6 +1882,9 @@ SUB SaveSettings
     PRINT #FreeFileNum, "Show position and size = ";
     IF __UI_ShowPositionAndSize THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
 
+    PRINT #FreeFileNum, "Check for updates = ";
+    IF CheckUpdates THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+
     $IF WIN THEN
     $ELSE
         PRINT #FreeFileNum, "Swap mouse buttons = ";
@@ -1842,6 +1914,7 @@ SUB __UI_OnLoad
 
     PreviewAttached = True
     AutoNameControls = True
+    CheckUpdates = True
     __UI_ShowPositionAndSize = True
     __UI_SnapLines = True
 
@@ -1872,6 +1945,8 @@ SUB __UI_OnLoad
                             IF IniValue$ = "FALSE" THEN PreviewAttached = False
                         CASE "AUTO-NAME CONTROLS"
                             IF IniValue$ = "FALSE" THEN AutoNameControls = False
+                        CASE "CHECK FOR UPDATES"
+                            IF IniValue$ = "FALSE" THEN CheckUpdates = False
                         CASE "SHOW POSITION AND SIZE"
                             IF IniValue$ = "FALSE" THEN __UI_ShowPositionAndSize = False
                         CASE "SNAP TO EDGES"
@@ -1894,6 +1969,7 @@ SUB __UI_OnLoad
 
     Control(ViewMenuPreviewDetach).Value = PreviewAttached
     Control(OptionsMenuAutoName).Value = AutoNameControls
+    Control(OptionsMenuCheckUpdates).Value = CheckUpdates
     Control(OptionsMenuSnapLines).Value = __UI_SnapLines
     Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
 
@@ -3738,5 +3814,66 @@ FUNCTION QuotedFilename$ (f$)
     $ELSE
         QuotedFilename$ = "'" + f$ + "'"
     $END IF
+END FUNCTION
+
+FUNCTION Download$ (url$, file$, timelimit) STATIC
+    'as seen on http://www.qb64.org/wiki/Downloading_Files
+    'adapted for use with InForm
+
+    DIM client AS LONG, l AS LONG
+    DIM prevUrl$, prevUrl2$, url2$, x AS LONG
+    DIM e$, url3$, x$, t!, a2$, a$, i AS LONG
+    DIM i2 AS LONG, i3 AS LONG, d$, fh AS LONG
+
+    IF url$ <> prevUrl$ THEN
+        prevUrl$ = url$
+        IF url$ = "" THEN
+            IF client THEN CLOSE client: client = 0
+            EXIT SUB
+        END IF
+        url2$ = url$
+        x = INSTR(url2$, "/")
+        IF x THEN url2$ = LEFT$(url$, x - 1)
+        IF url2$ <> prevUrl2$ THEN
+            prevUrl2$ = url2$
+            IF client THEN CLOSE client: client = 0
+            client = _OPENCLIENT("TCP/IP:80:" + url2$)
+            IF client = 0 THEN Download = MKI$(2): prevUrl$ = "": EXIT FUNCTION
+        END IF
+        e$ = CHR$(13) + CHR$(10) ' end of line characters
+        url3$ = RIGHT$(url$, LEN(url$) - x + 1)
+        x$ = "GET " + url3$ + " HTTP/1.1" + e$
+        x$ = x$ + "Host: " + url2$ + e$ + e$
+        PUT #client, , x$
+        t! = TIMER ' start time
+    END IF
+
+    GET #client, , a2$
+    a$ = a$ + a2$
+    i = INSTR(a$, "Content-Length:")
+    IF i THEN
+        i2 = INSTR(i, a$, e$)
+        IF i2 THEN
+            l = VAL(MID$(a$, i + 15, i2 - i - 14))
+            i3 = INSTR(i2, a$, e$ + e$)
+            IF i3 THEN
+                i3 = i3 + 4 'move i3 to start of data
+                IF (LEN(a$) - i3 + 1) = l THEN
+                    d$ = MID$(a$, i3, l)
+                    fh = FREEFILE
+                    OPEN file$ FOR OUTPUT AS #fh: CLOSE #fh 'Warning! Clears data from existing file
+                    OPEN file$ FOR BINARY AS #fh
+                    PUT #fh, , d$
+                    CLOSE #fh
+                    Download = MKI$(1) + MKL$(l) 'indicates download was successful
+                    prevUrl$ = ""
+                    a$ = ""
+                    EXIT FUNCTION
+                END IF ' availabledata = l
+            END IF ' i3
+        END IF ' i2
+    END IF ' i
+    IF TIMER > t! + timelimit THEN CLOSE client: client = 0: Download = MKI$(3): prevUrl$ = "": EXIT FUNCTION
+    Download = MKI$(0) 'still working
 END FUNCTION
 

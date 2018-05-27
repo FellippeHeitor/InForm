@@ -181,13 +181,17 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Distribute Hori&zontally"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuAutoName", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
+    SetCaption __UI_NewID, "&Auto-name controls"
+    Control(__UI_NewID).Value = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdates", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
     $IF WIN THEN
-        SetCaption __UI_NewID, "&Auto-name controls"
+        SetCaption __UI_NewID, "&Check for updates online at start-up"
     $ELSE
-        SetCaption __UI_NewID, "&Auto-name controls-"
+        SetCaption __UI_NewID, "&Check for updates online at start-up-"
     $END IF
     Control(__UI_NewID).Value = True
-    
+
     $IF WIN THEN
     $ELSE
         __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSwapButtons", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
@@ -762,4 +766,5 @@ SUB __UI_AssignIDs
     ControlToggles = __UI_GetID("ControlToggles")
     BulletOptions = __UI_GetID("BulletOptions")
     BulletOptionsLB = __UI_GetID("BulletOptionsLB")
+    OptionsMenuCheckUpdates = __UI_GetID("OptionsMenuCheckUpdates")
 END SUB
