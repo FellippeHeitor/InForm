@@ -1922,19 +1922,19 @@ SUB __UI_OnLoad
 
     DIM value$
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Keep preview window attached")
-    PreviewAttached = (value$ = "True")
+    IF LEN(value$) THEN PreviewAttached = (value$ = "True") ELSE PreviewAttached = True
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Auto-name controls")
-    AutoNameControls = (value$ = "True")
+    IF LEN(value$) THEN AutoNameControls = (value$ = "True") ELSE AutoNameControls = True
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Snap to edges")
-    __UI_SnapLines = (value$ = "True")
+    IF LEN(value$) THEN __UI_SnapLines = (value$ = "True") ELSE __UI_SnapLines = True
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show position and size")
-    __UI_ShowPositionAndSize = (value$ = "True")
+    IF LEN(value$) THEN __UI_ShowPositionAndSize = (value$ = "True") ELSE __UI_ShowPositionAndSize = True
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Check for updates")
-    CheckUpdates = (value$ = "True")
+    IF LEN(value$) THEN CheckUpdates = (value$ = "True") ELSE CheckUpdates = True
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
     IF value$ = "True" THEN
