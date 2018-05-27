@@ -118,14 +118,13 @@ SUB __UI_BeforeUpdateDisplay STATIC
                 outputFileName$ = url$
                 checksum$ = ReadSetting("InFormUpdate.ini", LTRIM$(STR$(thisFile%)), "checksum")
 
-                Report "Downloading " + outputFileName$ + "..."
-
                 IF _FILEEXISTS(outputFileName$) THEN
                     IF ADLER32$(outputFileName$) = checksum$ THEN
-                        Report "No change, skipping."
                         url$ = ""
                     END IF
                 END IF
+
+                IF LEN(url$) THEN Report "Downloading " + outputFileName$ + "..."
             END IF
 
             IF LEN(url$) THEN
