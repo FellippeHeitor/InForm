@@ -2,7 +2,6 @@
 'Fellippe Heitor, 2016-2018 - fellippe@qb64.org - @fellippeheitor
 '
 'VWATCH64:OFF
-'$INCLUDE:'InFormVersion.bas'
 
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
@@ -231,6 +230,7 @@ __UI_Type(17).Name = "Font"
 __UI_Type(18).Name = "ToggleSwitch"
 
 CONST True = -1, False = 0
+'$INCLUDE:'InFormVersion.bas'
 __UI_SnapDistance = 5
 __UI_SnapDistanceFromForm = 10
 __UI_Font8Offset = 5
