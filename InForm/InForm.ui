@@ -5201,12 +5201,12 @@ FUNCTION MessageBox& (Message$, Title$, Setup AS LONG)
     IF Title$ = "" THEN Title$ = __UI_CurrentTitle
 
     $IF WIN THEN
-        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False,0) + CHR$(0), Title$ + CHR$(0), Setup + MsgBox_SystemModal + MsgBox_SetForeground)
+        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False, 0) + CHR$(0), Title$ + CHR$(0), Setup + MsgBox_SystemModal + MsgBox_SetForeground)
     $ELSE
         IF (Setup AND 4) THEN
-        MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 4)
+        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False, 0) + CHR$(0), Title$ + CHR$(0), 4)
         ELSE
-        MessageBox& = __UI_MB(0, Message$ + CHR$(0), Title$ + CHR$(0), 0)
+        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False, 0) + CHR$(0), Title$ + CHR$(0), 0)
         END IF
     $END IF
 END FUNCTION
