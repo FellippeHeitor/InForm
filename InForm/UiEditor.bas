@@ -893,18 +893,20 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 3 'An update is available.
                     Result$ = Download$("", "", 30) 'close connection
                     CheckUpdateDone = True
-                    DIM binaryExtension$
+                    DIM binaryExtension$, appendPath$
                     $IF WIN THEN
                         binaryExtension$ = ".exe"
+                        appendPath$ = ""
                     $ELSE
                         binaryExtension$ = ""
+                        appendPath$ = "./"
                     $END IF
-                    IF _FILEEXISTS("InForm/updater/InFormUpdater" + binaryExtension$) THEN
+                    IF _FILEEXISTS(appendPath$ + "InForm/updater/InFormUpdater" + binaryExtension$) THEN
                         _DELAY .2
                         b$ = "A new version of InForm is available\n\nCurrent version: " + __UI_Version + "\n" + "New version: " + isBeta$ + serverVersion$ + "\n\n" + "Update now?"
                         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
                         IF Answer = MsgBox_Yes THEN
-                            SHELL _DONTWAIT "InForm/updater/InFormUpdater" + binaryExtension$
+                            SHELL _DONTWAIT appendPath$ + "InForm/updater/InFormUpdater" + binaryExtension$
                             SYSTEM
                         END IF
                     END IF
