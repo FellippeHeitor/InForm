@@ -1862,35 +1862,30 @@ SUB __UI_BeforeUnload
 END SUB
 
 SUB SaveSettings
-    DIM FreeFileNum AS INTEGER, b$
+    DIM value$
 
-    FreeFileNum = FREEFILE
     IF _DIREXISTS("InForm") = 0 THEN EXIT SUB
-    OPEN "InForm/InForm.ini" FOR OUTPUT AS #FreeFileNum
-    PRINT #FreeFileNum, "[InForm Settings]"
-    PRINT #FreeFileNum, "'This file will be recreated everytime the editor is closed."
 
-    PRINT #FreeFileNum, "Keep preview window attached = ";
-    IF PreviewAttached THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+    IF PreviewAttached THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Keep preview window attached", value$
 
-    PRINT #FreeFileNum, "Auto-name controls = ";
-    IF AutoNameControls THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+    IF AutoNameControls THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Auto-name controls", value$
 
-    PRINT #FreeFileNum, "Snap to edges = ";
-    IF __UI_SnapLines THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+    IF __UI_SnapLines THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Snap to edges", value$
 
-    PRINT #FreeFileNum, "Show position and size = ";
-    IF __UI_ShowPositionAndSize THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+    IF __UI_ShowPositionAndSize THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", value$
 
-    PRINT #FreeFileNum, "Check for updates = ";
-    IF CheckUpdates THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+    IF CheckUpdates THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
 
     $IF WIN THEN
     $ELSE
-        PRINT #FreeFileNum, "Swap mouse buttons = ";
-        IF __UI_MouseButtonsSwap THEN PRINT #FreeFileNum, "True" ELSE PRINT #FreeFileNum, "False"
+        IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Swap mouse buttons", value$
     $END IF
-    CLOSE #FreeFileNum
 END SUB
 
 SUB __UI_BeforeInit
@@ -1925,47 +1920,38 @@ SUB __UI_OnLoad
 
     IF _DIREXISTS("InForm") = 0 THEN MKDIR "InForm"
 
-    IF _FILEEXISTS("InForm/InForm.ini") THEN
-        'Load settings
-        FreeFileNum = FREEFILE
-        OPEN "InForm/InForm.ini" FOR BINARY AS #FreeFileNum
-        LINE INPUT #FreeFileNum, b$
-        IF b$ = "[InForm Settings]" THEN
-            DIM EqualSign AS INTEGER, IniProperty$, IniValue$
-            DO
-                IF EOF(FreeFileNum) THEN EXIT DO
-                LINE INPUT #FreeFileNum, b$
-                b$ = UCASE$(b$)
-                EqualSign = INSTR(b$, "=")
-                IF EqualSign > 0 AND LEFT$(LTRIM$(b$), 1) <> "'" THEN
-                    IniProperty$ = LTRIM$(RTRIM$(LEFT$(b$, EqualSign - 1)))
-                    IniValue$ = LTRIM$(RTRIM$(MID$(b$, EqualSign + 1)))
-                    SELECT CASE IniProperty$
-                        CASE "KEEP PREVIEW WINDOW ATTACHED"
-                            IF IniValue$ = "FALSE" THEN PreviewAttached = False
-                        CASE "AUTO-NAME CONTROLS"
-                            IF IniValue$ = "FALSE" THEN AutoNameControls = False
-                        CASE "CHECK FOR UPDATES"
-                            IF IniValue$ = "FALSE" THEN CheckUpdates = False
-                        CASE "SHOW POSITION AND SIZE"
-                            IF IniValue$ = "FALSE" THEN __UI_ShowPositionAndSize = False
-                        CASE "SNAP TO EDGES"
-                            IF IniValue$ = "FALSE" THEN __UI_SnapLines = False
-                        CASE "SWAP MOUSE BUTTONS"
-                            $IF WIN THEN
-                            $ELSE
-                                IF IniValue$ = "TRUE" THEN __UI_MouseButtonsSwap = True
-                            $END IF
-                    END SELECT
-                END IF
-            LOOP
-        END IF
-        CLOSE #FreeFileNum
+    DIM value$
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Keep preview window attached")
+    PreviewAttached = (value$ = "True")
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Auto-name controls")
+    AutoNameControls = (value$ = "True")
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Snap to edges")
+    __UI_SnapLines = (value$ = "True")
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show position and size")
+    __UI_ShowPositionAndSize = (value$ = "True")
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Check for updates")
+    CheckUpdates = (value$ = "True")
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
+    IF value$ = "True" THEN
         $IF WIN THEN
+            SHELL _HIDE _DONTWAIT "qb64.exe -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater.exe"
         $ELSE
-            Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
+            SHELL _HIDE _DONTWAIT "./qb64 -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater"
         $END IF
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
     END IF
+
+    $IF WIN THEN
+    $ELSE
+        value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Swap mouse buttons")
+        __UI_MouseButtonsSwap = (value$ = "True")
+        Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
+    $END IF
 
     Control(ViewMenuPreviewDetach).Value = PreviewAttached
     Control(OptionsMenuAutoName).Value = AutoNameControls
