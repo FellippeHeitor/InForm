@@ -193,6 +193,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
             Result$ = Download$("", "", 30) 'close client
             Control(ActivityIndicator).Hidden = True
             Caption(CancelBT) = "Finish"
+            SetFocus CancelBT
         CASE 1 TO 6
             BeginDraw ActivityIndicator
             CLS , __UI_DefaultColor(__UI_Type_Form, 2)
