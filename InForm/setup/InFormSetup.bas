@@ -385,7 +385,7 @@ SUB __UI_Click (id AS LONG)
                 IF _FILEEXISTS("UiEditor" + binaryExtension$) THEN
                     Answer = MessageBox("Launch InForm Designer?", "", MsgBox_YesNo + MsgBox_Question)
                     IF Answer = MsgBox_Yes THEN
-                        SHELL _DONTWAIT "UiEditor" + binaryExtension$
+                        SHELL _DONTWAIT pathAppend$ + "UiEditor" + binaryExtension$
                     END IF
                 END IF
             END IF
