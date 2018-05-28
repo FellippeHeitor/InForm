@@ -1,0 +1,25 @@
+InForm - GUI library for QB64
+Fellippe Heitor, 2016-2018 - fellippe@qb64.org - @fellippeheitor
+https://github.com/FellippeHeitor/InForm
+-----------------------------------------------------------
+Below is the binary format for undo/redo data saved to file
+'InForm/UiEditorUndo.dat'. Each time a new control is created or
+a new property is changed, the preview saves the current state to
+this file and adjusts 'total undo images' and sets 'undo pointer'
+accordingly.
+
+This format is used in UiEditorPreview's methods:
+    - SaveUndoImage
+    - RestoreUndoImage
+    - RestoreRedoImage
+-----------------------------------------------------------
+
+MAX UNDO ENTRIES: 100
+offset  data            description
+1       INTEGER         undo pointer
+3       INTEGER         total undo images
+
+Directory
+entry size: 8 bytes
+        LONG       size&
+        size&      backup form data

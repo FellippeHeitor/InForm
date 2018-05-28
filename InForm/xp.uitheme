@@ -4,6 +4,7 @@
 'Image data embeded into SUB __UI_ImageData$
 'Uses hardware images.
 '---------------------------------------------------------------------------------
+'VWATCH64:OFF
 SUB __UI_ThemeSetup
     'Metrics
     __UI_ScrollbarWidth = 17
@@ -93,7 +94,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Does this button have a helper canvas (icon)?
         DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
-        IF This.HelperCanvas < -1 AND LEN(Text(This.ID)) > 0 THEN
+        IF This.HelperCanvas < -1 THEN
             IF LEN(TempCaption$) THEN
                 'Icon will be to the left of caption
                 IconHeight = This.Height - 6
@@ -243,7 +244,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionTopFirstLine + uheight&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionTopFirstLine + uspacing&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
             TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
@@ -269,7 +270,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
             'Hot key:
             IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-                LINE (CaptionLeftFirstLine + This.HotKeyOffset, (TextTop% + (uspacing& \ 2)))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+                LINE (CaptionLeftFirstLine + This.HotKeyOffset, (TextTop% + uspacing&))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         END IF
 
@@ -300,7 +301,10 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
@@ -405,7 +409,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         DIM i AS SINGLE
 
         CaptionIndent = 0
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             CaptionIndent = 5
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
@@ -459,7 +463,10 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
@@ -654,11 +661,26 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
         _PUTIMAGE (This.Width - 4, 10), ControlImage_Track, , (3, 0)-STEP(1, 4)
 
         'Interval ticks
+        DIM IntervalSize AS INTEGER, MinIntervalSize AS INTEGER
+        MinIntervalSize = 2
+
         LINE (5, 30)-STEP(0, 3), This.BorderColor
         IF This.Interval = 0 THEN This.Interval = 1
+
+        IF This.MinInterval > This.Interval THEN
+            This.MinInterval = 0
+        ELSEIF This.MinInterval < This.Interval AND This.MinInterval > 0 THEN
+            FOR i = This.Min TO This.Max STEP This.MinInterval
+                LINE (__UI_MAP(i, This.Min, This.Max, 5, This.Width - 6), 30)-STEP(0, MinIntervalSize), This.BorderColor
+            NEXT i
+        ENDIF
+
+        IF This.MinInterval > 0 THEN IntervalSize = 5 ELSE IntervalSize = 2
+
         FOR i = This.Min TO This.Max STEP This.Interval
-            LINE (__UI_MAP(i, This.Min, This.Max, 5, This.Width - 6), 30)-STEP(0, 2), This.BorderColor
+            LINE (__UI_MAP(i, This.Min, This.Max, 5, This.Width - 6), 30)-STEP(0, IntervalSize), This.BorderColor
         NEXT i
+
         LINE (5 + (This.Width - SliderWidth), 30)-STEP(0, 3), This.BorderColor
 
         'Draw slider
@@ -706,7 +728,10 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
-        __UI_TempMask(This.ID) = Mask(This.ID)
+        IF Mask(This.ID) <> __UI_TempMask(This.ID) THEN
+            __UI_TempMask(This.ID) = Mask(This.ID)
+            Text(This.ID) = __UI_EmptyMask(This.ID)
+        END IF
         IF __UI_TempTexts(This.ID) <> Text(This.ID) THEN
             __UI_StateHasChanged = True
             __UI_TempTexts(This.ID) = Text(This.ID)
@@ -905,8 +930,12 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             END IF
         END IF
 
-        IF This.HasBorder THEN
+        IF This.HasBorder = True THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+        ELSEIF This.HasBorder > 0 THEN
+            FOR i = 0 TO This.HasBorder
+                LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+            NEXT
         END IF
         '------
 
@@ -927,7 +956,10 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         This.PreviousInputViewStart = This.InputViewStart
         __UI_TempTexts(This.ID) = Text(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
@@ -1015,7 +1047,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             END IF
         END IF
 
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------
@@ -1165,7 +1197,10 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         This.Redraw = False
         This.ControlState = ControlState
         This.FocusState = __UI_Focus = This.ID
-        This.PreviousValue = This.Value
+        IF This.PreviousValue <> This.Value THEN
+            __UI_StateHasChanged = True
+            This.PreviousValue = This.Value
+        END IF
         This.PreviousInputViewStart = This.InputViewStart
         __UI_TempTexts(This.ID) = Text(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
@@ -1189,53 +1224,55 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         CaptionIndent = 0
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             CaptionIndent = 5
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
 
         DIM TempText$, ThisItem%, FindLF&, ThisItemTop%
 
-        IF LEN(Text(This.ID)) THEN
-            TempText$ = Text(This.ID)
-            ThisItem% = 0
-            DO WHILE LEN(TempText$)
-                ThisItem% = ThisItem% + 1
-                FindLF& = INSTR(TempText$, CHR$(13))
-                IF FindLF& THEN
-                    TempCaption$ = LEFT$(TempText$, FindLF& - 1)
-                    TempText$ = MID$(TempText$, FindLF& + 1)
-                ELSE
-                    TempCaption$ = TempText$
-                    TempText$ = ""
-                END IF
-                IF ThisItem% = This.Value THEN
-                    ThisItemTop% = This.Height \ 2 - uspacing& \ 2 + 1
-
-                    IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
-
-                    IF NOT This.Disabled THEN
-                        COLOR This.ForeColor
+        IF This.Value > 0 THEN
+            IF LEN(Text(This.ID)) THEN
+                TempText$ = Text(This.ID)
+                ThisItem% = 0
+                DO WHILE LEN(TempText$)
+                    ThisItem% = ThisItem% + 1
+                    FindLF& = INSTR(TempText$, CHR$(13))
+                    IF FindLF& THEN
+                        TempCaption$ = LEFT$(TempText$, FindLF& - 1)
+                        TempText$ = MID$(TempText$, FindLF& + 1)
                     ELSE
-                        COLOR Darken(Control(__UI_FormID).BackColor, 80)
+                        TempCaption$ = TempText$
+                        TempText$ = ""
                     END IF
+                    IF ThisItem% = This.Value THEN
+                        ThisItemTop% = This.Height \ 2 - uspacing& \ 2 + 1
 
-                    IF __UI_Focus = This.ID THEN
-                        COLOR This.SelectedForeColor
-                        LINE (CaptionIndent, 3)-STEP(This.Width - CaptionIndent * 2, This.Height - 7), This.SelectedBackColor, BF
+                        IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
+
+                        IF NOT This.Disabled THEN
+                            COLOR This.ForeColor
+                        ELSE
+                            COLOR Darken(Control(__UI_FormID).BackColor, 80)
+                        END IF
+
+                        IF __UI_Focus = This.ID THEN
+                            COLOR This.SelectedForeColor
+                            LINE (CaptionIndent, 3)-STEP(This.Width - CaptionIndent * 2, This.Height - 7), This.SelectedBackColor, BF
+                        END IF
+
+                        SELECT CASE This.Align
+                            CASE __UI_Left
+                                __UI_PrintString CaptionIndent * 2, ThisItemTop%, TempCaption$
+                            CASE __UI_Center
+                                __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$
+                            CASE __UI_Right
+                                __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
+                        END SELECT
+                        EXIT DO
                     END IF
-
-                    SELECT CASE This.Align
-                        CASE __UI_Left
-                            __UI_PrintString CaptionIndent * 2, ThisItemTop%, TempCaption$
-                        CASE __UI_Center
-                            __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$
-                        CASE __UI_Right
-                            __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
-                    END SELECT
-                    EXIT DO
-                END IF
-            LOOP
+                LOOP
+            END IF
         END IF
 
         'Draw "dropdown" button
@@ -1425,20 +1462,21 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             COLOR Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
-        __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+        __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), TempCaption$
         IF This.HotKey > 0 AND (__UI_AltIsDown OR Control(__UI_Focus).Type = __UI_Type_MenuBar OR __UI_DesignMode) THEN
             'Has "hot-key"
             Temp& = __UI_PrintWidth(CHR$(This.HotKey))
-            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + uspacing& \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
+            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
         END IF
 
         IF __UI_DesignMode THEN
             IF This.Left + This.Width = __UI_NewMenuBarTextLeft THEN
                 'Last menu bar item. Next is "Add new"
-                COLOR Darken(Control(__UI_FormID).BackColor, 80)
                 _DEST Control(__UI_FormID).Canvas
+                COLOR Darken(Control(__UI_FormID).BackColor, 80)
                 _FONT (This.Font)
-                __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - uspacing& \ 2), "Add new"
+                LINE (__UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2))-STEP(__UI_PrintWidth("Add new"),(falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset))), Control(__UI_FormID).BackColor, BF
+                __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), "Add new"
             END IF
         END IF
         '---
@@ -1525,15 +1563,40 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
                 IF Control(i).Value = True THEN
                     'Checked menu item
-                    _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, Control(i).Top + Control(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                    IF Control(i).BulletStyle = __UI_Bullet%% THEN
+                        __UI_PrintString __UI_MenuItemOffset \ 2 - __UI_PrintWidth(CHR$(7)) \ 2, Control(i).Top + Control(i).Height \ 2 - uheight \ 2, CHR$(7)
+                    ELSE
+                        _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, Control(i).Top + Control(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
+                    END IF
                 ELSE
                     'Does this menu item have a helper canvas (icon)?
                     DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
-                    IF Control(i).HelperCanvas < -1 AND LEN(Text(Control(i).ID)) > 0 THEN
-                        'Icon will be to the left of caption
-                        IconHeight = 16
-                        IconWidth = _WIDTH(Control(i).HelperCanvas) * IconHeight / _HEIGHT(Control(i).HelperCanvas)
-                        _PUTIMAGE (3, Control(i).Top + Control(i).Height / 2 - IconHeight / 2)-STEP(IconWidth - 1, IconHeight - 1), Control(i).HelperCanvas
+                    IF Control(i).HelperCanvas < -1 THEN
+                        IF _HEIGHT(Control(i).HelperCanvas) = 16 AND _WIDTH(Control(i).HelperCanvas) MOD 16 = 0 THEN
+                            'If the HelperCanvas is 16px in height and either 16, 32 or 48px in width,
+                            'we assume that we have icons for Hover and Disabled states.
+                            SELECT CASE CheckMarkIndex
+                                CASE 1 'normal
+                                    _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(0, 0)-STEP(15, 15)
+                                CASE 2 'hovered/selected
+                                    IF _WIDTH(Control(i).HelperCanvas) >= 32 THEN
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(16, 0)-STEP(15, 15)
+                                    ELSE
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(0, 0)-STEP(15, 15)
+                                    END IF
+                                CASE 3 'disabled
+                                    IF _WIDTH(Control(i).HelperCanvas) >= 48 THEN
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(32, 0)-STEP(15, 15)
+                                    ELSE
+                                        _PUTIMAGE(3, Control(i).Top + Control(i).Height / 2 - 8)-STEP(15, 15), Control(i).HelperCanvas, ,(0, 0)-STEP(15, 15)
+                                    END IF
+                            END SELECT
+                        ELSE
+                            'Icon will be to the left of caption
+                            IconHeight = 16
+                            IconWidth = _WIDTH(Control(i).HelperCanvas) * IconHeight / _HEIGHT(Control(i).HelperCanvas)
+                            _PUTIMAGE (3, Control(i).Top + Control(i).Height / 2 - IconHeight / 2)-STEP(IconWidth - 1, IconHeight - 1), Control(i).HelperCanvas
+                        END IF
                     END IF
                 END IF
 
@@ -1599,7 +1662,7 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             _PUTIMAGE (TheX, TheY), This.HelperCanvas, This.Canvas
         END IF
 
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
         END IF
         '------
@@ -1612,14 +1675,14 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_ShadowBox (b.X AS INTEGER, b.Y AS INTEGER, b.W AS INTEGER, b.H AS INTEGER, C AS LONG, shadow.Level AS INTEGER, shadow.Size AS INTEGER)
+SUB __UI_ShadowBox (bX AS INTEGER, bY AS INTEGER, bW AS INTEGER, bH AS INTEGER, C AS LONG, shadowLevel AS INTEGER, shadowSize AS INTEGER)
     DIM i AS INTEGER
 
-    FOR i = 1 TO shadow.Size
-        LINE (b.X + i, b.Y + i)-STEP(b.W, b.H), _RGBA32(0, 0, 0, shadow.Level - (shadow.Level / shadow.Size) * i), BF
+    FOR i = 1 TO shadowSize
+        LINE (bX + i, bY + i)-STEP(bW, bH), _RGBA32(0, 0, 0, shadowLevel - (shadowLevel / shadowSize) * i), BF
     NEXT i
 
-    LINE (b.X, b.Y)-STEP(b.W, b.H), C, BF
+    LINE (bX, bY)-STEP(bW, bH), C, BF
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -2713,4 +2776,4 @@ FUNCTION __UI_ImageData$ (File$)
     END SELECT
     __UI_ImageData$ = A$
 END FUNCTION
-
+'VWATCH64:ON

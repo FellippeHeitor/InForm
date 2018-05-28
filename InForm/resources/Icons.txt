@@ -5,16 +5,9 @@ Iconset: Flatastic 11 Icons (60 icons)
 License: Free for non-commercial use.
 Commercial usage: Buy commercial license here: http://www.customicondesign.com/free-icons/flatastic-icon-set/flatastic-part-11
 
-http://www.iconarchive.com/show/onebit-icons-by-icojam/ok-icon.html
-"Ok Icon"
-Artist: Icojam
-Iconset: Onebit 1-3 Icons (105 icons)
-License: Public Domain
-Commercial usage: Allowed
-
-http://www.iconarchive.com/show/sleek-xp-basic-icons-by-hopstarter/Delete-icon.html
-"Delete Icon"
-Artist: Hopstarter (Available for custom work)
-Iconset: Sleek XP Basic Icons (50 icons)
-License: CC Attribution-Noncommercial-No Derivate 4.0
+http://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Apps-system-software-update-icon.html
+"Apps system software update Icon"
+Artist: Oxygen Team
+Iconset: Oxygen Icons (883 icons)
+License: GNU Lesser General Public License
 Commercial usage: Allowed

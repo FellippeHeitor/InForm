@@ -1,0 +1,77 @@
+InForm - GUI library for QB64
+Fellippe Heitor, 2016-2018 - fellippe@qb64.org - @fellippeheitor
+https://github.com/FellippeHeitor/InForm
+-----------------------------------------------------------
+Below is the binary format for exchange of controls data. It is
+used for UiEditorPreview.frmbin, which is read/written to by both
+UiEditor and UiEditorPreview, as well as for clipboard exchange.
+
+This format is used in UiEditor and UiEditorPreview's methods:
+    - LoadPreview
+    - SavePreview
+-----------------------------------------------------------
+    
+InForm + CHR(1)
+LONG UBOUND(Control)
+FOR EACH CONTROL (FORM INCLUDED):
+    INTEGER -1 (new control) + LONG Control.ID + INTEGER ControlType
+    INTEGER LEN(Control.Name) + RTRIM$(Control.Name)
+    INTEGER Width + INTEGER Height + INTEGER Left + INTEGER Top
+
+    IF HAS PARENT: INTEGER LEN(Parent.Name) + RTRIM$(Parent.Name)
+    ELSE: INTEGER 0
+
+    PROPERTIES --------
+    INTEGER -2 (Caption) + LONG LEN(Caption) + Caption
+    INTEGER -3 (Text) + LONG LEN(Text) + Text
+               For Form, PictureBox and Button controls, Text holds the
+               icon image file path to load from disk.
+    INTEGER -4 (Stretch)
+    INTEGER -5 (Font) + INTEGER LEN(FontSetup$) + FontSetup$
+    INTEGER -6 (ForeColor) + _UNSIGNED LONG .ForeColor
+    INTEGER -7 (BackColor) + _UNSIGNED LONG .BackColor
+    INTEGER -8 (SelectedForeColor) + _UNSIGNED LONG .SelectedForeColor
+    INTEGER -9 (SelectedBackColor) + _UNSIGNED LONG .SelectedBackColor
+    INTEGER -10 (BorderColor) + _UNSIGNED LONG .BorderColor
+    INTEGER -11 (Transparent BackStyle)
+    INTEGER -12 (HasBorder)
+    INTEGER -13 (Align) + _BYTE .Align
+    INTEGER -14 (Value) + _FLOAT .Value
+    INTEGER -15 (Min) + _FLOAT .Min
+    INTEGER -16 (Max) + _FLOAT .Max
+
+    (-17 and -18 retrieval of properties .HotKey and .HotKeyOffset deprecated,
+                 they are set at runtime by the SetCaption method.)
+
+    INTEGER -19 (ShowPercentage)
+    INTEGER -20 (CanHaveFocus)
+    INTEGER -21 (Disabled)
+    INTEGER -22 (Hidden)
+    INTEGER -23 (CenteredWindow)
+                For the Form control only.
+    INTEGER -24 (ToolTip) + LONG LEN(Tip) + Tip
+    INTEGER -25 (ContextMenuID) + INTEGER LEN(ContextMenuID.Name) + ContextMenuID.Name
+    INTEGER -26 (Interval) + _FLOAT .Interval
+    INTEGER -27 (WordWrap)
+    INTEGER -28 (Transparent color) + _UNSIGNED LONG .TransparentColor
+    INTEGER -29 (CanResize)
+                For the Form control only.
+    
+    (-30 property .HotKeyPosition deprecated, as it is set at run time
+         by the SetCaption method.)
+    
+    INTEGER -31 (Padding) + INTEGER .Padding
+    INTEGER -32 (Vertical Alignment) + INTEGER .VAlign
+    INTEGER -33 (Password mask)
+                For TextBox controls
+    INTEGER -34 (Encoding) + INTEGER EncodingID
+                For the Form control only.
+    INTEGER -35 Sets current Button control as __UI_DefaultButtonID
+    INTEGER -36 (Mask) + LONG Len(Mask()) + Mask()
+    INTEGER -37 (MinInterval) + _FLOAT .MinInterval
+    INTEGER -38 (NumericOnly = True)
+                For TextBox controls
+    INTEGER -39 (NumericOnly = __UI_NumericWithBounds)
+                For TextBox controls
+    -------------------
+INTEGER -1024 (End of file)
