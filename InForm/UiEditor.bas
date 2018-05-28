@@ -2204,7 +2204,7 @@ SUB __UI_OnLoad
 
     _FREEIMAGE CommControls
 
-    b$ = "Done."
+    b$ = "InForm Designer"
     GOSUB ShowMessage
 
     __UI_RefreshMenuBar
