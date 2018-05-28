@@ -231,6 +231,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
         CASE ELSE
             IF NextEvent THEN NextEvent = False: Report "Installation failed."
             Result$ = Download$("", "", 30) 'close client
+            KILL "InFormSetup.ini"
             Control(RetryBT).Hidden = False
             Control(ActivityIndicator).Hidden = True
     END SELECT
@@ -279,13 +280,15 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
 
     DIM client AS LONG, l AS LONG
 
+    IF url$ = "" THEN
+        IF client THEN CLOSE client: client = 0
+        prevUrl$ = ""
+        EXIT SUB
+    END IF
+
     IF url$ <> prevUrl$ THEN
         prevUrl$ = url$
         a$ = ""
-        IF url$ = "" THEN
-            IF client THEN CLOSE client: client = 0
-            EXIT SUB
-        END IF
         url2$ = url$
         x = INSTR(url2$, "/")
         IF x THEN url2$ = LEFT$(url$, x - 1)
