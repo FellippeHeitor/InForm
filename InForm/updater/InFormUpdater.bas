@@ -37,7 +37,7 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    Report "Contacting server"
+    Report "Contacting server..."
     CHDIR "../.."
     IF _FILEEXISTS("InFormUpdate.ini") THEN KILL "InFormUpdate.ini"
 END SUB
@@ -124,7 +124,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
                     END IF
                 END IF
 
-                IF LEN(url$) THEN Report "Downloading " + outputFileName$ + "..."
+                IF LEN(url$) THEN Report "Downloading " + outputFileName$ + "...;"
             END IF
 
             IF LEN(url$) THEN
@@ -145,13 +145,15 @@ SUB __UI_BeforeUpdateDisplay STATIC
                         NextEvent = True
                         EXIT SUB
                     END IF
-                    Report "Done:" + STR$(CVL(MID$(Result$, 3))) + " bytes."
+                    Report " done (" + LTRIM$(STR$(CVL(MID$(Result$, 3)))) + " bytes)"
                     url$ = ""
                 CASE 2 'Can't reach server
+                    Report "failed."
                     Report "Can't reach server."
                     ThisStep = -1
                     NextEvent = True
                 CASE 3 'Timeout :-(
+                    Report "failed."
                     Report "Failed to download update files from server."
                     ThisStep = -1
                     NextEvent = True
@@ -205,7 +207,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
             NEXT
             EndDraw ActivityIndicator
         CASE ELSE
-            IF NextEvent THEN NextEvent = False: Report "Updated failed."
+            IF NextEvent THEN NextEvent = False: Report "Updated failed.": AddItem ListBox1, ""
             Result$ = Download$("", "", 30)
             KILL "InFormUpdate.ini"
             Control(RetryBT).Hidden = False
@@ -214,8 +216,35 @@ SUB __UI_BeforeUpdateDisplay STATIC
 
 END SUB
 
-SUB Report (text$)
-    AddItem ListBox1, TIME$ + ": " + text$
+SUB Report (__text$)
+    STATIC Continue%%
+    DIM text$
+
+    text$ = __text$
+
+    IF text$ = "" THEN
+        Continue%% = False
+        EXIT SUB
+    END IF
+
+    IF RIGHT$(text$, 1) = ";" THEN
+        text$ = LEFT$(text$, LEN(text$) - 1)
+        GOSUB AddThisItem
+        Continue%% = True
+    ELSE
+        GOSUB AddThisItem
+        Continue%% = False
+    END IF
+    EXIT SUB
+
+    AddThisItem:
+    IF Continue%% THEN
+        text$ = GetItem(ListBox1, Control(ListBox1).Max) + text$
+        ReplaceItem ListBox1, Control(ListBox1).Max, text$
+    ELSE
+        AddItem ListBox1, TIME$ + ": " + text$
+    END IF
+    RETURN
 END SUB
 
 FUNCTION ADLER32$ (File$)
