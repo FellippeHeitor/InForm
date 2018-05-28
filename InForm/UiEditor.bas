@@ -869,12 +869,14 @@ SUB __UI_BeforeUpdateDisplay
                 CASE 2 'compare with current version
                     DIM localVersionNumber!, localVersionIsBeta%%
                     STATIC serverVersion$, isBeta$, serverBeta%%
+                    STATIC updateDescription$
 
                     localVersionNumber! = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionNumber"))
                     localVersionIsBeta%% = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionIsBeta") = "True"
 
                     serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
                     isBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")
+                    updateDescription$ = ReadSetting("InForm/InFormUpdate.ini", "", "description")
                     IF isBeta$ = "true" THEN isBeta$ = "Beta version " ELSE isBeta$ = ""
                     serverBeta%% = True
 
@@ -901,7 +903,10 @@ SUB __UI_BeforeUpdateDisplay
                     $END IF
                     IF _FILEEXISTS(updaterPath$) THEN
                         _DELAY .2
-                        b$ = "A new version of InForm is available\n\nCurrent version: " + __UI_Version + "\n" + "New version: " + isBeta$ + serverVersion$ + "\n\n" + "Update now?"
+                        IF LEN(updateDescription$) THEN
+                            updateDescription$ = "\n" + CHR$(34) + updateDescription$ + CHR$(34) + "\n"
+                        END IF
+                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + "\n" + "New version: " + isBeta$ + serverVersion$ + "\n" + updateDescription$ + "\n" + "Update now?"
                         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
                         IF Answer = MsgBox_Yes THEN
                             SHELL _DONTWAIT updaterPath$
