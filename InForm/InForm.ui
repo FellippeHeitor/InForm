@@ -4319,6 +4319,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
         __UI_TempTexts(This.ID) = ""
         ToolTip(This.ID) = ""
         __UI_TempTips(This.ID) = ""
+        Mask(This.ID) = ""
 
         IF This.Type = __UI_Type_ListBox THEN
             IF __UI_ActiveDropdownList = This.ID THEN
