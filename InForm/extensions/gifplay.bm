@@ -1,0 +1,430 @@
+'#######################################################################################
+'# Animated GIF decoder v1.0                                                           #
+'# By Zom-B                                                                            #
+'#                                                                                     #
+'# http://www.qb64.org/wiki/GIF_Images                                                 #
+'#######################################################################################
+'Adapted for use with InForm's PictureBox controls by @FellippeHeitor
+
+SUB UpdateGif (ID AS LONG)
+    DIM i AS LONG
+
+    i = GetGifIndex(ID)
+
+    IF GifData(i).IsPlaying THEN
+        IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate <= GifData(i).LastFrameDelay THEN
+            'Wait for the GIF's frame delay
+        ELSE
+            GifData(i).Frame = GifData(i).Frame + 1
+            GifData(i).LastFrameUpdate = TIMER
+        END IF
+    END IF
+
+    BeginDraw ID
+    _PUTIMAGE , GetGifFrame&(i)
+    EndDraw ID
+END SUB
+
+FUNCTION IsPlaying%% (ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    IsPlaying%% = GifData(i).IsPlaying
+END FUNCTION
+
+SUB PlayGif (ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    GifData(i).IsPlaying = True
+END SUB
+
+SUB PauseGif (ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    GifData(i).IsPlaying = False
+END SUB
+
+SUB StopGif (ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    GifData(i).IsPlaying = False
+    GifData(i).Frame = 1
+END SUB
+
+SUB OpenGif (ID AS LONG, filename$)
+    DIM file AS INTEGER, i AS LONG, Index AS LONG
+    DIM byte~%%, palette$, delay~%
+
+    IF Control(ID).Type <> __UI_Type_PictureBox THEN ERROR 5: EXIT SUB
+
+    Index = GetGifIndex&(ID)
+
+    IF Index = 0 THEN
+        TotalGIFLoaded = TotalGIFLoaded + 1
+        Index = TotalGIFLoaded
+        REDIM _PRESERVE GifData(1 TO TotalGIFLoaded) AS GIFDATA
+    ELSE
+        CloseGif ID
+    END IF
+
+    GifData(Index).ID = ID
+    GifData(Index).file = FREEFILE
+    OPEN filename$ FOR BINARY AS GifData(Index).file
+
+    GET GifData(Index).file, , GifData(Index).sigver
+    GET GifData(Index).file, , GifData(Index).width
+    GET GifData(Index).file, , GifData(Index).height
+    GET GifData(Index).file, , byte~%%
+    GifData(Index).bpp = (byte~%% AND 7) + 1
+    GifData(Index).sortFlag = (byte~%% AND 8) > 0
+    GifData(Index).colorRes = (byte~%% \ 16 AND 7) + 1
+    GifData(Index).colorTableFlag = (byte~%% AND 128) > 0
+    GifData(Index).numColors = 2 ^ GifData(Index).bpp
+    GET GifData(Index).file, , GifData(Index).bgColor
+    GET GifData(Index).file, , byte~%%
+    IF byte~%% = 0 THEN GifData(Index).aspect = 0 ELSE GifData(Index).aspect = (byte~%% + 15) / 64
+
+    IF GifData(Index).sigver <> "GIF87a" AND GifData(Index).sigver <> "GIF89a" THEN
+        'Invalid version
+        GOTO LoadError
+    END IF
+
+    IF NOT GifData(Index).colorTableFlag THEN
+        'No Color Table
+        GOTO LoadError
+    END IF
+
+    palette$ = SPACE$(3 * GifData(Index).numColors)
+    GET GifData(Index).file, , palette$
+    GifData(Index).palette = palette$
+    DO
+        GET GifData(Index).file, , byte~%%
+        SELECT CASE byte~%%
+            CASE &H2C ' Image Descriptor
+                TotalGIFFrames = TotalGIFFrames + 1
+                GifData(Index).totalFrames = GifData(Index).totalFrames + 1
+
+                IF GifData(Index).firstFrame = 0 THEN
+                    GifData(Index).firstFrame = TotalGIFFrames
+                END IF
+
+                IF TotalGIFFrames > UBOUND(GifFrameData) THEN
+                    REDIM _PRESERVE GifFrameData(0 TO TotalGIFFrames * 2) AS FRAMEDATA
+                END IF
+
+                GifFrameData(TotalGIFFrames).ID = ID
+                GifFrameData(TotalGIFFrames).thisFrame = GifData(Index).totalFrames
+
+                GET GifData(Index).file, , GifFrameData(TotalGIFFrames).left
+                GET GifData(Index).file, , GifFrameData(TotalGIFFrames).top
+                GET GifData(Index).file, , GifFrameData(TotalGIFFrames).width
+                GET GifData(Index).file, , GifFrameData(TotalGIFFrames).height
+                GET GifData(Index).file, , byte~%%
+                GifFrameData(TotalGIFFrames).localColorTableFlag = (byte~%% AND 128) > 0
+                GifFrameData(TotalGIFFrames).interlacedFlag = (byte~%% AND 64) > 0
+                GifFrameData(TotalGIFFrames).sortFlag = (byte~%% AND 32) > 0
+                GifFrameData(TotalGIFFrames).palBPP = (byte~%% AND 7) + 1
+                GifFrameData(TotalGIFFrames).addr = LOC(GifData(Index).file) + 1
+
+                IF GifFrameData(TotalGIFFrames).localColorTableFlag THEN
+                    SEEK GifData(Index).file, LOC(GifData(Index).file) + 3 * 2 ^ GifFrameData(TotalGIFFrames).palBPP + 1
+                END IF
+                GET GifData(Index).file, , GifFrameData(TotalGIFFrames).minimumCodeSize
+                IF GifFrameData(TotalGIFFrames).disposalMethod > 2 THEN
+                    'Unsupported disposalMethod
+                    GOTO LoadError
+                END IF
+                SkipGIFBlocks GifData(Index).file
+            CASE &H3B ' Trailer
+                EXIT DO
+            CASE &H21 ' Extension Introducer
+                GET GifData(Index).file, , byte~%% ' Extension Label
+                SELECT CASE byte~%%
+                    CASE &HFF, &HFE ' Application Extension, Comment Extension
+                        SkipGIFBlocks GifData(Index).file
+                    CASE &HF9
+                        TotalGIFFrames = TotalGIFFrames + 1
+                        IF TotalGIFFrames > UBOUND(GifFrameData) THEN
+                            REDIM _PRESERVE GifFrameData(0 TO TotalGIFFrames * 2) AS FRAMEDATA
+                        END IF
+                        GifFrameData(TotalGIFFrames).ID = ID
+
+                        GET 1, , byte~%% ' Block Size (always 4)
+                        GET 1, , byte~%%
+                        GifFrameData(TotalGIFFrames).transparentFlag = (byte~%% AND 1) > 0
+                        GifFrameData(TotalGIFFrames).userInput = (byte~%% AND 2) > 0
+                        GifFrameData(TotalGIFFrames).disposalMethod = byte~%% \ 4 AND 7
+                        GET 1, , delay~%
+                        IF delay~% = 0 THEN GifFrameData(TotalGIFFrames).delay = 0.1 ELSE GifFrameData(TotalGIFFrames).delay = delay~% / 100
+                        GET 1, , GifFrameData(TotalGIFFrames).transColor
+                        SkipGIFBlocks GifData(Index).file
+                    CASE ELSE
+                        'Unsupported extension Label
+                        GOTO LoadError
+                END SELECT
+            CASE ELSE
+                'Unsupported chunk
+                GOTO LoadError
+        END SELECT
+    LOOP
+
+    REDIM _PRESERVE GifFrameData(0 TO TotalGIFFrames) AS FRAMEDATA
+
+    GifData(Index).IsPlaying = True
+    EXIT SUB
+
+    LoadError:
+    GifData(Index).ID = 0
+    CLOSE GifData(Index).file
+    FOR i = 1 TO TotalGIFFrames
+        IF GifFrameData(i).ID = ID THEN
+            GifFrameData(i).ID = 0
+        END IF
+    NEXT
+END SUB
+
+FUNCTION GetGifIndex&(ID AS LONG)
+    DIM i AS LONG
+
+    FOR i = 1 TO TotalGIFLoaded
+        IF GifData(i).ID = ID THEN
+            GetGifIndex& = i
+            EXIT FOR
+        END IF
+    NEXT
+END FUNCTION
+
+SUB CloseGif(ID AS LONG)
+    DIM i AS LONG, Index AS LONG
+
+    Index = GetGifIndex(ID)
+
+    IF Index = 0 THEN EXIT SUB
+
+    FOR i = 0 TO UBOUND(GifFrameData)
+        IF GifFrameData(i).ID = ID THEN
+            GifFrameData(i).ID = 0
+            IF GifFrameData(i).addr < -1 THEN
+                _FREEIMAGE GifFrameData(i).addr
+            END IF
+        END IF
+    NEXT
+
+    CLOSE GifData(Index).file
+    GifData(Index).ID = 0
+    GifData(Index).firstFrame = 0
+END SUB
+
+SUB SkipGIFBlocks (file AS INTEGER)
+    DIM byte~%%
+    DO
+        GET file, , byte~%% ' Block Size
+        SEEK file, LOC(file) + byte~%% + 1
+    LOOP WHILE byte~%%
+END SUB
+
+FUNCTION GetGifFrame& (Index AS LONG)
+    DIM i AS LONG
+    DIM frame AS LONG, previousFrame AS LONG
+    DIM w AS INTEGER, h AS INTEGER
+    DIM img&, actualFrame&
+    DIM prevDest AS LONG
+
+    IF GifData(Index).Frame > GifData(Index).totalFrames THEN
+        GifData(Index).Frame = 1
+    END IF
+
+    FOR i = 1 TO UBOUND(GifFrameData)
+        IF GifFrameData(i).ID = GifData(Index).ID AND GifFrameData(i).thisFrame = GifData(Index).Frame THEN
+            frame = i
+            EXIT FOR
+        ELSEIF GifFrameData(i).ID = GifData(Index).ID AND GifFrameData(i).thisFrame < GifData(Index).Frame THEN
+            previousFrame = i
+        END IF
+    NEXT
+
+    GifData(Index).LastFrameDelay = GifFrameData(frame).delay
+
+    IF GifFrameData(frame).addr > 0 THEN
+        prevDest = _DEST
+        w = GifFrameData(frame).width
+        h = GifFrameData(frame).height
+        img& = _NEWIMAGE(w, h, 256)
+        actualFrame& = _NEWIMAGE(GifData(Index).width, GifData(Index).height, 256)
+
+        _DEST img&
+        DecodeFrame GifData(Index), GifFrameData(frame)
+
+        _DEST actualFrame&
+        IF GifFrameData(frame).localColorTableFlag THEN
+            _COPYPALETTE img&
+        ELSE
+            FOR i = 0 TO GifData(Index).numColors - 1
+                _PALETTECOLOR i, _RGB32(ASC(GifData(Index).palette, i * 3 + 1), ASC(GifData(Index).palette, i * 3 + 2), ASC(GifData(Index).palette, i * 3 + 3))
+            NEXT
+        END IF
+
+        IF GifData(Index).Frame > 1 THEN
+            SELECT CASE GifFrameData(previousFrame).disposalMethod
+                CASE 0, 1
+                    _PUTIMAGE , GifFrameData(previousFrame).addr
+                CASE 2
+                    CLS , GifData(Index).bgColor
+                    _CLEARCOLOR GifData(Index).bgColor
+            END SELECT
+        ELSE
+            CLS , GifData(Index).bgColor
+        END IF
+
+        IF GifFrameData(frame).transparentFlag THEN
+            _CLEARCOLOR GifFrameData(frame).transColor, img&
+        END IF
+        _PUTIMAGE (GifFrameData(frame).left, GifFrameData(frame).top), img&
+        _FREEIMAGE img&
+
+        GifFrameData(frame).addr = actualFrame&
+        GifData(Index).LoadedFrames = GifData(Index).LoadedFrames + 1
+        GifData(Index).GifLoadComplete = (GifData(Index).LoadedFrames = GifData(Index).TotalFrames)
+        _DEST prevDest
+    END IF
+
+    GetGifFrame& = GifFrameData(frame).addr
+END FUNCTION
+
+SUB DecodeFrame (gifdata AS GIFDATA, GifFrameData AS FRAMEDATA)
+    DIM byte AS _UNSIGNED _BYTE
+    DIM prefix(4095), suffix(4095), colorStack(4095)
+    DIM startCodeSize AS INTEGER, clearCode AS INTEGER
+    DIM endCode AS INTEGER, minCode AS INTEGER, startMaxCode AS INTEGER
+    DIM nvc AS INTEGER, codeSize AS INTEGER
+    DIM maxCode AS INTEGER, bitPointer AS INTEGER, blockSize AS INTEGER
+    DIM blockPointer AS INTEGER, x AS INTEGER, y AS INTEGER
+    DIM palette$, i AS LONG, c&, stackPointer AS INTEGER
+    DIM currentCode AS INTEGER, code AS INTEGER, lastColor AS INTEGER
+    DIM oldCode AS INTEGER, WorkCode&, LastChar AS INTEGER
+    DIM interlacedPass AS INTEGER, interlacedStep AS INTEGER
+    DIM file AS INTEGER, a$, loopStart!
+
+    startCodeSize = gifdata.bpp + 1
+    clearCode = 2 ^ gifdata.bpp
+    endCode = clearCode + 1
+    minCode = endCode + 1
+    startMaxCode = clearCode * 2 - 1
+    nvc = minCode
+    codeSize = startCodeSize
+    maxCode = startMaxCode
+
+    IF GifFrameData.interlacedFlag THEN interlacedPass = 0: interlacedStep = 8
+    bitPointer = 0
+    blockSize = 0
+    blockPointer = 0
+    x = 0
+    y = 0
+
+    file = gifdata.file
+    SEEK file, GifFrameData.addr
+
+    IF GifFrameData.localColorTableFlag THEN
+        palette$ = SPACE$(3 * 2 ^ GifFrameData.palBPP)
+        GET 1, , palette$
+
+        FOR i = 0 TO gifdata.numColors - 1
+            c& = _RGB32(ASC(palette$, i * 3 + 1), ASC(palette$, i * 3 + 2), ASC(palette$, i * 3 + 3))
+            _PALETTECOLOR i, c&
+        NEXT
+    END IF
+
+    GET file, , byte ' minimumCodeSize
+
+    loopStart! = TIMER
+    DO
+        IF TIMER - loopStart! > 2 THEN EXIT DO
+        GOSUB GetCode
+        stackPointer = 0
+        IF code = clearCode THEN 'Reset & Draw next color direct
+            nvc = minCode '           \
+            codeSize = startCodeSize ' Preset default codes
+            maxCode = startMaxCode '  /
+
+            GOSUB GetCode
+            currentCode = code
+
+            lastColor = code
+            colorStack(stackPointer) = lastColor
+            stackPointer = 1
+        ELSEIF code <> endCode THEN 'Draw direct color or colors from suffix
+            currentCode = code
+            IF currentCode = nvc THEN 'Take last color too
+                currentCode = oldCode
+                colorStack(stackPointer) = lastColor
+                stackPointer = stackPointer + 1
+            END IF
+
+            WHILE currentCode >= minCode 'Extract colors from suffix
+                colorStack(stackPointer) = suffix(currentCode)
+                stackPointer = stackPointer + 1
+                currentCode = prefix(currentCode) 'Next color from suffix is described in
+            WEND '                                 the prefix, else prefix is the last col.
+
+            lastColor = currentCode '              Last color is equal to the
+            colorStack(stackPointer) = lastColor ' last known code (direct, or from
+            stackPointer = stackPointer + 1 '      Prefix)
+            suffix(nvc) = lastColor 'Automatically, update suffix
+            prefix(nvc) = oldCode 'Code from the session before (for extracting from suffix)
+            nvc = nvc + 1
+
+            IF nvc > maxCode AND codeSize < 12 THEN
+                codeSize = codeSize + 1
+                maxCode = maxCode * 2 + 1
+            END IF
+        END IF
+
+        FOR i = stackPointer - 1 TO 0 STEP -1
+            PSET (x, y), colorStack(i)
+            x = x + 1
+            IF x = GifFrameData.width THEN
+                x = 0
+                IF GifFrameData.interlacedFlag THEN
+                    y = y + interlacedStep
+                    IF y >= GifFrameData.height THEN
+                        SELECT CASE interlacedPass
+                            CASE 0: interlacedPass = 1: y = 4
+                            CASE 1: interlacedPass = 2: y = 2
+                            CASE 2: interlacedPass = 3: y = 1
+                        END SELECT
+                        interlacedStep = 2 * y
+                    END IF
+                ELSE
+                    y = y + 1
+                END IF
+            END IF
+        NEXT
+
+        oldCode = code
+    LOOP UNTIL code = endCode
+    GET file, , byte
+    EXIT SUB
+
+    GetCode:
+    IF bitPointer = 0 THEN GOSUB ReadByteFromBlock: bitPointer = 8
+    WorkCode& = LastChar \ (2 ^ (8 - bitPointer))
+    WHILE codeSize > bitPointer
+        GOSUB ReadByteFromBlock
+
+        WorkCode& = WorkCode& OR LastChar * (2 ^ bitPointer)
+        bitPointer = bitPointer + 8
+    WEND
+    bitPointer = bitPointer - codeSize
+    code = WorkCode& AND maxCode
+    RETURN
+
+    ReadByteFromBlock:
+    IF blockPointer = blockSize THEN
+        GET file, , byte: blockSize = byte
+        a$ = SPACE$(blockSize): GET file, , a$
+        blockPointer = 0
+    END IF
+    blockPointer = blockPointer + 1
+    LastChar = ASC(MID$(a$, blockPointer, 1))
+    RETURN
+END SUB
+'############################################################################################
