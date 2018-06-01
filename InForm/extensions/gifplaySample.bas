@@ -54,6 +54,8 @@ SUB __UI_Click (id AS LONG)
                 PlayGif PictureBox1
                 Caption(PlayBT) = "Pause"
             END IF
+         CASE PictureBox1
+            HideGifOverlay PictureBox1
     END SELECT
 END SUB
 

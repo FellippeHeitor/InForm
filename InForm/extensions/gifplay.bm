@@ -8,10 +8,31 @@
 
 SUB UpdateGif (ID AS LONG)
     DIM i AS LONG
+    STATIC GifOverlay AS LONG
 
     i = GetGifIndex(ID)
 
     IF i = 0 THEN EXIT SUB
+
+    IF GifOverlay = 0 THEN
+        DIM w AS INTEGER, prevFont AS LONG, prevDest AS LONG
+        prevFont = _FONT
+        _FONT Control(ID).Font
+        w = __UI_PrintWidth("GIF") + 30
+        GifOverlay = _NEWIMAGE(w, w, 32)
+        prevDest = _DEST
+        _DEST GifOverlay
+        _FONT Control(ID).Font
+        CLS , _RGB32(255, 0, 255)
+        CIRCLE (w / 2, w / 2), w / 2 - 2, _RGB32(0, 0, 0)
+        PAINT (w / 2, w / 2), _RGB32(0, 0, 0), _RGB32(0, 0, 0)
+        COLOR _RGB32(255, 255, 255)
+        __UI_PrintString w / 2 - __UI_PrintWidth("GIF") / 2, w / 2 - uspacing& / 2, "GIF"
+        _CLEARCOLOR _RGB32(255, 0, 255)
+        _SETALPHA 127, _RGB32(0, 0, 0)
+        _DEST prevDest
+        _FONT prevFont
+    END IF
 
     IF GifData(i).IsPlaying THEN
         IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate <= GifData(i).LastFrameDelay THEN
@@ -24,6 +45,9 @@ SUB UpdateGif (ID AS LONG)
 
     BeginDraw ID
     _PUTIMAGE , GetGifFrame&(i)
+    IF GifData(i).IsPlaying = False AND GifData(i).HideOverlay = False THEN
+        _PUTIMAGE (_WIDTH / 2 - _WIDTH(GifOverlay) / 2, _HEIGHT / 2 - _HEIGHT(GifOverlay) / 2), GifOverlay
+    END IF
     EndDraw ID
 END SUB
 
@@ -32,6 +56,12 @@ FUNCTION IsPlaying%% (ID AS LONG)
     i = GetGifIndex(ID)
     IsPlaying%% = GifData(i).IsPlaying
 END FUNCTION
+
+SUB HideGifOverlay (ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    GifData(i).HideOverlay = True
+END SUB
 
 SUB PlayGif (ID AS LONG)
     DIM i AS LONG

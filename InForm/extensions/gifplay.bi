@@ -28,6 +28,7 @@ TYPE GIFDATA
     GifLoadComplete AS _BYTE
     LastFrameUpdate AS SINGLE
     LastFrameDelay AS SINGLE
+    HideOverlay AS _BYTE
 END TYPE
 
 TYPE FRAMEDATA
