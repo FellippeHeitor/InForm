@@ -1,0 +1,89 @@
+': This program uses
+': InForm - GUI library for QB64 - Beta version 8
+': Fellippe Heitor, 2016-2018 - fellippe@qb64.org - @fellippeheitor
+': https://github.com/FellippeHeitor/InForm
+'-----------------------------------------------------------
+
+': Controls' IDs: ------------------------------------------------------------------
+DIM SHARED gifplaySample AS LONG
+DIM SHARED PictureBox1 AS LONG
+DIM SHARED LoadBT AS LONG
+DIM SHARED PlayBT AS LONG
+
+': External modules: ---------------------------------------------------------------
+'$INCLUDE:'gifplay.bi'
+'$INCLUDE:'..\InForm.ui'
+'$INCLUDE:'..\xp.uitheme'
+'$INCLUDE:'gifplaySample.frm'
+'$INCLUDE:'gifplay.bm'
+
+': Event procedures: ---------------------------------------------------------------
+SUB __UI_BeforeInit
+
+END SUB
+
+SUB __UI_OnLoad
+    Control(PlayBT).Disabled = True
+END SUB
+
+SUB __UI_BeforeUpdateDisplay
+    UpdateGif PictureBox1
+END SUB
+
+SUB __UI_BeforeUnload
+END SUB
+
+SUB __UI_Click (id AS LONG)
+    SELECT CASE id
+        CASE LoadBT
+            'file 'globe.gif' comes from:
+            'https://en.wikipedia.org/wiki/GIF#/media/File:Rotating_earth_(large).gif
+            IF OpenGif(PictureBox1, "globe.gif") THEN
+                Control(PlayBT).Disabled = False
+                Caption(PlayBT) = "Pause"
+                Caption(LoadBT) = "globe.gif loaded"
+                Control(LoadBT).Disabled = True
+            ELSE
+                Answer = MessageBox("File 'globe.gif' could not be found.", "", MsgBox_Exclamation + MsgBox_OkOnly)
+            END IF
+        CASE PlayBT
+            IF IsPlaying(PictureBox1) THEN
+                PauseGif PictureBox1
+                Caption(PlayBT) = "Play"
+            ELSE
+                PlayGif PictureBox1
+                Caption(PlayBT) = "Pause"
+            END IF
+    END SELECT
+END SUB
+
+SUB __UI_MouseEnter (id AS LONG)
+END SUB
+
+SUB __UI_MouseLeave (id AS LONG)
+END SUB
+
+SUB __UI_FocusIn (id AS LONG)
+END SUB
+
+SUB __UI_FocusOut (id AS LONG)
+END SUB
+
+SUB __UI_MouseDown (id AS LONG)
+END SUB
+
+SUB __UI_MouseUp (id AS LONG)
+END SUB
+
+SUB __UI_KeyPress (id AS LONG)
+END SUB
+
+SUB __UI_TextChanged (id AS LONG)
+END SUB
+
+SUB __UI_ValueChanged (id AS LONG)
+END SUB
+
+SUB __UI_FormResized
+END SUB
+

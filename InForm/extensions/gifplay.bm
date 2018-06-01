@@ -11,6 +11,8 @@ SUB UpdateGif (ID AS LONG)
 
     i = GetGifIndex(ID)
 
+    IF i = 0 THEN EXIT SUB
+
     IF GifData(i).IsPlaying THEN
         IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate <= GifData(i).LastFrameDelay THEN
             'Wait for the GIF's frame delay
@@ -50,11 +52,11 @@ SUB StopGif (ID AS LONG)
     GifData(i).Frame = 1
 END SUB
 
-SUB OpenGif (ID AS LONG, filename$)
+FUNCTION OpenGif%%(ID AS LONG, filename$)
     DIM file AS INTEGER, i AS LONG, Index AS LONG
     DIM byte~%%, palette$, delay~%
 
-    IF Control(ID).Type <> __UI_Type_PictureBox THEN ERROR 5: EXIT SUB
+    IF Control(ID).Type <> __UI_Type_PictureBox THEN ERROR 5: EXIT FUNCTION
 
     Index = GetGifIndex&(ID)
 
@@ -68,6 +70,7 @@ SUB OpenGif (ID AS LONG, filename$)
 
     GifData(Index).ID = ID
     GifData(Index).file = FREEFILE
+    IF _FILEEXISTS(filename$) = 0 THEN EXIT FUNCTION
     OPEN filename$ FOR BINARY AS GifData(Index).file
 
     GET GifData(Index).file, , GifData(Index).sigver
@@ -170,7 +173,8 @@ SUB OpenGif (ID AS LONG, filename$)
     REDIM _PRESERVE GifFrameData(0 TO TotalGIFFrames) AS FRAMEDATA
 
     GifData(Index).IsPlaying = True
-    EXIT SUB
+    OpenGif%% = True
+    EXIT FUNCTION
 
     LoadError:
     GifData(Index).ID = 0
@@ -180,7 +184,7 @@ SUB OpenGif (ID AS LONG, filename$)
             GifFrameData(i).ID = 0
         END IF
     NEXT
-END SUB
+END FUNCTION
 
 FUNCTION GetGifIndex&(ID AS LONG)
     DIM i AS LONG
