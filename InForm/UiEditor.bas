@@ -107,6 +107,7 @@ DIM SHARED MinIntervalTB AS LONG, PaddingTB AS LONG
 DIM SHARED MaskTB AS LONG, MaskLB AS LONG
 DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
 DIM SHARED BooleanLB AS LONG, BooleanOptions AS LONG
+DIM SHARED FontListLB AS LONG, FontList AS LONG, FontSizeList
 '------------------------------------------------------------------------------
 
 'Other shared variables:
@@ -161,10 +162,12 @@ REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
-'DIM SHARED FontList.Names AS STRING
-'REDIM SHARED FontList.FileNames(0) AS STRING
+DIM SHARED HasFontList AS _BYTE
 
 $IF WIN THEN
+    REDIM SHARED FontFile(0) AS STRING
+    DIM SHARED TotalFontsFound AS LONG
+
     CONST PathSep$ = "\"
 $ELSE
     CONST PathSep$ = "/"
@@ -190,65 +193,65 @@ $IF WIN THEN
     ''Registry routines taken from the Wiki: http://www.qb64.net/wiki/index.php/Windows_Libraries#Registered_Fonts
     ''Code courtesy of Michael Calkins
     ''winreg.h
-    'CONST HKEY_CLASSES_ROOT = &H80000000~&
-    'CONST HKEY_CURRENT_USER = &H80000001~&
-    'CONST HKEY_LOCAL_MACHINE = &H80000002~&
-    'CONST HKEY_USERS = &H80000003~&
-    'CONST HKEY_PERFORMANCE_DATA = &H80000004~&
-    'CONST HKEY_CURRENT_CONFIG = &H80000005~&
-    'CONST HKEY_DYN_DATA = &H80000006~&
-    'CONST REG_OPTION_VOLATILE = 1
-    'CONST REG_OPTION_NON_VOLATILE = 0
-    'CONST REG_CREATED_NEW_KEY = 1
-    'CONST REG_OPENED_EXISTING_KEY = 2
+    CONST HKEY_CLASSES_ROOT = &H80000000~&
+    CONST HKEY_CURRENT_USER = &H80000001~&
+    CONST HKEY_LOCAL_MACHINE = &H80000002~&
+    CONST HKEY_USERS = &H80000003~&
+    CONST HKEY_PERFORMANCE_DATA = &H80000004~&
+    CONST HKEY_CURRENT_CONFIG = &H80000005~&
+    CONST HKEY_DYN_DATA = &H80000006~&
+    CONST REG_OPTION_VOLATILE = 1
+    CONST REG_OPTION_NON_VOLATILE = 0
+    CONST REG_CREATED_NEW_KEY = 1
+    CONST REG_OPENED_EXISTING_KEY = 2
 
     ''http://msdn.microsoft.com/en-us/library/ms724884(v=VS.85).aspx
-    'CONST REG_NONE = 0
-    'CONST REG_SZ = 1
-    'CONST REG_EXPAND_SZ = 2
-    'CONST REG_BINARY = 3
-    'CONST REG_DWORD_LITTLE_ENDIAN = 4
-    'CONST REG_DWORD = 4
-    'CONST REG_DWORD_BIG_ENDIAN = 5
-    'CONST REG_LINK = 6
-    'CONST REG_MULTI_SZ = 7
-    'CONST REG_RESOURCE_LIST = 8
-    'CONST REG_FULL_RESOURCE_DESCRIPTOR = 9
-    'CONST REG_RESOURCE_REQUIREMENTS_LIST = 10
-    'CONST REG_QWORD_LITTLE_ENDIAN = 11
-    'CONST REG_QWORD = 11
-    'CONST REG_NOTIFY_CHANGE_NAME = 1
-    'CONST REG_NOTIFY_CHANGE_ATTRIBUTES = 2
-    'CONST REG_NOTIFY_CHANGE_LAST_SET = 4
-    'CONST REG_NOTIFY_CHANGE_SECURITY = 8
+    CONST REG_NONE = 0
+    CONST REG_SZ = 1
+    CONST REG_EXPAND_SZ = 2
+    CONST REG_BINARY = 3
+    CONST REG_DWORD_LITTLE_ENDIAN = 4
+    CONST REG_DWORD = 4
+    CONST REG_DWORD_BIG_ENDIAN = 5
+    CONST REG_LINK = 6
+    CONST REG_MULTI_SZ = 7
+    CONST REG_RESOURCE_LIST = 8
+    CONST REG_FULL_RESOURCE_DESCRIPTOR = 9
+    CONST REG_RESOURCE_REQUIREMENTS_LIST = 10
+    CONST REG_QWORD_LITTLE_ENDIAN = 11
+    CONST REG_QWORD = 11
+    CONST REG_NOTIFY_CHANGE_NAME = 1
+    CONST REG_NOTIFY_CHANGE_ATTRIBUTES = 2
+    CONST REG_NOTIFY_CHANGE_LAST_SET = 4
+    CONST REG_NOTIFY_CHANGE_SECURITY = 8
 
     ''http://msdn.microsoft.com/en-us/library/ms724878(v=VS.85).aspx
-    'CONST KEY_ALL_ACCESS = &HF003F&
-    'CONST KEY_CREATE_LINK = &H0020&
-    'CONST KEY_CREATE_SUB_KEY = &H0004&
-    'CONST KEY_ENUMERATE_SUB_KEYS = &H0008&
-    'CONST KEY_EXECUTE = &H20019&
-    'CONST KEY_NOTIFY = &H0010&
-    'CONST KEY_QUERY_VALUE = &H0001&
-    'CONST KEY_READ = &H20019&
-    'CONST KEY_SET_VALUE = &H0002&
-    'CONST KEY_WOW64_32KEY = &H0200&
-    'CONST KEY_WOW64_64KEY = &H0100&
-    'CONST KEY_WRITE = &H20006&
+    CONST KEY_ALL_ACCESS = &HF003F&
+    CONST KEY_CREATE_LINK = &H0020&
+    CONST KEY_CREATE_SUB_KEY = &H0004&
+    CONST KEY_ENUMERATE_SUB_KEYS = &H0008&
+    CONST KEY_EXECUTE = &H20019&
+    CONST KEY_NOTIFY = &H0010&
+    CONST KEY_QUERY_VALUE = &H0001&
+    CONST KEY_READ = &H20019&
+    CONST KEY_SET_VALUE = &H0002&
+    CONST KEY_WOW64_32KEY = &H0200&
+    CONST KEY_WOW64_64KEY = &H0100&
+    CONST KEY_WRITE = &H20006&
 
     ''winerror.h
     ''http://msdn.microsoft.com/en-us/library/ms681382(v=VS.85).aspx
-    'CONST ERROR_SUCCESS = 0
-    'CONST ERROR_FILE_NOT_FOUND = &H2&
-    'CONST ERROR_INVALID_HANDLE = &H6&
-    'CONST ERROR_MORE_DATA = &HEA&
-    'CONST ERROR_NO_MORE_ITEMS = &H103&
+    CONST ERROR_SUCCESS = 0
+    CONST ERROR_FILE_NOT_FOUND = &H2&
+    CONST ERROR_INVALID_HANDLE = &H6&
+    CONST ERROR_MORE_DATA = &HEA&
+    CONST ERROR_NO_MORE_ITEMS = &H103&
 
-    'DECLARE DYNAMIC LIBRARY "advapi32"
-    '    FUNCTION RegOpenKeyExA& (BYVAL hKey AS _OFFSET, BYVAL lpSubKey AS _OFFSET, BYVAL ulOptions AS _UNSIGNED LONG, BYVAL samDesired AS _UNSIGNED LONG, BYVAL phkResult AS _OFFSET)
-    '    FUNCTION RegCloseKey& (BYVAL hKey AS _OFFSET)
-    '    FUNCTION RegEnumValueA& (BYVAL hKey AS _OFFSET, BYVAL dwIndex AS _UNSIGNED LONG, BYVAL lpValueName AS _OFFSET, BYVAL lpcchValueName AS _OFFSET, BYVAL lpReserved AS _OFFSET, BYVAL lpType AS _OFFSET, BYVAL lpData AS _OFFSET, BYVAL lpcbData AS _OFFSET)
-    'END DECLARE
+    DECLARE DYNAMIC LIBRARY "advapi32"
+        FUNCTION RegOpenKeyExA& (BYVAL hKey AS _OFFSET, BYVAL lpSubKey AS _OFFSET, BYVAL ulOptions AS _UNSIGNED LONG, BYVAL samDesired AS _UNSIGNED LONG, BYVAL phkResult AS _OFFSET)
+        FUNCTION RegCloseKey& (BYVAL hKey AS _OFFSET)
+        FUNCTION RegEnumValueA& (BYVAL hKey AS _OFFSET, BYVAL dwIndex AS _UNSIGNED LONG, BYVAL lpValueName AS _OFFSET, BYVAL lpcchValueName AS _OFFSET, BYVAL lpReserved AS _OFFSET, BYVAL lpType AS _OFFSET, BYVAL lpData AS _OFFSET, BYVAL lpcbData AS _OFFSET)
+    END DECLARE
 $ELSE
     DECLARE LIBRARY
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
@@ -825,6 +828,21 @@ SUB SelectPropertyFully (id AS LONG)
     Control(id).Cursor = LEN(Text(id))
 END SUB
 
+SUB SelectFontInList (FontSetup$)
+    DIM i AS LONG, thisFile$, thisSize%
+
+    thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
+    thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
+    IF thisFile$ = "" THEN EXIT SUB
+    Control(FontSizeList).Value = thisSize% - 7
+    FOR i = 1 TO UBOUND(FontFile)
+        IF UCASE$(FontFile(i)) = thisFile$ THEN
+            Control(FontList).Value = i
+            EXIT FOR
+        END IF
+    NEXT
+END SUB
+
 SUB __UI_BeforeUpdateDisplay
     DIM b$, c$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
     DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
@@ -1238,6 +1256,7 @@ SUB __UI_BeforeUpdateDisplay
                 Control(InputBox(i).ID).HasBorder = True
             END IF
         NEXT
+        Control(FontSizeList).Hidden = True
 
         DIM ShadeOfGreen AS _UNSIGNED LONG, ShadeOfRed AS _UNSIGNED LONG
         ShadeOfGreen = _RGB32(28, 150, 50)
@@ -1388,24 +1407,32 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
-                IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                    Text(FontTB) = PreviewFonts(FirstSelected)
-                ELSE
-                    Text(FontTB) = PreviewFonts(PreviewFormID)
-                END IF
-                IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-            ELSEIF __UI_Focus = FontTB THEN
-                IF PropertyFullySelected(FontTB) THEN
-                    IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
-                        Control(__UI_Focus).BorderColor = ShadeOfGreen
+            IF HasFontList = False THEN
+                IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
+                    IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                        Text(FontTB) = PreviewFonts(FirstSelected)
                     ELSE
-                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        Text(FontTB) = PreviewFonts(PreviewFormID)
+                    END IF
+                    IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+                ELSEIF __UI_Focus = FontTB THEN
+                    IF PropertyFullySelected(FontTB) THEN
+                        IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
+                            Control(__UI_Focus).BorderColor = ShadeOfGreen
                         ELSE
-                            Control(__UI_Focus).BorderColor = ShadeOfRed
+                            IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                                Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                            ELSE
+                                Control(__UI_Focus).BorderColor = ShadeOfRed
+                            END IF
                         END IF
                     END IF
+                END IF
+            ELSE
+                IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                    SelectFontInList PreviewFonts(FirstSelected)
+                ELSE
+                    SelectFontInList PreviewFonts(PreviewFormID)
                 END IF
             END IF
             IF __UI_Focus <> TooltipTB OR (__UI_Focus = TooltipTB AND RevertEdit = True) THEN
@@ -1573,6 +1600,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(BooleanOptions).Disabled = False
                     Control(TextTB).Disabled = True
                     Control(FontTB).Disabled = True
+                    Control(FontList).Disabled = True
                     Control(MinTB).Disabled = True
                     Control(MaxTB).Disabled = True
                     Control(IntervalTB).Disabled = True
@@ -1628,7 +1656,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, PaddingTB, AlignOptions, VAlignOptions
+                            CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, PaddingTB, AlignOptions, VAlignOptions, FontList
                                 Control(InputBox(i).ID).Disabled = False
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = True
@@ -1638,7 +1666,7 @@ SUB __UI_BeforeUpdateDisplay
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB
+                            CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
                                 Control(InputBox(i).ID).Disabled = False
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = True
@@ -1693,11 +1721,21 @@ SUB __UI_BeforeUpdateDisplay
                                 Control(InputBox(i).ID).Disabled = False
                         END SELECT
                     NEXT
-                CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ToggleSwitch
+                CASE __UI_Type_CheckBox, __UI_Type_RadioButton
                     Control(Transparent).Disabled = False
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
                             CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB
+                                Control(InputBox(i).ID).Disabled = True
+                            CASE ELSE
+                                Control(InputBox(i).ID).Disabled = False
+                        END SELECT
+                    NEXT
+                CASE __UI_Type_ToggleSwitch
+                    Control(Transparent).Disabled = False
+                    FOR i = 1 TO UBOUND(InputBox)
+                        SELECT CASE InputBox(i).ID
+                            CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1715,7 +1753,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE __UI_Type_TrackBar
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions
+                            CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -1757,7 +1795,7 @@ SUB __UI_BeforeUpdateDisplay
 
             FOR i = 1 TO UBOUND(InputBox)
                 SELECT CASE InputBox(i).ID
-                    CASE NameTB, CaptionTB, TextTB, WidthTB, HeightTB, FontTB
+                    CASE NameTB, CaptionTB, TextTB, WidthTB, HeightTB, FontTB, FontList
                         Control(InputBox(i).ID).Disabled = False
                     CASE ELSE
                         Control(InputBox(i).ID).Disabled = True
@@ -1780,6 +1818,12 @@ SUB __UI_BeforeUpdateDisplay
                 Control(InputBox(i).LabelID).Top = LastTopForInputBox
             END IF
         NEXT
+
+        IF HasFontList THEN
+            Control(FontSizeList).Disabled = Control(FontList).Disabled
+            Control(FontSizeList).Hidden = Control(FontList).Hidden
+            Control(FontSizeList).Top = Control(FontList).Top
+        END IF
 
         'Update the color mixer
         DIM ThisColor AS _UNSIGNED LONG, ThisBackColor AS _UNSIGNED LONG
@@ -2113,6 +2157,13 @@ SUB __UI_OnLoad
     Caption(PathLB) = "Path: " + CurrentPath$
     '-------------------------------------------------
 
+    $IF WIN THEN
+        'Load font list
+        b$ = "Loading font list..."
+        GOSUB ShowMessage
+        LoadFontList
+    $END IF
+
     'Assign InputBox IDs:
     i = 0
     i = i + 1: InputBox(i).ID = NameTB: InputBox(i).LabelID = NameLB: InputBox(i).Signal = 1
@@ -2123,7 +2174,13 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5
     i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6
     i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7
-    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
+    IF HasFontList THEN
+        i = i + 1: InputBox(i).ID = FontList: InputBox(i).LabelID = FontListLB: InputBox(i).Signal = 8
+        Control(FontTB).Hidden = True
+        Control(FontLB).Hidden = True
+    ELSE
+        i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
+    END IF
     i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9
     i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10
     i = i + 1: InputBox(i).ID = BooleanOptions: InputBox(i).LabelID = BooleanLB: InputBox(i).Signal = 10
@@ -2143,8 +2200,6 @@ SUB __UI_OnLoad
 
     StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
     Control(StatusBar).BackColor = StatusBarBackColor
-
-    'LoadFontList
 
     b$ = "Loading images..."
     GOSUB ShowMessage
@@ -2396,6 +2451,10 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE BooleanOptions
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
+        CASE FontList, FontSizeList
+            b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
+            b$ = MKL$(LEN(b$)) + b$
+            SendData b$, 8
         CASE Red
             Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
         CASE Green
@@ -3428,111 +3487,127 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
 END SUB
 
-'$IF WIN THEN
-'    SUB LoadFontList
-'        DIM hKey AS _OFFSET
-'        DIM Ky AS _OFFSET
-'        DIM SubKey AS STRING
-'        DIM Value AS STRING
-'        DIM bData AS STRING
-'        DIM t AS STRING
-'        DIM dwType AS _UNSIGNED LONG
-'        DIM numBytes AS _UNSIGNED LONG
-'        DIM numTchars AS _UNSIGNED LONG
-'        DIM l AS LONG
-'        DIM dwIndex AS _UNSIGNED LONG
+$IF WIN THEN
+    SUB LoadFontList
+        DIM hKey AS _OFFSET
+        DIM Ky AS _OFFSET
+        DIM SubKey AS STRING
+        DIM Value AS STRING
+        DIM bData AS STRING
+        DIM t AS STRING
+        DIM dwType AS _UNSIGNED LONG
+        DIM numBytes AS _UNSIGNED LONG
+        DIM numTchars AS _UNSIGNED LONG
+        DIM l AS LONG
+        DIM dwIndex AS _UNSIGNED LONG
 
-'        Ky = HKEY_LOCAL_MACHINE
-'        SubKey = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" + CHR$(0)
-'        Value = SPACE$(261) 'ANSI Value name limit 260 chars + 1 null
-'        bData = SPACE$(&H7FFF) 'arbitrary
+        Ky = HKEY_LOCAL_MACHINE
+        SubKey = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" + CHR$(0)
+        Value = SPACE$(261) 'ANSI Value name limit 260 chars + 1 null
+        bData = SPACE$(&H7FFF) 'arbitrary
 
-'        l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
-'        IF l THEN
-'            AddItem __UI_GetID("FontList"), "Access to fonts failed."
-'            EXIT SUB
-'        ELSE
-'            dwIndex = 0
-'            DO
-'                numBytes = LEN(bData)
-'                numTchars = LEN(Value)
-'                l = RegEnumValueA(hKey, dwIndex, _OFFSET(Value), _OFFSET(numTchars), 0, _OFFSET(dwType), _OFFSET(bData), _OFFSET(numBytes))
-'                IF l THEN
-'                    IF l <> ERROR_NO_MORE_ITEMS THEN
-'                        AddItem __UI_GetID("FontList"), "Access to fonts failed."
-'                    END IF
-'                    EXIT DO
-'                ELSE
-'                    IF UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".TTF" THEN
-'                        AddItem __UI_GetID("FontList"), LEFT$(Value, numTchars) + " = " + formatData(dwType, numBytes, bData)
-'                    END IF
-'                END IF
-'                dwIndex = dwIndex + 1
-'            LOOP
-'            l = RegCloseKey(hKey)
-'        END IF
-'    END SUB
+        HasFontList = True
+        l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
+        IF l THEN
+            HasFontList = False
+            EXIT SUB
+        ELSE
+            dwIndex = 0
+            DO
+                numBytes = LEN(bData)
+                numTchars = LEN(Value)
+                l = RegEnumValueA(hKey, dwIndex, _OFFSET(Value), _OFFSET(numTchars), 0, _OFFSET(dwType), _OFFSET(bData), _OFFSET(numBytes))
+                IF l THEN
+                    IF l <> ERROR_NO_MORE_ITEMS THEN
+                        HasFontList = False
+                        EXIT SUB
+                    END IF
+                    EXIT DO
+                ELSE
+                    IF UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".TTF" OR UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".OTF" THEN
+                        TotalFontsFound = TotalFontsFound + 1
+                        IF TotalFontsFound > UBOUND(FontFile) THEN
+                            REDIM _PRESERVE FontFile(TotalFontsFound) AS STRING
+                        END IF
+                        DIM tempName$
+                        tempName$ = LEFT$(Value, numTchars)
+                        IF RIGHT$(tempName$, 11) = " (TrueType)" THEN
+                            tempName$ = LEFT$(tempName$, LEN(tempName$) - 11)
+                        END IF
+                        AddItem FontList, tempName$
+                        FontFile(TotalFontsFound) = formatData(dwType, numBytes, bData)
+                    END IF
+                END IF
+                dwIndex = dwIndex + 1
+            LOOP
+            l = RegCloseKey(hKey)
+        END IF
 
-'    FUNCTION whatType$ (dwType AS _UNSIGNED LONG)
-'        SELECT CASE dwType
-'            CASE REG_SZ: whatType = "REG_SZ"
-'            CASE REG_EXPAND_SZ: whatType = "REG_EXPAND_SZ"
-'            CASE REG_BINARY: whatType = "REG_BINARY"
-'            CASE REG_DWORD: whatType = "REG_DWORD"
-'            CASE REG_DWORD_BIG_ENDIAN: whatType = "REG_DWORD_BIG_ENDIAN"
-'            CASE REG_LINK: whatType = "REG_LINK"
-'            CASE REG_MULTI_SZ: whatType = "REG_MULTI_SZ"
-'            CASE REG_RESOURCE_LIST: whatType = "REG_RESOURCE_LIST"
-'            CASE REG_FULL_RESOURCE_DESCRIPTOR: whatType = "REG_FULL_RESOURCE_DESCRIPTOR"
-'            CASE REG_RESOURCE_REQUIREMENTS_LIST: whatType = "REG_RESOURCE_REQUIREMENTS_LIST"
-'            CASE REG_QWORD: whatType = "REG_QWORD"
-'            CASE ELSE: whatType = "unknown"
-'        END SELECT
-'    END FUNCTION
+        FOR l = 8 TO 120
+            AddItem FontSizeList, LTRIM$(STR$(l))
+        NEXT
+    END SUB
 
-'    FUNCTION whatKey$ (hKey AS _OFFSET)
-'        SELECT CASE hKey
-'            CASE HKEY_CLASSES_ROOT: whatKey = "HKEY_CLASSES_ROOT"
-'            CASE HKEY_CURRENT_USER: whatKey = "HKEY_CURRENT_USER"
-'            CASE HKEY_LOCAL_MACHINE: whatKey = "HKEY_LOCAL_MACHINE"
-'            CASE HKEY_USERS: whatKey = "HKEY_USERS"
-'            CASE HKEY_PERFORMANCE_DATA: whatKey = "HKEY_PERFORMANCE_DATA"
-'            CASE HKEY_CURRENT_CONFIG: whatKey = "HKEY_CURRENT_CONFIG"
-'            CASE HKEY_DYN_DATA: whatKey = "HKEY_DYN_DATA"
-'        END SELECT
-'    END FUNCTION
+    FUNCTION whatType$ (dwType AS _UNSIGNED LONG)
+        SELECT CASE dwType
+            CASE REG_SZ: whatType = "REG_SZ"
+            CASE REG_EXPAND_SZ: whatType = "REG_EXPAND_SZ"
+            CASE REG_BINARY: whatType = "REG_BINARY"
+            CASE REG_DWORD: whatType = "REG_DWORD"
+            CASE REG_DWORD_BIG_ENDIAN: whatType = "REG_DWORD_BIG_ENDIAN"
+            CASE REG_LINK: whatType = "REG_LINK"
+            CASE REG_MULTI_SZ: whatType = "REG_MULTI_SZ"
+            CASE REG_RESOURCE_LIST: whatType = "REG_RESOURCE_LIST"
+            CASE REG_FULL_RESOURCE_DESCRIPTOR: whatType = "REG_FULL_RESOURCE_DESCRIPTOR"
+            CASE REG_RESOURCE_REQUIREMENTS_LIST: whatType = "REG_RESOURCE_REQUIREMENTS_LIST"
+            CASE REG_QWORD: whatType = "REG_QWORD"
+            CASE ELSE: whatType = "unknown"
+        END SELECT
+    END FUNCTION
 
-'    FUNCTION formatData$ (dwType AS _UNSIGNED LONG, numBytes AS _UNSIGNED LONG, bData AS STRING)
-'        DIM t AS STRING
-'        DIM ul AS _UNSIGNED LONG
-'        DIM b AS _UNSIGNED _BYTE
-'        SELECT CASE dwType
-'            CASE REG_SZ, REG_EXPAND_SZ, REG_MULTI_SZ
-'                formatData = LEFT$(bData, numBytes - 1)
-'            CASE REG_DWORD
-'                t = LCASE$(HEX$(CVL(LEFT$(bData, 4))))
-'                formatData = "0x" + STRING$(8 - LEN(t), &H30) + t
-'            CASE ELSE
-'                IF numBytes THEN
-'                    b = ASC(LEFT$(bData, 1))
-'                    IF b < &H10 THEN
-'                        t = t + "0" + LCASE$(HEX$(b))
-'                    ELSE
-'                        t = t + LCASE$(HEX$(b))
-'                    END IF
-'                END IF
-'                FOR ul = 2 TO numBytes
-'                    b = ASC(MID$(bData, ul, 1))
-'                    IF b < &H10 THEN
-'                        t = t + " 0" + LCASE$(HEX$(b))
-'                    ELSE
-'                        t = t + " " + LCASE$(HEX$(b))
-'                    END IF
-'                NEXT
-'                formatData = t
-'        END SELECT
-'    END FUNCTION
-'$END IF
+    FUNCTION whatKey$ (hKey AS _OFFSET)
+        SELECT CASE hKey
+            CASE HKEY_CLASSES_ROOT: whatKey = "HKEY_CLASSES_ROOT"
+            CASE HKEY_CURRENT_USER: whatKey = "HKEY_CURRENT_USER"
+            CASE HKEY_LOCAL_MACHINE: whatKey = "HKEY_LOCAL_MACHINE"
+            CASE HKEY_USERS: whatKey = "HKEY_USERS"
+            CASE HKEY_PERFORMANCE_DATA: whatKey = "HKEY_PERFORMANCE_DATA"
+            CASE HKEY_CURRENT_CONFIG: whatKey = "HKEY_CURRENT_CONFIG"
+            CASE HKEY_DYN_DATA: whatKey = "HKEY_DYN_DATA"
+        END SELECT
+    END FUNCTION
+
+    FUNCTION formatData$ (dwType AS _UNSIGNED LONG, numBytes AS _UNSIGNED LONG, bData AS STRING)
+        DIM t AS STRING
+        DIM ul AS _UNSIGNED LONG
+        DIM b AS _UNSIGNED _BYTE
+        SELECT CASE dwType
+            CASE REG_SZ, REG_EXPAND_SZ, REG_MULTI_SZ
+                formatData = LEFT$(bData, numBytes - 1)
+            CASE REG_DWORD
+                t = LCASE$(HEX$(CVL(LEFT$(bData, 4))))
+                formatData = "0x" + STRING$(8 - LEN(t), &H30) + t
+            CASE ELSE
+                IF numBytes THEN
+                    b = ASC(LEFT$(bData, 1))
+                    IF b < &H10 THEN
+                        t = t + "0" + LCASE$(HEX$(b))
+                    ELSE
+                        t = t + LCASE$(HEX$(b))
+                    END IF
+                END IF
+                FOR ul = 2 TO numBytes
+                    b = ASC(MID$(bData, ul, 1))
+                    IF b < &H10 THEN
+                        t = t + " 0" + LCASE$(HEX$(b))
+                    ELSE
+                        t = t + " " + LCASE$(HEX$(b))
+                    END IF
+                NEXT
+                formatData = t
+        END SELECT
+    END FUNCTION
+$END IF
 
 SUB RestoreFalcon
     DIM A$, B$, FileNum AS INTEGER
