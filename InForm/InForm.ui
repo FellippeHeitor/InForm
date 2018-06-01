@@ -4441,7 +4441,7 @@ END SUB
 SUB EndDraw(ThisID AS LONG)
     IF Control(ThisID).Type <> __UI_Type_PictureBox THEN EXIT SUB
     _DEST 0
-    Control(ThisID).PreviousValue = 0
+    Control(ThisID).Redraw = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -5876,17 +5876,6 @@ FUNCTION IconPreview& (IconFile$)
         EXIT FUNCTION
     END IF
 END FUNCTION
-
-'SUB echo (debugSession AS INTEGER, text$)
-'    $CONSOLE
-'    DIM prevDest AS LONG
-'    CONST thisSession = 4
-'    IF debugSession < thisSession THEN EXIT SUB
-'    prevDest = _DEST
-'    _DEST _CONSOLE
-'    PRINT text$
-'    _DEST prevDest
-'END SUB
 
 'Control types:
 FUNCTION __UI_Type_Form%%:__UI_Type_Form%% = 1: END FUNCTION
