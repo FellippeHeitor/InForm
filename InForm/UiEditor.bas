@@ -532,7 +532,7 @@ SUB __UI_Click (id AS LONG)
             'Refresh the file list control's contents
             DIM TotalFiles%
             IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
-            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, TotalFiles%)
+            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
 
@@ -611,7 +611,7 @@ SUB __UI_Click (id AS LONG)
             END IF
         CASE ShowOnlyFrmbinFilesCB
             ReloadList:
-            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, TotalFiles%)
+            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).FirstVisibleLine = 1
             Control(FileList).InputViewStart = 1
@@ -659,11 +659,9 @@ SUB __UI_Click (id AS LONG)
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
         CASE FontSwitchMenuSwitch
-            $IF WIN OR MAC THEN
-                Control(id).Value = NOT Control(id).Value
-                ShowFontList = Control(id).Value
-                SaveSettings
-            $END IF
+            Control(id).Value = NOT Control(id).Value
+            ShowFontList = Control(id).Value
+            SaveSettings
     END SELECT
 
     LastClickedID = id
@@ -837,20 +835,18 @@ SUB SelectPropertyFully (id AS LONG)
 END SUB
 
 SUB SelectFontInList (FontSetup$)
-    $IF WIN OR MAC THEN
-        DIM i AS LONG, thisFile$, thisSize%
+    DIM i AS LONG, thisFile$, thisSize%
 
-        thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
-        thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
-        IF thisFile$ = "" THEN EXIT SUB
-        Control(FontSizeList).Value = thisSize% - 7
-        FOR i = 1 TO UBOUND(FontFile)
-            IF UCASE$(FontFile(i)) = thisFile$ THEN
-                Control(FontList).Value = i
-                EXIT FOR
-            END IF
-        NEXT
-    $END IF
+    thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
+    thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
+    IF thisFile$ = "" THEN EXIT SUB
+    Control(FontSizeList).Value = thisSize% - 7
+    FOR i = 1 TO UBOUND(FontFile)
+        IF UCASE$(FontFile(i)) = thisFile$ THEN
+            Control(FontList).Value = i
+            EXIT FOR
+        END IF
+    NEXT
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -971,8 +967,8 @@ SUB __UI_BeforeUpdateDisplay
             PreviewAttached = False
             SaveSettings
             END IF
-            Control(VIEWMENUPREVIEWDETACH).Disabled = True
-            Control(VIEWMENUPREVIEWDETACH).Value = False
+            Control(ViewMenuPreviewDetach).Disabled = True
+            Control(ViewMenuPreviewDetach).Value = False
         $END IF
 
         b$ = MKI$(AutoNameControls)
@@ -2169,7 +2165,7 @@ SUB __UI_OnLoad
     '-------------------------------------------------
     DIM TotalFiles%
     IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
-    Text(FileList) = idezfilelist$(CurrentPath$, 0, TotalFiles%)
+    Text(FileList) = idezfilelist$(CurrentPath$, 0, 1, TotalFiles%)
     Control(FileList).Max = TotalFiles%
     Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
 
@@ -2180,16 +2176,10 @@ SUB __UI_OnLoad
     Caption(PathLB) = "Path: " + CurrentPath$
     '-------------------------------------------------
 
-    $IF WIN OR MAC THEN
-        'Load font list
-        b$ = "Loading font list..."
-        GOSUB ShowMessage
-        LoadFontList
-    $ELSE
-        Control(FontLB).ContextMenuID = 0
-        __UI_DestroyControl Control(FontSwitchMenuSwitch)
-        __UI_DestroyControl Control(FontSwitchMenu)
-    $END IF
+    'Load font list
+    b$ = "Loading font list..."
+    GOSUB ShowMessage
+    LoadFontList
 
     'Assign InputBox IDs:
     i = 0
@@ -2474,11 +2464,9 @@ SUB __UI_ValueChanged (id AS LONG)
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
         CASE FontList, FontSizeList
-            $IF WIN OR MAC THEN
-                b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
-                b$ = MKL$(LEN(b$)) + b$
-                SendData b$, 8
-            $END IF
+            b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
+            b$ = MKL$(LEN(b$)) + b$
+            SendData b$, 8
         CASE Red
             Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
         CASE Green
@@ -3635,11 +3623,17 @@ $IF WIN THEN
                 formatData = t
         END SELECT
     END FUNCTION
-$ELSEIF MAC THEN
+$ELSE
     SUB LoadFontList
-    DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$
+    DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$, depth%, x AS INTEGER
+
+    FontPath$ = "/usr/share/fonts"
+    depth% = 4
+    IF INSTR(_OS$, "MAC") > 0 THEN
     FontPath$ = "/Library/Fonts"
-    Text(FontList) = idezfilelist$(FontPath$, 1, TotalFiles%)
+    depth% = 1
+    END IF
+    Text(FontList) = idezfilelist$(FontPath$, 1, depth%, TotalFiles%)
     Control(FontList).Max = TotalFiles%
     Control(FontList).LastVisibleItem = 0 'Reset it so it's recalculated
 
@@ -3655,9 +3649,20 @@ $ELSEIF MAC THEN
     NEXT
 
     REDIM FontFile(TotalFontsFound) AS STRING
+    IF INSTR(_OS$, "MAC") = 0 THEN FontPath$ = "" ELSE FontPath$ = FontPath$ + "/"
     FOR i = 1 TO TotalFontsFound
-    FontFile(i) = FontPath$ + "/" + GetItem(FontList, i)
-    ReplaceItem FontList, i, LEFT$(GetItem(FontList, i), INSTR(GetItem(FontList, i), ".") - 1)
+    ThisFont$ = GetItem(FontList, i)
+    FontFile(i) = FontPath$ + GetItem(FontList, i)
+    ThisFont$ = LEFT$(ThisFont$, LEN(ThisFont$) - 4) 'Remove extension from list
+
+    FOR x = LEN(ThisFont$) TO 1 STEP -1
+    IF ASC(ThisFont$, x) = 47 THEN '"/"
+    ThisFont$ = MID$(ThisFont$, x + 1)
+    EXIT FOR
+    END IF
+    NEXT
+
+    ReplaceItem FontList, i, ThisFont$
     NEXT
 
     FOR i = 8 TO 120
@@ -3796,7 +3801,7 @@ END SUB
 
 'FUNCTION idezfilelist$ and idezpathlist$ (and helper functions) were
 'adapted from ide_methods.bas (QB64):
-FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.frm and *.frmbin, method1=*.*
+FUNCTION idezfilelist$ (path$, method, depth%, TotalFound AS INTEGER) 'method0=*.frm and *.frmbin, method1=*.*
     DIM sep AS STRING * 1, filelist$, a$
     sep = CHR$(13)
 
@@ -3824,16 +3829,17 @@ FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.frm and
         FOR i = 1 TO 2 - method
         OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
         IF method = 0 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
-        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
+        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
+        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
         END IF
         IF method = 1 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
+        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
         END IF
         OPEN "opendlgfiles.dat" FOR INPUT AS #150
         DO UNTIL EOF(150)
         LINE INPUT #150, a$
         IF LEN(a$) = 0 THEN EXIT DO
+        IF depth% = 1 THEN
         FOR x = LEN(a$) TO 1 STEP -1
         a2$ = MID$(a$, x, 1)
         IF a2$ = "/" THEN
@@ -3841,6 +3847,7 @@ FUNCTION idezfilelist$ (path$, method, TotalFound AS INTEGER) 'method0=*.frm and
         EXIT FOR
         END IF
         NEXT
+        END IF
         IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
         TotalFound = TotalFound + 1
         LOOP
