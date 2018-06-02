@@ -296,10 +296,16 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).VAlign = __UI_Middle
 
+    __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "FontSwitchMenu", 0, 0, 0, 0, 0)
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FontSwitchMenuSwitch", 0, 0, 0, 0, __UI_GetID("FontSwitchMenu"))
+    SetCaption __UI_NewID, "Show system fonts list"
+
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "FontLB", 120, 23, 10, 186, __UI_GetID("ControlProperties"))
     SetCaption __UI_NewID, "Font"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).ContextMenuID = __UI_GetID("FontSwitchMenu")
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "TooltipLB", 120, 23, 10, 208, __UI_GetID("ControlProperties"))
     SetCaption __UI_NewID, "Tooltip"
@@ -465,6 +471,7 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Font"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).ContextMenuID = __UI_GetID("FontSwitchMenu")
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontList", 180, 23, 129, 362, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
@@ -797,4 +804,6 @@ SUB __UI_AssignIDs
     FontList = __UI_GetID("FontList")
     FontListLB = __UI_GetID("FontListLB")
     FontSizeList = __UI_GetID("FontSizeList")
+    FontSwitchMenuSwitch = __UI_GetID("FontSwitchMenuSwitch")
+    FontSwitchMenu = __UI_GetID("FontSwitchMenu")
 END SUB

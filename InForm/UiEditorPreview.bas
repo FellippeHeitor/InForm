@@ -1705,11 +1705,15 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF LogFileLoad THEN PRINT #LogFileNum, FontSetup$
 
                     FindSep = INSTR(FontSetup$, ",")
-                    NewFontFile = LEFT$(FontSetup$, FindSep - 1): FontSetup$ = MID$(FontSetup$, FindSep + 1)
+                    NewFontFile = LEFT$(FontSetup$, FindSep - 1)
+                    FontSetup$ = MID$(FontSetup$, FindSep + 1)
 
                     NewFontSize = VAL(FontSetup$)
 
                     Control(TempValue).Font = SetFont(NewFontFile, NewFontSize)
+
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN FontSetup$ = ReadSequential$(Clip$, CVI(b$)) ELSE FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
                 CASE -6 'ForeColor
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
                     Control(TempValue).ForeColor = _CV(_UNSIGNED LONG, b$)
@@ -2326,12 +2330,13 @@ SUB SavePreview (Destination AS _BYTE)
                     'Internal fonts
                     SaveInternalFont:
                     FontSetup$ = "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
-                    b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
+                    b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$ + MKI$(0)
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 ELSE
                     SaveExternalFont:
                     FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
                     b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
+                    b$ = b$ + MKI$(LEN(Text(__UI_GetFontID(Control(i).Font)))) + Text(__UI_GetFontID(Control(i).Font))
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
             ELSE

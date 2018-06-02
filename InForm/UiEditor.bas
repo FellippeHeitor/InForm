@@ -10,7 +10,7 @@ DIM SHARED StatusBar AS LONG
 'Menus
 DIM SHARED FileMenu AS LONG, EditMenu AS LONG, ViewMenu AS LONG
 DIM SHARED InsertMenu AS LONG, AlignMenu AS LONG, OptionsMenu AS LONG
-DIM SHARED HelpMenu AS LONG
+DIM SHARED HelpMenu AS LONG, FontSwitchMenu AS LONG
 
 'Frames
 DIM SHARED Toolbox AS LONG, ColorMixer AS LONG
@@ -52,6 +52,8 @@ DIM SHARED OptionsMenuAutoName AS LONG, OptionsMenuSwapButtons AS LONG
 DIM SHARED OptionsMenuCheckUpdates AS LONG
 
 DIM SHARED HelpMenuHelp AS LONG, HelpMenuAbout AS LONG
+
+DIM SHARED FontSwitchMenuSwitch AS LONG
 
 'Toolbox buttons
 DIM SHARED AddButton AS LONG, AddLabel AS LONG
@@ -155,6 +157,7 @@ REDIM SHARED PreviewTexts(0) AS STRING
 REDIM SHARED PreviewMasks(0) AS STRING
 REDIM SHARED PreviewTips(0) AS STRING
 REDIM SHARED PreviewFonts(0) AS STRING
+REDIM SHARED PreviewActualFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
@@ -162,7 +165,7 @@ REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
-DIM SHARED HasFontList AS _BYTE
+DIM SHARED HasFontList AS _BYTE, ShowFontList AS _BYTE
 
 $IF WIN THEN
     REDIM SHARED FontFile(0) AS STRING
@@ -656,6 +659,12 @@ SUB __UI_Click (id AS LONG)
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
+        CASE FontSwitchMenuSwitch
+            $IF WIN THEN
+                Control(id).Value = NOT Control(id).Value
+                ShowFontList = Control(id).Value
+                SaveSettings
+            $END IF
     END SELECT
 
     LastClickedID = id
@@ -1409,33 +1418,30 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 END IF
             END IF
-            IF HasFontList = False THEN
-                IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
-                    IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                        Text(FontTB) = PreviewFonts(FirstSelected)
+            IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
+                IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                    Text(FontTB) = PreviewFonts(FirstSelected)
+                ELSE
+                    Text(FontTB) = PreviewFonts(PreviewFormID)
+                END IF
+                IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+            ELSEIF __UI_Focus = FontTB THEN
+                IF PropertyFullySelected(FontTB) THEN
+                    IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
+                        Control(__UI_Focus).BorderColor = ShadeOfGreen
                     ELSE
-                        Text(FontTB) = PreviewFonts(PreviewFormID)
-                    END IF
-                    IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-                ELSEIF __UI_Focus = FontTB THEN
-                    IF PropertyFullySelected(FontTB) THEN
-                        IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
-                            Control(__UI_Focus).BorderColor = ShadeOfGreen
+                        IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                            Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
                         ELSE
-                            IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                                Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                            ELSE
-                                Control(__UI_Focus).BorderColor = ShadeOfRed
-                            END IF
+                            Control(__UI_Focus).BorderColor = ShadeOfRed
                         END IF
                     END IF
                 END IF
+            END IF
+            IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                SelectFontInList PreviewActualFonts(FirstSelected)
             ELSE
-                IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                    SelectFontInList PreviewFonts(FirstSelected)
-                ELSE
-                    SelectFontInList PreviewFonts(PreviewFormID)
-                END IF
+                SelectFontInList PreviewActualFonts(PreviewFormID)
             END IF
             IF __UI_Focus <> TooltipTB OR (__UI_Focus = TooltipTB AND RevertEdit = True) THEN
                 Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
@@ -1807,6 +1813,12 @@ SUB __UI_BeforeUpdateDisplay
 
         IF TotalSelected > 1 THEN Control(NameTB).Disabled = True
 
+        IF HasFontList AND ShowFontList THEN
+            Control(FontTB).Disabled = True
+        ELSE
+            Control(FontList).Disabled = True
+        END IF
+
         DIM LastTopForInputBox AS INTEGER
         LastTopForInputBox = -12
         CONST TopIncrementForInputBox = 22
@@ -1821,11 +1833,9 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         NEXT
 
-        IF HasFontList THEN
-            Control(FontSizeList).Disabled = Control(FontList).Disabled
-            Control(FontSizeList).Hidden = Control(FontList).Hidden
-            Control(FontSizeList).Top = Control(FontList).Top
-        END IF
+        Control(FontSizeList).Disabled = Control(FontList).Disabled
+        Control(FontSizeList).Hidden = Control(FontList).Hidden
+        Control(FontSizeList).Top = Control(FontList).Top
 
         'Update the color mixer
         DIM ThisColor AS _UNSIGNED LONG, ThisBackColor AS _UNSIGNED LONG
@@ -1936,6 +1946,9 @@ SUB SaveSettings
     IF CheckUpdates THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
 
+    IF ShowFontList THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", value$
+
     $IF WIN THEN
     $ELSE
         IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
@@ -2015,6 +2028,15 @@ SUB __UI_OnLoad
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", "True"
         CheckUpdates = True
     END IF
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show font list")
+    IF LEN(value$) THEN
+        ShowFontList = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", "True"
+        ShowFontList = True
+    END IF
+    Control(FontSwitchMenuSwitch).Value = ShowFontList
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
     IF value$ = "True" THEN
@@ -2164,6 +2186,10 @@ SUB __UI_OnLoad
         b$ = "Loading font list..."
         GOSUB ShowMessage
         LoadFontList
+    $ELSE
+        Control(FontLB).ContextMenuID = 0
+        __UI_DestroyControl Control(FontSwitchMenuSwitch)
+        __UI_DestroyControl Control(FontSwitchMenu)
     $END IF
 
     'Assign InputBox IDs:
@@ -2176,13 +2202,8 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5
     i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6
     i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7
-    IF HasFontList THEN
-        i = i + 1: InputBox(i).ID = FontList: InputBox(i).LabelID = FontListLB: InputBox(i).Signal = 8
-        Control(FontTB).Hidden = True
-        Control(FontLB).Hidden = True
-    ELSE
-        i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
-    END IF
+    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
+    i = i + 1: InputBox(i).ID = FontList: InputBox(i).LabelID = FontListLB: InputBox(i).Signal = 8
     i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9
     i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10
     i = i + 1: InputBox(i).ID = BooleanOptions: InputBox(i).LabelID = BooleanLB: InputBox(i).Signal = 10
@@ -2762,6 +2783,7 @@ SUB LoadPreview
         REDIM PreviewMasks(1 TO CVL(b$)) AS STRING
         REDIM PreviewTips(1 TO CVL(b$)) AS STRING
         REDIM PreviewFonts(1 TO CVL(b$)) AS STRING
+        REDIM PreviewActualFonts(1 TO CVL(b$)) AS STRING
         REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
         REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
 
@@ -2817,11 +2839,14 @@ SUB LoadPreview
                         PreviewControls(Dummy).Stretch = True
                     CASE -5 'Font
                         DIM FontSetup$, FindSep AS INTEGER
-                        DIM NewFontName AS STRING, NewFontFile AS STRING
-                        DIM NewFontSize AS INTEGER, NewFontAttributes AS STRING
+                        DIM NewFontSize$
                         b$ = SPACE$(2): GET #BinaryFileNum, , b$
                         FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
                         PreviewFonts(Dummy) = FontSetup$
+                        NewFontSize$ = MID$(FontSetup$, INSTR(FontSetup$, ","))
+                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                        FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
+                        PreviewActualFonts(Dummy) = FontSetup$ + NewFontSize$
                     CASE -6 'ForeColor
                         b$ = SPACE$(4): GET #BinaryFileNum, , b$
                         PreviewControls(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
