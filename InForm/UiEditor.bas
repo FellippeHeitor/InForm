@@ -166,11 +166,10 @@ REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
 DIM SHARED HasFontList AS _BYTE, ShowFontList AS _BYTE
+DIM SHARED TotalFontsFound AS LONG
+REDIM SHARED FontFile(0) AS STRING
 
 $IF WIN THEN
-    REDIM SHARED FontFile(0) AS STRING
-    DIM SHARED TotalFontsFound AS LONG
-
     CONST PathSep$ = "\"
 $ELSE
     CONST PathSep$ = "/"
@@ -660,7 +659,7 @@ SUB __UI_Click (id AS LONG)
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
         CASE FontSwitchMenuSwitch
-            $IF WIN THEN
+            $IF WIN OR MAC THEN
                 Control(id).Value = NOT Control(id).Value
                 ShowFontList = Control(id).Value
                 SaveSettings
@@ -838,7 +837,7 @@ SUB SelectPropertyFully (id AS LONG)
 END SUB
 
 SUB SelectFontInList (FontSetup$)
-    $IF WIN THEN
+    $IF WIN OR MAC THEN
         DIM i AS LONG, thisFile$, thisSize%
 
         thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
@@ -2181,7 +2180,7 @@ SUB __UI_OnLoad
     Caption(PathLB) = "Path: " + CurrentPath$
     '-------------------------------------------------
 
-    $IF WIN THEN
+    $IF WIN OR MAC THEN
         'Load font list
         b$ = "Loading font list..."
         GOSUB ShowMessage
@@ -2475,7 +2474,7 @@ SUB __UI_ValueChanged (id AS LONG)
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
         CASE FontList, FontSizeList
-            $IF WIN THEN
+            $IF WIN OR MAC THEN
                 b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
                 b$ = MKL$(LEN(b$)) + b$
                 SendData b$, 8
@@ -3636,6 +3635,37 @@ $IF WIN THEN
                 formatData = t
         END SELECT
     END FUNCTION
+$ELSEIF MAC THEN
+    SUB LoadFontList
+    DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$
+    FontPath$ = "/Library/Fonts"
+    Text(FontList) = idezfilelist$(FontPath$, 1, TotalFiles%)
+    Control(FontList).Max = TotalFiles%
+    Control(FontList).LastVisibleItem = 0 'Reset it so it's recalculated
+
+    TotalFontsFound = TotalFiles%
+    FOR i = TotalFiles% TO 1 STEP -1
+    ThisFont$ = GetItem(FontList, i)
+    IF UCASE$(RIGHT$(ThisFont$, 4)) = ".TTF" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".TTC" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".OTF" THEN
+    'Valid font
+    ELSE
+    RemoveItem FontList, i
+    TotalFontsFound = TotalFontsFound - 1
+    END IF
+    NEXT
+
+    REDIM FontFile(TotalFontsFound) AS STRING
+    FOR i = 1 TO TotalFontsFound
+    FontFile(i) = FontPath$ + "/" + GetItem(FontList, i)
+    ReplaceItem FontList, i, LEFT$(GetItem(FontList, i), INSTR(GetItem(FontList, i), ".") - 1)
+    NEXT
+
+    FOR i = 8 TO 120
+    AddItem FontSizeList, LTRIM$(STR$(i))
+    NEXT
+
+    HasFontList = True
+    END SUB
 $END IF
 
 SUB RestoreFalcon
