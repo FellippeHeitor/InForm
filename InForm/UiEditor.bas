@@ -166,6 +166,7 @@ REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
 DIM SHARED HasFontList AS _BYTE, ShowFontList AS _BYTE
+DIM SHARED BypassShowFontList AS _BYTE
 DIM SHARED TotalFontsFound AS LONG
 REDIM SHARED FontFile(0) AS STRING
 
@@ -837,16 +838,26 @@ END SUB
 SUB SelectFontInList (FontSetup$)
     DIM i AS LONG, thisFile$, thisSize%
 
+    IF FontSetup$ = "" THEN EXIT SUB
+
     thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
     thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
-    IF thisFile$ = "" THEN EXIT SUB
+
     Control(FontSizeList).Value = thisSize% - 7
-    FOR i = 1 TO UBOUND(FontFile)
-        IF UCASE$(FontFile(i)) = thisFile$ THEN
-            Control(FontList).Value = i
-            EXIT FOR
-        END IF
-    NEXT
+    IF LEN(thisFile$) > 0 THEN
+        FOR i = 1 TO UBOUND(FontFile)
+            IF UCASE$(RIGHT$(FontFile(i), LEN(thisFile$))) = thisFile$ THEN
+                Control(FontList).Value = i
+                BypassShowFontList = False
+                EXIT SUB
+            END IF
+        NEXT
+    END IF
+
+    'If this line is reached, the currently open form
+    'uses a non-system font. In that case we must
+    'disable the list.
+    BypassShowFontList = True
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -1111,6 +1122,12 @@ SUB __UI_BeforeUpdateDisplay
 
         Control(EditMenuCP1252).Value = False
         Control(EditMenuCP437).Value = False
+        Control(FontSwitchMenuSwitch).Value = ShowFontList
+        IF BypassShowFontList THEN
+            Control(FontSwitchMenuSwitch).Disabled = True
+        ELSE
+            Control(FontSwitchMenuSwitch).Disabled = False
+        END IF
         SELECT CASE PreviewControls(PreviewFormID).Encoding
             CASE 0, 437
                 Control(EditMenuCP437).Value = True
@@ -1808,7 +1825,7 @@ SUB __UI_BeforeUpdateDisplay
 
         IF TotalSelected > 1 THEN Control(NameTB).Disabled = True
 
-        IF HasFontList AND ShowFontList THEN
+        IF HasFontList AND (ShowFontList = True AND BypassShowFontList = False) THEN
             Control(FontTB).Disabled = True
         ELSE
             Control(FontList).Disabled = True
@@ -2031,7 +2048,6 @@ SUB __UI_OnLoad
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", "True"
         ShowFontList = True
     END IF
-    Control(FontSwitchMenuSwitch).Value = ShowFontList
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
     IF value$ = "True" THEN
@@ -2208,6 +2224,7 @@ SUB __UI_OnLoad
     REDIM InputBoxText(1 TO i) AS STRING
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
+    ToolTip(FontList) = "System fonts may not be available in all computers. To specify a local font file, right-click 'Font' to the left of this list and disable 'Show system fonts list'."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
 
     StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
