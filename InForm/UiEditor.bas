@@ -829,18 +829,20 @@ SUB SelectPropertyFully (id AS LONG)
 END SUB
 
 SUB SelectFontInList (FontSetup$)
-    DIM i AS LONG, thisFile$, thisSize%
+    $IF WIN THEN
+        DIM i AS LONG, thisFile$, thisSize%
 
-    thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
-    thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
-    IF thisFile$ = "" THEN EXIT SUB
-    Control(FontSizeList).Value = thisSize% - 7
-    FOR i = 1 TO UBOUND(FontFile)
-        IF UCASE$(FontFile(i)) = thisFile$ THEN
-            Control(FontList).Value = i
-            EXIT FOR
-        END IF
-    NEXT
+        thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
+        thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
+        IF thisFile$ = "" THEN EXIT SUB
+        Control(FontSizeList).Value = thisSize% - 7
+        FOR i = 1 TO UBOUND(FontFile)
+            IF UCASE$(FontFile(i)) = thisFile$ THEN
+                Control(FontList).Value = i
+                EXIT FOR
+            END IF
+        NEXT
+    $END IF
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -2452,9 +2454,11 @@ SUB __UI_ValueChanged (id AS LONG)
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
         CASE FontList, FontSizeList
-            b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
-            b$ = MKL$(LEN(b$)) + b$
-            SendData b$, 8
+            $IF WIN THEN
+                b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
+                b$ = MKL$(LEN(b$)) + b$
+                SendData b$, 8
+            $END IF
         CASE Red
             Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
         CASE Green
