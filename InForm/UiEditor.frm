@@ -638,7 +638,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).WordWrap = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 485, 376, 15, 15, __UI_GetID("ZOrdering"))
-    Control(__UI_NewID).Font = SetFont("cour.ttf", 12)
+    Control(__UI_NewID).Font = SetFont("cour.ttf?/Library/Fonts/Courier New.ttf", 12)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
