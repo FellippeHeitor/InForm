@@ -165,10 +165,11 @@ SUB SelectNewControl (id AS LONG)
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
     DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG
+    DIM NewControl AS INTEGER
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
+    STATIC NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
 
     IF __UI_TotalSelectedControls < 0 THEN __UI_TotalSelectedControls = 0
 
@@ -185,29 +186,102 @@ SUB __UI_BeforeUpdateDisplay
 
     IF NOT MidRead THEN
         MidRead = True
+        DIM incomingData$, Signal$
+
+        GET #Host, , incomingData$
+        Stream$ = Stream$ + incomingData$
+
+        DIM thisData$, thisCommand$
+        DO WHILE INSTR(Stream$, "<END>") > 0
+            thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
+            Stream$ = MID$(Stream$, INSTR(Stream$, "<END>") + 5)
+            thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
+            thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
+            SELECT CASE UCASE$(thisCommand$)
+                CASE "WINDOWPOSITION"
+                    NewWindowLeft = CVI(LEFT$(thisData$, 2))
+                    NewWindowTop = CVI(MID$(thisData$, 3, 2))
+                CASE "AUTONAME"
+                    AutoNameControls = CVI(thisData$)
+                CASE "MOUSESWAP"
+                    __UI_MouseButtonsSwap = CVI(thisData$)
+                CASE "SHOWPOSSIZE"
+                    __UI_ShowPositionAndSize = CVI(thisData$)
+                CASE "SNAPLINES"
+                    __UI_SnapLines = CVI(thisData$)
+                CASE "NEWCONTROL"
+                    DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
+                    TempValue = CVI(thisData$)
+
+                    IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+                        ThisContainer = Control(__UI_FirstSelectedID).ParentID
+                        TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
+                        TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
+                    ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+                        ThisContainer = Control(__UI_FirstSelectedID).ID
+                        TempWidth = Control(__UI_FirstSelectedID).Width
+                        TempHeight = Control(__UI_FirstSelectedID).Height
+                    ELSE
+                        TempWidth = Control(__UI_FormID).Width
+                        TempHeight = Control(__UI_FormID).Height
+                    END IF
+
+                    IF TempValue > 0 THEN
+                        SaveUndoImage
+                        SELECT CASE TempValue
+                            CASE __UI_Type_Button
+                                TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
+                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                            CASE __UI_Type_Label
+                                TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                                AutoSizeLabel Control(TempValue)
+                            CASE __UI_Type_CheckBox, __UI_Type_RadioButton
+                                TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                            CASE __UI_Type_TextBox
+                                TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
+                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                            CASE __UI_Type_ListBox
+                                TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
+                                Control(TempValue).HasBorder = True
+                            CASE __UI_Type_DropdownList
+                                TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
+                            CASE __UI_Type_TrackBar
+                                TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
+                            CASE __UI_Type_ProgressBar
+                                TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
+                            CASE __UI_Type_PictureBox
+                                TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
+                            CASE __UI_Type_Frame
+                                TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
+                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                            CASE __UI_Type_MenuBar
+                                TempValue = AddNewMenuBarControl
+                            CASE __UI_Type_MenuItem
+                                IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                                    TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
+                                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                                    __UI_ActivateMenu Control(__UI_ParentMenu), False
+                                END IF
+                            CASE __UI_Type_ToggleSwitch
+                                TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempHeight \ 2 - 8, ThisContainer)
+                        END SELECT
+                        IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
+                            __UI_DestroyControl Control(__UI_ActiveMenu)
+                        END IF
+                        SelectNewControl TempValue
+                    END IF
+            END SELECT
+        LOOP
+
 
         $IF WIN THEN
-            'b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowLeft, b$
-            'NewWindowLeft = CVI(b$)
-            'b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowTop, b$
-            'NewWindowTop = CVI(b$)
-
             IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
                 _SCREENMOVE NewWindowLeft + 612, NewWindowTop
             END IF
         $END IF
 
-        'GET #UiEditorFile, OffsetAutoName, b$
-        'AutoNameControls = CVI(b$)
-
-        'GET #UiEditorFile, OffsetMouseSwapped, b$
-        '__UI_MouseButtonsSwap = CVI(b$)
-
-        'GET #UiEditorFile, OffsetShowPosSize, b$
-        '__UI_ShowPositionAndSize = CVI(b$)
-
-        'GET #UiEditorFile, OffsetSnapLines, b$
-        '__UI_SnapLines = CVI(b$)
 
         'Check if the editor is still alive
         $IF WIN THEN
@@ -248,71 +322,6 @@ SUB __UI_BeforeUpdateDisplay
                 WasResizing = False
                 SaveUndoImage
             END IF
-        END IF
-
-        'New control:
-        DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
-        'b$ = SPACE$(2): GET #UiEditorFile, OffsetNewControl, b$
-        'TempValue = CVI(b$)
-
-        IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
-            ThisContainer = Control(__UI_FirstSelectedID).ParentID
-            TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
-            TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
-        ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-            ThisContainer = Control(__UI_FirstSelectedID).ID
-            TempWidth = Control(__UI_FirstSelectedID).Width
-            TempHeight = Control(__UI_FirstSelectedID).Height
-        ELSE
-            TempWidth = Control(__UI_FormID).Width
-            TempHeight = Control(__UI_FormID).Height
-        END IF
-
-        IF TempValue > 0 THEN
-            SaveUndoImage
-            SELECT CASE TempValue
-                CASE __UI_Type_Button
-                    TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                CASE __UI_Type_Label
-                    TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                    AutoSizeLabel Control(TempValue)
-                CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                    TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                CASE __UI_Type_TextBox
-                    TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                CASE __UI_Type_ListBox
-                    TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
-                    Control(TempValue).HasBorder = True
-                CASE __UI_Type_DropdownList
-                    TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
-                CASE __UI_Type_TrackBar
-                    TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
-                CASE __UI_Type_ProgressBar
-                    TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
-                CASE __UI_Type_PictureBox
-                    TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
-                CASE __UI_Type_Frame
-                    TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                CASE __UI_Type_MenuBar
-                    TempValue = AddNewMenuBarControl
-                CASE __UI_Type_MenuItem
-                    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
-                        TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
-                        SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                        __UI_ActivateMenu Control(__UI_ParentMenu), False
-                    END IF
-                CASE __UI_Type_ToggleSwitch
-                    TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempHeight \ 2 - 8, ThisContainer)
-            END SELECT
-            IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
-                __UI_DestroyControl Control(__UI_ActiveMenu)
-            END IF
-            SelectNewControl TempValue
         END IF
 
         IF __UI_FirstSelectedID > 0 THEN

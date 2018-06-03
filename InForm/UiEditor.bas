@@ -315,19 +315,11 @@ SUB __UI_Click (id AS LONG)
             Control(id).Value = __UI_SnapLines
             SaveSettings
         CASE InsertMenuMenuBar
-            'UiEditorFile = FREEFILE
-            'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuBar) + "<END>"
-            'PUT #UiEditorFile, OffsetNewControl, b$
-            'CLOSE #UiEditorFile
             PUT #Client, , b$
             Edited = True
         CASE InsertMenuMenuItem
-            'UiEditorFile = FREEFILE
-            'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuItem) + "<END>"
-            'PUT #UiEditorFile, OffsetNewControl, b$
-            'CLOSE #UiEditorFile
             PUT #Client, , b$
             Edited = True
         CASE ViewMenuPreviewDetach
@@ -350,11 +342,7 @@ SUB __UI_Click (id AS LONG)
              AddRadioButton, AddListBox, AddDropdownList, _
              AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
              AddToggleSwitch
-            'UiEditorFile = FREEFILE
-            'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
-            'PUT #UiEditorFile, OffsetNewControl, b$
-            'CLOSE #UiEditorFile
             PUT #Client, , b$
             Edited = True
         CASE AddNumericBox
@@ -3011,30 +2999,15 @@ SUB LoadPreview
 END SUB
 
 SUB SendData (b$, Property AS INTEGER)
-    'DIM FileNum AS INTEGER
     IF PreviewSelectionRectangle THEN EXIT SUB
-
-    'FileNum = FREEFILE
-    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
-
-    'Send the data first, then the signal
-    'PUT #FileNum, OffsetPropertyValue, b$
-    'b$ = MKI$(Property): PUT #FileNum, OffsetPropertyChanged, b$
-    'b$ = MKI$(-1): PUT #FileNum, OffsetNewDataFromEditor, b$
-    'CLOSE #FileNum
     b$ = "PROPERTY>" + MKI$(Property) + b$ + "<END>"
     PUT #Client, , b$
 END SUB
 
 SUB SendSignal (Value AS INTEGER)
     DIM b$
-    'DIM FileNum AS INTEGER, b$
-    'FileNum = FREEFILE
-    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
-
     b$ = "SIGNAL>" + MKI$(Value) + "<END>"
     PUT #Client, , b$
-    'CLOSE #FileNum
 END SUB
 
 SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
@@ -3129,11 +3102,11 @@ SUB CheckPreview
         SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
 
         DO
-            Client = _OPENCONNECTION(Host)
-            IF Client THEN EXIT DO
-            IF _EXIT THEN SYSTEM 'Can't force user to wait...
-            _DISPLAY
-            _LIMIT 15
+        Client = _OPENCONNECTION(Host)
+        IF Client THEN EXIT DO
+        IF _EXIT THEN SYSTEM 'Can't force user to wait...
+        _DISPLAY
+        _LIMIT 15
         LOOP
 
         Handshake
