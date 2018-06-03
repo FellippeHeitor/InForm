@@ -175,14 +175,26 @@ SUB __UI_BeforeUpdateDisplay
 
     SavePreview InDisk
 
-    b$ = MKL$(__UI_DefaultButtonID)
-    SendData b$, "DEFAULTBUTTONID"
+    STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
+    STATIC prevSelectionRectangle AS INTEGER
 
-    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
-    SendData b$, "MENUPANELACTIVE"
+    IF __UI_DefaultButtonID <> prevDefaultButton THEN
+        prevDefaultButton = __UI_DefaultButtonID
+        b$ = MKL$(__UI_DefaultButtonID)
+        SendData b$, "DEFAULTBUTTONID"
+    END IF
 
-    IF __UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
-    SendData b$, "SELECTIONRECTANGLE"
+    IF prevMenuPanelActive <> (__UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_") THEN
+        prevMenuPanelActive = (__UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_")
+        b$ = MKI$(prevMenuPanelActive)
+        SendData b$, "MENUPANELACTIVE"
+    END IF
+
+    IF prevSelectionRectangle <> (__UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown) THEN
+        prevSelectionRectangle = (__UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown)
+        b$ = MKI$(prevSelectionRectangle)
+        SendData b$, "SELECTIONRECTANGLE"
+    END IF
 
     IF NOT MidRead THEN
         MidRead = True
@@ -330,33 +342,29 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         END IF
 
+        STATIC prevImgWidthSent AS INTEGER, prevImgHeightSent AS INTEGER
         IF __UI_FirstSelectedID > 0 THEN
             IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
-                b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
-                SendData b$, "ORIGINALIMAGEWIDTH"
-                b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
-                SendData b$, "ORIGINALIMAGEHEIGHT"
-            ELSE
-                b$ = MKI$(0)
-                SendData b$, "ORIGINALIMAGEWIDTH"
-                SendData b$, "ORIGINALIMAGEHEIGHT"
-            END IF
+                IF prevImgWidthSent <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) OR _
+                   prevImgHeightSent <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                    prevImgWidthSent = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
+                    prevImgHeightSent = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
+                    b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
+                    SendData b$, "ORIGINALIMAGEWIDTH"
 
-            IF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox AND Control(__UI_FirstSelectedID).NumericOnly <> False THEN
-                IF Control(__UI_FirstSelectedID).NumericOnly = True THEN
-                    SendSignal -12
-                ELSEIF Control(__UI_FirstSelectedID).NumericOnly = __UI_NumericWithBounds THEN
-                    SendSignal -13
-                ELSE
-                    SendSignal -14
+                    b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
+                    SendData b$, "ORIGINALIMAGEHEIGHT"
                 END IF
             ELSE
-                SendSignal -11
+                IF prevImgWidthSent <> 0 OR _
+                   prevImgHeightSent <> 0 THEN
+                    prevImgWidthSent = 0
+                    prevImgHeightSent = 0
+                    b$ = MKI$(0)
+                    SendData b$, "ORIGINALIMAGEWIDTH"
+                    SendData b$, "ORIGINALIMAGEHEIGHT"
+                END IF
             END IF
-
-        ELSE
-            SendSignal -11
-            SendSignal -14
         END IF
 
         DO WHILE LEN(Signal$)
@@ -972,17 +980,40 @@ SUB __UI_BeforeUpdateDisplay
             b$ = "SIGNAL>" + MKI$(-2) + "<END>" 'Signal to the editor that the preview can't show the context menu
             PUT #Host, , b$
         ELSEIF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
+            STATIC LocalMenuShown AS _BYTE, LocalMenuShownSignalSent AS _BYTE
+            LocalMenuShown = True
+        ELSE
+            LocalMenuShown = False
+            LocalMenuShownSignalSent = False
+        END IF
+
+        IF LocalMenuShown AND NOT LocalMenuShownSignalSent THEN
             b$ = "SIGNAL>" + MKI$(-5) + "<END>" 'Signal to the editor that a context menu is successfully shown
+            PUT #Host, , b$
+            LocalMenuShownSignalSent = True
+        END IF
+
+        STATIC prevTotalSelected AS LONG, prevFirstSelected AS LONG
+        STATIC prevFormID AS LONG
+
+        IF __UI_TotalSelectedControls <> prevTotalSelected THEN
+            prevTotalSelected = __UI_TotalSelectedControls
+            b$ = "TOTALSELECTEDCONTROLS>" + MKL$(__UI_TotalSelectedControls) + "<END>"
             PUT #Host, , b$
         END IF
 
-        b$ = "TOTALSELECTEDCONTROLS>" + MKL$(__UI_TotalSelectedControls) + "<END>"
-        PUT #Host, , b$
         IF Control(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
-        b$ = "FIRSTSELECTED>" + MKL$(__UI_FirstSelectedID) + "<END>"
-        PUT #Host, , b$
-        b$ = "FORMID>" + MKL$(__UI_FormID) + "<END>"
-        PUT #Host, , b$
+        IF __UI_FirstSelectedID <> prevFirstSelected THEN
+            prevFirstSelected = __UI_FirstSelectedID
+            b$ = "FIRSTSELECTED>" + MKL$(__UI_FirstSelectedID) + "<END>"
+            PUT #Host, , b$
+        END IF
+
+        IF __UI_FormID <> prevFormID THEN
+            prevFormID = __UI_FormID
+            b$ = "FORMID>" + MKL$(__UI_FormID) + "<END>"
+            PUT #Host, , b$
+        END IF
 
         MidRead = False
     END IF
@@ -1049,6 +1080,9 @@ SUB __UI_OnLoad
     LOOP UNTIL Host < 0 OR TIMER - start! > 10
 
     IF Host = 0 THEN GOTO ForceQuit
+
+    b$ = "Connected! Handshaking..."
+    GOSUB ShowMessage
 
     'Handshake: each module sends the other their PID:
     DIM incomingData$, thisData$

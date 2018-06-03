@@ -852,7 +852,7 @@ END SUB
 SUB __UI_BeforeUpdateDisplay
     DIM b$, c$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
     DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
-    DIM OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
+    STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
     STATIC CheckUpdateDone AS _BYTE
 
@@ -954,11 +954,20 @@ SUB __UI_BeforeUpdateDisplay
 
         $IF WIN THEN
             IF PreviewAttached THEN
-                b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
-                PUT #Client, , b$
+                STATIC prevScreenX AS INTEGER, prevScreenY AS INTEGER
+                IF prevScreenX <> _SCREENX OR prevScreenY <> _SCREENY THEN
+                    prevScreenX = _SCREENX
+                    prevScreenY = _SCREENY
+                    b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
+                    PUT #Client, , b$
+                END IF
             ELSE
-                b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
-                PUT #Client, , b$
+                IF prevScreenX <> -32001 OR prevScreenY <> -32001 THEN
+                    prevScreenX = -32001
+                    prevScreenY = -32001
+                    b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
+                    PUT #Client, , b$
+                END IF
             END IF
         $ELSE
             IF PreviewAttached = True THEN
@@ -969,17 +978,34 @@ SUB __UI_BeforeUpdateDisplay
             Control(ViewMenuPreviewDetach).Value = False
         $END IF
 
-        b$ = "AUTONAME>" + MKI$(AutoNameControls) + "<END>"
-        PUT #Client, , b$
+        STATIC prevAutoName AS _BYTE, prevMouseSwap AS _BYTE
+        STATIC prevShowPos AS _BYTE, prevSnapLines AS _BYTE
+        STATIC SignalsFirstSent AS _BYTE
 
-        b$ = "MOUSESWAP>" + MKI$(__UI_MouseButtonsSwap) + "<END>"
-        PUT #Client, , b$
+        IF prevAutoName <> AutoNameControls OR SignalsFirstSent = False THEN
+            prevAutoName = AutoNameControls
+            b$ = "AUTONAME>" + MKI$(AutoNameControls) + "<END>"
+            PUT #Client, , b$
+        END IF
 
-        b$ = "SHOWPOSSIZE>" + MKI$(__UI_ShowPositionAndSize) + "<END>"
-        PUT #Client, , b$
+        IF prevMouseSwap <> __UI_MouseButtonsSwap OR SignalsFirstSent = False THEN
+            prevMouseSwap = __UI_MouseButtonsSwap
+            b$ = "MOUSESWAP>" + MKI$(__UI_MouseButtonsSwap) + "<END>"
+            PUT #Client, , b$
+        END IF
 
-        b$ = "SNAPLINES>" + MKI$(__UI_SnapLines) + "<END>"
-        PUT #Client, , b$
+        IF prevShowPos <> __UI_ShowPositionAndSize OR SignalsFirstSent = False THEN
+            prevShowPos = __UI_ShowPositionAndSize
+            b$ = "SHOWPOSSIZE>" + MKI$(__UI_ShowPositionAndSize) + "<END>"
+            PUT #Client, , b$
+        END IF
+
+        IF prevSnapLines <> __UI_SnapLines OR SignalsFirstSent = False THEN
+            prevSnapLines = __UI_SnapLines
+            b$ = "SNAPLINES>" + MKI$(__UI_SnapLines) + "<END>"
+            PUT #Client, , b$
+        END IF
+        SignalsFirstSent = True
 
         DIM thisData$, thisCommand$
         DO WHILE INSTR(Stream$, "<END>") > 0
@@ -2323,7 +2349,7 @@ SUB __UI_OnLoad
 
     _FREEIMAGE CommControls
 
-    b$ = "Waiting for preview component..."
+    b$ = "Connecting to preview component..."
     GOSUB ShowMessage
     DO
         Client = _OPENCONNECTION(Host)
@@ -2333,6 +2359,8 @@ SUB __UI_OnLoad
         _LIMIT 15
     LOOP
 
+    b$ = "Connected! Handshaking..."
+    GOSUB ShowMessage
     Handshake
 
     b$ = "InForm Designer"
