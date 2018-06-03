@@ -122,6 +122,7 @@ DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
+DIM SHARED Stream$
 
 TYPE newInputBox
     ID AS LONG
@@ -960,11 +961,10 @@ SUB __UI_BeforeUpdateDisplay
 
     IF NOT MidRead THEN
         MidRead = True
-        STATIC stream$
         DIM incomingData$, Signal$
 
         GET #Client, , incomingData$
-        stream$ = stream$ + incomingData$
+        Stream$ = Stream$ + incomingData$
 
         Reload:
         LoadPreview
@@ -999,9 +999,9 @@ SUB __UI_BeforeUpdateDisplay
         PUT #Client, , b$
 
         DIM thisData$, thisCommand$
-        DO WHILE INSTR(stream$, "<END>") > 0
-            thisData$ = LEFT$(stream$, INSTR(stream$, "<END>") - 1)
-            stream$ = MID$(stream$, INSTR(stream$, "<END>") + 5)
+        DO WHILE INSTR(Stream$, "<END>") > 0
+            thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
+            Stream$ = MID$(Stream$, INSTR(Stream$, "<END>") + 5)
             thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
             thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
             SELECT CASE UCASE$(thisCommand$)
@@ -1991,6 +1991,38 @@ END SUB
 SUB __UI_FormResized
 END SUB
 
+SUB Handshake
+    'Handshake: each module sends the other their PID:
+
+    DIM b$, i AS INTEGER
+
+    Stream$ = "" 'clear buffer
+
+    b$ = "EDITORPID>" + MKL$(__UI_GetPID) + "<END>"
+    PUT #Client, , b$
+
+    DIM start!, incomingData$, thisData$
+    start! = TIMER
+    DO
+        incomingData$ = ""
+        GET #Client, , incomingData$
+        Stream$ = Stream$ + incomingData$
+        IF INSTR(Stream$, "<END>") THEN
+            thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
+            Stream$ = MID$(Stream$, LEN(thisData$) + 6)
+            IF LEFT$(thisData$, 11) = "PREVIEWPID>" THEN
+                UiPreviewPID = CVL(MID$(thisData$, 12))
+            END IF
+            EXIT DO
+        END IF
+    LOOP UNTIL TIMER - start! > 10
+
+    IF UiPreviewPID = 0 THEN
+        i = MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", MsgBox_OkOnly + MsgBox_Critical)
+        SYSTEM
+    END IF
+END SUB
+
 SUB __UI_OnLoad
     DIM i AS LONG, b$, UiEditorFile AS INTEGER
     DIM prevDest AS LONG
@@ -2190,12 +2222,6 @@ SUB __UI_OnLoad
         SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
     $END IF
 
-    'UiEditorFile = FREEFILE
-    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-    'b$ = MKL$(__UI_GetPID)
-    'PUT #UiEditorFile, OffsetEditorPID, b$
-    'CLOSE #UiEditorFile
-
     b$ = "Reading directory..."
     GOSUB ShowMessage
 
@@ -2324,6 +2350,8 @@ SUB __UI_OnLoad
         _DISPLAY
         _LIMIT 15
     LOOP
+
+    Handshake
 
     b$ = "InForm Designer"
     GOSUB ShowMessage
@@ -3047,14 +3075,9 @@ END SUB
 SUB CheckPreview
     'Check if the preview window is still alive
     DIM b$, UiEditorFile AS INTEGER
-    EXIT SUB
+
     IF OpenDialogOpen THEN EXIT SUB
 
-    UiEditorFile = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-    b$ = SPACE$(4): GET #UiEditorFile, OffsetPreviewPID, b$
-    CLOSE #UiEditorFile
-    UiPreviewPID = CVL(b$)
     $IF WIN THEN
         DIM hnd&, b&, c&, ExitCode&
         IF UiPreviewPID > 0 THEN
@@ -3069,21 +3092,23 @@ SUB CheckPreview
                 TIMER(__UI_EventsTimer) OFF
                 Control(ViewMenuPreview).Disabled = False
                 __UI_WaitMessage = "Reloading preview window..."
-                'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-                'b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
-                'CLOSE #UiEditorFile
-                'UiPreviewPID = 0
-                'SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
+                UiPreviewPID = 0
                 __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
-                DO
-                    _LIMIT 10
-                    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-                    'b$ = SPACE$(4)
-                    'GET #UiEditorFile, OffsetPreviewPID, b$
-                    'CLOSE #UiEditorFile
-                LOOP UNTIL CVL(b$) > 0
 
-                UiPreviewPID = CVL(b$)
+                CLOSE Client
+                Client = 0
+
+                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
+
+                DO
+                    Client = _OPENCONNECTION(Host)
+                    IF Client THEN EXIT DO
+                    IF _EXIT THEN SYSTEM 'Can't force user to wait...
+                    _DISPLAY
+                    _LIMIT 15
+                LOOP
+
+                Handshake
 
                 TIMER(__UI_EventsTimer) ON
             END IF
@@ -3095,21 +3120,23 @@ SUB CheckPreview
         TIMER(__UI_EventsTimer) OFF
         Control(ViewMenuPreview).Disabled = False
         __UI_WaitMessage = "Reloading preview window..."
-        OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-        b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
-        CLOSE #UiEditorFile
         UiPreviewPID = 0
-        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
         __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
-        DO
-        _LIMIT 10
-        OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-        b$ = SPACE$(4)
-        GET #UiEditorFile, OffsetPreviewPID, b$
-        CLOSE #UiEditorFile
-        LOOP UNTIL CVL(b$) > 0
 
-        UiPreviewPID = CVL(b$)
+        CLOSE Client
+        Client = 0
+
+        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+
+        DO
+            Client = _OPENCONNECTION(Host)
+            IF Client THEN EXIT DO
+            IF _EXIT THEN SYSTEM 'Can't force user to wait...
+            _DISPLAY
+            _LIMIT 15
+        LOOP
+
+        Handshake
 
         TIMER(__UI_EventsTimer) ON
         ELSE

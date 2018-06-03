@@ -22,12 +22,12 @@ CONST OffsetOriginalImageHeight = 49
 CONST OffsetSelectionRectangle = 51
 CONST OffsetPropertyValue = 53
 
-DIM SHARED UiPreviewPID AS LONG
-DIM SHARED ExeIcon AS LONG
+DIM SHARED UiEditorPID AS LONG, ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
 DIM SHARED IsCreating AS _BYTE
 DIM SHARED Host AS LONG, HostPort AS STRING
+DIM SHARED Stream$
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -166,16 +166,13 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
-    DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG, UiEditorPID AS LONG
+    DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
 
     IF __UI_TotalSelectedControls < 0 THEN __UI_TotalSelectedControls = 0
 
     SavePreview InDisk
-
-    b$ = MKL$(UiPreviewPID)
-    SendData b$, "PREVIEWPID"
 
     b$ = MKL$(__UI_DefaultButtonID)
     SendData b$, "DEFAULTBUTTONID"
@@ -188,8 +185,6 @@ SUB __UI_BeforeUpdateDisplay
 
     IF NOT MidRead THEN
         MidRead = True
-        'b$ = SPACE$(4): GET #UiEditorFile, OffsetEditorPID, b$
-        'UiEditorPID = CVL(b$)
 
         $IF WIN THEN
             'b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowLeft, b$
@@ -216,23 +211,23 @@ SUB __UI_BeforeUpdateDisplay
 
         'Check if the editor is still alive
         $IF WIN THEN
-            'DIM hnd&, b&, ExitCode&
-            'hnd& = OpenProcess(&H400, 0, UiEditorPID)
-            'b& = GetExitCodeProcess(hnd&, ExitCode&)
-            'IF b& = 1 AND ExitCode& = 259 THEN
-            '    'Editor is active.
-            '    EditorWasActive = True
-            'ELSE
-            '    'Editor was closed.
-            '    IF EditorWasActive = False THEN
-            '        'Preview was launched by user
-            '        DIM Answer AS LONG
-            '        _SCREENHIDE
-            '        Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
-            '    END IF
-            '    SYSTEM
-            'END IF
-            'b& = CloseHandle(hnd&)
+            DIM hnd&, b&, ExitCode&
+            hnd& = OpenProcess(&H400, 0, UiEditorPID)
+            b& = GetExitCodeProcess(hnd&, ExitCode&)
+            IF b& = 1 AND ExitCode& = 259 THEN
+                'Editor is active.
+                EditorWasActive = True
+            ELSE
+                'Editor was closed.
+                IF EditorWasActive = False THEN
+                    'Preview was launched by user
+                    DIM Answer AS LONG
+                    _SCREENHIDE
+                    Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
+                END IF
+                SYSTEM
+            END IF
+            b& = CloseHandle(hnd&)
         $ELSE
             IF PROCESS_CLOSED(UiEditorPID, 0) THEN SYSTEM
         $END IF
@@ -982,7 +977,6 @@ END SUB
 
 SUB __UI_BeforeInit
     __UI_DesignMode = True
-    UiPreviewPID = __UI_GetPID
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN
         DIM FileToLoad AS INTEGER, a$
@@ -1037,6 +1031,28 @@ SUB __UI_OnLoad
     LOOP UNTIL Host < 0 OR TIMER - start! > 10
 
     IF Host = 0 THEN GOTO ForceQuit
+
+    'Handshake: each module sends the other their PID:
+    DIM incomingData$, thisData$
+    start! = TIMER
+    DO
+        incomingData$ = ""
+        GET #Host, , incomingData$
+        Stream$ = Stream$ + incomingData$
+        IF INSTR(Stream$, "<END>") THEN
+            thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
+            Stream$ = MID$(Stream$, LEN(thisData$) + 6)
+            IF LEFT$(thisData$, 10) = "EDITORPID>" THEN
+                UiEditorPID = CVL(MID$(thisData$, 11))
+            END IF
+            EXIT DO
+        END IF
+    LOOP UNTIL TIMER - start! > 10
+
+    IF UiEditorPID = 0 THEN GOTO ForceQuit
+
+    b$ = "PREVIEWPID>" + MKL$(__UI_GetPID) + "<END>"
+    PUT #Host, , b$
 
     EXIT SUB
     ShowMessage:
