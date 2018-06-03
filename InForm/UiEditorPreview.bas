@@ -166,7 +166,7 @@ END SUB
 
 SUB __UI_BeforeUpdateDisplay
     DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG
-    DIM NewControl AS INTEGER
+    DIM NewControl AS INTEGER, FileNameToLoad$
     STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
     STATIC NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
@@ -186,7 +186,7 @@ SUB __UI_BeforeUpdateDisplay
 
     IF NOT MidRead THEN
         MidRead = True
-        DIM incomingData$, Signal$
+        DIM incomingData$, Signal$, Property$
 
         GET #Host, , incomingData$
         Stream$ = Stream$ + incomingData$
@@ -209,6 +209,12 @@ SUB __UI_BeforeUpdateDisplay
                     __UI_ShowPositionAndSize = CVI(thisData$)
                 CASE "SNAPLINES"
                     __UI_SnapLines = CVI(thisData$)
+                CASE "SIGNAL"
+                    Signal$ = Signal$ + thisData$
+                CASE "PROPERTY"
+                    Property$ = Property$ + thisData$
+                CASE "OPENFILE"
+                    FileNameToLoad$ = thisData$
                 CASE "NEWCONTROL"
                     DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
                     TempValue = CVI(thisData$)
@@ -353,70 +359,73 @@ SUB __UI_BeforeUpdateDisplay
             SendSignal -14
         END IF
 
-        'b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromEditor, b$
-        'TempValue = CVI(b$)
-        IF TempValue = -2 THEN
-            'Hide the preview
-            _SCREENHIDE
-        ELSEIF TempValue = -3 THEN
-            'Show the preview
-            _SCREENSHOW
-        ELSEIF TempValue = -4 THEN
-            'Load an existing file
-            IsCreating = True
-            'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-            'b$ = SPACE$(CVI(b$)): GET #UiEditorFile, , b$
-            DIM FileToLoad AS INTEGER
-            FileToLoad = FREEFILE
-            OPEN b$ FOR BINARY AS #FileToLoad
-            a$ = SPACE$(LOF(FileToLoad))
-            GET #FileToLoad, 1, a$
-            CLOSE #FileToLoad
+        DO WHILE LEN(Signal$)
+            b$ = LEFT$(Signal$, 2)
+            Signal$ = MID$(Signal$, 3)
+            TempValue = CVI(b$)
+            IF TempValue = -2 THEN
+                'Hide the preview
+                _SCREENHIDE
+            ELSEIF TempValue = -3 THEN
+                'Show the preview
+                _SCREENSHOW
+            ELSEIF TempValue = -4 THEN
+                'Load an existing file
+                IsCreating = True
+                DIM FileToLoad AS INTEGER
+                FileToLoad = FREEFILE
+                OPEN FileNameToLoad$ FOR BINARY AS #FileToLoad
+                a$ = SPACE$(LOF(FileToLoad))
+                GET #FileToLoad, 1, a$
+                CLOSE #FileToLoad
 
-            FileToLoad = FREEFILE
-            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
-            PUT #FileToLoad, 1, a$
-            CLOSE #FileToLoad
+                FileToLoad = FREEFILE
+                OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+                PUT #FileToLoad, 1, a$
+                CLOSE #FileToLoad
 
-            _SCREENSHOW
-            IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
-                LoadPreviewText
-            ELSE
+                _SCREENSHOW
+                IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
+                    LoadPreviewText
+                ELSE
+                    LoadPreview InDisk
+                END IF
+                UndoPointer = 0
+                TotalUndoImages = 0
+                SendSignal -7 'Form just loaded
+            ELSEIF TempValue = -5 THEN
+                'Reset request (new form)
+                IsCreating = True
+                a$ = Unpack$(EmptyForm$)
+
+                FileToLoad = FREEFILE
+                OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+                PUT #FileToLoad, 1, a$
+                CLOSE #FileToLoad
+
                 LoadPreview InDisk
+                LoadDefaultFonts
+
+                UndoPointer = 0
+                TotalUndoImages = 0
+                _ICON
+                SendSignal -7 'New form created
+            ELSEIF TempValue = -6 THEN
+                'Set current button as default
+                IF __UI_DefaultButtonID = __UI_FirstSelectedID THEN
+                    __UI_DefaultButtonID = 0
+                ELSE
+                    __UI_DefaultButtonID = __UI_FirstSelectedID
+                END IF
+            ELSEIF TempValue = -7 THEN
+                __UI_RestoreImageOriginalSize
             END IF
-            UndoPointer = 0
-            TotalUndoImages = 0
-            SendSignal -7 'Form just loaded
-        ELSEIF TempValue = -5 THEN
-            'Reset request (new form)
-            IsCreating = True
-            a$ = Unpack$(EmptyForm$)
+        LOOP
 
-            FileToLoad = FREEFILE
-            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
-            PUT #FileToLoad, 1, a$
-            CLOSE #FileToLoad
-
-            LoadPreview InDisk
-            LoadDefaultFonts
-
-            UndoPointer = 0
-            TotalUndoImages = 0
-            _ICON
-            SendSignal -7 'New form created
-        ELSEIF TempValue = -6 THEN
-            'Set current button as default
-            IF __UI_DefaultButtonID = __UI_FirstSelectedID THEN
-                __UI_DefaultButtonID = 0
-            ELSE
-                __UI_DefaultButtonID = __UI_FirstSelectedID
-            END IF
-        ELSEIF TempValue = -7 THEN
-            __UI_RestoreImageOriginalSize
-        ELSEIF TempValue = -1 THEN
+        DO WHILE LEN(Property$)
             DIM FloatValue AS _FLOAT
             'Editor sent property value
-            'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyChanged, b$
+            b$ = ReadSequential$(Property$, 2)
             TempValue = CVI(b$)
             IF TempValue <> 213 AND TempValue <> 214 AND TempValue <> 215 AND TempValue <> 217 AND TempValue <> 221 THEN
                 'Save undo image except for select, undo, redo, copy and select all signals
@@ -424,16 +433,16 @@ SUB __UI_BeforeUpdateDisplay
             END IF
             SELECT CASE TempValue
                 CASE 1 'Name
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    b$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, CVL(b$))
                     IF __UI_TotalSelectedControls = 1 THEN
                         Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
                     ELSEIF __UI_TotalSelectedControls = 0 THEN
                         Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
                     END IF
                 CASE 2 'Caption
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    b$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, CVL(b$))
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -487,8 +496,8 @@ SUB __UI_BeforeUpdateDisplay
 
                     SkipAutoName:
                 CASE 3 'Text
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    b$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, CVL(b$))
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -534,7 +543,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     END IF
                 CASE 4 'Top
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
@@ -542,7 +551,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 5 'Left
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
@@ -550,7 +559,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 6 'Width
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     IF TempValue < 1 THEN TempValue = 1
                     IF __UI_TotalSelectedControls > 0 THEN
@@ -564,7 +573,7 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).Width = TempValue
                     END IF
                 CASE 7 'Height
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     IF TempValue < 1 THEN TempValue = 1
                     IF __UI_TotalSelectedControls > 0 THEN
@@ -578,8 +587,8 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).Height = TempValue
                     END IF
                 CASE 8 'Font
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    b$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, CVL(b$))
                     DIM NewFontFile AS STRING
                     DIM NewFontSize AS INTEGER
                     DIM FindSep AS INTEGER, TotalSep AS INTEGER
@@ -631,15 +640,15 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     END IF
                 CASE 9 'Tooltip
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    b$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, CVL(b$))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
                         END IF
                     NEXT
                 CASE 10 'Value
-                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, LEN(FloatValue))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
@@ -660,14 +669,14 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 11 'Min
-                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, LEN(FloatValue))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Min = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 12 'Max
-                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, LEN(FloatValue))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Max = _CV(_FLOAT, b$)
@@ -678,56 +687,56 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 13 'Interval
-                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, LEN(FloatValue))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Interval = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 14 'Stretch
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Stretch = CVI(b$)
                         END IF
                     NEXT
                 CASE 15 'Has border
-                    ''b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).HasBorder = CVI(b$)
                         END IF
                     NEXT
                 CASE 16 'Show percentage
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).ShowPercentage = CVI(b$)
                         END IF
                     NEXT
                 CASE 17 'Word wrap
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).WordWrap = CVI(b$)
                         END IF
                     NEXT
                 CASE 18 'Can have focus
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).CanHaveFocus = CVI(b$)
                         END IF
                     NEXT
                 CASE 19 'Disabled
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Disabled = CVI(b$)
                         END IF
                     NEXT
                 CASE 20 'Hidden
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Hidden = CVI(b$)
@@ -737,13 +746,13 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 21 'CenteredWindow
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
                         Control(__UI_FormID).CenteredWindow = TempValue
                     END IF
                 CASE 22 'Alignment
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Align = CVI(b$)
@@ -755,7 +764,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 23 'ForeColor
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -771,7 +780,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 24 'BackColor
-                    ''b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -787,7 +796,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 25 'SelectedForeColor
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -803,7 +812,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 26 'SelectedBackColor
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -819,7 +828,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 27 'BorderColor
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -830,20 +839,20 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
                     END IF
                 CASE 28 'BackStyle
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).BackStyle = CVI(b$)
                         END IF
                     NEXT
                 CASE 29 'CanResize
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
                         Control(__UI_FormID).CanResize = TempValue
                     END IF
                 CASE 31 'Padding
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
@@ -853,25 +862,25 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 32 'Vertical Alignment
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).VAlign = CVI(b$)
                         END IF
                     NEXT
                 CASE 33 'Password field
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
                             Control(i).PasswordField = CVI(b$)
                         END IF
                     NEXT
                 CASE 34 'Encoding
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
                     Control(__UI_FormID).Encoding = CVL(b$)
                 CASE 35 'Mask
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    b$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, CVL(b$))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Mask(i) = b$
@@ -880,14 +889,14 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 36 'MinInterval
-                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, LEN(FloatValue))
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).MinInterval = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 37 'BulletStyle
-                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 2)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).BulletStyle = CVI(b$)
@@ -898,8 +907,8 @@ SUB __UI_BeforeUpdateDisplay
                     DoAlign TempValue
                 CASE 211, 212 'Z-Ordering -> Move up/down
                     DIM tID1 AS LONG, tID2 AS LONG
-                    'a$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, a$
-                    'b$ = SPACE$(4): GET #UiEditorFile, , b$
+                    a$ = ReadSequential$(Property$, 4)
+                    b$ = ReadSequential$(Property$, 4)
                     tID1 = Control(CVL(a$)).ID
                     tID2 = Control(CVL(b$)).ID
                     SWAP Control(CVL(b$)), Control(CVL(a$))
@@ -923,7 +932,7 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 CASE 213
                     'Select control
-                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    b$ = ReadSequential$(Property$, 4)
 
                     'Desselect all first:
                     FOR i = 1 TO UBOUND(Control)
@@ -956,7 +965,7 @@ SUB __UI_BeforeUpdateDisplay
                     AlternateNumericOnlyProperty
             END SELECT
             __UI_ForceRedraw = True
-        END IF
+        LOOP
 
         IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
             __UI_DestroyControl Control(__UI_ActiveMenu)

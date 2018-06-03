@@ -558,12 +558,7 @@ SUB __UI_Click (id AS LONG)
                 DIM FileToOpen$, FreeFileNum AS INTEGER
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
                 IF _FILEEXISTS(FileToOpen$) THEN
-                    'FreeFileNum = FREEFILE
-                    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FreeFileNum
-                    'Send the data first, then the signal
-                    b$ = "OPENFILE>" + MKI$(LEN(FileToOpen$)) + FileToOpen$ + "<END>"
-                    'PUT #FreeFileNum, OffsetPropertyValue, b$
-                    'CLOSE #FreeFileNum
+                    b$ = "OPENFILE>" + FileToOpen$ + "<END>"
                     PUT #Client, , b$
 
                     SendSignal -4
@@ -2174,7 +2169,6 @@ SUB __UI_OnLoad
     b$ = "Starting host (click 'unblock' if your Operating System asks)..."
     GOSUB ShowMessage
     HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
-    _TITLE HostPort
     Host = _OPENHOST("TCP/IP:" + HostPort)
 
     b$ = "Checking Preview component..."
