@@ -27,6 +27,7 @@ DIM SHARED ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
 DIM SHARED IsCreating AS _BYTE
+DIM SHARED Host AS LONG, HostPort AS STRING
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -174,67 +175,64 @@ SUB __UI_BeforeUpdateDisplay
     SavePreview InDisk
 
     b$ = MKL$(UiPreviewPID)
-    SendData b$, OffsetPreviewPID
+    SendData b$, "PREVIEWPID"
 
     b$ = MKL$(__UI_DefaultButtonID)
-    SendData b$, OffsetDefaultButtonID
+    SendData b$, "DEFAULTBUTTONID"
 
     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
-    SendData b$, OffsetMenuPanelIsON
+    SendData b$, "MENUPANELACTIVE"
 
     IF __UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown THEN b$ = MKI$(-1) ELSE b$ = MKI$(0)
-    SendData b$, OffsetSelectionRectangle
-
-    UiEditorFile = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+    SendData b$, "SELECTIONRECTANGLE"
 
     IF NOT MidRead THEN
         MidRead = True
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetEditorPID, b$
-        UiEditorPID = CVL(b$)
+        'b$ = SPACE$(4): GET #UiEditorFile, OffsetEditorPID, b$
+        'UiEditorPID = CVL(b$)
 
         $IF WIN THEN
-            b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowLeft, b$
-            NewWindowLeft = CVI(b$)
-            b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowTop, b$
-            NewWindowTop = CVI(b$)
+            'b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowLeft, b$
+            'NewWindowLeft = CVI(b$)
+            'b$ = SPACE$(2): GET #UiEditorFile, OffsetWindowTop, b$
+            'NewWindowTop = CVI(b$)
 
             IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
                 _SCREENMOVE NewWindowLeft + 612, NewWindowTop
             END IF
         $END IF
 
-        GET #UiEditorFile, OffsetAutoName, b$
-        AutoNameControls = CVI(b$)
+        'GET #UiEditorFile, OffsetAutoName, b$
+        'AutoNameControls = CVI(b$)
 
-        GET #UiEditorFile, OffsetMouseSwapped, b$
-        __UI_MouseButtonsSwap = CVI(b$)
+        'GET #UiEditorFile, OffsetMouseSwapped, b$
+        '__UI_MouseButtonsSwap = CVI(b$)
 
-        GET #UiEditorFile, OffsetShowPosSize, b$
-        __UI_ShowPositionAndSize = CVI(b$)
+        'GET #UiEditorFile, OffsetShowPosSize, b$
+        '__UI_ShowPositionAndSize = CVI(b$)
 
-        GET #UiEditorFile, OffsetSnapLines, b$
-        __UI_SnapLines = CVI(b$)
+        'GET #UiEditorFile, OffsetSnapLines, b$
+        '__UI_SnapLines = CVI(b$)
 
         'Check if the editor is still alive
         $IF WIN THEN
-            DIM hnd&, b&, ExitCode&
-            hnd& = OpenProcess(&H400, 0, UiEditorPID)
-            b& = GetExitCodeProcess(hnd&, ExitCode&)
-            IF b& = 1 AND ExitCode& = 259 THEN
-                'Editor is active.
-                EditorWasActive = True
-            ELSE
-                'Editor was closed.
-                IF EditorWasActive = False THEN
-                    'Preview was launched by user
-                    DIM Answer AS LONG
-                    _SCREENHIDE
-                    Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
-                END IF
-                SYSTEM
-            END IF
-            b& = CloseHandle(hnd&)
+            'DIM hnd&, b&, ExitCode&
+            'hnd& = OpenProcess(&H400, 0, UiEditorPID)
+            'b& = GetExitCodeProcess(hnd&, ExitCode&)
+            'IF b& = 1 AND ExitCode& = 259 THEN
+            '    'Editor is active.
+            '    EditorWasActive = True
+            'ELSE
+            '    'Editor was closed.
+            '    IF EditorWasActive = False THEN
+            '        'Preview was launched by user
+            '        DIM Answer AS LONG
+            '        _SCREENHIDE
+            '        Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
+            '    END IF
+            '    SYSTEM
+            'END IF
+            'b& = CloseHandle(hnd&)
         $ELSE
             IF PROCESS_CLOSED(UiEditorPID, 0) THEN SYSTEM
         $END IF
@@ -259,9 +257,8 @@ SUB __UI_BeforeUpdateDisplay
 
         'New control:
         DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetNewControl, b$
-        TempValue = CVI(b$)
-        b$ = MKI$(0): PUT #UiEditorFile, OffsetNewControl, b$
+        'b$ = SPACE$(2): GET #UiEditorFile, OffsetNewControl, b$
+        'TempValue = CVI(b$)
 
         IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
             ThisContainer = Control(__UI_FirstSelectedID).ParentID
@@ -326,13 +323,13 @@ SUB __UI_BeforeUpdateDisplay
         IF __UI_FirstSelectedID > 0 THEN
             IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
                 b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
-                SendData b$, OffsetOriginalImageWidth
+                SendData b$, "ORIGINALIMAGEWIDTH"
                 b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
-                SendData b$, OffsetOriginalImageHeight
+                SendData b$, "ORIGINALIMAGEHEIGHT"
             ELSE
                 b$ = MKI$(0)
-                SendData b$, OffsetOriginalImageWidth
-                SendData b$, OffsetOriginalImageHeight
+                SendData b$, "ORIGINALIMAGEWIDTH"
+                SendData b$, "ORIGINALIMAGEHEIGHT"
             END IF
 
             IF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox AND Control(__UI_FirstSelectedID).NumericOnly <> False THEN
@@ -352,9 +349,8 @@ SUB __UI_BeforeUpdateDisplay
             SendSignal -14
         END IF
 
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromEditor, b$
-        TempValue = CVI(b$)
-        b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromEditor, b$
+        'b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromEditor, b$
+        'TempValue = CVI(b$)
         IF TempValue = -2 THEN
             'Hide the preview
             _SCREENHIDE
@@ -364,8 +360,8 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF TempValue = -4 THEN
             'Load an existing file
             IsCreating = True
-            b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
-            b$ = SPACE$(CVI(b$)): GET #UiEditorFile, , b$
+            'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+            'b$ = SPACE$(CVI(b$)): GET #UiEditorFile, , b$
             DIM FileToLoad AS INTEGER
             FileToLoad = FREEFILE
             OPEN b$ FOR BINARY AS #FileToLoad
@@ -416,7 +412,7 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF TempValue = -1 THEN
             DIM FloatValue AS _FLOAT
             'Editor sent property value
-            b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyChanged, b$
+            'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyChanged, b$
             TempValue = CVI(b$)
             IF TempValue <> 213 AND TempValue <> 214 AND TempValue <> 215 AND TempValue <> 217 AND TempValue <> 221 THEN
                 'Save undo image except for select, undo, redo, copy and select all signals
@@ -424,16 +420,16 @@ SUB __UI_BeforeUpdateDisplay
             END IF
             SELECT CASE TempValue
                 CASE 1 'Name
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls = 1 THEN
                         Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
                     ELSEIF __UI_TotalSelectedControls = 0 THEN
                         Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
                     END IF
                 CASE 2 'Caption
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -487,8 +483,8 @@ SUB __UI_BeforeUpdateDisplay
 
                     SkipAutoName:
                 CASE 3 'Text
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -534,7 +530,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     END IF
                 CASE 4 'Top
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
@@ -542,7 +538,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 5 'Left
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
@@ -550,7 +546,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 6 'Width
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF TempValue < 1 THEN TempValue = 1
                     IF __UI_TotalSelectedControls > 0 THEN
@@ -564,7 +560,7 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).Width = TempValue
                     END IF
                 CASE 7 'Height
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF TempValue < 1 THEN TempValue = 1
                     IF __UI_TotalSelectedControls > 0 THEN
@@ -578,8 +574,8 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).Height = TempValue
                     END IF
                 CASE 8 'Font
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     DIM NewFontFile AS STRING
                     DIM NewFontSize AS INTEGER
                     DIM FindSep AS INTEGER, TotalSep AS INTEGER
@@ -631,15 +627,15 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     END IF
                 CASE 9 'Tooltip
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
                         END IF
                     NEXT
                 CASE 10 'Value
-                    b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
@@ -660,14 +656,14 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 11 'Min
-                    b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Min = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 12 'Max
-                    b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Max = _CV(_FLOAT, b$)
@@ -678,56 +674,56 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 13 'Interval
-                    b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Interval = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 14 'Stretch
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Stretch = CVI(b$)
                         END IF
                     NEXT
                 CASE 15 'Has border
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    ''b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).HasBorder = CVI(b$)
                         END IF
                     NEXT
                 CASE 16 'Show percentage
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).ShowPercentage = CVI(b$)
                         END IF
                     NEXT
                 CASE 17 'Word wrap
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).WordWrap = CVI(b$)
                         END IF
                     NEXT
                 CASE 18 'Can have focus
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).CanHaveFocus = CVI(b$)
                         END IF
                     NEXT
                 CASE 19 'Disabled
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Disabled = CVI(b$)
                         END IF
                     NEXT
                 CASE 20 'Hidden
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Hidden = CVI(b$)
@@ -737,13 +733,13 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 21 'CenteredWindow
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
                         Control(__UI_FormID).CenteredWindow = TempValue
                     END IF
                 CASE 22 'Alignment
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Align = CVI(b$)
@@ -755,7 +751,7 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 23 'ForeColor
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -771,7 +767,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 24 'BackColor
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    ''b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -787,7 +783,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 25 'SelectedForeColor
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -803,7 +799,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 26 'SelectedBackColor
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -819,7 +815,7 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 27 'BorderColor
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
@@ -830,20 +826,20 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
                     END IF
                 CASE 28 'BackStyle
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).BackStyle = CVI(b$)
                         END IF
                     NEXT
                 CASE 29 'CanResize
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls = 0 THEN
                         Control(__UI_FormID).CanResize = TempValue
                     END IF
                 CASE 31 'Padding
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     TempValue = CVI(b$)
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
@@ -853,25 +849,25 @@ SUB __UI_BeforeUpdateDisplay
                         NEXT
                     END IF
                 CASE 32 'Vertical Alignment
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).VAlign = CVI(b$)
                         END IF
                     NEXT
                 CASE 33 'Password field
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
                             Control(i).PasswordField = CVI(b$)
                         END IF
                     NEXT
                 CASE 34 'Encoding
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
                     Control(__UI_FormID).Encoding = CVL(b$)
                 CASE 35 'Mask
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
-                    b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(CVL(b$)): GET #UiEditorFile, , b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Mask(i) = b$
@@ -880,14 +876,14 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 CASE 36 'MinInterval
-                    b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(LEN(FloatValue)): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).MinInterval = _CV(_FLOAT, b$)
                         END IF
                     NEXT
                 CASE 37 'BulletStyle
-                    b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(2): GET #UiEditorFile, OffsetPropertyValue, b$
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).BulletStyle = CVI(b$)
@@ -898,8 +894,8 @@ SUB __UI_BeforeUpdateDisplay
                     DoAlign TempValue
                 CASE 211, 212 'Z-Ordering -> Move up/down
                     DIM tID1 AS LONG, tID2 AS LONG
-                    a$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, a$
-                    b$ = SPACE$(4): GET #UiEditorFile, , b$
+                    'a$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, a$
+                    'b$ = SPACE$(4): GET #UiEditorFile, , b$
                     tID1 = Control(CVL(a$)).ID
                     tID2 = Control(CVL(b$)).ID
                     SWAP Control(CVL(b$)), Control(CVL(a$))
@@ -923,7 +919,7 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                 CASE 213
                     'Select control
-                    b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
+                    'b$ = SPACE$(4): GET #UiEditorFile, OffsetPropertyValue, b$
 
                     'Desselect all first:
                     FOR i = 1 TO UBOUND(Control)
@@ -960,23 +956,22 @@ SUB __UI_BeforeUpdateDisplay
 
         IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
             __UI_DestroyControl Control(__UI_ActiveMenu)
-            b$ = MKI$(-2) 'Signal to the editor that the preview can't show the context menu
-            PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+            b$ = "SIGNAL>" + MKI$(-2) + "<END>" 'Signal to the editor that the preview can't show the context menu
+            PUT #Host, , b$
         ELSEIF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
-            b$ = MKI$(-5) 'Signal to the editor that a context menu is successfully shown
-            PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+            b$ = "SIGNAL>" + MKI$(-5) + "<END>" 'Signal to the editor that a context menu is successfully shown
+            PUT #Host, , b$
         END IF
 
-        b$ = MKL$(__UI_TotalSelectedControls)
-        PUT #UiEditorFile, OffsetTotalControlsSelected, b$
+        b$ = "TOTALSELECTEDCONTROLS>" + MKL$(__UI_TotalSelectedControls) + "<END>"
+        PUT #Host, , b$
         IF Control(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
-        b$ = MKL$(__UI_FirstSelectedID)
-        PUT #UiEditorFile, OffsetFirstSelectedID, b$
-        b$ = MKL$(__UI_FormID)
-        PUT #UiEditorFile, OffsetFormID, b$
+        b$ = "FIRSTSELECTED>" + MKL$(__UI_FirstSelectedID) + "<END>"
+        PUT #Host, , b$
+        b$ = "FORMID>" + MKL$(__UI_FormID) + "<END>"
+        PUT #Host, , b$
 
         MidRead = False
-        CLOSE #UiEditorFile
     END IF
 END SUB
 
@@ -1021,7 +1016,40 @@ SUB __UI_FormResized
 END SUB
 
 SUB __UI_OnLoad
+    DIM b$, Answer AS INTEGER, start!
     LoadDefaultFonts
+
+    b$ = "Connecting to InForm Designer..."
+    GOSUB ShowMessage
+
+    HostPort = COMMAND$(1)
+    IF VAL(HostPort) < 60000 THEN
+        ForceQuit:
+        _SCREENHIDE
+        Answer = MessageBox("InForm Designer is not running. Please run the main program.", HostPort, 0)
+        SYSTEM
+    END IF
+
+    start! = TIMER
+    DO
+        Host = _OPENCLIENT("TCP/IP:" + HostPort + ":localhost")
+        _DISPLAY
+    LOOP UNTIL Host < 0 OR TIMER - start! > 10
+
+    IF Host = 0 THEN GOTO ForceQuit
+
+    EXIT SUB
+    ShowMessage:
+    DIM PreserveDestMessage AS LONG
+    PreserveDestMessage = _DEST
+    _DEST 0
+    _FONT Control(__UI_FormID).Font
+    CLS , __UI_DefaultColor(__UI_Type_Form, 2)
+    COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
+    __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, b$
+    _DISPLAY
+    _DEST PreserveDestMessage
+    RETURN
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
@@ -2524,22 +2552,25 @@ SUB SavePreview (Destination AS _BYTE)
     IF Debug THEN CLOSE #TxtFileNum
 END SUB
 
-SUB SendData (b$, Offset AS LONG)
-    DIM FileNum AS INTEGER
-    FileNum = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
+SUB SendData (b$, thisCommand$)
+    'DIM FileNum AS INTEGER
+    'FileNum = FREEFILE
+    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
-    PUT #FileNum, Offset, b$
-    CLOSE #FileNum
+    b$ = UCASE$(thisCommand$) + ">" + b$ + "<END>"
+    PUT #Host, , b$
 END SUB
 
 SUB SendSignal (Value AS INTEGER)
-    DIM FileNum AS INTEGER, b$
-    FileNum = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
+    DIM b$
+    'DIM FileNum AS INTEGER, b$
+    'FileNum = FREEFILE
+    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
-    b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromPreview, b$
-    CLOSE #FileNum
+    'b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromPreview, b$
+    b$ = "SIGNAL>" + MKI$(Value) + "<END>"
+    PUT #Host, , b$
+    'CLOSE #FileNum
 END SUB
 
 FUNCTION AdaptName$ (tName$, TargetID AS LONG)

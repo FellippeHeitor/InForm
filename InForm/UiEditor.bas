@@ -121,6 +121,7 @@ DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
+DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
 
 TYPE newInputBox
     ID AS LONG
@@ -313,18 +314,20 @@ SUB __UI_Click (id AS LONG)
             Control(id).Value = __UI_SnapLines
             SaveSettings
         CASE InsertMenuMenuBar
-            UiEditorFile = FREEFILE
-            OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-            b$ = MKI$(__UI_Type_MenuBar)
-            PUT #UiEditorFile, OffsetNewControl, b$
-            CLOSE #UiEditorFile
+            'UiEditorFile = FREEFILE
+            'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuBar) + "<END>"
+            'PUT #UiEditorFile, OffsetNewControl, b$
+            'CLOSE #UiEditorFile
+            PUT #Client, , b$
             Edited = True
         CASE InsertMenuMenuItem
-            UiEditorFile = FREEFILE
-            OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-            b$ = MKI$(__UI_Type_MenuItem)
-            PUT #UiEditorFile, OffsetNewControl, b$
-            CLOSE #UiEditorFile
+            'UiEditorFile = FREEFILE
+            'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuItem) + "<END>"
+            'PUT #UiEditorFile, OffsetNewControl, b$
+            'CLOSE #UiEditorFile
+            PUT #Client, , b$
             Edited = True
         CASE ViewMenuPreviewDetach
             PreviewAttached = NOT PreviewAttached
@@ -346,11 +349,12 @@ SUB __UI_Click (id AS LONG)
              AddRadioButton, AddListBox, AddDropdownList, _
              AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
              AddToggleSwitch
-            UiEditorFile = FREEFILE
-            OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-            b$ = MKI$(Dummy)
-            PUT #UiEditorFile, OffsetNewControl, b$
-            CLOSE #UiEditorFile
+            'UiEditorFile = FREEFILE
+            'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+            b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
+            'PUT #UiEditorFile, OffsetNewControl, b$
+            'CLOSE #UiEditorFile
+            PUT #Client, , b$
             Edited = True
         CASE AddNumericBox
             b$ = MKI$(0)
@@ -404,9 +408,9 @@ SUB __UI_Click (id AS LONG)
             Edited = True
         CASE ViewMenuPreview
             $IF WIN THEN
-                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
+                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
             $ELSE
-                SHELL _DONTWAIT "./InForm/UiEditorPreview"
+                SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
             $END IF
         CASE ViewMenuLoadedFonts
             DIM Temp$
@@ -565,12 +569,13 @@ SUB __UI_Click (id AS LONG)
                 DIM FileToOpen$, FreeFileNum AS INTEGER
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
                 IF _FILEEXISTS(FileToOpen$) THEN
-                    FreeFileNum = FREEFILE
-                    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FreeFileNum
+                    'FreeFileNum = FREEFILE
+                    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FreeFileNum
                     'Send the data first, then the signal
-                    b$ = MKI$(LEN(FileToOpen$)) + FileToOpen$
-                    PUT #FreeFileNum, OffsetPropertyValue, b$
-                    CLOSE #FreeFileNum
+                    b$ = "OPENFILE>" + MKI$(LEN(FileToOpen$)) + FileToOpen$ + "<END>"
+                    'PUT #FreeFileNum, OffsetPropertyValue, b$
+                    'CLOSE #FreeFileNum
+                    PUT #Client, , b$
 
                     SendSignal -4
 
@@ -955,23 +960,22 @@ SUB __UI_BeforeUpdateDisplay
 
     IF NOT MidRead THEN
         MidRead = True
-        UiEditorFile = FREEFILE
-        OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+        STATIC stream$
+        DIM incomingData$, Signal$
+
+        GET #Client, , incomingData$
+        stream$ = stream$ + incomingData$
 
         Reload:
         LoadPreview
 
         $IF WIN THEN
             IF PreviewAttached THEN
-                b$ = MKI$(_SCREENX)
-                PUT #UiEditorFile, OffsetWindowLeft, b$
-
-                b$ = MKI$(_SCREENY)
-                PUT #UiEditorFile, OffsetWindowTop, b$
+                b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
+                PUT #Client, , b$
             ELSE
-                b$ = MKI$(-32001)
-                PUT #UiEditorFile, OffsetWindowLeft, b$
-                PUT #UiEditorFile, OffsetWindowTop, b$
+                b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
+                PUT #Client, , b$
             END IF
         $ELSE
             IF PreviewAttached = True THEN
@@ -982,32 +986,45 @@ SUB __UI_BeforeUpdateDisplay
             Control(ViewMenuPreviewDetach).Value = False
         $END IF
 
-        b$ = MKI$(AutoNameControls)
-        PUT #UiEditorFile, OffsetAutoName, b$
+        b$ = "AUTONAME>" + MKI$(AutoNameControls) + "<END>"
+        PUT #Client, , b$
 
-        b$ = MKI$(__UI_MouseButtonsSwap)
-        PUT #UiEditorFile, OffsetMouseSwapped, b$
+        b$ = "MOUSESWAP>" + MKI$(__UI_MouseButtonsSwap) + "<END>"
+        PUT #Client, , b$
 
-        b$ = MKI$(__UI_ShowPositionAndSize)
-        PUT #UiEditorFile, OffsetShowPosSize, b$
+        b$ = "SHOWPOSSIZE>" + MKI$(__UI_ShowPositionAndSize) + "<END>"
+        PUT #Client, , b$
 
-        b$ = MKI$(__UI_SnapLines)
-        PUT #UiEditorFile, OffsetSnapLines, b$
+        b$ = "SNAPLINES>" + MKI$(__UI_SnapLines) + "<END>"
+        PUT #Client, , b$
 
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetTotalControlsSelected, b$
-        TotalSelected = CVL(b$)
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetFormID, b$
-        PreviewFormID = CVL(b$)
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetFirstSelectedID, b$
-        FirstSelected = CVL(b$)
-        b$ = SPACE$(4): GET #UiEditorFile, OffsetDefaultButtonID, b$
-        PreviewDefaultButtonID = CVL(b$)
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetOriginalImageWidth, b$
-        OriginalImageWidth = CVI(b$)
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetOriginalImageHeight, b$
-        OriginalImageHeight = CVI(b$)
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetSelectionRectangle, b$
-        PreviewSelectionRectangle = CVI(b$)
+        DIM thisData$, thisCommand$
+        DO WHILE INSTR(stream$, "<END>") > 0
+            thisData$ = LEFT$(stream$, INSTR(stream$, "<END>") - 1)
+            stream$ = MID$(stream$, INSTR(stream$, "<END>") + 5)
+            thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
+            thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
+            SELECT CASE UCASE$(thisCommand$)
+                CASE "TOTALSELECTEDCONTROLS"
+                    TotalSelected = CVL(thisData$)
+                CASE "FORMID"
+                    PreviewFormID = CVL(thisData$)
+                CASE "FIRSTSELECTED"
+                    FirstSelected = CVL(thisData$)
+                CASE "DEFAULTBUTTONID"
+                    PreviewDefaultButtonID = CVL(thisData$)
+                CASE "ORIGINALIMAGEWIDTH"
+                    OriginalImageWidth = CVI(thisData$)
+                CASE "ORIGINALIMAGEHEIGHT"
+                    OriginalImageHeight = CVI(thisData$)
+                CASE "SELECTIONRECTANGLE"
+                    PreviewSelectionRectangle = CVI(thisData$)
+                CASE "MENUPANELACTIVE"
+                    PreviewHasMenuActive = CVI(thisData$)
+                CASE "SIGNAL"
+                    Signal$ = Signal$ + thisData$
+            END SELECT
+        LOOP
 
         Control(EditMenuRestoreDimensions).Disabled = True
         SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
@@ -1019,45 +1036,47 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         END IF
 
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetNewDataFromPreview, b$
-        IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
-            'Controls in the editor lose focus when the preview is manipulated
-            IF CVI(b$) = -1 THEN Edited = True
-            IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
-            IF CVI(b$) = -1 THEN
+        DO WHILE LEN(Signal$)
+            b$ = LEFT$(Signal$, 2)
+            Signal$ = MID$(Signal$, 3)
+            IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
+                'Controls in the editor lose focus when the preview is manipulated
+                IF CVI(b$) = -1 THEN Edited = True
+                IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
+                IF CVI(b$) = -1 THEN
+                    IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+                END IF
+                IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
+                __UI_ForceRedraw = True
+            ELSEIF CVI(b$) = -2 THEN
+                'User attempted to right-click a control but the preview
+                'form is smaller than the menu panel. In such case the "Align"
+                'menu is shown in the editor.
+                IF ZOrderingDialogOpen THEN __UI_Click CloseZOrderingBT
+                __UI_ActivateMenu Control(AlignMenu), False
+                __UI_ForceRedraw = True
+            ELSEIF CVI(b$) = -4 THEN
+                'User attempted to load an icon file that couldn't be previewed
+                Answer = MessageBox("Icon couldn't be previewed. Make sure it's a valid icon file.", "", MsgBox_OkOnly + MsgBox_Exclamation)
+            ELSEIF CVI(b$) = -5 THEN
+                'Context menu was successfully shown on the preview
                 IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+                __UI_Focus = 0
+                __UI_ForceRedraw = True
+            ELSEIF CVI(b$) = -6 THEN
+                'User attempted to load an invalid icon file
+                Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
+            ELSEIF CVI(b$) = -7 THEN
+                'A new empty form has just been created or a file has just finished loading from disk
+                Edited = False
+            ELSEIF CVI(b$) = -8 THEN
+                'Preview form was resized
+                Edited = True
+            ELSEIF CVI(b$) = -9 THEN
+                'User attempted to close the preview form
+                __UI_Click FileMenuNew
             END IF
-            IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
-            __UI_ForceRedraw = True
-        ELSEIF CVI(b$) = -2 THEN
-            'User attempted to right-click a control but the preview
-            'form is smaller than the menu panel. In such case the "Align"
-            'menu is shown in the editor.
-            IF ZOrderingDialogOpen THEN __UI_Click CloseZOrderingBT
-            __UI_ActivateMenu Control(AlignMenu), False
-            __UI_ForceRedraw = True
-        ELSEIF CVI(b$) = -4 THEN
-            'User attempted to load an icon file that couldn't be previewed
-            Answer = MessageBox("Icon couldn't be previewed. Make sure it's a valid icon file.", "", MsgBox_OkOnly + MsgBox_Exclamation)
-        ELSEIF CVI(b$) = -5 THEN
-            'Context menu was successfully shown on the preview
-            IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
-            __UI_Focus = 0
-            __UI_ForceRedraw = True
-        ELSEIF CVI(b$) = -6 THEN
-            'User attempted to load an invalid icon file
-            Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
-        ELSEIF CVI(b$) = -7 THEN
-            'A new empty form has just been created or a file has just finished loading from disk
-            Edited = False
-        ELSEIF CVI(b$) = -8 THEN
-            'Preview form was resized
-            Edited = True
-        ELSEIF CVI(b$) = -9 THEN
-            'User attempted to close the preview form
-            __UI_Click FileMenuNew
-        END IF
-        b$ = MKI$(0): PUT #UiEditorFile, OffsetNewDataFromPreview, b$
+        LOOP
 
         IF FirstSelected > UBOUND(PreviewCaptions) THEN GOTO Reload
 
@@ -1071,8 +1090,6 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
             END IF
         END IF
-        b$ = SPACE$(2): GET #UiEditorFile, OffsetMenuPanelIsON, b$
-        PreviewHasMenuActive = CVI(b$)
 
         IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
             Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
@@ -1916,7 +1933,7 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         MidRead = False
-        CLOSE #UiEditorFile
+        'CLOSE #UiEditorFile
     END IF
 
 END SUB
@@ -2074,7 +2091,6 @@ SUB __UI_OnLoad
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
     IF _FILEEXISTS("InForm/UiEditorUndo.dat") THEN KILL "InForm/UiEditorUndo.dat"
-    IF _FILEEXISTS("InForm/UiEditor.dat") THEN KILL "InForm/UiEditor.dat"
 
     b$ = "Parsing command line..."
     GOSUB ShowMessage
@@ -2135,6 +2151,12 @@ SUB __UI_OnLoad
         END IF
     END IF
 
+    b$ = "Starting host (click 'unblock' if your Operating System asks)..."
+    GOSUB ShowMessage
+    HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
+    _TITLE HostPort
+    Host = _OPENHOST("TCP/IP:" + HostPort)
+
     b$ = "Checking Preview component..."
     GOSUB ShowMessage
 
@@ -2151,7 +2173,7 @@ SUB __UI_OnLoad
         END IF
         b$ = "Launching Preview component..."
         GOSUB ShowMessage
-        SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
+        SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
     $ELSE
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
         IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
@@ -2165,14 +2187,14 @@ SUB __UI_OnLoad
         END IF
         b$ = "Launching Preview component..."
         GOSUB ShowMessage
-        SHELL _DONTWAIT "./InForm/UiEditorPreview"
+        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
     $END IF
 
-    UiEditorFile = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-    b$ = MKL$(__UI_GetPID)
-    PUT #UiEditorFile, OffsetEditorPID, b$
-    CLOSE #UiEditorFile
+    'UiEditorFile = FREEFILE
+    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+    'b$ = MKL$(__UI_GetPID)
+    'PUT #UiEditorFile, OffsetEditorPID, b$
+    'CLOSE #UiEditorFile
 
     b$ = "Reading directory..."
     GOSUB ShowMessage
@@ -2292,6 +2314,16 @@ SUB __UI_OnLoad
     Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
 
     _FREEIMAGE CommControls
+
+    b$ = "Waiting for preview component..."
+    GOSUB ShowMessage
+    DO
+        Client = _OPENCONNECTION(Host)
+        IF Client THEN EXIT DO
+        IF _EXIT THEN SYSTEM 'Can't force user to wait...
+        _DISPLAY
+        _LIMIT 15
+    LOOP
 
     b$ = "InForm Designer"
     GOSUB ShowMessage
@@ -2951,26 +2983,30 @@ SUB LoadPreview
 END SUB
 
 SUB SendData (b$, Property AS INTEGER)
-    DIM FileNum AS INTEGER
+    'DIM FileNum AS INTEGER
     IF PreviewSelectionRectangle THEN EXIT SUB
 
-    FileNum = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
+    'FileNum = FREEFILE
+    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
     'Send the data first, then the signal
-    PUT #FileNum, OffsetPropertyValue, b$
-    b$ = MKI$(Property): PUT #FileNum, OffsetPropertyChanged, b$
-    b$ = MKI$(-1): PUT #FileNum, OffsetNewDataFromEditor, b$
-    CLOSE #FileNum
+    'PUT #FileNum, OffsetPropertyValue, b$
+    'b$ = MKI$(Property): PUT #FileNum, OffsetPropertyChanged, b$
+    'b$ = MKI$(-1): PUT #FileNum, OffsetNewDataFromEditor, b$
+    'CLOSE #FileNum
+    b$ = "PROPERTY>" + MKI$(Property) + b$ + "<END>"
+    PUT #Client, , b$
 END SUB
 
 SUB SendSignal (Value AS INTEGER)
-    DIM FileNum AS INTEGER, b$
-    FileNum = FREEFILE
-    OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
+    DIM b$
+    'DIM FileNum AS INTEGER, b$
+    'FileNum = FREEFILE
+    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
 
-    b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromEditor, b$
-    CLOSE #FileNum
+    b$ = "SIGNAL>" + MKI$(Value) + "<END>"
+    PUT #Client, , b$
+    'CLOSE #FileNum
 END SUB
 
 SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
@@ -3011,7 +3047,7 @@ END SUB
 SUB CheckPreview
     'Check if the preview window is still alive
     DIM b$, UiEditorFile AS INTEGER
-
+    EXIT SUB
     IF OpenDialogOpen THEN EXIT SUB
 
     UiEditorFile = FREEFILE
@@ -3033,18 +3069,18 @@ SUB CheckPreview
                 TIMER(__UI_EventsTimer) OFF
                 Control(ViewMenuPreview).Disabled = False
                 __UI_WaitMessage = "Reloading preview window..."
-                OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-                b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
-                CLOSE #UiEditorFile
-                UiPreviewPID = 0
-                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe"
+                'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+                'b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
+                'CLOSE #UiEditorFile
+                'UiPreviewPID = 0
+                'SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
                 __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
                 DO
                     _LIMIT 10
-                    OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
-                    b$ = SPACE$(4)
-                    GET #UiEditorFile, OffsetPreviewPID, b$
-                    CLOSE #UiEditorFile
+                    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #UiEditorFile
+                    'b$ = SPACE$(4)
+                    'GET #UiEditorFile, OffsetPreviewPID, b$
+                    'CLOSE #UiEditorFile
                 LOOP UNTIL CVL(b$) > 0
 
                 UiPreviewPID = CVL(b$)
@@ -3063,7 +3099,7 @@ SUB CheckPreview
         b$ = MKL$(0): PUT #UiEditorFile, OffsetPreviewPID, b$
         CLOSE #UiEditorFile
         UiPreviewPID = 0
-        SHELL _DONTWAIT "./InForm/UiEditorPreview"
+        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
         __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
         DO
         _LIMIT 10
