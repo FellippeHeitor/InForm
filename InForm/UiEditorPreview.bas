@@ -1069,7 +1069,7 @@ SUB __UI_OnLoad
     IF VAL(HostPort) < 60000 THEN
         ForceQuit:
         _SCREENHIDE
-        Answer = MessageBox("InForm Designer is not running. Please run the main program.", HostPort, 0)
+        Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
         SYSTEM
     END IF
 
