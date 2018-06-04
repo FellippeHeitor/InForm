@@ -2194,8 +2194,19 @@ SUB __UI_OnLoad
 
     b$ = "Starting host (click 'unblock' if your Operating System asks)..."
     GOSUB ShowMessage
-    HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
-    Host = _OPENHOST("TCP/IP:" + HostPort)
+    DIM HostAttempts AS INTEGER
+    RANDOMIZE TIMER
+    DO
+        HostAttempts = HostAttempts + 1
+        HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
+        Host = _OPENHOST("TCP/IP:" + HostPort)
+    LOOP UNTIL Host <> 0 OR HostAttempts > 1000
+
+    IF Host = 0 THEN
+        DIM Answer AS INTEGER
+        Answer = MessageBox("Can't start as host.", "", MsgBox_OkOnly + MsgBox_Critical)
+        SYSTEM
+    END IF
 
     b$ = "Checking Preview component..."
     GOSUB ShowMessage
