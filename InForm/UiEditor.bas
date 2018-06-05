@@ -866,6 +866,7 @@ SUB __UI_BeforeUpdateDisplay
     STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
     STATIC MidRead AS _BYTE, PrevFirstSelected AS LONG
     STATIC CheckUpdateDone AS _BYTE
+    STATIC UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 
     STATIC LastChange AS SINGLE
     IF TIMER - BlinkStatusBar < 1 THEN
@@ -1048,6 +1049,10 @@ SUB __UI_BeforeUpdateDisplay
                 CASE "FORMDATA"
                     LoadPreview thisData$
                     FormDataReceived = True
+                CASE "UNDOPOINTER"
+                    UndoPointer = CVI(thisData$)
+                CASE "TOTALUNDOIMAGES"
+                    TotalUndoImages = CVI(thisData$)
             END SELECT
         LOOP
 
@@ -1128,15 +1133,7 @@ SUB __UI_BeforeUpdateDisplay
         'Ctrl+Z? Ctrl+Y?
         Control(EditMenuUndo).Disabled = True
         Control(EditMenuRedo).Disabled = True
-        DIM BinFileNum AS INTEGER, UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
-        BinFileNum = FREEFILE
-        OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
-        IF LOF(BinFileNum) > 0 THEN
-            b$ = SPACE$(2): GET #BinFileNum, 1, b$: UndoPointer = CVI(b$)
-            b$ = SPACE$(2): GET #BinFileNum, 3, b$: TotalUndoImages = CVI(b$)
-        END IF
-        CLOSE #BinFileNum
-        IF UndoPointer > 2 THEN Control(EditMenuUndo).Disabled = False
+        IF UndoPointer > 0 THEN Control(EditMenuUndo).Disabled = False
         IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
 
         IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
@@ -2147,7 +2144,6 @@ SUB __UI_OnLoad
     Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
-    IF _FILEEXISTS("InForm/UiEditorUndo.dat") THEN KILL "InForm/UiEditorUndo.dat"
 
     b$ = "Parsing command line..."
     GOSUB ShowMessage

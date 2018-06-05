@@ -25,6 +25,7 @@ CONST OffsetPropertyValue = 53
 DIM SHARED UiEditorPID AS LONG, ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
+REDIM SHARED UndoImage(100) AS STRING
 DIM SHARED IsCreating AS _BYTE
 DIM SHARED Host AS LONG, HostPort AS STRING
 DIM SHARED Stream$
@@ -66,6 +67,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 CONST InDisk = 1
 CONST InClipboard = 2
 CONST ToEditor = 3
+CONST ToUndoBuffer = 4
 
 DIM i AS LONG
 DIM SHARED AlphaNumeric(255)
@@ -177,7 +179,8 @@ SUB __UI_BeforeUpdateDisplay
     SavePreview ToEditor
 
     STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
-    STATIC prevSelectionRectangle AS INTEGER
+    STATIC prevSelectionRectangle AS INTEGER, prevUndoPointer AS INTEGER
+    STATIC prevTotalUndoImages AS INTEGER
 
     IF __UI_DefaultButtonID <> prevDefaultButton THEN
         prevDefaultButton = __UI_DefaultButtonID
@@ -195,6 +198,18 @@ SUB __UI_BeforeUpdateDisplay
         prevSelectionRectangle = (__UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown)
         b$ = MKI$(prevSelectionRectangle)
         SendData b$, "SELECTIONRECTANGLE"
+    END IF
+
+    IF prevUndoPointer <> UndoPointer THEN
+        prevUndoPointer = UndoPointer
+        b$ = MKI$(UndoPointer)
+        SendData b$, "UNDOPOINTER"
+    END IF
+
+    IF prevTotalUndoImages <> TotalUndoImages THEN
+        prevTotalUndoImages = TotalUndoImages
+        b$ = MKI$(TotalUndoImages)
+        SendData b$, "TOTALUNDOIMAGES"
     END IF
 
     IF NOT MidRead THEN
@@ -326,20 +341,24 @@ SUB __UI_BeforeUpdateDisplay
         $END IF
 
         IF __UI_IsDragging THEN
-            WasDragging = True
+            IF NOT WasDragging THEN
+                SaveUndoImage
+                WasDragging = True
+            END IF
         ELSE
             IF WasDragging THEN
                 WasDragging = False
-                SaveUndoImage
             END IF
         END IF
 
         IF __UI_IsResizing THEN
-            WasResizing = True
+            IF NOT WasResizing THEN
+                SaveUndoImage
+                WasResizing = True
+            END IF
         ELSE
             IF WasResizing THEN
                 WasResizing = False
-                SaveUndoImage
             END IF
         END IF
 
@@ -1606,7 +1625,7 @@ SUB LoadPreview (Destination AS _BYTE)
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, TempValue AS LONG
     DIM Dummy AS LONG, Disk AS _BYTE, Clip$, FirstToBeSelected AS LONG
     DIM BinaryFileNum AS INTEGER, LogFileNum AS INTEGER
-    DIM CorruptedData AS _BYTE
+    DIM CorruptedData AS _BYTE, UndoBuffer AS _BYTE
 
     CONST LogFileLoad = False
 
@@ -1618,6 +1637,8 @@ SUB LoadPreview (Destination AS _BYTE)
         Disk = True
         BinaryFileNum = FREEFILE
         OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
+    ELSEIF Destination = ToUndoBuffer THEN
+        UndoBuffer = True
     END IF
 
     LogFileNum = FREEFILE
@@ -1629,6 +1650,9 @@ SUB LoadPreview (Destination AS _BYTE)
             GOTO LoadError
             EXIT SUB
         END IF
+    ELSEIF UndoBuffer THEN
+        IF UndoPointer = TotalUndoImages THEN EXIT SUB
+        Clip$ = UndoImage$(UndoPointer)
     ELSE
         Clip$ = _CLIPBOARD$
         b$ = ReadSequential$(Clip$, LEN(__UI_ClipboardCheck$))
@@ -1651,6 +1675,24 @@ SUB LoadPreview (Destination AS _BYTE)
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
 
         b$ = SPACE$(4): GET #BinaryFileNum, , b$
+        IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
+
+        REDIM _PRESERVE Caption(1 TO CVL(b$)) AS STRING
+        REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
+        REDIM Text(1 TO CVL(b$)) AS STRING
+        REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
+        REDIM ToolTip(1 TO CVL(b$)) AS STRING
+        REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE Control(0 TO CVL(b$)) AS __UI_ControlTYPE
+    ELSEIF UndoBuffer THEN
+        FOR i = UBOUND(Control) TO 1 STEP -1
+            IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                __UI_DestroyControl Control(i)
+            END IF
+        NEXT
+        IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
+
+        b$ = ReadSequential$(Clip$, 4)
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
 
         REDIM _PRESERVE Caption(1 TO CVL(b$)) AS STRING
@@ -1759,7 +1801,7 @@ SUB LoadPreview (Destination AS _BYTE)
 
         TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
 
-        IF NOT Disk THEN
+        IF NOT Disk AND NOT UndoBuffer THEN
             Control(TempValue).ControlIsSelected = True
             __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
             IF __UI_TotalSelectedControls = 1 THEN FirstToBeSelected = TempValue
@@ -1942,7 +1984,7 @@ SUB LoadPreview (Destination AS _BYTE)
     LOOP UNTIL __UI_EOF
     IF Disk THEN CLOSE #BinaryFileNum
     IF LogFileLoad THEN CLOSE #LogFileNum
-    IF NOT Disk THEN
+    IF NOT Disk AND NOT UndoBuffer THEN
         IF NOT CorruptedData THEN
             __UI_FirstSelectedID = FirstToBeSelected
         ELSE
@@ -2309,7 +2351,8 @@ END FUNCTION
 SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
-    DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, PreviewData$
+    DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, UndoBuffer AS _BYTE
+    DIM PreviewData$
     STATIC LastPreviewDataSent$
 
     CONST Debug = False
@@ -2320,6 +2363,8 @@ SUB SavePreview (Destination AS _BYTE)
         OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
     ELSEIF Destination = ToEditor THEN
         TCP = True
+    ELSEIF Destination = ToUndoBuffer THEN
+        UndoBuffer = True
     ELSE
         IF __UI_TotalSelectedControls = 0 THEN EXIT SUB
     END IF
@@ -2336,6 +2381,8 @@ SUB SavePreview (Destination AS _BYTE)
         PUT #BinFileNum, , b$
     ELSEIF TCP THEN
         PreviewData$ = "FORMDATA>" + MKL$(UBOUND(Control))
+    ELSEIF UndoBuffer THEN
+        Clip$ = MKL$(UBOUND(Control))
     END IF
 
     FOR i = 1 TO UBOUND(Control)
@@ -2601,9 +2648,20 @@ SUB SavePreview (Destination AS _BYTE)
         CLOSE #BinFileNum
     ELSEIF TCP THEN
         PreviewData$ = PreviewData$ + Clip$ + b$ + "<END>"
-        IF LastPreviewDataSent$ <> PreviewData$ AND __UI_IsDragging = False THEN
+        IF LastPreviewDataSent$ <> PreviewData$ AND __UI_IsDragging = False AND __UI_IsResizing = False THEN
             LastPreviewDataSent$ = PreviewData$
             PUT #Host, , PreviewData$
+        END IF
+    ELSEIF UndoBuffer THEN
+        Clip$ = Clip$ + b$
+        IF UndoPointer > 0 THEN
+            IF UndoImage(UndoPointer - 1) = Clip$ THEN EXIT SUB
+        END IF
+        UndoImage(UndoPointer) = Clip$
+        UndoPointer = UndoPointer + 1
+        IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
+        IF TotalUndoImages > UBOUND(UndoImage) THEN
+            REDIM _PRESERVE UndoImage(UBOUND(UndoImage) + 99) AS STRING
         END IF
     ELSE
         Clip$ = Clip$ + b$
@@ -2833,99 +2891,19 @@ FUNCTION IS_KEYWORD (Text$)
 END FUNCTION
 
 SUB SaveUndoImage
-    DIM BinFileNum AS INTEGER, b$, a$, i AS INTEGER
-    STATIC LastForm$
-
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
-    a$ = SPACE$(LOF(BinFileNum))
-    GET #BinFileNum, 1, a$
-    CLOSE #BinFileNum
-
-    IF LastForm$ = a$ AND UndoPointer > 1 AND TotalUndoImages > 1 THEN EXIT SUB 'Identical states don't get saved consecutively
-
-    UndoPointer = UndoPointer + 1
-    IF UndoPointer < TotalUndoImages THEN TotalUndoImages = UndoPointer
-    IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
-
-    LastForm$ = a$
-
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
-    b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
-    b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
-
-    FOR i = 1 TO UndoPointer - 1
-        b$ = SPACE$(4): GET #BinFileNum, , b$
-        SEEK #BinFileNum, SEEK(BinFileNum) + CVL(b$)
-    NEXT
-
-    b$ = MKL$(LEN(a$))
-    PUT #BinFileNum, , b$
-    PUT #BinFileNum, , a$
-    CLOSE #BinFileNum
+    SavePreview ToUndoBuffer
 END SUB
 
 SUB RestoreUndoImage
-    DIM i AS INTEGER, b$, a$, BinFileNum AS INTEGER
-
-    IF UndoPointer < 2 THEN EXIT SUB
-
+    IF UndoPointer = 0 THEN EXIT SUB
     UndoPointer = UndoPointer - 1
-
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
-    b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
-    b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
-
-    FOR i = 1 TO UndoPointer - 1
-        b$ = SPACE$(4): GET #BinFileNum, , b$
-        SEEK #BinFileNum, SEEK(BinFileNum) + CVL(b$)
-    NEXT
-
-    b$ = SPACE$(4)
-    GET #BinFileNum, , b$
-    a$ = SPACE$(CVL(b$))
-    GET #BinFileNum, , a$
-    CLOSE #BinFileNum
-
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
-    PUT #BinFileNum, 1, a$
-    CLOSE #BinFileNum
-
-    LoadPreview InDisk
+    LoadPreview ToUndoBuffer
 END SUB
 
 SUB RestoreRedoImage
-    DIM i AS INTEGER, b$, a$, BinFileNum AS INTEGER
-
-    IF UndoPointer >= TotalUndoImages THEN EXIT SUB
-
+    IF UndoPointer = TotalUndoImages THEN EXIT SUB
     UndoPointer = UndoPointer + 1
-
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorUndo.dat" FOR BINARY AS #BinFileNum
-    b$ = MKI$(UndoPointer): PUT #BinFileNum, 1, b$
-    b$ = MKI$(TotalUndoImages): PUT #BinFileNum, 3, b$
-
-    FOR i = 1 TO UndoPointer - 1
-        b$ = SPACE$(4): GET #BinFileNum, , b$
-        SEEK #BinFileNum, SEEK(BinFileNum) + CVL(b$)
-    NEXT
-
-    b$ = SPACE$(4)
-    GET #BinFileNum, , b$
-    a$ = SPACE$(CVL(b$))
-    GET #BinFileNum, , a$
-    CLOSE #BinFileNum
-
-    BinFileNum = FREEFILE
-    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
-    PUT #BinFileNum, 1, a$
-    CLOSE #BinFileNum
-
-    LoadPreview InDisk
+    LoadPreview ToUndoBuffer
 END SUB
 
 
