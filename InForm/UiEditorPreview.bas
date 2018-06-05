@@ -203,6 +203,20 @@ SUB __UI_BeforeUpdateDisplay
         GET #Host, , incomingData$
         Stream$ = Stream$ + incomingData$
 
+        DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
+        IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+            ThisContainer = Control(__UI_FirstSelectedID).ParentID
+            TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
+            TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
+        ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+            ThisContainer = Control(__UI_FirstSelectedID).ID
+            TempWidth = Control(__UI_FirstSelectedID).Width
+            TempHeight = Control(__UI_FirstSelectedID).Height
+        ELSE
+            TempWidth = Control(__UI_FormID).Width
+            TempHeight = Control(__UI_FormID).Height
+        END IF
+
         DIM thisData$, thisCommand$
         DO WHILE INSTR(Stream$, "<END>") > 0
             thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
@@ -228,21 +242,7 @@ SUB __UI_BeforeUpdateDisplay
                 CASE "OPENFILE"
                     FileNameToLoad$ = thisData$
                 CASE "NEWCONTROL"
-                    DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
                     TempValue = CVI(thisData$)
-
-                    IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
-                        ThisContainer = Control(__UI_FirstSelectedID).ParentID
-                        TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
-                        TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
-                    ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-                        ThisContainer = Control(__UI_FirstSelectedID).ID
-                        TempWidth = Control(__UI_FirstSelectedID).Width
-                        TempHeight = Control(__UI_FirstSelectedID).Height
-                    ELSE
-                        TempWidth = Control(__UI_FormID).Width
-                        TempHeight = Control(__UI_FormID).Height
-                    END IF
 
                     IF TempValue > 0 THEN
                         SaveUndoImage
