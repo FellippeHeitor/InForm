@@ -122,7 +122,7 @@ DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
-DIM SHARED Stream$
+DIM SHARED Stream$, FormDataReceived AS _BYTE
 
 TYPE newInputBox
     ID AS LONG
@@ -488,7 +488,6 @@ SUB __UI_Click (id AS LONG)
             SendData b$, 211
             Edited = True
             _DELAY .1
-            LoadPreview
             Moving = True: GOSUB ReloadZList
             Moving = False
             Control(ControlList).Value = PrevListValue - 1
@@ -500,7 +499,6 @@ SUB __UI_Click (id AS LONG)
             SendData b$, 212
             Edited = True
             _DELAY .1
-            LoadPreview
             Moving = True: GOSUB ReloadZList
             Moving = False
             Control(ControlList).Value = PrevListValue + 1
@@ -967,9 +965,6 @@ SUB __UI_BeforeUpdateDisplay
         GET #Client, , incomingData$
         Stream$ = Stream$ + incomingData$
 
-        Reload:
-        LoadPreview
-
         $IF WIN THEN
             IF PreviewAttached THEN
                 STATIC prevScreenX AS INTEGER, prevScreenY AS INTEGER
@@ -1050,8 +1045,13 @@ SUB __UI_BeforeUpdateDisplay
                     PreviewHasMenuActive = CVI(thisData$)
                 CASE "SIGNAL"
                     Signal$ = Signal$ + thisData$
+                CASE "FORMDATA"
+                    LoadPreview thisData$
+                    FormDataReceived = True
             END SELECT
         LOOP
+
+        IF NOT FormDataReceived THEN EXIT SUB
 
         Control(EditMenuRestoreDimensions).Disabled = True
         SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
@@ -1104,8 +1104,6 @@ SUB __UI_BeforeUpdateDisplay
                 __UI_Click FileMenuNew
             END IF
         LOOP
-
-        IF FirstSelected > UBOUND(PreviewCaptions) THEN GOTO Reload
 
         IF PrevFirstSelected <> FirstSelected THEN
             PrevFirstSelected = FirstSelected
@@ -2857,196 +2855,181 @@ FUNCTION Unpack$ (PackedData$)
     Unpack$ = btemp$
 END FUNCTION
 
-SUB LoadPreview
+FUNCTION ReadSequential$ (Txt$, Bytes%)
+    ReadSequential$ = LEFT$(Txt$, Bytes%)
+    Txt$ = MID$(Txt$, Bytes% + 1)
+END FUNCTION
+
+SUB LoadPreview (FormData$)
     DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
     DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, Dummy AS LONG
-    DIM BinaryFileNum AS INTEGER
 
-    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") = 0 THEN
-        EXIT SUB
-    ELSE
-        TIMER(__UI_EventsTimer) OFF
-        TIMER(__UI_RefreshTimer) OFF
+    TIMER(__UI_EventsTimer) OFF
+    TIMER(__UI_RefreshTimer) OFF
 
-        BinaryFileNum = FREEFILE
-        OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinaryFileNum
+    b$ = ReadSequential$(FormData$, 4)
 
-        b$ = SPACE$(7): GET #BinaryFileNum, 1, b$
-        IF b$ <> "InForm" + CHR$(1) THEN
-            GOTO LoadError
-            EXIT SUB
+    REDIM PreviewCaptions(1 TO CVL(b$)) AS STRING
+    REDIM PreviewTexts(1 TO CVL(b$)) AS STRING
+    REDIM PreviewMasks(1 TO CVL(b$)) AS STRING
+    REDIM PreviewTips(1 TO CVL(b$)) AS STRING
+    REDIM PreviewFonts(1 TO CVL(b$)) AS STRING
+    REDIM PreviewActualFonts(1 TO CVL(b$)) AS STRING
+    REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
+    REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
+
+    b$ = ReadSequential$(FormData$, 2)
+    IF CVI(b$) <> -1 THEN GOTO LoadError
+    DO
+        b$ = ReadSequential$(FormData$, 4)
+        Dummy = CVL(b$)
+        IF Dummy <= 0 OR Dummy > UBOUND(PreviewControls) THEN EXIT DO 'Corrupted exchange file.
+        b$ = ReadSequential$(FormData$, 2)
+        NewType = CVI(b$)
+        b$ = ReadSequential$(FormData$, 2)
+        b$ = ReadSequential$(FormData$, CVI(b$))
+        NewName = b$
+        b$ = ReadSequential$(FormData$, 2)
+        NewWidth = CVI(b$)
+        b$ = ReadSequential$(FormData$, 2)
+        NewHeight = CVI(b$)
+        b$ = ReadSequential$(FormData$, 2)
+        NewLeft = CVI(b$)
+        b$ = ReadSequential$(FormData$, 2)
+        NewTop = CVI(b$)
+        b$ = ReadSequential$(FormData$, 2)
+        IF CVI(b$) > 0 THEN
+            NewParentID = ReadSequential$(FormData$, CVI(b$))
+        ELSE
+            NewParentID = ""
         END IF
 
-        b$ = SPACE$(4): GET #BinaryFileNum, , b$
+        PreviewControls(Dummy).ID = Dummy
+        PreviewParentIDS(Dummy) = RTRIM$(NewParentID)
+        PreviewControls(Dummy).Type = NewType
+        PreviewControls(Dummy).Name = NewName
+        PreviewControls(Dummy).Width = NewWidth
+        PreviewControls(Dummy).Height = NewHeight
+        PreviewControls(Dummy).Left = NewLeft
+        PreviewControls(Dummy).Top = NewTop
 
-        REDIM PreviewCaptions(1 TO CVL(b$)) AS STRING
-        REDIM PreviewTexts(1 TO CVL(b$)) AS STRING
-        REDIM PreviewMasks(1 TO CVL(b$)) AS STRING
-        REDIM PreviewTips(1 TO CVL(b$)) AS STRING
-        REDIM PreviewFonts(1 TO CVL(b$)) AS STRING
-        REDIM PreviewActualFonts(1 TO CVL(b$)) AS STRING
-        REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
-        REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
-
-        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-        IF CVI(b$) <> -1 THEN GOTO LoadError
-        DO
-            b$ = SPACE$(4): GET #BinaryFileNum, , b$
-            Dummy = CVL(b$)
-            IF Dummy <= 0 OR Dummy > UBOUND(PreviewControls) THEN EXIT DO 'Corrupted exchange file.
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewType = CVI(b$)
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            b$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , b$
-            NewName = b$
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewWidth = CVI(b$)
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewHeight = CVI(b$)
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewLeft = CVI(b$)
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            NewTop = CVI(b$)
-            b$ = SPACE$(2): GET #BinaryFileNum, , b$
-            IF CVI(b$) > 0 THEN
-                NewParentID = SPACE$(CVI(b$)): GET #BinaryFileNum, , NewParentID
-            ELSE
-                NewParentID = ""
-            END IF
-
-            PreviewControls(Dummy).ID = Dummy
-            PreviewParentIDS(Dummy) = RTRIM$(NewParentID)
-            PreviewControls(Dummy).Type = NewType
-            PreviewControls(Dummy).Name = NewName
-            PreviewControls(Dummy).Width = NewWidth
-            PreviewControls(Dummy).Height = NewHeight
-            PreviewControls(Dummy).Left = NewLeft
-            PreviewControls(Dummy).Top = NewTop
-
-            DO 'read properties
-                b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                SELECT CASE CVI(b$)
-                    CASE -2 'Caption
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        PreviewCaptions(Dummy) = b$
-                    CASE -3 'Text
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        PreviewTexts(Dummy) = b$
-                    CASE -4 'Stretch
-                        PreviewControls(Dummy).Stretch = True
-                    CASE -5 'Font
-                        DIM FontSetup$, FindSep AS INTEGER
-                        DIM NewFontSize$
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
-                        PreviewFonts(Dummy) = FontSetup$
-                        NewFontSize$ = MID$(FontSetup$, INSTR(FontSetup$, ","))
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        FontSetup$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , FontSetup$
-                        PreviewActualFonts(Dummy) = FontSetup$ + NewFontSize$
-                    CASE -6 'ForeColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
-                    CASE -7 'BackColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).BackColor = _CV(_UNSIGNED LONG, b$)
-                    CASE -8 'SelectedForeColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                    CASE -9 'SelectedBackColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                    CASE -10 'BorderColor
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).BorderColor = _CV(_UNSIGNED LONG, b$)
-                    CASE -11
-                        PreviewControls(Dummy).BackStyle = __UI_Transparent
-                    CASE -12
-                        PreviewControls(Dummy).HasBorder = True
-                    CASE -13
-                        b$ = SPACE$(1): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Align = _CV(_BYTE, b$)
-                    CASE -14
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Value = _CV(_FLOAT, b$)
-                    CASE -15
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Min = _CV(_FLOAT, b$)
-                    CASE -16
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Max = _CV(_FLOAT, b$)
-                    CASE -19
-                        PreviewControls(Dummy).ShowPercentage = True
-                    CASE -20
-                        PreviewControls(Dummy).CanHaveFocus = True
-                    CASE -21
-                        PreviewControls(Dummy).Disabled = True
-                    CASE -22
-                        PreviewControls(Dummy).Hidden = True
-                    CASE -23
-                        PreviewControls(Dummy).CenteredWindow = True
-                    CASE -24 'Tips
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        PreviewTips(Dummy) = b$
-                    CASE -26
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Interval = _CV(_FLOAT, b$)
-                    CASE -27
-                        PreviewControls(Dummy).WordWrap = True
-                    CASE -29
-                        PreviewControls(Dummy).CanResize = True
-                    CASE -31
-                        b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Padding = CVI(b$)
-                    CASE -32
-                        b$ = SPACE$(1): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
-                    CASE -33
-                        PreviewControls(Dummy).PasswordField = True
-                    CASE -34
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).Encoding = CVL(b$)
-                    CASE -35
-                        PreviewDefaultButtonID = Dummy
-                    CASE -36 'Mask
-                        b$ = SPACE$(4): GET #BinaryFileNum, , b$
-                        b$ = SPACE$(CVL(b$))
-                        GET #BinaryFileNum, , b$
-                        PreviewMasks(Dummy) = b$
-                    CASE -37
-                        b$ = SPACE$(LEN(FloatValue)): GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).MinInterval = _CV(_FLOAT, b$)
-                    CASE -38
-                        PreviewControls(Dummy).NumericOnly = True
-                    CASE -39
-                        PreviewControls(Dummy).NumericOnly = __UI_NumericWithBounds
-                    CASE -40
-                        b$ = SPACE$(2)
-                        GET #BinaryFileNum, , b$
-                        PreviewControls(Dummy).BulletStyle = CVI(b$)
-                    CASE -1 'new control
-                        EXIT DO
-                    CASE -1024
-                        __UI_EOF = True
-                        EXIT DO
-                    CASE ELSE
-                        EXIT DO
-                END SELECT
-            LOOP
-        LOOP UNTIL __UI_EOF
-        LoadError:
-        CLOSE #BinaryFileNum
-        TIMER(__UI_EventsTimer) ON
-        TIMER(__UI_RefreshTimer) ON
-    END IF
+        DO 'read properties
+            b$ = ReadSequential$(FormData$, 2)
+            SELECT CASE CVI(b$)
+                CASE -2 'Caption
+                    b$ = ReadSequential$(FormData$, 4)
+                    b$ = ReadSequential$(FormData$, CVL(b$))
+                    PreviewCaptions(Dummy) = b$
+                CASE -3 'Text
+                    b$ = ReadSequential$(FormData$, 4)
+                    b$ = ReadSequential$(FormData$, CVL(b$))
+                    PreviewTexts(Dummy) = b$
+                CASE -4 'Stretch
+                    PreviewControls(Dummy).Stretch = True
+                CASE -5 'Font
+                    DIM FontSetup$, FindSep AS INTEGER
+                    DIM NewFontSize$
+                    b$ = ReadSequential$(FormData$, 2)
+                    FontSetup$ = ReadSequential$(FormData$, CVI(b$))
+                    PreviewFonts(Dummy) = FontSetup$
+                    NewFontSize$ = MID$(FontSetup$, INSTR(FontSetup$, ","))
+                    b$ = ReadSequential$(FormData$, 2)
+                    FontSetup$ = ReadSequential$(FormData$, CVI(b$))
+                    PreviewActualFonts(Dummy) = FontSetup$ + NewFontSize$
+                CASE -6 'ForeColor
+                    b$ = ReadSequential$(FormData$, 4)
+                    PreviewControls(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
+                CASE -7 'BackColor
+                    b$ = ReadSequential$(FormData$, 4)
+                    PreviewControls(Dummy).BackColor = _CV(_UNSIGNED LONG, b$)
+                CASE -8 'SelectedForeColor
+                    b$ = ReadSequential$(FormData$, 4)
+                    PreviewControls(Dummy).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                CASE -9 'SelectedBackColor
+                    b$ = ReadSequential$(FormData$, 4)
+                    PreviewControls(Dummy).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                CASE -10 'BorderColor
+                    b$ = ReadSequential$(FormData$, 4)
+                    PreviewControls(Dummy).BorderColor = _CV(_UNSIGNED LONG, b$)
+                CASE -11
+                    PreviewControls(Dummy).BackStyle = __UI_Transparent
+                CASE -12
+                    PreviewControls(Dummy).HasBorder = True
+                CASE -13
+                    b$ = ReadSequential$(FormData$, 1)
+                    PreviewControls(Dummy).Align = _CV(_BYTE, b$)
+                CASE -14
+                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
+                    PreviewControls(Dummy).Value = _CV(_FLOAT, b$)
+                CASE -15
+                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
+                    PreviewControls(Dummy).Min = _CV(_FLOAT, b$)
+                CASE -16
+                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
+                    PreviewControls(Dummy).Max = _CV(_FLOAT, b$)
+                CASE -19
+                    PreviewControls(Dummy).ShowPercentage = True
+                CASE -20
+                    PreviewControls(Dummy).CanHaveFocus = True
+                CASE -21
+                    PreviewControls(Dummy).Disabled = True
+                CASE -22
+                    PreviewControls(Dummy).Hidden = True
+                CASE -23
+                    PreviewControls(Dummy).CenteredWindow = True
+                CASE -24 'Tips
+                    b$ = ReadSequential$(FormData$, 4)
+                    b$ = ReadSequential$(FormData$, CVL(b$))
+                    PreviewTips(Dummy) = b$
+                CASE -26
+                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
+                    PreviewControls(Dummy).Interval = _CV(_FLOAT, b$)
+                CASE -27
+                    PreviewControls(Dummy).WordWrap = True
+                CASE -29
+                    PreviewControls(Dummy).CanResize = True
+                CASE -31
+                    b$ = ReadSequential$(FormData$, 2)
+                    PreviewControls(Dummy).Padding = CVI(b$)
+                CASE -32
+                    b$ = ReadSequential$(FormData$, 1)
+                    PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
+                CASE -33
+                    PreviewControls(Dummy).PasswordField = True
+                CASE -34
+                    b$ = ReadSequential$(FormData$, 4)
+                    PreviewControls(Dummy).Encoding = CVL(b$)
+                CASE -35
+                    PreviewDefaultButtonID = Dummy
+                CASE -36 'Mask
+                    b$ = ReadSequential$(FormData$, 4)
+                    b$ = ReadSequential$(FormData$, CVL(b$))
+                    PreviewMasks(Dummy) = b$
+                CASE -37
+                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
+                    PreviewControls(Dummy).MinInterval = _CV(_FLOAT, b$)
+                CASE -38
+                    PreviewControls(Dummy).NumericOnly = True
+                CASE -39
+                    PreviewControls(Dummy).NumericOnly = __UI_NumericWithBounds
+                CASE -40
+                    b$ = ReadSequential$(FormData$, 2)
+                    PreviewControls(Dummy).BulletStyle = CVI(b$)
+                CASE -1 'new control
+                    EXIT DO
+                CASE -1024
+                    __UI_EOF = True
+                    EXIT DO
+                CASE ELSE
+                    EXIT DO
+            END SELECT
+        LOOP
+    LOOP UNTIL __UI_EOF
+    LoadError:
+    TIMER(__UI_EventsTimer) ON
+    TIMER(__UI_RefreshTimer) ON
 END SUB
 
 SUB SendData (b$, Property AS INTEGER)

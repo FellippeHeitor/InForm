@@ -65,6 +65,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 'SavePreview parameters:
 CONST InDisk = 1
 CONST InClipboard = 2
+CONST ToEditor = 3
 
 DIM i AS LONG
 DIM SHARED AlphaNumeric(255)
@@ -173,7 +174,7 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_TotalSelectedControls < 0 THEN __UI_TotalSelectedControls = 0
 
-    SavePreview InDisk
+    SavePreview ToEditor
 
     STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
     STATIC prevSelectionRectangle AS INTEGER
@@ -2308,7 +2309,8 @@ END FUNCTION
 SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
-    DIM Clip$, Disk AS _BYTE
+    DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, PreviewData$
+    STATIC LastPreviewDataSent$
 
     CONST Debug = False
 
@@ -2316,6 +2318,8 @@ SUB SavePreview (Destination AS _BYTE)
         Disk = True
         BinFileNum = FREEFILE
         OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #BinFileNum
+    ELSEIF Destination = ToEditor THEN
+        TCP = True
     ELSE
         IF __UI_TotalSelectedControls = 0 THEN EXIT SUB
     END IF
@@ -2330,6 +2334,8 @@ SUB SavePreview (Destination AS _BYTE)
         PUT #BinFileNum, 1, b$
         b$ = MKL$(UBOUND(Control))
         PUT #BinFileNum, , b$
+    ELSEIF TCP THEN
+        PreviewData$ = "FORMDATA>" + MKL$(UBOUND(Control))
     END IF
 
     FOR i = 1 TO UBOUND(Control)
@@ -2593,6 +2599,12 @@ SUB SavePreview (Destination AS _BYTE)
     IF Disk THEN
         PUT #BinFileNum, , b$
         CLOSE #BinFileNum
+    ELSEIF TCP THEN
+        PreviewData$ = PreviewData$ + Clip$ + b$ + "<END>"
+        IF LastPreviewDataSent$ <> PreviewData$ AND __UI_IsDragging = False THEN
+            LastPreviewDataSent$ = PreviewData$
+            PUT #Host, , PreviewData$
+        END IF
     ELSE
         Clip$ = Clip$ + b$
         b$ = Pack$(Clip$)
