@@ -879,16 +879,21 @@ SUB __UI_BeforeUpdateDisplay
     IF CheckUpdates THEN
         IF CheckUpdateDone = False THEN
             STATIC ThisStep AS INTEGER
-            DIM Result$
+            DIM Result$, start!
             IF ThisStep = 0 THEN ThisStep = 1
 
             SELECT EVERYCASE ThisStep
                 CASE 1 'check availability
+                    start! = TIMER
                     Result$ = Download$("www.qb64.org/inform/update/latest.ini", "InForm/InFormUpdate.ini", 30)
                     SELECT CASE CVI(LEFT$(Result$, 2))
                         CASE 1 'Success
                             ThisStep = 2
                         CASE 2, 3 'Can't reach server / Timeout
+                            IF TIMER - start! > 5 THEN
+                                CheckUpdates = False
+                                SaveSettings
+                            END IF
                             CheckUpdateDone = True
                     END SELECT
                 CASE 2 'compare with current version
@@ -2374,7 +2379,7 @@ SUB __UI_OnLoad
     GOSUB ShowMessage
     Handshake
 
-    b$ = "InForm Designer"
+    IF CheckUpdates THEN b$ = "Checking for updates..." ELSE b$ = "InForm Designer"
     GOSUB ShowMessage
 
     __UI_RefreshMenuBar
