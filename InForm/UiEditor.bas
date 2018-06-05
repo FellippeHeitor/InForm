@@ -648,10 +648,11 @@ SUB __UI_Click (id AS LONG)
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
-        CASE FontSwitchMenuSwitch
-            Control(id).Value = NOT Control(id).Value
-            ShowFontList = Control(id).Value
+        CASE FontSwitchMenuSwitch, FontLB, FontListLB
+            ShowFontList = NOT ShowFontList
+            IF id <> FontSwitchMenuSwitch THEN __UI_MouseEnter FontLB
             SaveSettings
+            __UI_ForceRedraw = True
     END SELECT
 
     LastClickedID = id
@@ -717,6 +718,11 @@ SUB __UI_MouseEnter (id AS LONG)
             Caption(StatusBar) = "Automatically sets control names based on caption and type"
         CASE OptionsMenuSwapButtons
             Caption(StatusBar) = "Toggles left/right mouse buttons."
+        CASE FontLB, FontListLB
+            Control(FontLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
+            Control(FontListLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
+            Caption(FontLB) = "Font (toggle)"
+            Caption(FontListLB) = "Font (toggle)"
         CASE ELSE
             IF Control(id).Type = __UI_Type_MenuItem OR Control(id).Type = __UI_Type_MenuBar THEN
                 Caption(StatusBar) = ""
@@ -725,6 +731,13 @@ SUB __UI_MouseEnter (id AS LONG)
 END SUB
 
 SUB __UI_MouseLeave (id AS LONG)
+    SELECT CASE id
+        CASE FontLB, FontListLB
+            Control(FontLB).BackColor = __UI_DefaultColor(__UI_Type_Form, 2)
+            Control(FontListLB).BackColor = __UI_DefaultColor(__UI_Type_Form, 2)
+            Caption(FontLB) = "Font"
+            Caption(FontListLB) = "Font"
+    END SELECT
 END SUB
 
 SUB __UI_FocusIn (id AS LONG)
