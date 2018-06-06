@@ -2659,7 +2659,11 @@ SUB SavePreview (Destination AS _BYTE)
         END IF
         UndoImage(UndoPointer) = Clip$
         UndoPointer = UndoPointer + 1
-        IF UndoPointer > TotalUndoImages THEN TotalUndoImages = TotalUndoImages + 1
+        IF UndoPointer > TotalUndoImages THEN
+            TotalUndoImages = TotalUndoImages + 1
+        ELSEIF UndoPointer < TotalUndoImages THEN
+            TotalUndoImages = UndoPointer
+        END IF
         IF TotalUndoImages > UBOUND(UndoImage) THEN
             REDIM _PRESERVE UndoImage(UBOUND(UndoImage) + 99) AS STRING
         END IF
