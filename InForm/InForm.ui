@@ -1937,7 +1937,6 @@ SUB __UI_EventDispatcher
                                     __UI_JustOpenedMenu = True
                                 END IF
                             END IF
-                            IF Control(__UI_HoveringID).Type = __UI_Type_Form THEN __UI_Click 0 'Force the preview to inform it was manipulated
                         ELSE
                             IF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame AND (TIMER - __UI_LastMouseDownEvent < .5 AND (__UI_MouseTop = __UI_MouseDownTop AND __UI_MouseLeft = __UI_MouseDownLeft)) THEN
                                 'Select all controls inside a frame
@@ -2565,7 +2564,6 @@ SUB __UI_EventDispatcher
 
     DIM SetNewParent AS _BYTE, LeftOffset AS INTEGER, TopOffset AS INTEGER
     IF __UI_IsDragging AND __UI_DraggingID > 0 THEN
-        __UI_Click 0 'Force the preview to inform it was edited
         IF Control(__UI_DraggingID).Type <> __UI_Type_Frame THEN
             IF Control(__UI_BelowHoveringID).Type = __UI_Type_Frame OR Control(__UI_HoveringID).Type = __UI_Type_Frame THEN
                 IF Control(__UI_HoveringID).Type = __UI_Type_Frame THEN __UI_BelowHoveringID = __UI_HoveringID
@@ -2829,7 +2827,6 @@ SUB __UI_EventDispatcher
 
         END IF
     IF __UI_IsResizing AND __UI_ResizingID > 0 THEN
-        __UI_Click 0 'Force the preview to inform it was edited
         __UI_ForceRedraw = True
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ControlIsSelected THEN
@@ -3834,7 +3831,6 @@ SUB __UI_EventDispatcher
                     ControlCut:
                     __UI_KeyPress 216
                     __UI_KeyPress 219
-                    __UI_Click 0 'Force the preview to inform it was edited
                 END IF
             CASE ASC("C"), ASC("c")
                 IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
@@ -3847,7 +3843,6 @@ SUB __UI_EventDispatcher
                     Clip$ = _CLIPBOARD$
                     IF LEFT$(Clip$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
                         __UI_KeyPress 218
-                        __UI_Click 0 'Force the preview to inform it was edited
                     END IF
                 END IF
             CASE 21248 'Delete
@@ -3858,7 +3853,6 @@ SUB __UI_EventDispatcher
                 __UI_KeyPress 216
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Width = Control(i).Width - 1
                             __UI_IsResizing = True
@@ -3872,7 +3866,6 @@ SUB __UI_EventDispatcher
                 __UI_KeyPress 216
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Width = Control(i).Width + 1
                             __UI_IsResizing = True
@@ -3886,7 +3879,6 @@ SUB __UI_EventDispatcher
                 __UI_KeyPress 216
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             __UI_IsResizing = True
                             __UI_ResizingID = i
@@ -3900,7 +3892,6 @@ SUB __UI_EventDispatcher
                 __UI_KeyPress 216
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         IF __UI_ShiftIsDown THEN
                             Control(i).Height = Control(i).Height + 1
                             __UI_IsResizing = True
