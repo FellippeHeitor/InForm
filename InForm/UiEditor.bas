@@ -293,7 +293,6 @@ SUB __UI_Click (id AS LONG)
              AlignMenuDistributeH
             b$ = MKI$(0)
             SendData b$, Dummy
-            Edited = True
         CASE OptionsMenuAutoName
             AutoNameControls = NOT AutoNameControls
             Control(id).Value = AutoNameControls
@@ -304,10 +303,8 @@ SUB __UI_Click (id AS LONG)
             SaveSettings
         CASE EditMenuSetDefaultButton
             SendSignal -6
-            Edited = True
         CASE EditMenuRestoreDimensions
             SendSignal -7
-            Edited = True
         CASE OptionsMenuSwapButtons
             __UI_MouseButtonsSwap = NOT __UI_MouseButtonsSwap
             Control(id).Value = __UI_MouseButtonsSwap
@@ -319,11 +316,9 @@ SUB __UI_Click (id AS LONG)
         CASE InsertMenuMenuBar
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuBar) + "<END>"
             PUT #Client, , b$
-            Edited = True
         CASE InsertMenuMenuItem
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuItem) + "<END>"
             PUT #Client, , b$
-            Edited = True
         CASE ViewMenuPreviewDetach
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
@@ -346,57 +341,44 @@ SUB __UI_Click (id AS LONG)
              AddToggleSwitch
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
             PUT #Client, , b$
-            Edited = True
         CASE AddNumericBox
             b$ = MKI$(0)
             SendData b$, 222
-            Edited = True
         CASE Stretch
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
-            Edited = True
         CASE HasBorder
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
-            Edited = True
         CASE Transparent
             b$ = MKI$(Control(Transparent).Value)
             SendData b$, 28
-            Edited = True
         CASE ShowPercentage
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
-            Edited = True
         CASE WordWrap
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
-            Edited = True
         CASE CanHaveFocus
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
-            Edited = True
         CASE ColorPreview
             _CLIPBOARD$ = ColorPreviewWord$
         CASE Disabled
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
-            Edited = True
         CASE Hidden
             b$ = MKI$(Control(id).Value)
             SendData b$, 20
-            Edited = True
         CASE CenteredWindow
             b$ = MKI$(Control(id).Value)
             SendData b$, 21
-            Edited = True
         CASE Resizable
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
-            Edited = True
         CASE PasswordMaskCB
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
-            Edited = True
         CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
@@ -432,10 +414,10 @@ SUB __UI_Click (id AS LONG)
             END IF
 
             __UI_Focus = 0
-            Edited = False
             LastFormData$ = ""
             Stream$ = ""
             FormDataReceived = False
+            Edited = False
             SendSignal -5
         CASE FileMenuSaveFrm
             SaveForm True, True
@@ -491,7 +473,6 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
             SendData b$, 211
-            Edited = True
             _DELAY .1
             Moving = True: GOSUB ReloadZList
             Moving = False
@@ -502,7 +483,6 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
-            Edited = True
             _DELAY .1
             Moving = True: GOSUB ReloadZList
             Moving = False
@@ -617,26 +597,21 @@ SUB __UI_Click (id AS LONG)
         CASE EditMenuUndo
             b$ = MKI$(0)
             SendData b$, 214
-            Edited = True
         CASE EditMenuRedo
             b$ = MKI$(0)
             SendData b$, 215
-            Edited = True
         CASE EditMenuCopy
             b$ = MKI$(0)
             SendData b$, 217
         CASE EditMenuPaste
             b$ = MKI$(0)
             SendData b$, 218
-            Edited = True
         CASE EditMenuCut
             b$ = MKI$(0)
             SendData b$, 219
-            Edited = True
         CASE EditMenuDelete
             b$ = MKI$(0)
             SendData b$, 220
-            Edited = True
         CASE EditMenuSelectAll
             b$ = MKI$(0)
             SendData b$, 221
@@ -646,11 +621,9 @@ SUB __UI_Click (id AS LONG)
         CASE EditMenuCP437
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
-            Edited = True
         CASE EditMenuCP1252
             b$ = MKL$(1252)
             SendData b$, 34 'Encoding
-            Edited = True
         CASE ViewMenuShowPositionAndSize
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
@@ -821,7 +794,6 @@ SUB __UI_MouseUp (id AS LONG)
             'Compose a new color and send it to the preview
             SendNewRGB
             Caption(StatusBar) = "Color changed."
-            Edited = True
     END SELECT
 END SUB
 
@@ -1117,12 +1089,10 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF CVI(b$) = -7 THEN
             'A new empty form has just been created or a file has just finished loading from disk
             Edited = False
-        ELSEIF CVI(b$) = -8 THEN
-            'Preview form was resized
-            Edited = True
         ELSEIF CVI(b$) = -9 THEN
             'User attempted to close the preview form
             __UI_Click FileMenuNew
+            EXIT SUB
         END IF
     LOOP
 
@@ -1155,11 +1125,9 @@ SUB __UI_BeforeUpdateDisplay
     IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
         b$ = MKI$(0)
         SendData b$, 214
-        Edited = True
     ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
         b$ = MKI$(0)
         SendData b$, 215
-        Edited = True
     END IF
 
     'Make ZOrdering menu enabled/disabled according to control list
@@ -2520,7 +2488,6 @@ SUB __UI_KeyPress (id AS LONG)
                         Caption(StatusBar) = "Ready."
                     END IF
                 END IF
-                Edited = True
             ELSEIF __UI_KeyHit = 32 THEN
                 IF id = NameTB THEN
                     __UI_KeyHit = 0
@@ -2534,10 +2501,6 @@ SUB __UI_KeyPress (id AS LONG)
             ELSE
                 InputBox(GetInputBoxFromID(id)).Sent = False
             END IF
-        CASE AlignOptions
-            Edited = True
-        CASE VAlignOptions
-            Edited = True
     END SELECT
 END SUB
 
