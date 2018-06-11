@@ -3077,6 +3077,8 @@ SUB CheckPreview
                 CLOSE Client
                 Client = 0
 
+                __UI_UpdateDisplay
+
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
 
                 DO
@@ -3114,6 +3116,8 @@ SUB CheckPreview
         CLOSE Client
         Client = 0
 
+        __UI_UpdateDisplay
+
         SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
 
         DO
@@ -3125,6 +3129,15 @@ SUB CheckPreview
         LOOP
 
         Handshake
+
+        IF LEN(LastFormData$) THEN
+        b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
+        PUT #Client, , b$
+        prevScreenX = -1
+        prevScreenY = -1
+        UndoPointer = 0
+        TotalUndoImages = 0
+        END IF
 
         TIMER(__UI_EventsTimer) ON
         ELSE

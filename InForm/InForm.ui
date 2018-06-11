@@ -1395,15 +1395,15 @@ SUB __UI_UpdateDisplay
             _PRINTMODE _KEEPBACKGROUND
             NoInputMessage$ = "Please wait..."
             COLOR _RGB32(0, 0, 0)
-            __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2 + 1, _HEIGHT \ 2 - _FONTWIDTH + 1, NoInputMessage$
+            __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2 + 1, _HEIGHT \ 2 - uspacing + 1, NoInputMessage$
             COLOR _RGB32(255, 255, 255)
-            __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2, _HEIGHT \ 2 - _FONTWIDTH, NoInputMessage$
+            __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2, _HEIGHT \ 2 - uspacing, NoInputMessage$
             IF LEN(__UI_WaitMessage) > 0 THEN
                 IF LEFT$(__UI_WaitMessage, 1) <> "(" THEN __UI_WaitMessage = "(" + __UI_WaitMessage + ")"
                 COLOR _RGB32(0, 0, 0)
-                __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2 + 1, _HEIGHT \ 2 + 4, __UI_WaitMessage
+                __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(__UI_WaitMessage) / 2 + 1, _HEIGHT \ 2 + uspacing + 1, __UI_WaitMessage
                 COLOR _RGB32(255, 255, 255)
-                __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(NoInputMessage$) / 2, _HEIGHT \ 2 + 3, __UI_WaitMessage
+                __UI_PrintString _WIDTH / 2 - __UI_PrintWidth(__UI_WaitMessage) / 2, _HEIGHT \ 2 + uspacing, __UI_WaitMessage
             END IF
             _DEST PrevDest
             __UI_MakeHardwareImage __UI_WaitMessageHandle
