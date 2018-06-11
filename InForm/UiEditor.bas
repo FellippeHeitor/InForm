@@ -1064,7 +1064,7 @@ SUB __UI_BeforeUpdateDisplay
             IF CVI(b$) = -1 THEN
                 IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
             END IF
-            IF __UI_ActiveMenu = 0 THEN __UI_Focus = 0
+            IF CVI(b$) = -3 THEN __UI_Focus = 0
             __UI_ForceRedraw = True
         ELSEIF CVI(b$) = -2 THEN
             'User attempted to right-click a control but the preview
@@ -2458,31 +2458,29 @@ SUB __UI_KeyPress (id AS LONG)
             END IF
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
             IF __UI_KeyHit = 13 THEN
-                IF __UI_Focus = id THEN
-                    'Send the preview the new property value
-                    DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
-                    STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
+                'Send the preview the new property value
+                DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
+                STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
 
-                    IF PreviousValue$ <> Text(id) OR PreviousControl <> FirstSelected OR PreviousProperty <> id THEN
-                        PreviousValue$ = Text(id)
-                        PreviousControl = FirstSelected
-                        PreviousProperty = id
-                        TempValue = GetPropertySignal(id)
-                        SELECT CASE TempValue
-                            CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
-                                b$ = MKL$(LEN(Text(id))) + Text(id)
-                            CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
-                                b$ = MKI$(VAL(Text(id)))
-                            CASE 10, 11, 12, 13, 36 'Value, min, max, interval, mininterval
-                                b$ = _MK$(_FLOAT, VAL(Text(id)))
-                        END SELECT
-                        SendData b$, TempValue
-                        SelectPropertyFully id
-                        InputBoxText(GetInputBoxFromID(id)) = Text(id)
-                        InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
-                        InputBox(GetInputBoxFromID(id)).Sent = True
-                        Caption(StatusBar) = "Ready."
-                    END IF
+                IF InputBox(GetInputBoxFromID(id)).Sent = False THEN
+                    PreviousValue$ = Text(id)
+                    PreviousControl = FirstSelected
+                    PreviousProperty = id
+                    TempValue = GetPropertySignal(id)
+                    SELECT CASE TempValue
+                        CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
+                            b$ = MKL$(LEN(Text(id))) + Text(id)
+                        CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
+                            b$ = MKI$(VAL(Text(id)))
+                        CASE 10, 11, 12, 13, 36 'Value, min, max, interval, mininterval
+                            b$ = _MK$(_FLOAT, VAL(Text(id)))
+                    END SELECT
+                    SendData b$, TempValue
+                    SelectPropertyFully id
+                    InputBoxText(GetInputBoxFromID(id)) = Text(id)
+                    InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
+                    InputBox(GetInputBoxFromID(id)).Sent = True
+                    Caption(StatusBar) = "Ready."
                 END IF
             ELSEIF __UI_KeyHit = 32 THEN
                 IF id = NameTB THEN

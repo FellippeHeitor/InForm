@@ -383,6 +383,20 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "FontListLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Font"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+    Control(__UI_NewID).ContextMenuID = __UI_GetID("FontSwitchMenu")
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontList", 180, 23, 129, 362, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontSizeList", 50, 23, 309, 362, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "TooltipTB", 230, 23, 129, 208, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
@@ -465,20 +479,6 @@ SUB __UI_LoadForm
     AddItem __UI_NewID, "True"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 1
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "FontListLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
-    SetCaption __UI_NewID, "Font"
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).VAlign = __UI_Middle
-    Control(__UI_NewID).ContextMenuID = __UI_GetID("FontSwitchMenu")
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontList", 180, 23, 129, 362, __UI_GetID("ControlProperties"))
-    Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).CanHaveFocus = True
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontSizeList", 50, 23, 309, 362, __UI_GetID("ControlProperties"))
-    Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 12, 12, __UI_GetID("ControlToggles"))

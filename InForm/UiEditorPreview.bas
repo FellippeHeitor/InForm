@@ -104,6 +104,7 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
+    SendSignal -3
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
