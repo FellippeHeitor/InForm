@@ -4450,7 +4450,12 @@ SUB LoadImage (This AS __UI_ControlTYPE, File$)
             IF This.HelperCanvas >= -1 THEN ErrorMessage$ = "Unable to load file:"
         END IF
     ELSE
-        ErrorMessage$ = "Missing image file:"
+        IF File$ = "" THEN
+            'Passing an empty file name can be used to clean the canvas
+            This.HelperCanvas = _NEWIMAGE(This.Width, This.Height, 32)
+        ELSE
+            ErrorMessage$ = "Missing image file:"
+        END IF
     END IF
 
     IF LEN(ErrorMessage$) THEN
