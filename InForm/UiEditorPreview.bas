@@ -413,6 +413,7 @@ SUB __UI_BeforeUpdateDisplay
             PUT #FileToLoad, 1, a$
             CLOSE #FileToLoad
 
+            __UI_DefaultButtonID = 0
             _SCREENSHOW
             IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
                 LoadPreviewText
@@ -438,6 +439,7 @@ SUB __UI_BeforeUpdateDisplay
             LastPreviewDataSent$ = ""
             UndoPointer = 0
             TotalUndoImages = 0
+            __UI_DefaultButtonID = 0
             _ICON
             SendSignal -7 'New form created
         ELSEIF TempValue = -6 THEN
