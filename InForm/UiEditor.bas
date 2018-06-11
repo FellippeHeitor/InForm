@@ -595,11 +595,9 @@ SUB __UI_Click (id AS LONG)
             Control(FileList).Value = 0
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
         CASE EditMenuUndo
-            b$ = MKI$(0)
-            SendData b$, 214
+            SendSignal 214
         CASE EditMenuRedo
-            b$ = MKI$(0)
-            SendData b$, 215
+            SendSignal 215
         CASE EditMenuCopy
             b$ = MKI$(0)
             SendData b$, 217

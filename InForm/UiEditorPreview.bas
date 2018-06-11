@@ -343,22 +343,22 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_IsDragging THEN
         IF NOT WasDragging THEN
-            SaveUndoImage
             WasDragging = True
         END IF
     ELSE
         IF WasDragging THEN
+            SaveUndoImage
             WasDragging = False
         END IF
     END IF
 
     IF __UI_IsResizing THEN
         IF NOT WasResizing THEN
-            SaveUndoImage
             WasResizing = True
         END IF
     ELSE
         IF WasResizing THEN
+            SaveUndoImage
             WasResizing = False
         END IF
     END IF
@@ -451,6 +451,10 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         ELSEIF TempValue = -7 THEN
             __UI_RestoreImageOriginalSize
+        ELSEIF TempValue = 214 THEN
+            RestoreUndoImage
+        ELSEIF TempValue = 215 THEN
+            RestoreRedoImage
         END IF
     LOOP
 
@@ -970,8 +974,7 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
 
                 IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
-            CASE 214 TO 221
-                b$ = ReadSequential$(Property$, 2)
+            CASE 216 TO 221
                 __UI_KeyPress TempValue
             CASE 222 'New textbox control with the NumericOnly property set to true
                 b$ = ReadSequential$(Property$, 2)
