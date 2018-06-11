@@ -171,7 +171,7 @@ END SUB
 SUB __UI_BeforeUpdateDisplay
     DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG
     DIM NewControl AS INTEGER, FileNameToLoad$
-    STATIC MidRead AS _BYTE, UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
+    STATIC UiEditorFile AS INTEGER, EditorWasActive AS _BYTE
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
     STATIC NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
 
@@ -213,833 +213,828 @@ SUB __UI_BeforeUpdateDisplay
         SendData b$, "TOTALUNDOIMAGES"
     END IF
 
-    IF NOT MidRead THEN
-        MidRead = True
-        DIM incomingData$, Signal$, Property$
+    DIM incomingData$, Signal$, Property$
 
-        GET #Host, , incomingData$
-        Stream$ = Stream$ + incomingData$
+    GET #Host, , incomingData$
+    Stream$ = Stream$ + incomingData$
 
-        DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
-        IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
-            ThisContainer = Control(__UI_FirstSelectedID).ParentID
-            TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
-            TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
-        ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-            ThisContainer = Control(__UI_FirstSelectedID).ID
-            TempWidth = Control(__UI_FirstSelectedID).Width
-            TempHeight = Control(__UI_FirstSelectedID).Height
-        ELSE
-            TempWidth = Control(__UI_FormID).Width
-            TempHeight = Control(__UI_FormID).Height
-        END IF
+    DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
+    IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+        ThisContainer = Control(__UI_FirstSelectedID).ParentID
+        TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
+        TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
+    ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+        ThisContainer = Control(__UI_FirstSelectedID).ID
+        TempWidth = Control(__UI_FirstSelectedID).Width
+        TempHeight = Control(__UI_FirstSelectedID).Height
+    ELSE
+        TempWidth = Control(__UI_FormID).Width
+        TempHeight = Control(__UI_FormID).Height
+    END IF
 
-        DIM thisData$, thisCommand$
-        DO WHILE INSTR(Stream$, "<END>") > 0
-            thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
-            Stream$ = MID$(Stream$, INSTR(Stream$, "<END>") + 5)
-            thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
-            thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
-            SELECT CASE UCASE$(thisCommand$)
-                CASE "RESTORECRASH"
-                    RestoreCrashData$ = thisData$
-                    LoadPreview FromEditor
-                    EXIT SUB
-                CASE "WINDOWPOSITION"
-                    NewWindowLeft = CVI(LEFT$(thisData$, 2))
-                    NewWindowTop = CVI(MID$(thisData$, 3, 2))
-                CASE "AUTONAME"
-                    AutoNameControls = CVI(thisData$)
-                CASE "MOUSESWAP"
-                    __UI_MouseButtonsSwap = CVI(thisData$)
-                CASE "SHOWPOSSIZE"
-                    __UI_ShowPositionAndSize = CVI(thisData$)
-                CASE "SNAPLINES"
-                    __UI_SnapLines = CVI(thisData$)
-                CASE "SIGNAL"
-                    Signal$ = Signal$ + thisData$
-                CASE "PROPERTY"
-                    Property$ = Property$ + thisData$
-                CASE "OPENFILE"
-                    FileNameToLoad$ = thisData$
-                CASE "NEWCONTROL"
-                    TempValue = CVI(thisData$)
+    DIM thisData$, thisCommand$
+    DO WHILE INSTR(Stream$, "<END>") > 0
+        thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
+        Stream$ = MID$(Stream$, INSTR(Stream$, "<END>") + 5)
+        thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
+        thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
+        SELECT CASE UCASE$(thisCommand$)
+            CASE "RESTORECRASH"
+                RestoreCrashData$ = thisData$
+                LoadPreview FromEditor
+                EXIT SUB
+            CASE "WINDOWPOSITION"
+                NewWindowLeft = CVI(LEFT$(thisData$, 2))
+                NewWindowTop = CVI(MID$(thisData$, 3, 2))
+            CASE "AUTONAME"
+                AutoNameControls = CVI(thisData$)
+            CASE "MOUSESWAP"
+                __UI_MouseButtonsSwap = CVI(thisData$)
+            CASE "SHOWPOSSIZE"
+                __UI_ShowPositionAndSize = CVI(thisData$)
+            CASE "SNAPLINES"
+                __UI_SnapLines = CVI(thisData$)
+            CASE "SIGNAL"
+                Signal$ = Signal$ + thisData$
+            CASE "PROPERTY"
+                Property$ = Property$ + thisData$
+            CASE "OPENFILE"
+                FileNameToLoad$ = thisData$
+            CASE "NEWCONTROL"
+                TempValue = CVI(thisData$)
 
-                    IF TempValue > 0 THEN
-                        SaveUndoImage
-                        SELECT CASE TempValue
-                            CASE __UI_Type_Button
-                                TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
+                IF TempValue > 0 THEN
+                    SaveUndoImage
+                    SELECT CASE TempValue
+                        CASE __UI_Type_Button
+                            TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
+                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                        CASE __UI_Type_Label
+                            TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                            AutoSizeLabel Control(TempValue)
+                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton
+                            TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                        CASE __UI_Type_TextBox
+                            TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
+                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                        CASE __UI_Type_ListBox
+                            TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
+                            Control(TempValue).HasBorder = True
+                        CASE __UI_Type_DropdownList
+                            TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
+                        CASE __UI_Type_TrackBar
+                            TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
+                        CASE __UI_Type_ProgressBar
+                            TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
+                        CASE __UI_Type_PictureBox
+                            TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
+                        CASE __UI_Type_Frame
+                            TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
+                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                        CASE __UI_Type_MenuBar
+                            TempValue = AddNewMenuBarControl
+                        CASE __UI_Type_MenuItem
+                            IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                                TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
                                 SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            CASE __UI_Type_Label
-                                TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
-                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                                AutoSizeLabel Control(TempValue)
-                            CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                                TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
-                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            CASE __UI_Type_TextBox
-                                TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            CASE __UI_Type_ListBox
-                                TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
-                                Control(TempValue).HasBorder = True
-                            CASE __UI_Type_DropdownList
-                                TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
-                            CASE __UI_Type_TrackBar
-                                TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
-                            CASE __UI_Type_ProgressBar
-                                TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
-                            CASE __UI_Type_PictureBox
-                                TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
-                            CASE __UI_Type_Frame
-                                TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
-                                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            CASE __UI_Type_MenuBar
-                                TempValue = AddNewMenuBarControl
-                            CASE __UI_Type_MenuItem
-                                IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
-                                    TempValue = __UI_NewControl(TempValue, "", 0, 0, 0, 0, __UI_ParentMenu)
-                                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                                    __UI_ActivateMenu Control(__UI_ParentMenu), False
-                                END IF
-                            CASE __UI_Type_ToggleSwitch
-                                TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempHeight \ 2 - 8, ThisContainer)
-                        END SELECT
-                        IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
-                            __UI_DestroyControl Control(__UI_ActiveMenu)
-                        END IF
-                        SelectNewControl TempValue
+                                __UI_ActivateMenu Control(__UI_ParentMenu), False
+                            END IF
+                        CASE __UI_Type_ToggleSwitch
+                            TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempHeight \ 2 - 8, ThisContainer)
+                    END SELECT
+                    IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
+                        __UI_DestroyControl Control(__UI_ActiveMenu)
                     END IF
-            END SELECT
-        LOOP
-
-        $IF WIN THEN
-            IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
-                _SCREENMOVE NewWindowLeft + 612, NewWindowTop
-            END IF
-        $END IF
-
-        'Check if the editor is still alive
-        $IF WIN THEN
-            DIM hnd&, b&, ExitCode&
-            hnd& = OpenProcess(&H400, 0, UiEditorPID)
-            b& = GetExitCodeProcess(hnd&, ExitCode&)
-            IF b& = 1 AND ExitCode& = 259 THEN
-                'Editor is active.
-                EditorWasActive = True
-            ELSE
-                'Editor was closed.
-                IF EditorWasActive = False THEN
-                    'Preview was launched by user
-                    DIM Answer AS LONG
-                    _SCREENHIDE
-                    Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
+                    SelectNewControl TempValue
                 END IF
-                SYSTEM
-            END IF
-            b& = CloseHandle(hnd&)
-        $ELSE
-            IF PROCESS_CLOSED(UiEditorPID, 0) THEN SYSTEM
-        $END IF
+        END SELECT
+    LOOP
 
-        IF __UI_IsDragging THEN
-            IF NOT WasDragging THEN
-                SaveUndoImage
-                WasDragging = True
-            END IF
+    $IF WIN THEN
+        IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
+            _SCREENMOVE NewWindowLeft + 612, NewWindowTop
+        END IF
+    $END IF
+
+    'Check if the editor is still alive
+    $IF WIN THEN
+        DIM hnd&, b&, ExitCode&
+        hnd& = OpenProcess(&H400, 0, UiEditorPID)
+        b& = GetExitCodeProcess(hnd&, ExitCode&)
+        IF b& = 1 AND ExitCode& = 259 THEN
+            'Editor is active.
+            EditorWasActive = True
         ELSE
-            IF WasDragging THEN
-                WasDragging = False
-            END IF
-        END IF
-
-        IF __UI_IsResizing THEN
-            IF NOT WasResizing THEN
-                SaveUndoImage
-                WasResizing = True
-            END IF
-        ELSE
-            IF WasResizing THEN
-                WasResizing = False
-            END IF
-        END IF
-
-        STATIC prevImgWidthSent AS INTEGER, prevImgHeightSent AS INTEGER
-        IF __UI_FirstSelectedID > 0 THEN
-            IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
-                IF prevImgWidthSent <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) OR _
-                   prevImgHeightSent <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) THEN
-                    prevImgWidthSent = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
-                    prevImgHeightSent = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
-                    b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
-                    SendData b$, "ORIGINALIMAGEWIDTH"
-
-                    b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
-                    SendData b$, "ORIGINALIMAGEHEIGHT"
-                END IF
-            ELSE
-                IF prevImgWidthSent <> 0 OR _
-                   prevImgHeightSent <> 0 THEN
-                    prevImgWidthSent = 0
-                    prevImgHeightSent = 0
-                    b$ = MKI$(0)
-                    SendData b$, "ORIGINALIMAGEWIDTH"
-                    SendData b$, "ORIGINALIMAGEHEIGHT"
-                END IF
-            END IF
-        END IF
-
-        DO WHILE LEN(Signal$)
-            b$ = LEFT$(Signal$, 2)
-            Signal$ = MID$(Signal$, 3)
-            TempValue = CVI(b$)
-            IF TempValue = -2 THEN
-                'Hide the preview
+            'Editor was closed.
+            IF EditorWasActive = False THEN
+                'Preview was launched by user
+                DIM Answer AS LONG
                 _SCREENHIDE
-            ELSEIF TempValue = -3 THEN
-                'Show the preview
-                _SCREENSHOW
-            ELSEIF TempValue = -4 THEN
-                'Load an existing file
-                IsCreating = True
-                DIM FileToLoad AS INTEGER
-                FileToLoad = FREEFILE
-                OPEN FileNameToLoad$ FOR BINARY AS #FileToLoad
-                a$ = SPACE$(LOF(FileToLoad))
-                GET #FileToLoad, 1, a$
-                CLOSE #FileToLoad
-
-                FileToLoad = FREEFILE
-                OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
-                PUT #FileToLoad, 1, a$
-                CLOSE #FileToLoad
-
-                _SCREENSHOW
-                IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
-                    LoadPreviewText
-                ELSE
-                    LoadPreview InDisk
-                END IF
-                UndoPointer = 0
-                TotalUndoImages = 0
-                SendSignal -7 'Form just loaded
-            ELSEIF TempValue = -5 THEN
-                'Reset request (new form)
-                IsCreating = True
-                a$ = Unpack$(EmptyForm$)
-
-                FileToLoad = FREEFILE
-                OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
-                PUT #FileToLoad, 1, a$
-                CLOSE #FileToLoad
-
-                LoadPreview InDisk
-                LoadDefaultFonts
-
-                LastPreviewDataSent$ = ""
-                UndoPointer = 0
-                TotalUndoImages = 0
-                _ICON
-                SendSignal -7 'New form created
-            ELSEIF TempValue = -6 THEN
-                'Set current button as default
-                IF __UI_DefaultButtonID = __UI_FirstSelectedID THEN
-                    __UI_DefaultButtonID = 0
-                ELSE
-                    __UI_DefaultButtonID = __UI_FirstSelectedID
-                END IF
-            ELSEIF TempValue = -7 THEN
-                __UI_RestoreImageOriginalSize
+                Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
             END IF
-        LOOP
+            SYSTEM
+        END IF
+        b& = CloseHandle(hnd&)
+    $ELSE
+        IF PROCESS_CLOSED(UiEditorPID, 0) THEN SYSTEM
+    $END IF
 
-        DO WHILE LEN(Property$)
-            DIM FloatValue AS _FLOAT
-            'Editor sent property value
-            b$ = ReadSequential$(Property$, 2)
-            TempValue = CVI(b$)
+    IF __UI_IsDragging THEN
+        IF NOT WasDragging THEN
             SaveUndoImage
-            SELECT CASE TempValue
-                CASE 1 'Name
-                    b$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, CVL(b$))
-                    IF __UI_TotalSelectedControls = 1 THEN
-                        Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
-                    ELSEIF __UI_TotalSelectedControls = 0 THEN
-                        Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
-                    END IF
-                CASE 2 'Caption
-                    b$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, CVL(b$))
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                IF Control(i).Type = __UI_Type_Label THEN
-                                    DIM TotalReplacements AS LONG
-                                    b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
-                                END IF
-                                SetCaption i, b$
-                                IF Control(i).Type = __UI_Type_Label THEN AutoSizeLabel Control(i)
-                                IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
-                                IF Control(i).Type = __UI_Type_MenuItem THEN
-                                    __UI_ActivateMenu Control(Control(i).ParentID), False
-                                END IF
+            WasDragging = True
+        END IF
+    ELSE
+        IF WasDragging THEN
+            WasDragging = False
+        END IF
+    END IF
+
+    IF __UI_IsResizing THEN
+        IF NOT WasResizing THEN
+            SaveUndoImage
+            WasResizing = True
+        END IF
+    ELSE
+        IF WasResizing THEN
+            WasResizing = False
+        END IF
+    END IF
+
+    STATIC prevImgWidthSent AS INTEGER, prevImgHeightSent AS INTEGER
+    IF __UI_FirstSelectedID > 0 THEN
+        IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
+            IF prevImgWidthSent <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) OR _
+               prevImgHeightSent <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                prevImgWidthSent = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
+                prevImgHeightSent = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
+                b$ = MKI$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))
+                SendData b$, "ORIGINALIMAGEWIDTH"
+
+                b$ = MKI$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))
+                SendData b$, "ORIGINALIMAGEHEIGHT"
+            END IF
+        ELSE
+            IF prevImgWidthSent <> 0 OR _
+               prevImgHeightSent <> 0 THEN
+                prevImgWidthSent = 0
+                prevImgHeightSent = 0
+                b$ = MKI$(0)
+                SendData b$, "ORIGINALIMAGEWIDTH"
+                SendData b$, "ORIGINALIMAGEHEIGHT"
+            END IF
+        END IF
+    END IF
+
+    DO WHILE LEN(Signal$)
+        b$ = LEFT$(Signal$, 2)
+        Signal$ = MID$(Signal$, 3)
+        TempValue = CVI(b$)
+        IF TempValue = -2 THEN
+            'Hide the preview
+            _SCREENHIDE
+        ELSEIF TempValue = -3 THEN
+            'Show the preview
+            _SCREENSHOW
+        ELSEIF TempValue = -4 THEN
+            'Load an existing file
+            IsCreating = True
+            DIM FileToLoad AS INTEGER
+            FileToLoad = FREEFILE
+            OPEN FileNameToLoad$ FOR BINARY AS #FileToLoad
+            a$ = SPACE$(LOF(FileToLoad))
+            GET #FileToLoad, 1, a$
+            CLOSE #FileToLoad
+
+            FileToLoad = FREEFILE
+            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+            PUT #FileToLoad, 1, a$
+            CLOSE #FileToLoad
+
+            _SCREENSHOW
+            IF INSTR(a$, "SUB __UI_LoadForm") > 0 THEN
+                LoadPreviewText
+            ELSE
+                LoadPreview InDisk
+            END IF
+            UndoPointer = 0
+            TotalUndoImages = 0
+            SendSignal -7 'Form just loaded
+        ELSEIF TempValue = -5 THEN
+            'Reset request (new form)
+            IsCreating = True
+            a$ = Unpack$(EmptyForm$)
+
+            FileToLoad = FREEFILE
+            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
+            PUT #FileToLoad, 1, a$
+            CLOSE #FileToLoad
+
+            LoadPreview InDisk
+            LoadDefaultFonts
+
+            LastPreviewDataSent$ = ""
+            UndoPointer = 0
+            TotalUndoImages = 0
+            _ICON
+            SendSignal -7 'New form created
+        ELSEIF TempValue = -6 THEN
+            'Set current button as default
+            IF __UI_DefaultButtonID = __UI_FirstSelectedID THEN
+                __UI_DefaultButtonID = 0
+            ELSE
+                __UI_DefaultButtonID = __UI_FirstSelectedID
+            END IF
+        ELSEIF TempValue = -7 THEN
+            __UI_RestoreImageOriginalSize
+        END IF
+    LOOP
+
+    DO WHILE LEN(Property$)
+        DIM FloatValue AS _FLOAT
+        'Editor sent property value
+        b$ = ReadSequential$(Property$, 2)
+        TempValue = CVI(b$)
+        SaveUndoImage
+        SELECT CASE TempValue
+            CASE 1 'Name
+                b$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, CVL(b$))
+                IF __UI_TotalSelectedControls = 1 THEN
+                    Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
+                ELSEIF __UI_TotalSelectedControls = 0 THEN
+                    Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
+                END IF
+            CASE 2 'Caption
+                b$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, CVL(b$))
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            IF Control(i).Type = __UI_Type_Label THEN
+                                DIM TotalReplacements AS LONG
+                                b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                             END IF
-                        NEXT
-                    ELSE
-                        Caption(__UI_FormID) = b$
-                        i = __UI_FormID
-                        IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
-                    END IF
-
-                    GOTO SkipAutoName
-
-                    AutoName:
-                    IF AutoNameControls THEN
-                        DIM NewName$
-
-                        NewName$ = RTRIM$(b$)
-
-                        IF Control(i).Type = __UI_Type_MenuBar THEN
-                            IF LEN(NewName$) > 36 THEN NewName$ = LEFT$(NewName$, 36)
-                        ELSEIF Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_ListBox AND Control(i).Type <> __UI_Type_TrackBar AND Control(i).Type <> __UI_Type_DropdownList THEN
-                            IF LEN(NewName$) > 38 THEN NewName$ = LEFT$(NewName$, 38)
-                        END IF
-                        SELECT CASE Control(i).Type
-                            CASE __UI_Type_Button: NewName$ = NewName$ + "BT"
-                            CASE __UI_Type_Label: NewName$ = NewName$ + "LB"
-                            CASE __UI_Type_CheckBox: NewName$ = NewName$ + "CB"
-                            CASE __UI_Type_RadioButton: NewName$ = NewName$ + "RB"
-                            CASE __UI_Type_TextBox: NewName$ = NewName$ + "TB"
-                            CASE __UI_Type_ProgressBar: NewName$ = NewName$ + "PB"
-                            CASE __UI_Type_MenuBar: NewName$ = NewName$ + "Menu"
-                            CASE __UI_Type_MenuItem
-                                NewName$ = RTRIM$(Control(Control(i).ParentID).Name) + NewName$
-                            CASE __UI_Type_PictureBox: NewName$ = NewName$ + "PX"
-                        END SELECT
-
-                        Control(i).Name = AdaptName$(NewName$, i)
-                    END IF
-                    RETURN
-
-                    SkipAutoName:
-                CASE 3 'Text
-                    b$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, CVL(b$))
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Text(i) = b$
-                                IF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
-                                    Text(i) = LEFT$(b$, Control(i).Max)
-                                END IF
-                                IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
-                                    LoadImage Control(i), b$
-                                ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
-                                    LoadImage Control(i), b$
-                                    IF LEN(Text(i)) > 0 THEN 'Load successful
-                                        'Keep aspect ratio at load
-                                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
-                                    END IF
-                                    IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
-                                ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
-                                    Text(i) = Replace(b$, "\n", CHR$(13), False, TotalReplacements)
-                                    IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
-                                    Control(i).LastVisibleItem = 0 'Reset it so it's recalculated
-                                END IF
-                            END IF
-                        NEXT
-                    ELSE
-                        IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
-                        ExeIcon = IconPreview&(b$)
-                        IF ExeIcon < -1 THEN
-                            _ICON ExeIcon
-                            Text(__UI_FormID) = b$
-                        ELSE
-                            _ICON
-                            IF _FILEEXISTS(b$) THEN
-                                IF LCASE$(RIGHT$(b$, 4)) <> ".ico" THEN
-                                    SendSignal -6
-                                    Text(__UI_FormID) = ""
-                                ELSE
-                                    SendSignal -4
-                                    Text(__UI_FormID) = b$
-                                END IF
-                            ELSE
-                                Text(__UI_FormID) = ""
-                            END IF
-                        END IF
-                    END IF
-                CASE 4 'Top
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Top = TempValue
-                        END IF
-                    NEXT
-                CASE 5 'Left
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Left = TempValue
-                        END IF
-                    NEXT
-                CASE 6 'Width
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    IF TempValue < 1 THEN TempValue = 1
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).Width = TempValue
-                            END IF
-                        NEXT
-                    ELSE
-                        IF TempValue < 20 THEN TempValue = 20
-                        Control(__UI_FormID).Width = TempValue
-                    END IF
-                CASE 7 'Height
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    IF TempValue < 1 THEN TempValue = 1
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).Height = TempValue
-                            END IF
-                        NEXT
-                    ELSE
-                        IF TempValue < 20 THEN TempValue = 20
-                        Control(__UI_FormID).Height = TempValue
-                    END IF
-                CASE 8 'Font
-                    b$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, CVL(b$))
-                    DIM NewFontFile AS STRING
-                    DIM NewFontSize AS INTEGER
-                    DIM FindSep AS INTEGER, TotalSep AS INTEGER
-
-                    'Parse b$ into Font data
-                    FindSep = INSTR(b$, ",")
-                    IF FindSep THEN TotalSep = TotalSep + 1
-                    NewFontFile = LEFT$(b$, FindSep - 1)
-                    b$ = MID$(b$, FindSep + 1)
-
-                    NewFontSize = VAL(b$)
-
-                    IF TotalSep = 1 AND NewFontSize > 0 THEN
-                        IF __UI_TotalSelectedControls > 0 THEN
-                            FOR i = 1 TO UBOUND(Control)
-                                IF Control(i).ControlIsSelected THEN
-                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
-                                    DIM tempFont AS LONG
-                                    tempFont = _FONT
-                                    _FONT Control(i).Font
-                                    SELECT CASE Control(i).Type
-                                        CASE __UI_Type_Label
-                                            IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6: AutoSizeLabel Control(i)
-                                        CASE __UI_Type_TextBox
-                                            IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6
-                                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
-                                            Control(i).Height = uspacing + 6
-                                    END SELECT
-                                    IF Control(i).HotKey > 0 THEN
-                                        IF Control(i).HotKeyPosition = 1 THEN
-                                            Control(i).HotKeyOffset = 0
-                                        ELSE
-                                            Control(i).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(i), Control(i).HotKeyPosition - 1))
-                                        END IF
-                                    END IF
-                                    _FONT tempFont
-                                END IF
-                            NEXT
-                        ELSE
-                            Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize)
-                            DIM MustRedrawMenus AS _BYTE
-                            FOR i = 1 TO UBOUND(Control)
-                                IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
-                                    MustRedrawMenus = True
-                                END IF
-                            NEXT
-                            IF MustRedrawMenus THEN __UI_RefreshMenuBar
-                        END IF
-                    END IF
-                CASE 9 'Tooltip
-                    b$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, CVL(b$))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
-                        END IF
-                    NEXT
-                CASE 10 'Value
-                    b$ = ReadSequential$(Property$, LEN(FloatValue))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
-                                IF _CV(_FLOAT, b$) <> 0 THEN
-                                    Control(i).Value = True
-                                ELSE
-                                    Control(i).Value = False
-                                END IF
-                            ELSEIF Control(i).Type = __UI_Type_RadioButton OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_Bullet) THEN
-                                IF _CV(_FLOAT, b$) <> 0 THEN
-                                    SetRadioButtonValue i
-                                ELSE
-                                    Control(i).Value = False
-                                END IF
-                            ELSE
-                                Control(i).Value = _CV(_FLOAT, b$)
-                            END IF
-                        END IF
-                    NEXT
-                CASE 11 'Min
-                    b$ = ReadSequential$(Property$, LEN(FloatValue))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Min = _CV(_FLOAT, b$)
-                        END IF
-                    NEXT
-                CASE 12 'Max
-                    b$ = ReadSequential$(Property$, LEN(FloatValue))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Max = _CV(_FLOAT, b$)
-                            IF Control(i).Type = __UI_Type_TextBox THEN
-                                Text(i) = LEFT$(Text(i), INT(Control(i).Max))
-                                IF LEN(Mask(i)) > 0 THEN Mask(i) = ""
-                            END IF
-                        END IF
-                    NEXT
-                CASE 13 'Interval
-                    b$ = ReadSequential$(Property$, LEN(FloatValue))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Interval = _CV(_FLOAT, b$)
-                        END IF
-                    NEXT
-                CASE 14 'Stretch
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Stretch = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 15 'Has border
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).HasBorder = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 16 'Show percentage
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).ShowPercentage = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 17 'Word wrap
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).WordWrap = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 18 'Can have focus
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).CanHaveFocus = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 19 'Disabled
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Disabled = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 20 'Hidden
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Hidden = CVI(b$)
-                            IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = Control(i).ParentID THEN
+                            SetCaption i, b$
+                            IF Control(i).Type = __UI_Type_Label THEN AutoSizeLabel Control(i)
+                            IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                            IF Control(i).Type = __UI_Type_MenuItem THEN
                                 __UI_ActivateMenu Control(Control(i).ParentID), False
                             END IF
                         END IF
                     NEXT
-                CASE 21 'CenteredWindow
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    IF __UI_TotalSelectedControls = 0 THEN
-                        Control(__UI_FormID).CenteredWindow = TempValue
-                    END IF
-                CASE 22 'Alignment
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Align = CVI(b$)
-                            IF Control(i).Type = __UI_Type_MenuBar THEN
-                                IF Control(i).Align <> __UI_Left THEN Control(i).Align = __UI_Right
-                                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
-                                __UI_RefreshMenuBar
-                            END IF
-                        END IF
-                    NEXT
-                CASE 23 'ForeColor
-                    b$ = ReadSequential$(Property$, 4)
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    ELSE
-                        Control(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).Type = __UI_Type_MenuBar THEN
-                                Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    END IF
-                CASE 24 'BackColor
-                    b$ = ReadSequential$(Property$, 4)
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    ELSE
-                        Control(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).Type = __UI_Type_MenuBar THEN
-                                Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    END IF
-                CASE 25 'SelectedForeColor
-                    b$ = ReadSequential$(Property$, 4)
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    ELSE
-                        Control(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                                Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    END IF
-                CASE 26 'SelectedBackColor
-                    b$ = ReadSequential$(Property$, 4)
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    ELSE
-                        Control(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                                Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    END IF
-                CASE 27 'BorderColor
-                    b$ = ReadSequential$(Property$, 4)
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).BorderColor = _CV(_UNSIGNED LONG, b$)
-                            END IF
-                        NEXT
-                    ELSE
-                        Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
-                    END IF
-                CASE 28 'BackStyle
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).BackStyle = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 29 'CanResize
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    IF __UI_TotalSelectedControls = 0 THEN
-                        Control(__UI_FormID).CanResize = TempValue
-                    END IF
-                CASE 31 'Padding
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = CVI(b$)
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).Padding = TempValue
-                            END IF
-                        NEXT
-                    END IF
-                CASE 32 'Vertical Alignment
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).VAlign = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 33 'Password field
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
-                            Control(i).PasswordField = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 34 'Encoding
-                    b$ = ReadSequential$(Property$, 4)
-                    Control(__UI_FormID).Encoding = CVL(b$)
-                CASE 35 'Mask
-                    b$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, CVL(b$))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Mask(i) = b$
-                            Text(i) = ""
-                            IF LEN(Mask(i)) THEN Control(i).Max = 0
-                        END IF
-                    NEXT
-                CASE 36 'MinInterval
-                    b$ = ReadSequential$(Property$, LEN(FloatValue))
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).MinInterval = _CV(_FLOAT, b$)
-                        END IF
-                    NEXT
-                CASE 37 'BulletStyle
-                    b$ = ReadSequential$(Property$, 2)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).BulletStyle = CVI(b$)
-                        END IF
-                    NEXT
-                CASE 201 TO 210
-                    'Alignment commands
-                    b$ = ReadSequential$(Property$, 2)
-                    DoAlign TempValue
-                CASE 211, 212 'Z-Ordering -> Move up/down
-                    DIM tID1 AS LONG, tID2 AS LONG
-                    a$ = ReadSequential$(Property$, 4)
-                    b$ = ReadSequential$(Property$, 4)
-                    tID1 = Control(CVL(a$)).ID
-                    tID2 = Control(CVL(b$)).ID
-                    SWAP Control(CVL(b$)), Control(CVL(a$))
-                    SWAP Caption(CVL(b$)), Caption(CVL(a$))
-                    SWAP Text(CVL(b$)), Text(CVL(a$))
-                    SWAP ToolTip(CVL(b$)), ToolTip(CVL(a$))
-                    Control(CVL(a$)).ID = tID1
-                    Control(CVL(b$)).ID = tID2
+                ELSE
+                    Caption(__UI_FormID) = b$
+                    i = __UI_FormID
+                    IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                END IF
 
-                    'Restore ParentIDs based on ParentName
-                    FOR i = 1 TO UBOUND(Control)
-                        Control(i).ParentID = __UI_GetID(Control(i).ParentName)
-                    NEXT
+                GOTO SkipAutoName
 
-                    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
-                        IF Control(CVL(a$)).Type = __UI_Type_MenuItem OR Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
-                            __UI_ActivateMenu Control(__UI_ParentMenu), False
+                AutoName:
+                IF AutoNameControls THEN
+                    DIM NewName$
+
+                    NewName$ = RTRIM$(b$)
+
+                    IF Control(i).Type = __UI_Type_MenuBar THEN
+                        IF LEN(NewName$) > 36 THEN NewName$ = LEFT$(NewName$, 36)
+                    ELSEIF Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_ListBox AND Control(i).Type <> __UI_Type_TrackBar AND Control(i).Type <> __UI_Type_DropdownList THEN
+                        IF LEN(NewName$) > 38 THEN NewName$ = LEFT$(NewName$, 38)
+                    END IF
+                    SELECT CASE Control(i).Type
+                        CASE __UI_Type_Button: NewName$ = NewName$ + "BT"
+                        CASE __UI_Type_Label: NewName$ = NewName$ + "LB"
+                        CASE __UI_Type_CheckBox: NewName$ = NewName$ + "CB"
+                        CASE __UI_Type_RadioButton: NewName$ = NewName$ + "RB"
+                        CASE __UI_Type_TextBox: NewName$ = NewName$ + "TB"
+                        CASE __UI_Type_ProgressBar: NewName$ = NewName$ + "PB"
+                        CASE __UI_Type_MenuBar: NewName$ = NewName$ + "Menu"
+                        CASE __UI_Type_MenuItem
+                            NewName$ = RTRIM$(Control(Control(i).ParentID).Name) + NewName$
+                        CASE __UI_Type_PictureBox: NewName$ = NewName$ + "PX"
+                    END SELECT
+
+                    Control(i).Name = AdaptName$(NewName$, i)
+                END IF
+                RETURN
+
+                SkipAutoName:
+            CASE 3 'Text
+                b$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, CVL(b$))
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Text(i) = b$
+                            IF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
+                                Text(i) = LEFT$(b$, Control(i).Max)
+                            END IF
+                            IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
+                                LoadImage Control(i), b$
+                            ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
+                                LoadImage Control(i), b$
+                                IF LEN(Text(i)) > 0 THEN 'Load successful
+                                    'Keep aspect ratio at load
+                                    Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                                END IF
+                                IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                            ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
+                                Text(i) = Replace(b$, "\n", CHR$(13), False, TotalReplacements)
+                                IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
+                                Control(i).LastVisibleItem = 0 'Reset it so it's recalculated
+                            END IF
+                        END IF
+                    NEXT
+                ELSE
+                    IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
+                    ExeIcon = IconPreview&(b$)
+                    IF ExeIcon < -1 THEN
+                        _ICON ExeIcon
+                        Text(__UI_FormID) = b$
+                    ELSE
+                        _ICON
+                        IF _FILEEXISTS(b$) THEN
+                            IF LCASE$(RIGHT$(b$, 4)) <> ".ico" THEN
+                                SendSignal -6
+                                Text(__UI_FormID) = ""
+                            ELSE
+                                SendSignal -4
+                                Text(__UI_FormID) = b$
+                            END IF
                         ELSE
-                            __UI_DestroyControl Control(__UI_ActiveMenu)
+                            Text(__UI_FormID) = ""
                         END IF
                     END IF
-                CASE 213
-                    'Select control
-                    b$ = ReadSequential$(Property$, 4)
-
-                    'Desselect all first:
+                END IF
+            CASE 4 'Top
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Top = TempValue
+                    END IF
+                NEXT
+            CASE 5 'Left
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Left = TempValue
+                    END IF
+                NEXT
+            CASE 6 'Width
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                IF TempValue < 1 THEN TempValue = 1
+                IF __UI_TotalSelectedControls > 0 THEN
                     FOR i = 1 TO UBOUND(Control)
-                        Control(i).ControlIsSelected = False
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Width = TempValue
+                        END IF
                     NEXT
+                ELSE
+                    IF TempValue < 20 THEN TempValue = 20
+                    Control(__UI_FormID).Width = TempValue
+                END IF
+            CASE 7 'Height
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                IF TempValue < 1 THEN TempValue = 1
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Height = TempValue
+                        END IF
+                    NEXT
+                ELSE
+                    IF TempValue < 20 THEN TempValue = 20
+                    Control(__UI_FormID).Height = TempValue
+                END IF
+            CASE 8 'Font
+                b$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, CVL(b$))
+                DIM NewFontFile AS STRING
+                DIM NewFontSize AS INTEGER
+                DIM FindSep AS INTEGER, TotalSep AS INTEGER
 
-                    IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
-                CASE 214 TO 221
-                    b$ = ReadSequential$(Property$, 2)
-                    __UI_KeyPress TempValue
-                CASE 222 'New textbox control with the NumericOnly property set to true
-                    b$ = ReadSequential$(Property$, 2)
-                    TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
-                    Control(TempValue).Name = "Numeric" + Control(TempValue).Name
-                    SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                    Control(TempValue).NumericOnly = True
-                    Control(TempValue).Min = -32768
-                    Control(TempValue).Max = 32767
+                'Parse b$ into Font data
+                FindSep = INSTR(b$, ",")
+                IF FindSep THEN TotalSep = TotalSep + 1
+                NewFontFile = LEFT$(b$, FindSep - 1)
+                b$ = MID$(b$, FindSep + 1)
 
-                    IF __UI_ActiveMenu > 0 THEN
+                NewFontSize = VAL(b$)
+
+                IF TotalSep = 1 AND NewFontSize > 0 THEN
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).Font = SetFont(NewFontFile, NewFontSize)
+                                DIM tempFont AS LONG
+                                tempFont = _FONT
+                                _FONT Control(i).Font
+                                SELECT CASE Control(i).Type
+                                    CASE __UI_Type_Label
+                                        IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6: AutoSizeLabel Control(i)
+                                    CASE __UI_Type_TextBox
+                                        IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6
+                                    CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
+                                        Control(i).Height = uspacing + 6
+                                END SELECT
+                                IF Control(i).HotKey > 0 THEN
+                                    IF Control(i).HotKeyPosition = 1 THEN
+                                        Control(i).HotKeyOffset = 0
+                                    ELSE
+                                        Control(i).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(i), Control(i).HotKeyPosition - 1))
+                                    END IF
+                                END IF
+                                _FONT tempFont
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize)
+                        DIM MustRedrawMenus AS _BYTE
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                Control(i).Font = SetFont(NewFontFile, NewFontSize)
+                                MustRedrawMenus = True
+                            END IF
+                        NEXT
+                        IF MustRedrawMenus THEN __UI_RefreshMenuBar
+                    END IF
+                END IF
+            CASE 9 'Tooltip
+                b$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, CVL(b$))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
+                    END IF
+                NEXT
+            CASE 10 'Value
+                b$ = ReadSequential$(Property$, LEN(FloatValue))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
+                            IF _CV(_FLOAT, b$) <> 0 THEN
+                                Control(i).Value = True
+                            ELSE
+                                Control(i).Value = False
+                            END IF
+                        ELSEIF Control(i).Type = __UI_Type_RadioButton OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_Bullet) THEN
+                            IF _CV(_FLOAT, b$) <> 0 THEN
+                                SetRadioButtonValue i
+                            ELSE
+                                Control(i).Value = False
+                            END IF
+                        ELSE
+                            Control(i).Value = _CV(_FLOAT, b$)
+                        END IF
+                    END IF
+                NEXT
+            CASE 11 'Min
+                b$ = ReadSequential$(Property$, LEN(FloatValue))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Min = _CV(_FLOAT, b$)
+                    END IF
+                NEXT
+            CASE 12 'Max
+                b$ = ReadSequential$(Property$, LEN(FloatValue))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Max = _CV(_FLOAT, b$)
+                        IF Control(i).Type = __UI_Type_TextBox THEN
+                            Text(i) = LEFT$(Text(i), INT(Control(i).Max))
+                            IF LEN(Mask(i)) > 0 THEN Mask(i) = ""
+                        END IF
+                    END IF
+                NEXT
+            CASE 13 'Interval
+                b$ = ReadSequential$(Property$, LEN(FloatValue))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Interval = _CV(_FLOAT, b$)
+                    END IF
+                NEXT
+            CASE 14 'Stretch
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Stretch = CVI(b$)
+                    END IF
+                NEXT
+            CASE 15 'Has border
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).HasBorder = CVI(b$)
+                    END IF
+                NEXT
+            CASE 16 'Show percentage
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).ShowPercentage = CVI(b$)
+                    END IF
+                NEXT
+            CASE 17 'Word wrap
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).WordWrap = CVI(b$)
+                    END IF
+                NEXT
+            CASE 18 'Can have focus
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).CanHaveFocus = CVI(b$)
+                    END IF
+                NEXT
+            CASE 19 'Disabled
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Disabled = CVI(b$)
+                    END IF
+                NEXT
+            CASE 20 'Hidden
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Hidden = CVI(b$)
+                        IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = Control(i).ParentID THEN
+                            __UI_ActivateMenu Control(Control(i).ParentID), False
+                        END IF
+                    END IF
+                NEXT
+            CASE 21 'CenteredWindow
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                IF __UI_TotalSelectedControls = 0 THEN
+                    Control(__UI_FormID).CenteredWindow = TempValue
+                END IF
+            CASE 22 'Alignment
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).Align = CVI(b$)
+                        IF Control(i).Type = __UI_Type_MenuBar THEN
+                            IF Control(i).Align <> __UI_Left THEN Control(i).Align = __UI_Right
+                            IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+                            __UI_RefreshMenuBar
+                        END IF
+                    END IF
+                NEXT
+            CASE 23 'ForeColor
+                b$ = ReadSequential$(Property$, 4)
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                ELSE
+                    Control(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_MenuBar THEN
+                            Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 24 'BackColor
+                b$ = ReadSequential$(Property$, 4)
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                ELSE
+                    Control(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_MenuBar THEN
+                            Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 25 'SelectedForeColor
+                b$ = ReadSequential$(Property$, 4)
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                ELSE
+                    Control(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                            Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 26 'SelectedBackColor
+                b$ = ReadSequential$(Property$, 4)
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                ELSE
+                    Control(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                            Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 27 'BorderColor
+                b$ = ReadSequential$(Property$, 4)
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BorderColor = _CV(_UNSIGNED LONG, b$)
+                        END IF
+                    NEXT
+                ELSE
+                    Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
+                END IF
+            CASE 28 'BackStyle
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).BackStyle = CVI(b$)
+                    END IF
+                NEXT
+            CASE 29 'CanResize
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                IF __UI_TotalSelectedControls = 0 THEN
+                    Control(__UI_FormID).CanResize = TempValue
+                END IF
+            CASE 31 'Padding
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                IF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Padding = TempValue
+                        END IF
+                    NEXT
+                END IF
+            CASE 32 'Vertical Alignment
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).VAlign = CVI(b$)
+                    END IF
+                NEXT
+            CASE 33 'Password field
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
+                        Control(i).PasswordField = CVI(b$)
+                    END IF
+                NEXT
+            CASE 34 'Encoding
+                b$ = ReadSequential$(Property$, 4)
+                Control(__UI_FormID).Encoding = CVL(b$)
+            CASE 35 'Mask
+                b$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, CVL(b$))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Mask(i) = b$
+                        Text(i) = ""
+                        IF LEN(Mask(i)) THEN Control(i).Max = 0
+                    END IF
+                NEXT
+            CASE 36 'MinInterval
+                b$ = ReadSequential$(Property$, LEN(FloatValue))
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).MinInterval = _CV(_FLOAT, b$)
+                    END IF
+                NEXT
+            CASE 37 'BulletStyle
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).BulletStyle = CVI(b$)
+                    END IF
+                NEXT
+            CASE 201 TO 210
+                'Alignment commands
+                b$ = ReadSequential$(Property$, 2)
+                DoAlign TempValue
+            CASE 211, 212 'Z-Ordering -> Move up/down
+                DIM tID1 AS LONG, tID2 AS LONG
+                a$ = ReadSequential$(Property$, 4)
+                b$ = ReadSequential$(Property$, 4)
+                tID1 = Control(CVL(a$)).ID
+                tID2 = Control(CVL(b$)).ID
+                SWAP Control(CVL(b$)), Control(CVL(a$))
+                SWAP Caption(CVL(b$)), Caption(CVL(a$))
+                SWAP Text(CVL(b$)), Text(CVL(a$))
+                SWAP ToolTip(CVL(b$)), ToolTip(CVL(a$))
+                Control(CVL(a$)).ID = tID1
+                Control(CVL(b$)).ID = tID2
+
+                'Restore ParentIDs based on ParentName
+                FOR i = 1 TO UBOUND(Control)
+                    Control(i).ParentID = __UI_GetID(Control(i).ParentName)
+                NEXT
+
+                IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                    IF Control(CVL(a$)).Type = __UI_Type_MenuItem OR Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
+                        __UI_ActivateMenu Control(__UI_ParentMenu), False
+                    ELSE
                         __UI_DestroyControl Control(__UI_ActiveMenu)
                     END IF
-                    FOR i = 1 TO UBOUND(Control)
-                        Control(i).ControlIsSelected = False
-                    NEXT
-                    Control(TempValue).ControlIsSelected = True
-                    __UI_TotalSelectedControls = 1
-                    __UI_FirstSelectedID = TempValue
-                    __UI_ForceRedraw = True
-                CASE 223
-                    b$ = ReadSequential$(Property$, 2)
-                    AlternateNumericOnlyProperty
-            END SELECT
-            __UI_ForceRedraw = True
-        LOOP
+                END IF
+            CASE 213
+                'Select control
+                b$ = ReadSequential$(Property$, 4)
 
-        IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
-            __UI_DestroyControl Control(__UI_ActiveMenu)
-            b$ = "SIGNAL>" + MKI$(-2) + "<END>" 'Signal to the editor that the preview can't show the context menu
-            PUT #Host, , b$
-        ELSEIF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
-            STATIC LocalMenuShown AS _BYTE, LocalMenuShownSignalSent AS _BYTE
-            LocalMenuShown = True
-        ELSE
-            LocalMenuShown = False
-            LocalMenuShownSignalSent = False
-        END IF
+                'Desselect all first:
+                FOR i = 1 TO UBOUND(Control)
+                    Control(i).ControlIsSelected = False
+                NEXT
 
-        IF LocalMenuShown AND NOT LocalMenuShownSignalSent THEN
-            b$ = "SIGNAL>" + MKI$(-5) + "<END>" 'Signal to the editor that a context menu is successfully shown
-            PUT #Host, , b$
-            LocalMenuShownSignalSent = True
-        END IF
+                IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
+            CASE 214 TO 221
+                b$ = ReadSequential$(Property$, 2)
+                __UI_KeyPress TempValue
+            CASE 222 'New textbox control with the NumericOnly property set to true
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
+                Control(TempValue).Name = "Numeric" + Control(TempValue).Name
+                SetCaption TempValue, RTRIM$(Control(TempValue).Name)
+                Control(TempValue).NumericOnly = True
+                Control(TempValue).Min = -32768
+                Control(TempValue).Max = 32767
 
-        STATIC prevTotalSelected AS LONG, prevFirstSelected AS LONG
-        STATIC prevFormID AS LONG
+                IF __UI_ActiveMenu > 0 THEN
+                    __UI_DestroyControl Control(__UI_ActiveMenu)
+                END IF
+                FOR i = 1 TO UBOUND(Control)
+                    Control(i).ControlIsSelected = False
+                NEXT
+                Control(TempValue).ControlIsSelected = True
+                __UI_TotalSelectedControls = 1
+                __UI_FirstSelectedID = TempValue
+                __UI_ForceRedraw = True
+            CASE 223
+                b$ = ReadSequential$(Property$, 2)
+                AlternateNumericOnlyProperty
+        END SELECT
+        __UI_ForceRedraw = True
+    LOOP
 
-        IF __UI_TotalSelectedControls <> prevTotalSelected THEN
-            prevTotalSelected = __UI_TotalSelectedControls
-            b$ = "TOTALSELECTEDCONTROLS>" + MKL$(__UI_TotalSelectedControls) + "<END>"
-            PUT #Host, , b$
-        END IF
+    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
+        __UI_DestroyControl Control(__UI_ActiveMenu)
+        b$ = "SIGNAL>" + MKI$(-2) + "<END>" 'Signal to the editor that the preview can't show the context menu
+        PUT #Host, , b$
+    ELSEIF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
+        STATIC LocalMenuShown AS _BYTE, LocalMenuShownSignalSent AS _BYTE
+        LocalMenuShown = True
+    ELSE
+        LocalMenuShown = False
+        LocalMenuShownSignalSent = False
+    END IF
 
-        IF Control(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
-        IF __UI_FirstSelectedID <> prevFirstSelected THEN
-            prevFirstSelected = __UI_FirstSelectedID
-            b$ = "FIRSTSELECTED>" + MKL$(__UI_FirstSelectedID) + "<END>"
-            PUT #Host, , b$
-        END IF
+    IF LocalMenuShown AND NOT LocalMenuShownSignalSent THEN
+        b$ = "SIGNAL>" + MKI$(-5) + "<END>" 'Signal to the editor that a context menu is successfully shown
+        PUT #Host, , b$
+        LocalMenuShownSignalSent = True
+    END IF
 
-        IF __UI_FormID <> prevFormID THEN
-            prevFormID = __UI_FormID
-            b$ = "FORMID>" + MKL$(__UI_FormID) + "<END>"
-            PUT #Host, , b$
-        END IF
+    STATIC prevTotalSelected AS LONG, prevFirstSelected AS LONG
+    STATIC prevFormID AS LONG
 
-        MidRead = False
+    IF __UI_TotalSelectedControls <> prevTotalSelected THEN
+        prevTotalSelected = __UI_TotalSelectedControls
+        b$ = "TOTALSELECTEDCONTROLS>" + MKL$(__UI_TotalSelectedControls) + "<END>"
+        PUT #Host, , b$
+    END IF
+
+    IF Control(__UI_FirstSelectedID).ID = 0 THEN __UI_FirstSelectedID = 0
+    IF __UI_FirstSelectedID <> prevFirstSelected THEN
+        prevFirstSelected = __UI_FirstSelectedID
+        b$ = "FIRSTSELECTED>" + MKL$(__UI_FirstSelectedID) + "<END>"
+        PUT #Host, , b$
+    END IF
+
+    IF __UI_FormID <> prevFormID THEN
+        prevFormID = __UI_FormID
+        b$ = "FORMID>" + MKL$(__UI_FormID) + "<END>"
+        PUT #Host, , b$
     END IF
 END SUB
 

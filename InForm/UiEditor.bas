@@ -123,6 +123,8 @@ DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
 DIM SHARED Stream$, FormDataReceived AS _BYTE, LastFormData$
+DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
+DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 
 TYPE newInputBox
     ID AS LONG
@@ -873,7 +875,6 @@ SUB __UI_BeforeUpdateDisplay
     STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
     STATIC PrevFirstSelected AS LONG
     STATIC CheckUpdateDone AS _BYTE
-    STATIC UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 
     STATIC LastChange AS SINGLE
     IF TIMER - BlinkStatusBar < 1 THEN
@@ -979,7 +980,6 @@ SUB __UI_BeforeUpdateDisplay
 
     $IF WIN THEN
         IF PreviewAttached THEN
-            STATIC prevScreenX AS INTEGER, prevScreenY AS INTEGER
             IF prevScreenX <> _SCREENX OR prevScreenY <> _SCREENY THEN
                 prevScreenX = _SCREENX
                 prevScreenY = _SCREENY
@@ -3131,6 +3131,10 @@ SUB CheckPreview
                 IF LEN(LastFormData$) THEN
                     b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
                     PUT #Client, , b$
+                    prevScreenX = -1
+                    prevScreenY = -1
+                    UndoPointer = 0
+                    TotalUndoImages = 0
                 END IF
 
                 TIMER(__UI_EventsTimer) ON
