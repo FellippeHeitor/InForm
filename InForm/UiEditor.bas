@@ -1121,11 +1121,9 @@ SUB __UI_BeforeUpdateDisplay
     IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
 
     IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
-        b$ = MKI$(0)
-        SendData b$, 214
+        SendSignal 214
     ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
-        b$ = MKI$(0)
-        SendData b$, 215
+        SendSignal 215
     END IF
 
     'Make ZOrdering menu enabled/disabled according to control list
