@@ -28,7 +28,7 @@ DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER, MidUndo AS _BYTE
 REDIM SHARED UndoImage(100) AS STRING
 DIM SHARED IsCreating AS _BYTE
 DIM SHARED Host AS LONG, HostPort AS STRING
-DIM SHARED Stream$
+DIM SHARED Stream$, RestoreCrashData$
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -68,6 +68,7 @@ CONST InDisk = 1
 CONST InClipboard = 2
 CONST ToEditor = 3
 CONST ToUndoBuffer = 4
+CONST FromEditor = 5
 
 DIM i AS LONG
 DIM SHARED AlphaNumeric(255)
@@ -240,6 +241,10 @@ SUB __UI_BeforeUpdateDisplay
             thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
             thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
             SELECT CASE UCASE$(thisCommand$)
+                CASE "RESTORECRASH"
+                    RestoreCrashData$ = thisData$
+                    LoadPreview FromEditor
+                    EXIT SUB
                 CASE "WINDOWPOSITION"
                     NewWindowLeft = CVI(LEFT$(thisData$, 2))
                     NewWindowTop = CVI(MID$(thisData$, 3, 2))
@@ -309,13 +314,11 @@ SUB __UI_BeforeUpdateDisplay
             END SELECT
         LOOP
 
-
         $IF WIN THEN
             IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
                 _SCREENMOVE NewWindowLeft + 612, NewWindowTop
             END IF
         $END IF
-
 
         'Check if the editor is still alive
         $IF WIN THEN
@@ -455,10 +458,7 @@ SUB __UI_BeforeUpdateDisplay
             'Editor sent property value
             b$ = ReadSequential$(Property$, 2)
             TempValue = CVI(b$)
-            IF TempValue <> 213 AND TempValue <> 214 AND TempValue <> 215 AND TempValue <> 217 AND TempValue <> 221 THEN
-                'Save undo image except for select, undo, redo, copy and select all signals
-                SaveUndoImage
-            END IF
+            SaveUndoImage
             SELECT CASE TempValue
                 CASE 1 'Name
                     b$ = ReadSequential$(Property$, 4)
@@ -932,6 +932,7 @@ SUB __UI_BeforeUpdateDisplay
                     NEXT
                 CASE 201 TO 210
                     'Alignment commands
+                    b$ = ReadSequential$(Property$, 2)
                     DoAlign TempValue
                 CASE 211, 212 'Z-Ordering -> Move up/down
                     DIM tID1 AS LONG, tID2 AS LONG
@@ -969,9 +970,10 @@ SUB __UI_BeforeUpdateDisplay
 
                     IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
                 CASE 214 TO 221
+                    b$ = ReadSequential$(Property$, 2)
                     __UI_KeyPress TempValue
                 CASE 222 'New textbox control with the NumericOnly property set to true
-                    SaveUndoImage
+                    b$ = ReadSequential$(Property$, 2)
                     TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
                     Control(TempValue).Name = "Numeric" + Control(TempValue).Name
                     SetCaption TempValue, RTRIM$(Control(TempValue).Name)
@@ -990,6 +992,7 @@ SUB __UI_BeforeUpdateDisplay
                     __UI_FirstSelectedID = TempValue
                     __UI_ForceRedraw = True
                 CASE 223
+                    b$ = ReadSequential$(Property$, 2)
                     AlternateNumericOnlyProperty
             END SELECT
             __UI_ForceRedraw = True
@@ -1143,7 +1146,6 @@ END SUB
 SUB __UI_KeyPress (id AS LONG)
     SELECT CASE id
         CASE 201 TO 210
-            SaveUndoImage
             DoAlign id
         CASE 214
             RestoreUndoImage
@@ -1166,7 +1168,6 @@ SUB __UI_KeyPress (id AS LONG)
             AlternateNumericOnlyProperty
         CASE 224
             DIM TempID AS LONG
-            SaveUndoImage
             TempID = AddNewMenuBarControl
             SelectNewControl TempID
     END SELECT
@@ -1653,6 +1654,9 @@ SUB LoadPreview (Destination AS _BYTE)
     ELSEIF UndoBuffer THEN
         IF UndoPointer = TotalUndoImages THEN EXIT SUB
         Clip$ = UndoImage$(UndoPointer)
+    ELSEIF Destination = FromEditor THEN
+        Clip$ = RestoreCrashData$
+        UndoBuffer = True
     ELSE
         Clip$ = _CLIPBOARD$
         b$ = ReadSequential$(Clip$, LEN(__UI_ClipboardCheck$))

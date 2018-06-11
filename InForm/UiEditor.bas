@@ -122,7 +122,7 @@ DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
-DIM SHARED Stream$, FormDataReceived AS _BYTE
+DIM SHARED Stream$, FormDataReceived AS _BYTE, LastFormData$
 
 TYPE newInputBox
     ID AS LONG
@@ -183,8 +183,8 @@ IF _FILEEXISTS("falcon.h") = 0 THEN RestoreFalcon
 DIM SHARED CurrentPath$
 DIM SHARED OpenDialog AS LONG
 
-CheckPreviewTimer = _FREETIMER
-ON TIMER(CheckPreviewTimer, .003) CheckPreview
+'CheckPreviewTimer = _FREETIMER
+'ON TIMER(CheckPreviewTimer, .003) CheckPreview
 
 UiEditorTitle$ = "InForm Designer"
 
@@ -959,12 +959,18 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     END IF
 
+    CheckPreview
+
     IF NOT MidRead THEN
         MidRead = True
         DIM incomingData$, Signal$
 
         GET #Client, , incomingData$
         Stream$ = Stream$ + incomingData$
+        STATIC bytesIn~&, refreshes~&
+        refreshes~& = refreshes~& + 1
+        bytesIn~& = bytesIn~& + LEN(incomingData$)
+        Caption(StatusBar) = LTRIM$(STR$(refreshes~&)) + ": " + LTRIM$(STR$(bytesIn~&)) + " bytes received. (" + Stream$ + "...)"
 
         $IF WIN THEN
             IF PreviewAttached THEN
@@ -1047,7 +1053,8 @@ SUB __UI_BeforeUpdateDisplay
                 CASE "SIGNAL"
                     Signal$ = Signal$ + thisData$
                 CASE "FORMDATA"
-                    LoadPreview thisData$
+                    LastFormData$ = thisData$
+                    LoadPreview
                     FormDataReceived = True
                 CASE "UNDOPOINTER"
                     UndoPointer = CVI(thisData$)
@@ -2393,7 +2400,7 @@ SUB __UI_OnLoad
     __UI_ForceRedraw = True
     _FREEIMAGE tempIcon
 
-    TIMER(CheckPreviewTimer) ON
+    'TIMER(CheckPreviewTimer) ON
 
     EXIT SUB
     UiEditorPreviewNotFound:
@@ -2856,14 +2863,17 @@ FUNCTION ReadSequential$ (Txt$, Bytes%)
     Txt$ = MID$(Txt$, Bytes% + 1)
 END FUNCTION
 
-SUB LoadPreview (FormData$)
+SUB LoadPreview
     DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
     DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, Dummy AS LONG
+    DIM FormData$
 
     TIMER(__UI_EventsTimer) OFF
     TIMER(__UI_RefreshTimer) OFF
+
+    FormData$ = LastFormData$
 
     b$ = ReadSequential$(FormData$, 4)
 
@@ -3092,8 +3102,9 @@ SUB CheckPreview
                 Control(ViewMenuPreview).Disabled = True
             ELSE
                 'Preview was closed.
+
                 TIMER(__UI_EventsTimer) OFF
-                Control(ViewMenuPreview).Disabled = False
+
                 __UI_WaitMessage = "Reloading preview window..."
                 UiPreviewPID = 0
                 __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
@@ -3112,6 +3123,11 @@ SUB CheckPreview
                 LOOP
 
                 Handshake
+
+                IF LEN(LastFormData$) THEN
+                    b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
+                    PUT #Client, , b$
+                END IF
 
                 TIMER(__UI_EventsTimer) ON
             END IF
