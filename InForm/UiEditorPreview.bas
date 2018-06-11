@@ -29,6 +29,7 @@ REDIM SHARED UndoImage(100) AS STRING
 DIM SHARED IsCreating AS _BYTE
 DIM SHARED Host AS LONG, HostPort AS STRING
 DIM SHARED Stream$, RestoreCrashData$
+DIM SHARED LastPreviewDataSent$
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -103,7 +104,6 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-    SendSignal -1
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
@@ -437,6 +437,7 @@ SUB __UI_BeforeUpdateDisplay
                 LoadPreview InDisk
                 LoadDefaultFonts
 
+                LastPreviewDataSent$ = ""
                 UndoPointer = 0
                 TotalUndoImages = 0
                 _ICON
@@ -2357,7 +2358,6 @@ SUB SavePreview (Destination AS _BYTE)
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
     DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, UndoBuffer AS _BYTE
     DIM PreviewData$
-    STATIC LastPreviewDataSent$
 
     CONST Debug = False
 
@@ -2709,14 +2709,8 @@ END SUB
 
 SUB SendSignal (Value AS INTEGER)
     DIM b$
-    'DIM FileNum AS INTEGER, b$
-    'FileNum = FREEFILE
-    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
-
-    'b$ = MKI$(Value): PUT #FileNum, OffsetNewDataFromPreview, b$
     b$ = "SIGNAL>" + MKI$(Value) + "<END>"
     PUT #Host, , b$
-    'CLOSE #FileNum
 END SUB
 
 FUNCTION AdaptName$ (tName$, TargetID AS LONG)
