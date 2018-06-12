@@ -525,6 +525,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Resizable"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoScroll", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "AutoScroll"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))
     AddItem __UI_NewID, "ForeColor"
     AddItem __UI_NewID, "BackColor"
@@ -806,4 +810,5 @@ SUB __UI_AssignIDs
     FontSizeList = __UI_GetID("FontSizeList")
     FontSwitchMenuSwitch = __UI_GetID("FontSwitchMenuSwitch")
     FontSwitchMenu = __UI_GetID("FontSwitchMenu")
+    AutoScroll = __UI_GetID("AutoScroll")
 END SUB

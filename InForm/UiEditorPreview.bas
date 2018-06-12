@@ -936,6 +936,13 @@ SUB __UI_BeforeUpdateDisplay
                         Control(i).BulletStyle = CVI(b$)
                     END IF
                 NEXT
+            CASE 38 'AutoScroll
+                b$ = ReadSequential$(Property$, 2)
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).AutoScroll = CVI(b$)
+                    END IF
+                NEXT
             CASE 201 TO 210
                 'Alignment commands
                 b$ = ReadSequential$(Property$, 2)
@@ -1973,6 +1980,10 @@ SUB LoadPreview (Destination AS _BYTE)
                     Control(TempValue).NumericOnly = True
                 CASE -39
                     Control(TempValue).NumericOnly = __UI_NumericWithBounds
+                CASE -40
+                    Control(TempValue).BulletStyle = __UI_Bullet
+                CASE -41
+                    Control(TempValue).AutoScroll = True
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2235,6 +2246,8 @@ SUB LoadPreviewText
                             ELSEIF DummyText$ = "__UI_Bullet" THEN
                                 Control(TempValue).BulletStyle = __UI_Bullet
                             END IF
+                        CASE "AutoScroll"
+                            Control(TempValue).AutoScroll = (DummyText$ = "True")
                     END SELECT
                 ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
                     __UI_DefaultButtonID = TempValue
@@ -2638,7 +2651,15 @@ SUB SavePreview (Destination AS _BYTE)
                 END IF
             END IF
             IF Control(i).BulletStyle = __UI_Bullet THEN
-                b$ = MKI$(-40) + MKI$(Control(i).BulletStyle)
+                b$ = MKI$(-40)
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
+            END IF
+            IF Control(i).AutoScroll = True THEN
+                b$ = MKI$(-41)
                 IF Disk THEN
                     PUT #BinFileNum, , b$
                 ELSE

@@ -70,7 +70,7 @@ DIM SHARED ShowPercentage AS LONG, PasswordMaskCB AS LONG
 DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
 DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
-DIM SHARED Resizable AS LONG
+DIM SHARED Resizable AS LONG, AutoScroll AS LONG
 
 'Open dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -166,6 +166,7 @@ REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
+REDIM SHARED Toggles(1 TO 100) AS LONG
 REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
@@ -379,6 +380,9 @@ SUB __UI_Click (id AS LONG)
         CASE PasswordMaskCB
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
+        CASE AutoScroll
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 38
         CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
@@ -1300,6 +1304,11 @@ SUB __UI_BeforeUpdateDisplay
     NEXT
     Control(FontSizeList).Hidden = True
 
+    FOR i = 1 TO UBOUND(Toggles)
+        Control(Toggles(i)).Disabled = True
+        Control(Toggles(i)).Hidden = False
+    NEXT
+
     DIM ShadeOfGreen AS _UNSIGNED LONG, ShadeOfRed AS _UNSIGNED LONG
     ShadeOfGreen = _RGB32(28, 150, 50)
     ShadeOfRed = _RGB32(233, 44, 0)
@@ -1610,25 +1619,15 @@ SUB __UI_BeforeUpdateDisplay
     Control(BulletOptions).Value = PreviewControls(FirstSelected).BulletStyle + 1
     Control(Transparent).Value = PreviewControls(FirstSelected).BackStyle
     Control(Resizable).Value = PreviewControls(FirstSelected).CanResize
+    Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
 
     'Disable properties that don't apply
-    Control(Stretch).Disabled = True
-    Control(HasBorder).Disabled = True
-    Control(ShowPercentage).Disabled = True
-    Control(WordWrap).Disabled = True
-    Control(CanHaveFocus).Disabled = True
-    Control(Disabled).Disabled = True
-    Control(Hidden).Disabled = True
-    Control(CenteredWindow).Disabled = True
-    Control(PasswordMaskCB).Disabled = True
     Control(AlignOptions).Disabled = True
     Control(BooleanOptions).Disabled = True
     Control(VAlignOptions).Disabled = True
     Control(BulletOptions).Disabled = True
-    Control(Transparent).Disabled = True
     Caption(TextLB) = "Text"
     Caption(ValueLB) = "Value"
-    Control(Resizable).Disabled = True
     IF TotalSelected > 0 THEN
         SELECT EVERYCASE PreviewControls(FirstSelected).Type
             CASE __UI_Type_ToggleSwitch
@@ -1702,7 +1701,7 @@ SUB __UI_BeforeUpdateDisplay
                     END SELECT
                 NEXT
             CASE __UI_Type_Frame
-                Control(Transparent).Disabled = False
+                Control(Transparent).Disabled = True
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
                         CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
@@ -1810,6 +1809,8 @@ SUB __UI_BeforeUpdateDisplay
                             Control(InputBox(i).ID).Disabled = False
                     END SELECT
                 NEXT
+            CASE __UI_Type_ListBox
+                Control(AutoScroll).Disabled = False
             CASE __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
                 Control(HasBorder).Disabled = False
             CASE __UI_Type_ProgressBar
@@ -1861,6 +1862,16 @@ SUB __UI_BeforeUpdateDisplay
             LastTopForInputBox = LastTopForInputBox + TopIncrementForInputBox
             Control(InputBox(i).ID).Top = LastTopForInputBox
             Control(InputBox(i).LabelID).Top = LastTopForInputBox
+        END IF
+    NEXT
+
+    LastTopForInputBox = -12
+    FOR i = 1 TO UBOUND(Toggles)
+        IF Control(Toggles(i)).Disabled THEN
+            Control(Toggles(i)).Hidden = True
+        ELSE
+            LastTopForInputBox = LastTopForInputBox + TopIncrementForInputBox
+            Control(Toggles(i)).Top = LastTopForInputBox
         END IF
     NEXT
 
@@ -2276,6 +2287,22 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
     REDIM InputBoxText(1 TO i) AS STRING
+
+    'Assign Toggles IDs:
+    i = 0
+    i = i + 1: Toggles(i) = Stretch
+    i = i + 1: Toggles(i) = HasBorder
+    i = i + 1: Toggles(i) = ShowPercentage
+    i = i + 1: Toggles(i) = PasswordMaskCB
+    i = i + 1: Toggles(i) = WordWrap
+    i = i + 1: Toggles(i) = CanHaveFocus
+    i = i + 1: Toggles(i) = Disabled
+    i = i + 1: Toggles(i) = Transparent
+    i = i + 1: Toggles(i) = Hidden
+    i = i + 1: Toggles(i) = CenteredWindow
+    i = i + 1: Toggles(i) = Resizable
+    i = i + 1: Toggles(i) = AutoScroll
+    REDIM _PRESERVE Toggles(1 TO i) AS LONG
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(FontList) = "System fonts may not be available in all computers. To specify a local font file, right-click 'Font' to the left of this list and disable 'Show system fonts list'."
@@ -2982,8 +3009,9 @@ SUB LoadPreview
                 CASE -39
                     PreviewControls(Dummy).NumericOnly = __UI_NumericWithBounds
                 CASE -40
-                    b$ = ReadSequential$(FormData$, 2)
-                    PreviewControls(Dummy).BulletStyle = CVI(b$)
+                    PreviewControls(Dummy).BulletStyle = __UI_Bullet
+                CASE -41
+                    PreviewControls(Dummy).AutoScroll = True
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3411,6 +3439,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         CASE __UI_Bullet
                             PRINT #TextFileNum, "    Control(__UI_NewID).BulletStyle = __UI_Bullet"
                     END SELECT
+                END IF
+                IF PreviewControls(i).AutoScroll THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).AutoScroll = True"
                 END IF
                 PRINT #TextFileNum,
             END IF

@@ -73,5 +73,8 @@ FOR EACH CONTROL (FORM INCLUDED):
                 For TextBox controls
     INTEGER -39 (NumericOnly = __UI_NumericWithBounds)
                 For TextBox controls
+    INTEGER -40 (BulletStyle = __UI_Bullet)
+    INTEGER -41 (AutoScroll = True)
+                For ListBox controls
     -------------------
 INTEGER -1024 (End of file)
