@@ -886,6 +886,7 @@ SUB __UI_BeforeUpdateDisplay
                         CASE 2, 3 'Can't reach server / Timeout
                             IF TIMER - start! > 5 THEN
                                 CheckUpdates = False
+                                Control(OptionsMenuCheckUpdates).Value = CheckUpdates
                                 SaveSettings
                             END IF
                             CheckUpdateDone = True
