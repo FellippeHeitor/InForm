@@ -3608,6 +3608,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         SYSTEM
     ELSE
         Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
+        Edited = False
     END IF
 END SUB
 
