@@ -274,7 +274,7 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-    DIM Answer AS _BYTE, Dummy AS LONG, b$, UiEditorFile AS INTEGER
+    DIM Answer AS _BYTE, Dummy AS LONG, b$
     STATIC LastClick#, LastClickedID AS LONG
 
     SELECT EVERYCASE id
@@ -844,10 +844,10 @@ SUB SelectFontInList (FontSetup$)
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    DIM b$, c$, PreviewChanged AS _BYTE, UiEditorFile AS INTEGER
-    DIM PreviewHasMenuActive AS INTEGER, i AS LONG, j AS LONG, Answer AS _BYTE
+    DIM b$, c$
+    DIM i AS LONG, j AS LONG, Answer AS _BYTE
     STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
-    STATIC PrevFirstSelected AS LONG
+    STATIC PrevFirstSelected AS LONG, PreviewHasMenuActive AS INTEGER
     STATIC CheckUpdateDone AS _BYTE
 
     STATIC LastChange AS SINGLE
@@ -2032,7 +2032,7 @@ SUB Handshake
 END SUB
 
 SUB __UI_OnLoad
-    DIM i AS LONG, b$, UiEditorFile AS INTEGER
+    DIM i AS LONG, b$
     DIM prevDest AS LONG
 
     b$ = "Starting..."
@@ -3076,7 +3076,7 @@ END SUB
 
 SUB CheckPreview
     'Check if the preview window is still alive
-    DIM b$, UiEditorFile AS INTEGER
+    DIM b$
 
     IF OpenDialogOpen THEN EXIT SUB
 
