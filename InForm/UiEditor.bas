@@ -1770,7 +1770,7 @@ SUB __UI_BeforeUpdateDisplay
                     END SELECT
                 NEXT
             CASE __UI_Type_ToggleSwitch
-                Control(Transparent).Disabled = False
+                Control(Transparent).Disabled = True
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
                         CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
