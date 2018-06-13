@@ -1884,7 +1884,7 @@ SUB __UI_EventDispatcher
                         END IF
                     END IF
                 ELSEIF _KEYDOWN(100303) OR _KEYDOWN(100304) THEN
-                    IF Control(__UI_HoveringID).Type <> __UI_Type_Frame AND Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar THEN
+                    IF __UI_FirstSelectedID <> __UI_HoveringID AND Control(__UI_HoveringID).Type <> __UI_Type_Frame AND Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar THEN
                         'Select all controls in the range between the first
                         'selected and the one being clicked, emulating the
                         'selection rectangle.
@@ -2824,8 +2824,8 @@ SUB __UI_EventDispatcher
 
         __UI_DragY = __UI_MouseTop
         __UI_DragX = __UI_MouseLeft
+    END IF
 
-        END IF
     IF __UI_IsResizing AND __UI_ResizingID > 0 THEN
         __UI_ForceRedraw = True
         FOR i = 1 TO UBOUND(Control)
@@ -2998,6 +2998,7 @@ SUB __UI_EventDispatcher
             END IF
         END IF
     END IF
+
     IF __UI_SelectionRectangle THEN
         DoSelectionRectangle:
         DIM tsmx AS INTEGER, tmx AS INTEGER
