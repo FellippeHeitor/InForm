@@ -134,28 +134,6 @@ TYPE newInputBox
     Sent AS _BYTE
 END TYPE
 
-CONST OffsetEditorPID = 1
-CONST OffsetPreviewPID = 5
-CONST OffsetWindowLeft = 9
-CONST OffsetWindowTop = 11
-CONST OffsetNewControl = 13
-CONST OffsetNewDataFromEditor = 15
-CONST OffsetNewDataFromPreview = 17
-CONST OffsetTotalControlsSelected = 19
-CONST OffsetFormID = 23
-CONST OffsetFirstSelectedID = 27
-CONST OffsetMenuPanelIsON = 31
-CONST OffsetAutoName = 33
-CONST OffsetShowPosSize = 35
-CONST OffsetSnapLines = 37
-CONST OffsetPropertyChanged = 39
-CONST OffsetMouseSwapped = 41
-CONST OffsetDefaultButtonID = 43
-CONST OffsetOriginalImageWidth = 47
-CONST OffsetOriginalImageHeight = 49
-CONST OffsetSelectionRectangle = 51
-CONST OffsetPropertyValue = 53
-
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
 REDIM SHARED PreviewMasks(0) AS STRING
