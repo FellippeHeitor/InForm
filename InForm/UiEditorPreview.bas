@@ -104,11 +104,9 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-    SendSignal -3
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
-    SendSignal -3
 END SUB
 
 SUB __UI_MouseLeave (id AS LONG)
@@ -452,6 +450,11 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         ELSEIF TempValue = -7 THEN
             __UI_RestoreImageOriginalSize
+        ELSEIF TempValue = -8 THEN
+            'Editor is manipulated, preview menus must be closed.
+            IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
+                __UI_DestroyControl Control(__UI_ActiveMenu)
+            END IF
         ELSEIF TempValue = 214 THEN
             RestoreUndoImage
         ELSEIF TempValue = 215 THEN

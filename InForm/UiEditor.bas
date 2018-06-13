@@ -277,6 +277,8 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$
     STATIC LastClick#, LastClickedID AS LONG
 
+    SendSignal -8
+
     SELECT EVERYCASE id
         CASE AlignMenuAlignLeft: Dummy = 201
         CASE AlignMenuAlignRight: Dummy = 202
@@ -843,6 +845,13 @@ SUB SelectFontInList (FontSetup$)
     BypassShowFontList = True
 END SUB
 
+SUB LoseFocus
+    IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+    IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
+    __UI_Focus = 0
+    __UI_ForceRedraw = True
+END SUB
+
 SUB __UI_BeforeUpdateDisplay
     DIM b$, c$
     DIM i AS LONG, j AS LONG, Answer AS _BYTE
@@ -1020,6 +1029,7 @@ SUB __UI_BeforeUpdateDisplay
                 PreviewFormID = CVL(thisData$)
             CASE "FIRSTSELECTED"
                 FirstSelected = CVL(thisData$)
+                LoseFocus
             CASE "DEFAULTBUTTONID"
                 PreviewDefaultButtonID = CVL(thisData$)
             CASE "ORIGINALIMAGEWIDTH"
@@ -1028,6 +1038,7 @@ SUB __UI_BeforeUpdateDisplay
                 OriginalImageHeight = CVI(thisData$)
             CASE "SELECTIONRECTANGLE"
                 PreviewSelectionRectangle = CVI(thisData$)
+                LoseFocus
             CASE "MENUPANELACTIVE"
                 PreviewHasMenuActive = CVI(thisData$)
             CASE "SIGNAL"
@@ -1038,7 +1049,8 @@ SUB __UI_BeforeUpdateDisplay
                 IF NOT FormDataReceived THEN
                     FormDataReceived = True
                 ELSE
-                    Signal$ = Signal$ + MKI$(-1)
+                    Edited = True
+                    LoseFocus
                 END IF
             CASE "UNDOPOINTER"
                 UndoPointer = CVI(thisData$)
@@ -1060,18 +1072,10 @@ SUB __UI_BeforeUpdateDisplay
     END IF
 
     DO WHILE LEN(Signal$)
+        'signals -1 and -3 deprecated for now
         b$ = LEFT$(Signal$, 2)
         Signal$ = MID$(Signal$, 3)
-        IF CVI(b$) = -1 OR CVI(b$) = -3 THEN
-            'Controls in the editor lose focus when the preview is manipulated
-            IF CVI(b$) = -1 THEN Edited = True
-            IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
-            IF CVI(b$) = -1 THEN
-                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
-            END IF
-            IF CVI(b$) = -3 THEN __UI_Focus = 0
-            __UI_ForceRedraw = True
-        ELSEIF CVI(b$) = -2 THEN
+        IF CVI(b$) = -2 THEN
             'User attempted to right-click a control but the preview
             'form is smaller than the menu panel. In such case the "Align"
             'menu is shown in the editor.
