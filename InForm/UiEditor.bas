@@ -1028,7 +1028,9 @@ SUB __UI_BeforeUpdateDisplay
                     FormDataReceived = True
                 ELSE
                     Edited = True
-                    LoseFocus
+                    IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited > 1 THEN
+                        LoseFocus
+                    END IF
                 END IF
             CASE "UNDOPOINTER"
                 UndoPointer = CVI(thisData$)
