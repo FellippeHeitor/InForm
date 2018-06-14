@@ -125,6 +125,7 @@ DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
 DIM SHARED Stream$, FormDataReceived AS _BYTE, LastFormData$
 DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
+DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
 
 TYPE newInputBox
     ID AS LONG
@@ -296,10 +297,10 @@ SUB __UI_Click (id AS LONG)
             SaveSettings
         CASE InsertMenuMenuBar
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuBar) + "<END>"
-            PUT #Client, , b$
+            Send Client, b$
         CASE InsertMenuMenuItem
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuItem) + "<END>"
-            PUT #Client, , b$
+            Send Client, b$
         CASE ViewMenuPreviewDetach
             PreviewAttached = NOT PreviewAttached
             Control(id).Value = PreviewAttached
@@ -321,7 +322,7 @@ SUB __UI_Click (id AS LONG)
              AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
              AddToggleSwitch
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
-            PUT #Client, , b$
+            Send Client, b$
         CASE AddNumericBox
             b$ = MKI$(0)
             SendData b$, 222
@@ -526,7 +527,7 @@ SUB __UI_Click (id AS LONG)
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
                 IF _FILEEXISTS(FileToOpen$) THEN
                     b$ = "OPENFILE>" + FileToOpen$ + "<END>"
-                    PUT #Client, , b$
+                    Send Client, b$
 
                     SendSignal -4
 
@@ -935,10 +936,10 @@ SUB __UI_BeforeUpdateDisplay
 
     GET #Client, , incomingData$
     Stream$ = Stream$ + incomingData$
-    STATIC bytesIn~&, refreshes~&
+    STATIC bytesIn~&&, refreshes~&
     refreshes~& = refreshes~& + 1
-    bytesIn~& = bytesIn~& + LEN(incomingData$)
-    Caption(StatusBar) = LTRIM$(STR$(refreshes~&)) + ": " + LTRIM$(STR$(bytesIn~&)) + " bytes received. (" + Stream$ + "...)"
+    bytesIn~&& = bytesIn~&& + LEN(incomingData$)
+    Caption(StatusBar) = "Received:" + STR$(bytesIn~&&) + " bytes | Sent:" + STR$(totalBytesSent) + " bytes"
 
     $IF WIN THEN
         IF PreviewAttached THEN
@@ -946,14 +947,14 @@ SUB __UI_BeforeUpdateDisplay
                 prevScreenX = _SCREENX
                 prevScreenY = _SCREENY
                 b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
-                PUT #Client, , b$
+                Send Client, b$
             END IF
         ELSE
             IF prevScreenX <> -32001 OR prevScreenY <> -32001 THEN
                 prevScreenX = -32001
                 prevScreenY = -32001
                 b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
-                PUT #Client, , b$
+                Send Client, b$
             END IF
         END IF
     $ELSE
@@ -972,25 +973,25 @@ SUB __UI_BeforeUpdateDisplay
     IF prevAutoName <> AutoNameControls OR SignalsFirstSent = False THEN
         prevAutoName = AutoNameControls
         b$ = "AUTONAME>" + MKI$(AutoNameControls) + "<END>"
-        PUT #Client, , b$
+        Send Client, b$
     END IF
 
     IF prevMouseSwap <> __UI_MouseButtonsSwap OR SignalsFirstSent = False THEN
         prevMouseSwap = __UI_MouseButtonsSwap
         b$ = "MOUSESWAP>" + MKI$(__UI_MouseButtonsSwap) + "<END>"
-        PUT #Client, , b$
+        Send Client, b$
     END IF
 
     IF prevShowPos <> __UI_ShowPositionAndSize OR SignalsFirstSent = False THEN
         prevShowPos = __UI_ShowPositionAndSize
         b$ = "SHOWPOSSIZE>" + MKI$(__UI_ShowPositionAndSize) + "<END>"
-        PUT #Client, , b$
+        Send Client, b$
     END IF
 
     IF prevSnapLines <> __UI_SnapLines OR SignalsFirstSent = False THEN
         prevSnapLines = __UI_SnapLines
         b$ = "SNAPLINES>" + MKI$(__UI_SnapLines) + "<END>"
-        PUT #Client, , b$
+        Send Client, b$
     END IF
     SignalsFirstSent = True
 
@@ -1007,7 +1008,6 @@ SUB __UI_BeforeUpdateDisplay
                 PreviewFormID = CVL(thisData$)
             CASE "FIRSTSELECTED"
                 FirstSelected = CVL(thisData$)
-                LoseFocus
             CASE "DEFAULTBUTTONID"
                 PreviewDefaultButtonID = CVL(thisData$)
             CASE "ORIGINALIMAGEWIDTH"
@@ -1086,7 +1086,7 @@ SUB __UI_BeforeUpdateDisplay
     IF PrevFirstSelected <> FirstSelected THEN
         PrevFirstSelected = FirstSelected
         __UI_ForceRedraw = True
-
+        LoseFocus
         IF ZOrderingDialogOpen AND FirstSelected <> PreviewFormID THEN
             FOR j = 1 TO UBOUND(zOrderIDs)
                 IF zOrderIDs(j) = FirstSelected THEN Control(ControlList).Value = j: __UI_ValueChanged ControlList: EXIT FOR
@@ -1992,7 +1992,7 @@ SUB Handshake
     Stream$ = "" 'clear buffer
 
     b$ = "EDITORPID>" + MKL$(__UI_GetPID) + "<END>"
-    PUT #Client, , b$
+    Send Client, b$
 
     DIM start!, incomingData$, thisData$
     start! = TIMER
@@ -3015,13 +3015,18 @@ END SUB
 SUB SendData (b$, Property AS INTEGER)
     IF PreviewSelectionRectangle THEN EXIT SUB
     b$ = "PROPERTY>" + MKI$(Property) + b$ + "<END>"
-    PUT #Client, , b$
+    Send Client, b$
+END SUB
+
+SUB Send (channel AS LONG, b$)
+    totalBytesSent = totalBytesSent + LEN(b$)
+    PUT #channel, , b$
 END SUB
 
 SUB SendSignal (Value AS INTEGER)
     DIM b$
     b$ = "SIGNAL>" + MKI$(Value) + "<END>"
-    PUT #Client, , b$
+    Send Client, b$
 END SUB
 
 SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
@@ -3102,7 +3107,7 @@ SUB CheckPreview
 
                 IF LEN(LastFormData$) THEN
                     b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
-                    PUT #Client, , b$
+                    Send Client, b$
                     prevScreenX = -1
                     prevScreenY = -1
                     UndoPointer = 0
@@ -3141,7 +3146,7 @@ SUB CheckPreview
 
         IF LEN(LastFormData$) THEN
         b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
-        PUT #Client, , b$
+        Send Client, b$
         prevScreenX = -1
         prevScreenY = -1
         UndoPointer = 0
@@ -4079,7 +4084,7 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
     'as seen on http://www.qb64.org/wiki/Downloading_Files
     'adapted for use with InForm
 
-    DIM client AS LONG, l AS LONG
+    DIM theClient AS LONG, l AS LONG
     DIM prevUrl$, prevUrl2$, url2$, x AS LONG
     DIM e$, url3$, x$, t!, a2$, a$, i AS LONG
     DIM i2 AS LONG, i3 AS LONG, d$, fh AS LONG
@@ -4087,7 +4092,7 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
     IF url$ <> prevUrl$ THEN
         prevUrl$ = url$
         IF url$ = "" THEN
-            IF client THEN CLOSE client: client = 0
+            IF theClient THEN CLOSE theClient: theClient = 0
             EXIT SUB
         END IF
         url2$ = url$
@@ -4095,19 +4100,19 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
         IF x THEN url2$ = LEFT$(url$, x - 1)
         IF url2$ <> prevUrl2$ THEN
             prevUrl2$ = url2$
-            IF client THEN CLOSE client: client = 0
-            client = _OPENCLIENT("TCP/IP:80:" + url2$)
-            IF client = 0 THEN Download = MKI$(2): prevUrl$ = "": EXIT FUNCTION
+            IF theClient THEN CLOSE theClient: theClient = 0
+            theClient = _OPENCLIENT("TCP/IP:80:" + url2$)
+            IF theClient = 0 THEN Download = MKI$(2): prevUrl$ = "": EXIT FUNCTION
         END IF
         e$ = CHR$(13) + CHR$(10) ' end of line characters
         url3$ = RIGHT$(url$, LEN(url$) - x + 1)
         x$ = "GET " + url3$ + " HTTP/1.1" + e$
         x$ = x$ + "Host: " + url2$ + e$ + e$
-        PUT #client, , x$
+        PUT #theClient, , x$
         t! = TIMER ' start time
     END IF
 
-    GET #client, , a2$
+    GET #theClient, , a2$
     a$ = a$ + a2$
     i = INSTR(a$, "Content-Length:")
     IF i THEN
@@ -4132,7 +4137,7 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
             END IF ' i3
         END IF ' i2
     END IF ' i
-    IF TIMER > t! + timelimit THEN CLOSE client: client = 0: Download = MKI$(3): prevUrl$ = "": EXIT FUNCTION
+    IF TIMER > t! + timelimit THEN CLOSE theClient: theClient = 0: Download = MKI$(3): prevUrl$ = "": EXIT FUNCTION
     Download = MKI$(0) 'still working
 END FUNCTION
 
