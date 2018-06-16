@@ -196,17 +196,21 @@ SUB __UI_BeforeUpdateDisplay
     Stream$ = Stream$ + incomingData$
 
     DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
+    DIM TempTop AS INTEGER
     IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
         ThisContainer = Control(__UI_FirstSelectedID).ParentID
         TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
         TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
+        TempTop = TempHeight \ 2
     ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
         ThisContainer = Control(__UI_FirstSelectedID).ID
         TempWidth = Control(__UI_FirstSelectedID).Width
         TempHeight = Control(__UI_FirstSelectedID).Height
+        TempTop = TempHeight \ 2
     ELSE
         TempWidth = Control(__UI_FormID).Width
         TempHeight = Control(__UI_FormID).Height
+        TempTop = (TempHeight - __UI_MenuBarOffsetV) \ 2 + __UI_MenuBarOffsetV
     END IF
 
     DIM thisData$, thisCommand$
@@ -244,31 +248,31 @@ SUB __UI_BeforeUpdateDisplay
                     SaveUndoImage
                     SELECT CASE TempValue
                         CASE __UI_Type_Button
-                            TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempHeight \ 2 - 12, ThisContainer)
+                            TempValue = __UI_NewControl(__UI_Type_Button, "", 80, 23, TempWidth \ 2 - 40, TempTop - 12, ThisContainer)
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         CASE __UI_Type_Label
-                            TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                            TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempTop - 12, ThisContainer)
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                             AutoSizeLabel Control(TempValue)
                         CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                            TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempHeight \ 2 - 12, ThisContainer)
+                            TempValue = __UI_NewControl(TempValue, "", 150, 23, TempWidth \ 2 - 75, TempTop - 12, ThisContainer)
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         CASE __UI_Type_TextBox
-                            TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
+                            TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempTop - 12, ThisContainer)
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         CASE __UI_Type_ListBox
-                            TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempHeight \ 2 - 100, ThisContainer)
+                            TempValue = __UI_NewControl(__UI_Type_ListBox, "", 200, 200, TempWidth \ 2 - 100, TempTop - 100, ThisContainer)
                             Control(TempValue).HasBorder = True
                         CASE __UI_Type_DropdownList
-                            TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempHeight \ 2 - 12, ThisContainer)
+                            TempValue = __UI_NewControl(__UI_Type_DropdownList, "", 200, 23, TempWidth \ 2 - 100, TempTop - 12, ThisContainer)
                         CASE __UI_Type_TrackBar
-                            TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempHeight \ 2 - 23, ThisContainer)
+                            TempValue = __UI_NewControl(__UI_Type_TrackBar, "", 300, 45, TempWidth \ 2 - 150, TempTop - 23, ThisContainer)
                         CASE __UI_Type_ProgressBar
-                            TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempHeight \ 2 - 12, ThisContainer)
+                            TempValue = __UI_NewControl(__UI_Type_ProgressBar, "", 300, 23, TempWidth \ 2 - 150, TempTop - 12, ThisContainer)
                         CASE __UI_Type_PictureBox
-                            TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, ThisContainer)
+                            TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempTop - 75, ThisContainer)
                         CASE __UI_Type_Frame
-                            TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempHeight \ 2 - 75, 0)
+                            TempValue = __UI_NewControl(TempValue, "", 230, 150, TempWidth \ 2 - 115, TempTop - 75, 0)
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                         CASE __UI_Type_MenuBar
                             TempValue = AddNewMenuBarControl
@@ -279,7 +283,7 @@ SUB __UI_BeforeUpdateDisplay
                                 __UI_ActivateMenu Control(__UI_ParentMenu), False
                             END IF
                         CASE __UI_Type_ToggleSwitch
-                            TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempHeight \ 2 - 8, ThisContainer)
+                            TempValue = __UI_NewControl(TempValue, "", 40, 17, TempWidth \ 2 - 20, TempTop - 8, ThisContainer)
                     END SELECT
                     IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
                         __UI_DestroyControl Control(__UI_ActiveMenu)
@@ -967,7 +971,7 @@ SUB __UI_BeforeUpdateDisplay
                 __UI_KeyPress TempValue
             CASE 222 'New textbox control with the NumericOnly property set to true
                 b$ = ReadSequential$(Property$, 2)
-                TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempHeight \ 2 - 12, ThisContainer)
+                TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempTop - 12, ThisContainer)
                 Control(TempValue).Name = "Numeric" + Control(TempValue).Name
                 SetCaption TempValue, RTRIM$(Control(TempValue).Name)
                 Control(TempValue).NumericOnly = True
@@ -1199,7 +1203,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 NEXT
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Left = LeftMost
                     END IF
                 NEXT
@@ -1214,7 +1217,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 NEXT
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Left = RightMost - (Control(i).Width - 1)
                     END IF
                 NEXT
@@ -1229,7 +1231,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 NEXT
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Top = TopMost
                     END IF
                 NEXT
@@ -1244,7 +1245,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 NEXT
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Top = BottomMost - (Control(i).Height - 1)
                     END IF
                 NEXT
@@ -1267,7 +1267,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 NewTopMost = TopMost + SelectionHeight / 2
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Top = NewTopMost - Control(i).Height / 2
                     END IF
                 NEXT
@@ -1290,7 +1289,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 NewLeftMost = LeftMost + SelectionWidth / 2
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Left = NewLeftMost - Control(i).Width / 2
                     END IF
                 NEXT
@@ -1298,7 +1296,7 @@ SUB DoAlign (AlignMode AS INTEGER)
         CASE 207 'Center vertically to form
             IF __UI_TotalSelectedControls = 1 THEN
                 IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
-                    Control(__UI_FirstSelectedID).Top = Control(__UI_FormID).Height / 2 - Control(__UI_FirstSelectedID).Height / 2
+                    Control(__UI_FirstSelectedID).Top = (Control(__UI_FormID).Height - __UI_MenuBarOffsetV) / 2 - Control(__UI_FirstSelectedID).Height / 2 + __UI_MenuBarOffsetV
                 ELSE
                     Control(__UI_FirstSelectedID).Top = Control(Control(__UI_FirstSelectedID).ParentID).Height / 2 - Control(__UI_FirstSelectedID).Height / 2
                 END IF
@@ -1311,22 +1309,20 @@ SUB DoAlign (AlignMode AS INTEGER)
                 BottomMost = 0
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         IF Control(i).Top < TopMost THEN TopMost = Control(i).Top
                         IF Control(i).Top + Control(i).Height - 1 > BottomMost THEN BottomMost = Control(i).Top + Control(i).Height - 1
                     END IF
                 NEXT
                 SelectionHeight = BottomMost - TopMost
                 IF Control(__UI_FirstSelectedID).ParentID = 0 THEN
-                    NewTopMost = Control(__UI_FormID).Height / 2 - SelectionHeight / 2
+                    NewTopMost = (Control(__UI_FormID).Height - __UI_MenuBarOffsetV) / 2 - SelectionHeight / 2
                 ELSE
                     NewTopMost = Control(Control(__UI_FirstSelectedID).ParentID).Height / 2 - SelectionHeight / 2
                 END IF
                 TopDifference = TopMost - NewTopMost
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
-                        Control(i).Top = Control(i).Top - TopDifference
+                        Control(i).Top = Control(i).Top - TopDifference + __UI_MenuBarOffsetV
                     END IF
                 NEXT
             END IF
@@ -1359,7 +1355,6 @@ SUB DoAlign (AlignMode AS INTEGER)
                 LeftDifference = LeftMost - NewLeftMost
                 FOR i = 1 TO UBOUND(Control)
                     IF Control(i).ControlIsSelected THEN
-                        __UI_Click 0 'Force the preview to inform it was edited
                         Control(i).Left = Control(i).Left - LeftDifference
                     END IF
                 NEXT
@@ -1397,7 +1392,6 @@ SUB DoAlign (AlignMode AS INTEGER)
             BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
             FindTops = Control(SubList(1)).Top - BinSize
             FOR i = 1 TO __UI_TotalSelectedControls
-                __UI_Click 0 'Force the preview to inform it was edited
                 FindTops = FindTops + BinSize
                 Control(SubList(i)).Top = FindTops
                 FindTops = FindTops + Control(SubList(i)).Height
@@ -1438,7 +1432,6 @@ SUB DoAlign (AlignMode AS INTEGER)
             BinSize = TotalSpace \ (__UI_TotalSelectedControls - 1)
             FindLefts = Control(SubList(1)).Left - BinSize
             FOR i = 1 TO __UI_TotalSelectedControls
-                __UI_Click 0 'Force the preview to inform it was edited
                 FindLefts = FindLefts + BinSize
                 Control(SubList(i)).Left = FindLefts
                 FindLefts = FindLefts + Control(SubList(i)).Width
@@ -1514,7 +1507,6 @@ SUB DeleteSelectedControls
     NEXT
     IF didDelete THEN
         IF __UI_TotalSelectedControls > 0 THEN __UI_TotalSelectedControls = 0
-        __UI_Click 0 'Force the preview to inform it was edited
     END IF
 END SUB
 

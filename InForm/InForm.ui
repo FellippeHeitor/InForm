@@ -206,7 +206,7 @@ DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDistanceFromForm AS INTEGER
 DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Offset AS INTEGER
-DIM SHARED __UI_ClipboardCheck$
+DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -816,9 +816,12 @@ SUB __UI_ProcessInput
             IF __UI_HasMenuBar = True THEN
                 'Add menubar div to main form's canvas
                 _FONT Control(__UI_FormID).Font
-                LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-                LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+                __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
+                LINE (0, __UI_MenuBarOffsetV - 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+                LINE (0, __UI_MenuBarOffsetV)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
                 __UI_RefreshMenuBar
+            ELSE
+                __UI_MenuBarOffsetV = 0
             END IF
             _DEST 0
 
@@ -890,8 +893,11 @@ SUB __UI_UpdateDisplay
         CLS
         IF __UI_HasMenuBar THEN
             _FONT Control(__UI_FormID).Font
+            __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
             LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
             LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+        ELSE
+            __UI_MenuBarOffsetV = 0
         END IF
         _DEST 0
     END IF
@@ -2655,11 +2661,11 @@ SUB __UI_EventDispatcher
                 END IF
 
                 'Middle of form:
-                YSnapOffset = ABS((Control(__UI_FormID).Height / 2) - (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2))
+                YSnapOffset = ABS(((Control(__UI_FormID).Height - __UI_MenuBarOffsetV) / 2 + __UI_MenuBarOffsetV) - (Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2))
                 IF YSnapOffset < 5 AND MouseYOffset < 10 THEN
-                    Control(__UI_DraggingID).Top = Control(__UI_FormID).Height / 2 - Control(__UI_DraggingID).Height / 2
+                    Control(__UI_DraggingID).Top = (Control(__UI_FormID).Height - __UI_MenuBarOffsetV) / 2 + __UI_MenuBarOffsetV - Control(__UI_DraggingID).Height / 2
                     __UI_Snapped = True
-                    __UI_SnappedY = Control(__UI_FormID).Height / 2
+                    __UI_SnappedY = (Control(__UI_FormID).Height - __UI_MenuBarOffsetV) / 2 + __UI_MenuBarOffsetV
                 END IF
 
                 'Center of form:
@@ -4235,6 +4241,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
             COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
             CLS
             IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
+            __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
             LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
             LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
             _DEST 0
