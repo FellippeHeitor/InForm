@@ -207,6 +207,7 @@ DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDistanceFromForm AS INTEGER
 DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Offset AS INTEGER
 DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
+DIM SHARED __UI_KeepScreenHidden AS _BYTE
 
 'Control types:
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -478,7 +479,7 @@ SUB __UI_Init
 
     __UI_BeforeInit
 
-    _SCREENSHOW
+    IF __UI_KeepScreenHidden = False THEN _SCREENSHOW
 
     IF __UI_FormID = 0 THEN SYSTEM
 

@@ -121,6 +121,7 @@ DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
+DIM SHARED InstanceHost AS LONG, InstanceClient AS LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
 DIM SHARED Stream$, FormDataReceived AS _BYTE, LastFormData$
 DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
@@ -175,6 +176,10 @@ $IF WIN THEN
         FUNCTION OpenProcess& (BYVAL dwDesiredAccess AS LONG, BYVAL bInheritHandle AS LONG, BYVAL dwProcessId AS LONG)
         FUNCTION CloseHandle& (BYVAL hObject AS LONG)
         FUNCTION GetExitCodeProcess& (BYVAL hProcess AS LONG, lpExitCode AS LONG)
+    END DECLARE
+
+    DECLARE DYNAMIC LIBRARY "user32"
+        FUNCTION SetForegroundWindow& (BYVAL hWnd AS LONG)
     END DECLARE
 
     ''Registry routines taken from the Wiki: http://www.qb64.net/wiki/index.php/Windows_Libraries#Registered_Fonts
@@ -834,11 +839,13 @@ END SUB
 SUB __UI_BeforeUpdateDisplay
     DIM b$, c$
     DIM i AS LONG, j AS LONG, Answer AS _BYTE
+    DIM incomingData$, Signal$
+    DIM thisData$, thisCommand$
     STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
     STATIC PrevFirstSelected AS LONG, PreviewHasMenuActive AS INTEGER
     STATIC CheckUpdateDone AS _BYTE
-
     STATIC LastChange AS SINGLE
+
     IF TIMER - BlinkStatusBar < 1 THEN
         IF TIMER - LastChange > .2 THEN
             IF Control(StatusBar).BackColor = StatusBarBackColor THEN
@@ -856,6 +863,64 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_Focus = 0 THEN
         IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
+    END IF
+
+    'Check if another instance was launched and is passing
+    'parameters:
+    STATIC BringToFront AS _BYTE, InstanceStream$
+    IF InstanceClient THEN
+        IF BringToFront = False THEN
+            $IF WIN THEN
+                i = SetForegroundWindow&(_WINDOWHANDLE)
+            $END IF
+            BringToFront = True
+        END IF
+
+        GET #InstanceClient, , incomingData$
+        InstanceStream$ = InstanceStream$ + incomingData$
+
+        IF INSTR(InstanceStream$, "<END>") THEN
+            IF LEFT$(InstanceStream$, 12) = "NEWINSTANCE>" THEN
+                InstanceStream$ = MID$(InstanceStream$, 13)
+                InstanceStream$ = LEFT$(InstanceStream$, INSTR(InstanceStream$, "<END>") - 1)
+                IF _FILEEXISTS(InstanceStream$) THEN
+                    IF INSTR(InstanceStream$, "/") > 0 OR INSTR(InstanceStream$, "\") > 0 THEN
+                        FOR i = LEN(InstanceStream$) TO 1 STEP -1
+                            IF ASC(InstanceStream$, i) = 92 OR ASC(InstanceStream$, i) = 47 THEN
+                                CurrentPath$ = LEFT$(InstanceStream$, i - 1)
+                                InstanceStream$ = MID$(InstanceStream$, i + 1)
+                                EXIT FOR
+                            END IF
+                        NEXT
+                    END IF
+
+                    IF Edited THEN
+                        $IF WIN THEN
+                            Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                        $ELSE
+                            Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                        $END IF
+                        IF Answer = MsgBox_Cancel THEN
+                            CLOSE InstanceClient
+                            InstanceClient = 0
+                            EXIT SUB
+                        ELSEIF Answer = MsgBox_Yes THEN
+                            SaveForm False, False
+                        END IF
+                    END IF
+
+                    Text(FileNameTextBox) = InstanceStream$
+                    OpenDialogOpen = True
+                    __UI_Click OpenBT
+                END IF
+            END IF
+            CLOSE InstanceClient
+            InstanceClient = 0
+        END IF
+    ELSE
+        InstanceClient = _OPENCONNECTION(InstanceHost)
+        BringToFront = False
+        InstanceStream$ = ""
     END IF
 
     IF CheckUpdates THEN
@@ -932,8 +997,6 @@ SUB __UI_BeforeUpdateDisplay
 
     CheckPreview
 
-    DIM incomingData$, Signal$
-
     GET #Client, , incomingData$
     Stream$ = Stream$ + incomingData$
     STATIC bytesIn~&&, refreshes~&
@@ -995,7 +1058,6 @@ SUB __UI_BeforeUpdateDisplay
     END IF
     SignalsFirstSent = True
 
-    DIM thisData$, thisCommand$
     DO WHILE INSTR(Stream$, "<END>") > 0
         thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
         Stream$ = MID$(Stream$, INSTR(Stream$, "<END>") + 5)
@@ -1979,6 +2041,7 @@ SUB SaveSettings
 END SUB
 
 SUB __UI_BeforeInit
+    __UI_KeepScreenHidden = True
 END SUB
 
 SUB __UI_FormResized
@@ -2028,6 +2091,50 @@ SUB __UI_OnLoad
     tempIcon = _LOADIMAGE("./InForm/resources/Application-icon-128.png", 32)
 
     GOSUB ShowMessage
+
+    b$ = "Opening communication port (click 'unblock' if your Operating System asks)..."
+    GOSUB ShowMessage
+    DIM HostAttempts AS INTEGER
+    DO
+        HostAttempts = HostAttempts + 1
+        InstanceHost = _OPENHOST("TCP/IP:60680") '60680 = #ED08, as the functionality was implemented in Beta 8 of the EDitor ;-)
+    LOOP UNTIL InstanceHost <> 0 OR HostAttempts > 1000
+
+    IF InstanceHost = 0 THEN
+        'There is probably another instance of InForm Designer running.
+        '(i) attempt to communicate and pass parameters and
+        '(ii) bring it to the front.
+
+        HostAttempts = 0
+        DO
+            HostAttempts = HostAttempts + 1
+            Host = _OPENCLIENT("TCP/IP:60680:localhost")
+        LOOP UNTIL Host <> 0 OR HostAttempts > 1000
+
+        IF Host THEN
+            b$ = "NEWINSTANCE>" + COMMAND$ + "<END>"
+            Send Host, b$
+            _DELAY 1
+            CLOSE Host
+        END IF
+        SYSTEM
+    END IF
+
+    _SCREENSHOW
+
+    RANDOMIZE TIMER
+    HostAttempts = 0
+    DO
+        HostAttempts = HostAttempts + 1
+        HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
+        Host = _OPENHOST("TCP/IP:" + HostPort)
+    LOOP UNTIL Host <> 0 OR HostAttempts > 1000
+
+    IF Host = 0 THEN
+        DIM Answer AS _BYTE
+        Answer = MessageBox("Unable to open communication port.", "", MsgBox_OkOnly + MsgBox_Critical)
+        SYSTEM
+    END IF
 
     PreviewAttached = True
     AutoNameControls = True
@@ -2173,22 +2280,6 @@ SUB __UI_OnLoad
             PUT #FreeFileNum, 1, b$
             CLOSE #FreeFileNum
         END IF
-    END IF
-
-    b$ = "Starting host (click 'unblock' if your Operating System asks)..."
-    GOSUB ShowMessage
-    DIM HostAttempts AS INTEGER
-    RANDOMIZE TIMER
-    DO
-        HostAttempts = HostAttempts + 1
-        HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
-        Host = _OPENHOST("TCP/IP:" + HostPort)
-    LOOP UNTIL Host <> 0 OR HostAttempts > 1000
-
-    IF Host = 0 THEN
-        DIM Answer AS INTEGER
-        Answer = MessageBox("Can't start as host.", "", MsgBox_OkOnly + MsgBox_Critical)
-        SYSTEM
     END IF
 
     b$ = "Checking Preview component..."
