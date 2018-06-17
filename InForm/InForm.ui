@@ -968,7 +968,12 @@ SUB __UI_UpdateDisplay
                     __UI_FillSelectedText ss1, ss2
                     __UI_StateHasChanged = False
                     __UI_DrawTextBox Control(i), ControlState, ss1, ss2
-                    IF __UI_StateHasChanged THEN __UI_TextChanged i
+                    IF __UI_StateHasChanged THEN
+                        __UI_TextChanged i
+                        IF Control(i).NumericOnly THEN
+                            Control(i).Value = VAL(Text(i))
+                        END IF
+                    END IF
                 CASE __UI_Type_ListBox
                     'List boxes
                     IF Control(i).InputViewStart <= 0 THEN Control(i).InputViewStart = 1
@@ -3465,6 +3470,9 @@ SUB __UI_EventDispatcher
                                                     '__UI_SelectionLength = 0
                                                 END IF
                                                 __UI_TextChanged __UI_Focus
+                                                IF Control(__UI_Focus).NumericOnly THEN
+                                                    Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                                END IF
                                             END IF
                                             IF ContextMenuPaste THEN
                                                 ContextMenuPaste = False
@@ -3531,6 +3539,9 @@ SUB __UI_EventDispatcher
                                                     END IF
                                                 END IF
                                                 __UI_TextChanged __UI_Focus
+                                                IF Control(__UI_Focus).NumericOnly THEN
+                                                    Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                                END IF
                                             END IF
                                             IF ContextMenuPaste THEN
                                                 ContextMenuPaste = False
@@ -3552,6 +3563,9 @@ SUB __UI_EventDispatcher
                                             _CLIPBOARD$ = __UI_SelectedText
                                             __UI_DeleteSelection
                                             __UI_TextChanged __UI_Focus
+                                            IF Control(__UI_Focus).NumericOnly THEN
+                                                Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                            END IF
                                         END IF
                                         __UI_KeyHit = 0
                                     END IF
@@ -3651,6 +3665,9 @@ SUB __UI_EventDispatcher
                                     END IF
 
                                     __UI_TextChanged __UI_Focus
+                                    IF Control(__UI_Focus).NumericOnly THEN
+                                        Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                    END IF
                                 END IF
                             CASE 8 'Backspace
                                 IF Mask(__UI_Focus) = "" OR Control(__UI_Focus).Multiline THEN
@@ -3673,6 +3690,9 @@ SUB __UI_EventDispatcher
                                             __UI_DeleteSelection
                                         END IF
                                         __UI_TextChanged __UI_Focus
+                                        IF Control(__UI_Focus).NumericOnly THEN
+                                            Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                        END IF
                                     END IF
                                 ELSE
                                     'Masked input Backspace:
@@ -3693,6 +3713,9 @@ SUB __UI_EventDispatcher
                                         __UI_DeleteSelectionMasked
                                     END IF
                                     __UI_TextChanged __UI_Focus
+                                    IF Control(__UI_Focus).NumericOnly THEN
+                                        Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                    END IF
                                 END IF
                             CASE 21248 'Delete
                                 IF LEN(Mask(__UI_Focus)) = 0 THEN
@@ -3704,10 +3727,16 @@ SUB __UI_EventDispatcher
                                                 Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 2)
                                             END IF
                                             __UI_TextChanged __UI_Focus
+                                            IF Control(__UI_Focus).NumericOnly THEN
+                                                Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                            END IF
                                         END IF
                                     ELSE
                                         __UI_DeleteSelection
                                         __UI_TextChanged __UI_Focus
+                                        IF Control(__UI_Focus).NumericOnly THEN
+                                            Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                        END IF
                                     END IF
                                 ELSE
                                     'Masked input Delete:
@@ -3716,11 +3745,17 @@ SUB __UI_EventDispatcher
                                             IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN
                                                 MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1) = MID$(__UI_EmptyMask$(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)
                                                 __UI_TextChanged __UI_Focus
+                                                IF Control(__UI_Focus).NumericOnly THEN
+                                                    Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                                END IF
                                             END IF
                                         END IF
                                     ELSE
                                         __UI_DeleteSelectionMasked
                                         __UI_TextChanged __UI_Focus
+                                        IF Control(__UI_Focus).NumericOnly THEN
+                                            Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+                                        END IF
                                     END IF
                                 END IF
                             CASE 19200 'Left arrow key
