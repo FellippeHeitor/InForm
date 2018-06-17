@@ -2121,6 +2121,7 @@ SUB __UI_OnLoad
     END IF
 
     _SCREENSHOW
+    _ICON
 
     RANDOMIZE TIMER
     HostAttempts = 0
