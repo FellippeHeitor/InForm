@@ -4912,6 +4912,7 @@ SUB ResetList (WhichListBox AS LONG)
 
     This.Max = 0
     This.LastVisibleItem = 0 'Reset this var so it'll be recalculated
+    This.InputViewStart = 1
     This.Value = 0
 
     Control(This.ID) = This
