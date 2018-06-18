@@ -110,6 +110,7 @@ DIM SHARED MaskTB AS LONG, MaskLB AS LONG
 DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
 DIM SHARED BooleanLB AS LONG, BooleanOptions AS LONG
 DIM SHARED FontListLB AS LONG, FontList AS LONG, FontSizeList
+DIM SHARED PasteListBT AS LONG
 '------------------------------------------------------------------------------
 
 'Other shared variables:
@@ -621,6 +622,15 @@ SUB __UI_Click (id AS LONG)
             IF id <> FontSwitchMenuSwitch THEN __UI_MouseEnter FontLB
             SaveSettings
             __UI_ForceRedraw = True
+        CASE PasteListBT
+            DIM Clip$
+            Clip$ = _CLIPBOARD$
+            Clip$ = Replace$(Clip$, CHR$(13) + CHR$(10), CHR$(10), 0, 0)
+            Clip$ = Replace$(Clip$, CHR$(10), "\n", 0, 0)
+            Text(TextTB) = Clip$
+            __UI_Focus = TextTB
+            Control(TextTB).Cursor = LEN(Text(TextTB))
+            Control(TextTB).TextIsSelected = False
     END SELECT
 
     LastClickedID = id
@@ -1090,8 +1100,10 @@ SUB __UI_BeforeUpdateDisplay
                     FormDataReceived = True
                 ELSE
                     Edited = True
-                    IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited > 1 THEN
-                        LoseFocus
+                    IF __UI_Focus > 0 THEN
+                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited > 1 THEN
+                            LoseFocus
+                        END IF
                     END IF
                 END IF
             CASE "UNDOPOINTER"
@@ -1926,6 +1938,18 @@ SUB __UI_BeforeUpdateDisplay
     Control(FontSizeList).Hidden = Control(FontList).Hidden
     Control(FontSizeList).Top = Control(FontList).Top
 
+    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR _
+       (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
+        IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
+            Control(PasteListBT).Top = Control(TextTB).Top
+            Control(PasteListBT).Hidden = False
+        ELSE
+            Control(PasteListBT).Hidden = True
+        END IF
+    ELSE
+        Control(PasteListBT).Hidden = True
+    END IF
+
     'Update the color mixer
     DIM ThisColor AS _UNSIGNED LONG, ThisBackColor AS _UNSIGNED LONG
 
@@ -2436,6 +2460,14 @@ SUB __UI_OnLoad
     LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
     COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
     __UI_PrintString 5, 3, "#"
+
+    'Draw PasteListBT icon
+    Control(PasteListBT).HelperCanvas = _NEWIMAGE(17, 17, 32)
+    _DEST Control(PasteListBT).HelperCanvas
+    _FONT 16
+    FOR i = 4 TO 15 STEP 4
+        LINE (3, i)-STEP(_WIDTH - 6, 1), _RGB32(122, 122, 122), BF
+    NEXT
 
     'Import Align menu icons from InForm.ui
     Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas

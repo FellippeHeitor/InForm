@@ -351,6 +351,10 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "PasteListBT", 23, 23, 106, 54, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "Paste list into control"
+
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "TextTB", 230, 23, 129, 54, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
@@ -811,4 +815,5 @@ SUB __UI_AssignIDs
     FontSwitchMenuSwitch = __UI_GetID("FontSwitchMenuSwitch")
     FontSwitchMenu = __UI_GetID("FontSwitchMenu")
     AutoScroll = __UI_GetID("AutoScroll")
+    PasteListBT = __UI_GetID("PasteListBT")
 END SUB
