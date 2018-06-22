@@ -2344,7 +2344,7 @@ SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
     DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, UndoBuffer AS _BYTE
-    DIM PreviewData$
+    DIM PreviewData$, CopyFrame AS _BYTE
 
     CONST Debug = False
 
@@ -2358,6 +2358,10 @@ SUB SavePreview (Destination AS _BYTE)
         UndoBuffer = True
     ELSE
         IF __UI_TotalSelectedControls = 0 THEN EXIT SUB
+
+        IF __UI_TotalSelectedControls = 1 AND Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+            CopyFrame = True
+        END IF
     END IF
 
     IF Debug THEN
@@ -2378,7 +2382,11 @@ SUB SavePreview (Destination AS _BYTE)
 
     FOR i = 1 TO UBOUND(Control)
         IF Destination = InClipboard THEN
-            IF Control(i).ControlIsSelected = False THEN _CONTINUE
+            IF CopyFrame THEN
+                IF i <> __UI_FirstSelectedID OR Control(i).ParentID <> __UI_FirstSelectedID THEN _CONTINUE
+            ELSE
+                IF Control(i).ControlIsSelected = False THEN _CONTINUE
+            END IF
         END IF
 
         IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 AND LEFT$(RTRIM$(Control(i).Name), 5) <> "__UI_" THEN
