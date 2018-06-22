@@ -1474,18 +1474,23 @@ END SUB
 
 SUB DeleteSelectedControls
     DIM i AS LONG, j AS LONG, didDelete AS _BYTE
+
+    'A frame's contents will be deleted with it if it's
+    'the only selected control.
+    IF __UI_TotalSelectedControls = 1 AND Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ParentID = __UI_FirstSelectedID THEN
+                IF Control(i).ControlIsSelected = False THEN
+                    Control(i).ControlIsSelected = True
+                    __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+                END IF
+            END IF
+        NEXT
+    END IF
+
+    'Iterate over control list and delete selected controls.
     FOR i = UBOUND(Control) TO 1 STEP -1
         IF Control(i).ControlIsSelected THEN
-            IF Control(i).Type = __UI_Type_Frame THEN
-                'Remove controls from container before deleting it
-                FOR j = 1 TO UBOUND(Control)
-                    IF Control(j).ParentID = Control(i).ID THEN
-                        Control(j).ParentID = 0
-                        Control(j).Top = Control(j).Top + Control(i).Top
-                        Control(j).Left = Control(j).Left + Control(i).Left
-                    END IF
-                NEXT
-            END IF
             IF Control(i).Type = __UI_Type_MenuBar THEN
                 DIM MustRefreshMenuBar AS _BYTE
                 MustRefreshMenuBar = True
@@ -2383,7 +2388,9 @@ SUB SavePreview (Destination AS _BYTE)
     FOR i = 1 TO UBOUND(Control)
         IF Destination = InClipboard THEN
             IF CopyFrame THEN
-                IF i <> __UI_FirstSelectedID OR Control(i).ParentID <> __UI_FirstSelectedID THEN _CONTINUE
+                IF i <> __UI_FirstSelectedID THEN
+                    IF Control(i).ParentID <> __UI_FirstSelectedID THEN _CONTINUE
+                END IF
             ELSE
                 IF Control(i).ControlIsSelected = False THEN _CONTINUE
             END IF
