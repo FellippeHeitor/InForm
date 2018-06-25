@@ -1765,8 +1765,16 @@ SUB LoadPreview (Destination AS _BYTE)
 
         IF NOT Disk THEN
             'Change control's name in case this form already has one with the same name
-            DIM TempName$, c$, OriginalIndex$
+            DIM TempName$, c$, OriginalIndex$, NameChanges$
+            DIM OriginalName$, DidRename AS _BYTE
+
+            OriginalName$ = RTRIM$(NewName)
+            DidRename = False
             DO WHILE __UI_GetID(NewName) > 0
+                DidRename = True
+                IF INSTR(NameChanges$, OriginalName$ + "=") = 0 THEN
+                    NameChanges$ = NameChanges$ + OriginalName$ + "="
+                END IF
                 TempName$ = RTRIM$(NewName)
                 c$ = RIGHT$(TempName$, 1)
                 IF ASC(c$) >= 48 AND ASC(c$) <= 57 THEN
@@ -1788,6 +1796,18 @@ SUB LoadPreview (Destination AS _BYTE)
                 END IF
                 NewName = TempName$ + LTRIM$(STR$(VAL(OriginalIndex$) + 1))
             LOOP
+            IF DidRename THEN
+                NameChanges$ = NameChanges$ + NewName + ";"
+            END IF
+        END IF
+
+        IF INSTR(NameChanges$, NewParentID + "=") THEN
+            'This control's container had a name change when it was
+            'pasted, so we'll reassign it to its new cloned parent:
+            DIM NewID AS LONG, EndNewID AS LONG
+            NewID = INSTR(NameChanges$, NewParentID + "=") + LEN(NewParentID + "=")
+            EndNewID = INSTR(NewID, NameChanges$, ";")
+            NewParentID = MID$(NameChanges$, NewID, EndNewID - NewID)
         END IF
 
         TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
@@ -2385,276 +2405,295 @@ SUB SavePreview (Destination AS _BYTE)
         Clip$ = MKL$(UBOUND(Control))
     END IF
 
-    FOR i = 1 TO UBOUND(Control)
-        IF Destination = InClipboard THEN
-            IF CopyFrame THEN
-                IF i <> __UI_FirstSelectedID THEN
-                    IF Control(i).ParentID <> __UI_FirstSelectedID THEN _CONTINUE
-                END IF
-            ELSE
-                IF Control(i).ControlIsSelected = False THEN _CONTINUE
-            END IF
-        END IF
-
-        IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 AND LEFT$(RTRIM$(Control(i).Name), 5) <> "__UI_" THEN
-            IF Debug THEN
-                PRINT #TxtFileNum, Control(i).ID,
-                PRINT #TxtFileNum, RTRIM$(Control(i).Name)
-            END IF
-            b$ = MKI$(-1) + MKL$(i) + MKI$(Control(i).Type) '-1 indicates a new control
-            b$ = b$ + MKI$(LEN(RTRIM$(Control(i).Name)))
-            b$ = b$ + RTRIM$(Control(i).Name)
-            b$ = b$ + MKI$(Control(i).Width) + MKI$(Control(i).Height) + MKI$(Control(i).Left) + MKI$(Control(i).Top)
-            IF Control(i).ParentID > 0 THEN
-                b$ = b$ + MKI$(LEN(RTRIM$(Control(Control(i).ParentID).Name))) + RTRIM$(Control(Control(i).ParentID).Name)
-            ELSE
-                b$ = b$ + MKI$(0)
-            END IF
-
-            IF Disk THEN
-                PUT #BinFileNum, , b$
-            ELSE
-                Clip$ = Clip$ + b$
-            END IF
-
-            IF LEN(Caption(i)) > 0 THEN
-                IF Control(i).HotKeyPosition > 0 THEN
-                    a$ = LEFT$(Caption(i), Control(i).HotKeyPosition - 1) + "&" + MID$(Caption(i), Control(i).HotKeyPosition)
+    DIM ThisPass AS _BYTE
+    FOR ThisPass = 1 TO 2
+        FOR i = 1 TO UBOUND(Control)
+            IF Destination = InClipboard THEN
+                IF Control(i).Type = __UI_Type_Form THEN _CONTINUE
+                IF CopyFrame THEN
+                    IF ThisPass = 2 THEN
+                        IF Control(i).ParentID <> __UI_FirstSelectedID THEN _CONTINUE
+                    END IF
                 ELSE
-                    a$ = Caption(i)
-                END IF
-                b$ = MKI$(-2) + MKL$(LEN(a$)) '-2 indicates a caption
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                    PUT #BinFileNum, , a$
-                ELSE
-                    Clip$ = Clip$ + b$ + a$
+                    IF Control(i).ControlIsSelected = False THEN _CONTINUE
                 END IF
             END IF
 
-            IF LEN(ToolTip(i)) > 0 THEN
-                b$ = MKI$(-24) + MKL$(LEN(ToolTip(i))) '-24 indicates a tip
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                    PUT #BinFileNum, , ToolTip(i)
-                ELSE
-                    Clip$ = Clip$ + b$ + ToolTip(i)
+            IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 AND LEFT$(RTRIM$(Control(i).Name), 5) <> "__UI_" THEN
+                IF ThisPass = 1 THEN
+                    IF Control(i).Type <> __UI_Type_Form AND _
+                       Control(i).Type <> __UI_Type_Frame AND _
+                       Control(i).Type <> __UI_Type_MenuBar THEN
+                        _CONTINUE
+                    END IF
+                ELSEIF ThisPass = 2 THEN
+                    IF Control(i).Type = __UI_Type_Form OR _
+                       Control(i).Type = __UI_Type_Frame OR _
+                       Control(i).Type = __UI_Type_MenuBar THEN
+                        _CONTINUE
+                    END IF
                 END IF
-            END IF
-
-            IF LEN(Text(i)) > 0 THEN
-                b$ = MKI$(-3) + MKL$(LEN(Text(i))) '-3 indicates a text
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                    PUT #BinFileNum, , Text(i)
-                ELSE
-                    Clip$ = Clip$ + b$ + Text(i)
+                IF Debug THEN
+                    PRINT #TxtFileNum, Control(i).ID,
+                    PRINT #TxtFileNum, RTRIM$(Control(i).Name)
                 END IF
-            END IF
-
-            IF LEN(Mask(i)) > 0 THEN
-                b$ = MKI$(-36) + MKL$(LEN(Mask(i))) '-36 indicates a mask
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                    PUT #BinFileNum, , Mask(i)
-                ELSE
-                    Clip$ = Clip$ + b$ + Mask(i)
-                END IF
-            END IF
-
-            IF Control(i).TransparentColor > 0 THEN
-                b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, Control(i).TransparentColor)
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                ELSE
-                    Clip$ = Clip$ + b$
-                END IF
-            END IF
-
-            IF Control(i).Stretch THEN
-                b$ = MKI$(-4)
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                ELSE
-                    Clip$ = Clip$ + b$
-                END IF
-            END IF
-            'Inheritable properties won't be saved if they are the same as the parent's
-            IF Control(i).Type = __UI_Type_Form OR Destination = InClipboard THEN
-                IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
-                    'Internal fonts
-                    SaveInternalFont:
-                    FontSetup$ = "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
-                    b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$ + MKI$(0)
-                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-                ELSE
-                    SaveExternalFont:
-                    FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
-                    b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
-                    b$ = b$ + MKI$(LEN(Text(__UI_GetFontID(Control(i).Font)))) + Text(__UI_GetFontID(Control(i).Font))
-                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-                END IF
-            ELSE
+                DIM tempList$
+                tempList$ = tempList$ + RTRIM$(Control(i).Name) + ";"
+                b$ = MKI$(-1) + MKL$(i) + MKI$(Control(i).Type) '-1 indicates a new control
+                b$ = b$ + MKI$(LEN(RTRIM$(Control(i).Name)))
+                b$ = b$ + RTRIM$(Control(i).Name)
+                b$ = b$ + MKI$(Control(i).Width) + MKI$(Control(i).Height) + MKI$(Control(i).Left) + MKI$(Control(i).Top)
                 IF Control(i).ParentID > 0 THEN
-                    IF Control(i).Font > 0 AND Control(i).Font <> Control(Control(i).ParentID).Font THEN
-                        IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
-                            GOTO SaveInternalFont
-                        ELSE
-                            GOTO SaveExternalFont
-                        END IF
+                    b$ = b$ + MKI$(LEN(RTRIM$(Control(Control(i).ParentID).Name))) + RTRIM$(Control(Control(i).ParentID).Name)
+                ELSE
+                    b$ = b$ + MKI$(0)
+                END IF
+
+                IF Disk THEN
+                    PUT #BinFileNum, , b$
+                ELSE
+                    Clip$ = Clip$ + b$
+                END IF
+
+                IF LEN(Caption(i)) > 0 THEN
+                    IF Control(i).HotKeyPosition > 0 THEN
+                        a$ = LEFT$(Caption(i), Control(i).HotKeyPosition - 1) + "&" + MID$(Caption(i), Control(i).HotKeyPosition)
+                    ELSE
+                        a$ = Caption(i)
+                    END IF
+                    b$ = MKI$(-2) + MKL$(LEN(a$)) '-2 indicates a caption
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                        PUT #BinFileNum, , a$
+                    ELSE
+                        Clip$ = Clip$ + b$ + a$
+                    END IF
+                END IF
+
+                IF LEN(ToolTip(i)) > 0 THEN
+                    b$ = MKI$(-24) + MKL$(LEN(ToolTip(i))) '-24 indicates a tip
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                        PUT #BinFileNum, , ToolTip(i)
+                    ELSE
+                        Clip$ = Clip$ + b$ + ToolTip(i)
+                    END IF
+                END IF
+
+                IF LEN(Text(i)) > 0 THEN
+                    b$ = MKI$(-3) + MKL$(LEN(Text(i))) '-3 indicates a text
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                        PUT #BinFileNum, , Text(i)
+                    ELSE
+                        Clip$ = Clip$ + b$ + Text(i)
+                    END IF
+                END IF
+
+                IF LEN(Mask(i)) > 0 THEN
+                    b$ = MKI$(-36) + MKL$(LEN(Mask(i))) '-36 indicates a mask
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                        PUT #BinFileNum, , Mask(i)
+                    ELSE
+                        Clip$ = Clip$ + b$ + Mask(i)
+                    END IF
+                END IF
+
+                IF Control(i).TransparentColor > 0 THEN
+                    b$ = MKI$(-28) + _MK$(_UNSIGNED LONG, Control(i).TransparentColor)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+
+                IF Control(i).Stretch THEN
+                    b$ = MKI$(-4)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                'Inheritable properties won't be saved if they are the same as the parent's
+                IF Control(i).Type = __UI_Type_Form OR Destination = InClipboard THEN
+                    IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
+                        'Internal fonts
+                        SaveInternalFont:
+                        FontSetup$ = "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
+                        b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$ + MKI$(0)
+                        IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                    ELSE
+                        SaveExternalFont:
+                        FontSetup$ = ToolTip(__UI_GetFontID(Control(i).Font)) + "," + LTRIM$(STR$(Control(__UI_GetFontID(Control(i).Font)).Max))
+                        b$ = MKI$(-5) + MKI$(LEN(FontSetup$)) + FontSetup$
+                        b$ = b$ + MKI$(LEN(Text(__UI_GetFontID(Control(i).Font)))) + Text(__UI_GetFontID(Control(i).Font))
+                        IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                     END IF
                 ELSE
-                    IF Control(i).Font > 0 AND Control(i).Font <> Control(__UI_FormID).Font THEN
-                        IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
-                            GOTO SaveInternalFont
-                        ELSE
-                            GOTO SaveExternalFont
+                    IF Control(i).ParentID > 0 THEN
+                        IF Control(i).Font > 0 AND Control(i).Font <> Control(Control(i).ParentID).Font THEN
+                            IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
+                                GOTO SaveInternalFont
+                            ELSE
+                                GOTO SaveExternalFont
+                            END IF
+                        END IF
+                    ELSE
+                        IF Control(i).Font > 0 AND Control(i).Font <> Control(__UI_FormID).Font THEN
+                            IF Control(i).Font = 8 OR Control(i).Font = 16 THEN
+                                GOTO SaveInternalFont
+                            ELSE
+                                GOTO SaveExternalFont
+                            END IF
                         END IF
                     END IF
                 END IF
-            END IF
-            'Colors are saved only if they differ from the theme's defaults
-            IF Control(i).ForeColor <> __UI_DefaultColor(Control(i).Type, 1) THEN
-                b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, Control(i).ForeColor)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).BackColor <> __UI_DefaultColor(Control(i).Type, 2) THEN
-                b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, Control(i).BackColor)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).SelectedForeColor <> __UI_DefaultColor(Control(i).Type, 3) THEN
-                b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, Control(i).SelectedForeColor)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).SelectedBackColor <> __UI_DefaultColor(Control(i).Type, 4) THEN
-                b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, Control(i).SelectedBackColor)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).BorderColor <> __UI_DefaultColor(Control(i).Type, 5) THEN
-                b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, Control(i).BorderColor)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).BackStyle = __UI_Transparent THEN
-                b$ = MKI$(-11)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).HasBorder THEN
-                b$ = MKI$(-12)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Align = __UI_Center THEN
-                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            ELSEIF Control(i).Align = __UI_Right THEN
-                b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).VAlign = __UI_Middle THEN
-                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            ELSEIF Control(i).VAlign = __UI_Bottom THEN
-                b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).PasswordField = True THEN
-                b$ = MKI$(-33)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Encoding > 0 THEN
-                b$ = MKI$(-34) + MKL$(Control(i).Encoding)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Value <> 0 THEN
-                b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Min <> 0 THEN
-                b$ = MKI$(-15) + _MK$(_FLOAT, Control(i).Min)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Max <> 0 THEN
-                b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).ShowPercentage THEN
-                b$ = MKI$(-19)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).CanHaveFocus THEN
-                b$ = MKI$(-20)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Disabled THEN
-                b$ = MKI$(-21)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Hidden THEN
-                b$ = MKI$(-22)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).CenteredWindow THEN
-                b$ = MKI$(-23)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).ContextMenuID THEN
-                IF LEFT$(Control(Control(i).ContextMenuID).Name, 9) <> "__UI_Text" AND LEFT$(Control(Control(i).ContextMenuID).Name, 16) <> "__UI_PreviewMenu" THEN
-                    b$ = MKI$(-25) + MKI$(LEN(RTRIM$(Control(Control(i).ContextMenuID).Name))) + RTRIM$(Control(Control(i).ContextMenuID).Name)
+                'Colors are saved only if they differ from the theme's defaults
+                IF Control(i).ForeColor <> __UI_DefaultColor(Control(i).Type, 1) THEN
+                    b$ = MKI$(-6) + _MK$(_UNSIGNED LONG, Control(i).ForeColor)
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
-            END IF
-            IF Control(i).Interval THEN
-                b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).MinInterval THEN
-                b$ = MKI$(-37) + _MK$(_FLOAT, Control(i).MinInterval)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).WordWrap THEN
-                b$ = MKI$(-27)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).CanResize AND Control(i).Type = __UI_Type_Form THEN
-                b$ = MKI$(-29)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).Padding > 0 THEN
-                b$ = MKI$(-31) + MKI$(Control(i).Padding)
-                IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
-            END IF
-            IF Control(i).NumericOnly = True THEN
-                b$ = MKI$(-38)
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                ELSE
-                    Clip$ = Clip$ + b$
+                IF Control(i).BackColor <> __UI_DefaultColor(Control(i).Type, 2) THEN
+                    b$ = MKI$(-7) + _MK$(_UNSIGNED LONG, Control(i).BackColor)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).SelectedForeColor <> __UI_DefaultColor(Control(i).Type, 3) THEN
+                    b$ = MKI$(-8) + _MK$(_UNSIGNED LONG, Control(i).SelectedForeColor)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).SelectedBackColor <> __UI_DefaultColor(Control(i).Type, 4) THEN
+                    b$ = MKI$(-9) + _MK$(_UNSIGNED LONG, Control(i).SelectedBackColor)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).BorderColor <> __UI_DefaultColor(Control(i).Type, 5) THEN
+                    b$ = MKI$(-10) + _MK$(_UNSIGNED LONG, Control(i).BorderColor)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).BackStyle = __UI_Transparent THEN
+                    b$ = MKI$(-11)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).HasBorder THEN
+                    b$ = MKI$(-12)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Align = __UI_Center THEN
+                    b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                ELSEIF Control(i).Align = __UI_Right THEN
+                    b$ = MKI$(-13) + _MK$(_BYTE, Control(i).Align)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).VAlign = __UI_Middle THEN
+                    b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                ELSEIF Control(i).VAlign = __UI_Bottom THEN
+                    b$ = MKI$(-32) + _MK$(_BYTE, Control(i).VAlign)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).PasswordField = True THEN
+                    b$ = MKI$(-33)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Encoding > 0 THEN
+                    b$ = MKI$(-34) + MKL$(Control(i).Encoding)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Value <> 0 THEN
+                    b$ = MKI$(-14) + _MK$(_FLOAT, Control(i).Value)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Min <> 0 THEN
+                    b$ = MKI$(-15) + _MK$(_FLOAT, Control(i).Min)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Max <> 0 THEN
+                    b$ = MKI$(-16) + _MK$(_FLOAT, Control(i).Max)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).ShowPercentage THEN
+                    b$ = MKI$(-19)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).CanHaveFocus THEN
+                    b$ = MKI$(-20)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Disabled THEN
+                    b$ = MKI$(-21)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Hidden THEN
+                    b$ = MKI$(-22)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).CenteredWindow THEN
+                    b$ = MKI$(-23)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).ContextMenuID THEN
+                    IF LEFT$(Control(Control(i).ContextMenuID).Name, 9) <> "__UI_Text" AND LEFT$(Control(Control(i).ContextMenuID).Name, 16) <> "__UI_PreviewMenu" THEN
+                        b$ = MKI$(-25) + MKI$(LEN(RTRIM$(Control(Control(i).ContextMenuID).Name))) + RTRIM$(Control(Control(i).ContextMenuID).Name)
+                        IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).Interval THEN
+                    b$ = MKI$(-26) + _MK$(_FLOAT, Control(i).Interval)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).MinInterval THEN
+                    b$ = MKI$(-37) + _MK$(_FLOAT, Control(i).MinInterval)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).WordWrap THEN
+                    b$ = MKI$(-27)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).CanResize AND Control(i).Type = __UI_Type_Form THEN
+                    b$ = MKI$(-29)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Padding > 0 THEN
+                    b$ = MKI$(-31) + MKI$(Control(i).Padding)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).NumericOnly = True THEN
+                    b$ = MKI$(-38)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).NumericOnly = __UI_NumericWithBounds THEN
+                    b$ = MKI$(-39)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).BulletStyle = __UI_Bullet THEN
+                    b$ = MKI$(-40)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).AutoScroll = True THEN
+                    b$ = MKI$(-41)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
                 END IF
             END IF
-            IF Control(i).NumericOnly = __UI_NumericWithBounds THEN
-                b$ = MKI$(-39)
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                ELSE
-                    Clip$ = Clip$ + b$
-                END IF
-            END IF
-            IF Control(i).BulletStyle = __UI_Bullet THEN
-                b$ = MKI$(-40)
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                ELSE
-                    Clip$ = Clip$ + b$
-                END IF
-            END IF
-            IF Control(i).AutoScroll = True THEN
-                b$ = MKI$(-41)
-                IF Disk THEN
-                    PUT #BinFileNum, , b$
-                ELSE
-                    Clip$ = Clip$ + b$
-                END IF
-            END IF
-        END IF
+        NEXT
     NEXT
     b$ = MKI$(-1024) 'end of file
     IF Disk THEN
@@ -2703,7 +2742,7 @@ SUB SavePreview (Destination AS _BYTE)
         Clip$ = Clip$ + b$ + CHR$(10)
         Clip$ = Clip$ + STRING$(60, "-") + CHR$(10)
         Clip$ = Clip$ + "END CONTROL DATA"
-        _CLIPBOARD$ = Clip$
+        _CLIPBOARD$ = Clip$ + CHR$(10) + "Controls in this block: " + tempList$
     END IF
     IF Debug THEN CLOSE #TxtFileNum
 END SUB
