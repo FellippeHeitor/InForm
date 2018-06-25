@@ -3398,12 +3398,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     'ELSE
                     '    a$ = PreviewCaptions(i)
                     'END IF
-                    a$ = "    SetCaption __UI_NewID, " + __UI_SpecialCharsToCHR$(PreviewCaptions(i))
+                    a$ = "    SetCaption __UI_NewID, " + SpecialCharsToEscapeCode$(PreviewCaptions(i))
                     PRINT #TextFileNum, a$
                 END IF
 
                 IF LEN(PreviewTips(i)) > 0 THEN
-                    a$ = "    ToolTip(__UI_NewID) = " + __UI_SpecialCharsToCHR$(PreviewTips(i))
+                    a$ = "    ToolTip(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTips(i))
                     PRINT #TextFileNum, a$
                 END IF
 
@@ -3432,12 +3432,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
                             PRINT #TextFileNum, a$
                         CASE ELSE
-                            a$ = "    Text(__UI_NewID) = " + __UI_SpecialCharsToCHR$(PreviewTexts(i))
+                            a$ = "    Text(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTexts(i))
                             PRINT #TextFileNum, a$
                     END SELECT
                 END IF
                 IF LEN(PreviewMasks(i)) > 0 THEN
-                    a$ = "    Mask(__UI_NewID) = " + __UI_SpecialCharsToCHR$(PreviewMasks(i))
+                    a$ = "    Mask(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewMasks(i))
                     PRINT #TextFileNum, a$
                 END IF
                 IF PreviewControls(i).TransparentColor > 0 THEN
@@ -4263,5 +4263,20 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
     END IF ' i
     IF TIMER > t! + timelimit THEN CLOSE theClient: theClient = 0: Download = MKI$(3): prevUrl$ = "": EXIT FUNCTION
     Download = MKI$(0) 'still working
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION SpecialCharsToEscapeCode$ (Text$)
+    DIM i AS LONG, Temp$
+
+    Temp$ = CHR$(34)
+    FOR i = 1 TO LEN(Text$)
+        IF ASC(Text$, i) < 32 OR ASC(Text$, i) = 34 OR ASC(Text$, i) = 92 THEN
+            Temp$ = Temp$ + "\" + LTRIM$(STR$(ASC(Text$, i))) + ";"
+        ELSE
+            Temp$ = Temp$ + MID$(Text$, i, 1)
+        END IF
+    NEXT
+    SpecialCharsToEscapeCode$ = Temp$ + CHR$(34)
 END FUNCTION
 

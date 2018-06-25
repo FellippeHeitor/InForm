@@ -4619,21 +4619,6 @@ FUNCTION __UI_LoadThemeImage& (FileName$)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_SpecialCharsToCHR$ (Text$)
-    DIM i AS LONG, Temp$
-
-    Temp$ = CHR$(34)
-    FOR i = 1 TO LEN(Text$)
-        IF ASC(Text$, i) < 32 OR ASC(Text$, i) = 34 THEN
-            Temp$ = Temp$ + CHR$(34) + " + CHR$(" + LTRIM$(STR$(ASC(Text$, i))) + ") + " + CHR$(34)
-        ELSE
-            Temp$ = Temp$ + MID$(Text$, i, 1)
-        END IF
-    NEXT
-    __UI_SpecialCharsToCHR$ = Temp$ + CHR$(34)
-END FUNCTION
-
-'---------------------------------------------------------------------------------
 SUB SetRadioButtonValue (id AS LONG)
     'Radio buttons will change value of others in the same group
     'Also works for menus with the .BulletStyle set to __UI_Bullet
