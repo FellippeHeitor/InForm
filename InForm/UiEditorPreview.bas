@@ -2970,8 +2970,6 @@ FUNCTION RestoreCHRfromEscapeCode$ (__Text$)
         IF LEN(tempNum$) THEN
             Text$ = LEFT$(Text$, BackSlash - 1) + CHR$(VAL(tempNum$)) + MID$(Text$, SemiColon + 1)
         END IF
-
-        BackSlash = 0
     LOOP
 
     RestoreCHRfromEscapeCode$ = Text$
