@@ -1490,6 +1490,7 @@ SUB DeleteSelectedControls
 
     'Iterate over control list and delete selected controls.
     FOR i = UBOUND(Control) TO 1 STEP -1
+        IF Control(i).Type = __UI_Type_Form THEN _CONTINUE
         IF Control(i).ControlIsSelected THEN
             IF Control(i).Type = __UI_Type_MenuBar THEN
                 DIM MustRefreshMenuBar AS _BYTE
@@ -2369,7 +2370,7 @@ SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
     DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, UndoBuffer AS _BYTE
-    DIM PreviewData$, CopyFrame AS _BYTE
+    DIM PreviewData$
 
     CONST Debug = False
 
@@ -2384,9 +2385,12 @@ SUB SavePreview (Destination AS _BYTE)
     ELSE
         IF __UI_TotalSelectedControls = 0 THEN EXIT SUB
 
-        IF __UI_TotalSelectedControls = 1 AND Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-            CopyFrame = True
-        END IF
+        DIM SelectedFrames$
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_Frame THEN
+                SelectedFrames$ = SelectedFrames$ + ";" + RTRIM$(Control(i).Name) + ";"
+            END IF
+        NEXT
     END IF
 
     IF Debug THEN
@@ -2409,13 +2413,11 @@ SUB SavePreview (Destination AS _BYTE)
     FOR ThisPass = 1 TO 2
         FOR i = 1 TO UBOUND(Control)
             IF Destination = InClipboard THEN
-                IF Control(i).Type = __UI_Type_Form THEN _CONTINUE
-                IF CopyFrame THEN
-                    IF ThisPass = 2 THEN
-                        IF Control(i).ParentID <> __UI_FirstSelectedID THEN _CONTINUE
+                IF Control(i).Type = __UI_Type_Form OR Control(i).Type = __UI_Type_MenuBar THEN _CONTINUE
+                IF Control(i).ControlIsSelected = False THEN
+                    IF INSTR(SelectedFrames$, ";" + RTRIM$(Control(Control(i).ParentID).Name) + ";") = 0 THEN
+                        _CONTINUE
                     END IF
-                ELSE
-                    IF Control(i).ControlIsSelected = False THEN _CONTINUE
                 END IF
             END IF
 
