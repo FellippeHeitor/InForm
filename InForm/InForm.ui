@@ -4338,7 +4338,6 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     __UI_AutoRefresh = False
 
     IF This.ID > 0 THEN
-        IF This.Type = __UI_Type_Form THEN EXIT SUB
         Caption(This.ID) = ""
         __UI_TempCaptions(This.ID) = ""
         Text(This.ID) = ""
