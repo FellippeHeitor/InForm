@@ -2254,12 +2254,11 @@ SUB LoadPreviewText
                     'Caption
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
-                    DummyText$ = RestoreCHRfromEscapeCode$(DummyText$)
                     SetCaption TempValue, DummyText$
                 ELSEIF LEFT$(b$, 8) = "AddItem " THEN
                     'Caption
                     DummyText$ = nextParameter(b$) 'discard first parameter
-                    DummyText$ = RestoreCHRfromEscapeCode(nextParameter(b$))
+                    DummyText$ = nextParameter(b$)
                     AddItem TempValue, DummyText$
                 ELSEIF LEFT$(b$, 10) = "LoadImage " THEN
                     'Image
@@ -2269,12 +2268,12 @@ SUB LoadPreviewText
                 ELSEIF LEFT$(b$, 22) = "ToolTip(__UI_NewID) = " THEN
                     'Tooltip
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
-                    DummyText$ = RestoreCHRfromEscapeCode$(DummyText$)
+                    DummyText$ = RestoreCHR$(DummyText$)
                     ToolTip(TempValue) = removeQuotation$(DummyText$)
                 ELSEIF LEFT$(b$, 19) = "Text(__UI_NewID) = " THEN
                     'Text
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
-                    DummyText$ = RestoreCHRfromEscapeCode$(DummyText$)
+                    DummyText$ = RestoreCHR$(DummyText$)
                     Text(TempValue) = removeQuotation$(DummyText$)
 
                     IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
@@ -2289,7 +2288,7 @@ SUB LoadPreviewText
                 ELSEIF LEFT$(b$, 19) = "Mask(__UI_NewID) = " THEN
                     'Mask
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
-                    DummyText$ = RestoreCHRfromEscapeCode$(DummyText$)
+                    DummyText$ = RestoreCHR$(DummyText$)
                     Mask(TempValue) = removeQuotation$(DummyText$)
                 ELSEIF INSTR(b$, "__UI_NewControl") > 0 THEN
                     'New Control
@@ -2983,36 +2982,3 @@ SUB LoadDefaultFonts
         Control(__UI_FormID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12)
     END IF
 END SUB
-
-FUNCTION RestoreCHRfromEscapeCode$ (__Text$)
-    DIM Text$, i AS LONG, BackSlash AS LONG, SemiColon AS LONG
-    DIM j AS LONG, tempNum$
-
-    Text$ = __Text$
-
-    IF INSTR(Text$, "\") = 0 THEN
-        RestoreCHRfromEscapeCode$ = Text$
-        EXIT FUNCTION
-    END IF
-
-    DO
-        BackSlash = INSTR(BackSlash + 1, Text$, "\")
-        IF BackSlash = 0 THEN EXIT DO
-
-        SemiColon = INSTR(BackSlash + 1, Text$, ";")
-        IF SemiColon = 0 THEN _CONTINUE
-
-        tempNum$ = ""
-        FOR j = BackSlash + 1 TO SemiColon - 1
-            IF ASC(Text$, j) < 48 OR ASC(Text$, j) > 57 THEN tempNum$ = "": EXIT FOR
-            tempNum$ = tempNum$ + MID$(Text$, j, 1)
-        NEXT
-
-        IF LEN(tempNum$) THEN
-            Text$ = LEFT$(Text$, BackSlash - 1) + CHR$(VAL(tempNum$)) + MID$(Text$, SemiColon + 1)
-        END IF
-    LOOP
-
-    RestoreCHRfromEscapeCode$ = Text$
-END FUNCTION
-
