@@ -4348,6 +4348,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     __UI_AutoRefresh = False
 
     IF This.ID > 0 THEN
+        IF This.Type = __UI_Type_Form THEN EXIT SUB
         Caption(This.ID) = ""
         __UI_TempCaptions(This.ID) = ""
         Text(This.ID) = ""
@@ -4386,7 +4387,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
         END IF
     END IF
 
-    DIM noti AS __ui_ControlTYPE    
+    DIM EmptyControl AS __UI_ControlTYPE
     
     IF This.Canvas <> 0 THEN _FREEIMAGE This.Canvas: This.Canvas = 0
     IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas: This.HelperCanvas = 0
@@ -4394,7 +4395,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
     
     uw& = GetControlDrawOrder(This.ID)
     ControlDrawOrder(uw&) = 0    
-    This = noti
+    This = EmptyControl
 
     __UI_HasMenuBar = (__UI_FirstMenuBarControl > 0)
 
