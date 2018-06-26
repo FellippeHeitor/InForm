@@ -1802,7 +1802,7 @@ SUB LoadPreview (Destination AS _BYTE)
             END IF
         END IF
 
-        IF INSTR(NameChanges$, NewParentID + "=") THEN
+        IF LEN(NewParentID) > 0 AND INSTR(NameChanges$, NewParentID + "=") THEN
             'This control's container had a name change when it was
             'pasted, so we'll reassign it to its new cloned parent:
             DIM NewID AS LONG, EndNewID AS LONG
