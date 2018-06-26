@@ -1920,18 +1920,7 @@ SUB __UI_EventDispatcher
                         __UI_FirstSelectedID = TempValue
                     ELSEIF Control(__UI_HoveringID).Type = __UI_Type_Form AND __UI_MouseTop <= (uspacing& + 5) THEN
                         IF __UI_HasMenuBar THEN
-                            TempValue = __UI_NewControl(__UI_Type_MenuBar, "", 0, 0, 0, 0, 0)
-                            SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            FOR i = 1 TO UBOUND(Control)
-                                Control(i).ControlIsSelected = False
-                            NEXT
-                            Control(TempValue).ControlIsSelected = True
-                            __UI_RefreshMenuBar
-                            __UI_PrevMouseLeft = -1: __UI_PrevMouseTop = -1
-                            __UI_TotalSelectedControls = 1
-                            __UI_FirstSelectedID = TempValue
-                            __UI_ActivateMenu Control(TempValue), False
-                            __UI_HoveringID = TempValue
+                            __UI_KeyPress 224
                         END IF
                     ELSE
                         IF Control(__UI_HoveringID).ControlIsSelected = False THEN
