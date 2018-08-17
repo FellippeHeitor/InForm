@@ -1015,6 +1015,9 @@ SUB __UI_UpdateDisplay
                 DIM X1 AS INTEGER, X2 AS INTEGER
                 DIM Y1 AS INTEGER, Y2 AS INTEGER
 
+                ContainerOffsetLeft = Control(Control(__UI_DraggingID).ParentID).Left
+                ContainerOffsetTop = Control(Control(__UI_DraggingID).ParentID).Top
+
                 IF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY = 0 THEN
                     X1 = 0
                     X2 = _WIDTH
@@ -1027,7 +1030,7 @@ SUB __UI_UpdateDisplay
                             IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
                             Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height
                             FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1, Y1)-STEP(0, __UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, __UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
                             NEXT
                         CASE 2 'top of dragged control to bottom of snapped control
                             X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
@@ -1035,7 +1038,7 @@ SUB __UI_UpdateDisplay
                             IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
                             Y1 = Control(__UI_DraggingID).Top
                             FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1, Y1)-STEP(0, -__UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, -__UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
                             NEXT
                         CASE 3 'snapped to top of form
                             X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
@@ -1043,7 +1046,7 @@ SUB __UI_UpdateDisplay
                             IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
                             Y1 = Control(__UI_DraggingID).Top
                             FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1, Y1)-STEP(0, -__UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, -__UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
                             NEXT
                         CASE 4 'snapped to bottom of form
                             X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
@@ -1051,7 +1054,7 @@ SUB __UI_UpdateDisplay
                             IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
                             Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height
                             FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1, Y1)-STEP(0, __UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, __UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
                             NEXT
                     END SELECT
                 END IF
@@ -1068,7 +1071,7 @@ SUB __UI_UpdateDisplay
                             IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
                             IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
                             FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1, Y1)-STEP(__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
                             NEXT
                         CASE 2 'right of dragged control to left of snapped control
                             X1 = Control(__UI_SnappedXID).Left
@@ -1076,7 +1079,7 @@ SUB __UI_UpdateDisplay
                             IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
                             IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
                             FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1, Y1)-STEP(-__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(-__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
                             NEXT
                         CASE 3 'snapped to left side of form
                             X1 = Control(__UI_DraggingID).Left
@@ -1084,7 +1087,7 @@ SUB __UI_UpdateDisplay
                             IF Y1 < 1 THEN Y1 = 1
                             IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
                             FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1, Y1)-STEP(-__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(-__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
                             NEXT
                         CASE 4 'snapped to right side of form
                             X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width
@@ -1092,7 +1095,7 @@ SUB __UI_UpdateDisplay
                             IF Y1 < 1 THEN Y1 = 1
                             IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
                             FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1, Y1)-STEP(__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
+                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
                             NEXT
                     END SELECT
                 END IF
