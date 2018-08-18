@@ -123,6 +123,9 @@ END TYPE
 TYPE __UI_Types
     Name AS STRING * 16
     Count AS LONG
+    TurnsInto AS INTEGER
+    DefaultHeight AS INTEGER
+    DefaultWidth AS INTEGER
 END TYPE
 
 TYPE __UI_ThemeImagesType
@@ -209,26 +212,74 @@ DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Off
 DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
 DIM SHARED __UI_KeepScreenHidden AS _BYTE
 
-'Control types:
+'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
 __UI_Type(1).Name = "Form"
+
 __UI_Type(2).Name = "Frame"
+__UI_Type(2).DefaultWidth = 230
+__UI_Type(2).DefaultHeight = 150
+
 __UI_Type(3).Name = "Button"
+__UI_Type(3).DefaultWidth = 80
+__UI_Type(3).DefaultHeight = 23
+
 __UI_Type(4).Name = "Label"
+__UI_Type(4).DefaultWidth = 150
+__UI_Type(4).DefaultHeight = 23
+
 __UI_Type(5).Name = "CheckBox"
+__UI_Type(5).DefaultWidth = 150
+__UI_Type(5).DefaultHeight = 23
+__UI_Type(5).TurnsInto = __UI_Type_ToggleSwitch
+
 __UI_Type(6).Name = "RadioButton"
+__UI_Type(6).DefaultWidth = 150
+__UI_Type(6).DefaultHeight = 23
+
 __UI_Type(7).Name = "TextBox"
+__UI_Type(7).DefaultWidth = 120
+__UI_Type(7).DefaultHeight = 23
+
 __UI_Type(8).Name = "ProgressBar"
+__UI_Type(8).DefaultWidth = 300
+__UI_Type(8).DefaultHeight = 23
+
 __UI_Type(9).Name = "ListBox"
+__UI_Type(9).DefaultWidth = 200
+__UI_Type(9).DefaultHeight = 200
+__UI_Type(9).TurnsInto = __UI_Type_DropdownList
+
 __UI_Type(10).Name = "DropdownList"
+__UI_Type(10).DefaultWidth = 200
+__UI_Type(10).DefaultHeight = 23
+__UI_Type(10).TurnsInto = __UI_Type_ListBox
+
 __UI_Type(11).Name = "MenuBar"
+__UI_Type(11).TurnsInto = __UI_Type_ContextMenu
+
 __UI_Type(12).Name = "MenuItem"
+
 __UI_Type(13).Name = "MenuPanel"
+
 __UI_Type(14).Name = "PictureBox"
+__UI_Type(14).DefaultWidth = 230
+__UI_Type(14).DefaultHeight = 150
+
 __UI_Type(15).Name = "TrackBar"
+__UI_Type(15).DefaultWidth = 300
+__UI_Type(15).DefaultHeight = 45
+
 __UI_Type(16).Name = "ContextMenuPanel"
+__UI_Type(16).TurnsInto = __UI_Type_MenuBar
+
 __UI_Type(17).Name = "Font"
+
 __UI_Type(18).Name = "ToggleSwitch"
+__UI_Type(18).DefaultWidth = 40
+__UI_Type(18).DefaultHeight = 17
+__UI_Type(18).TurnsInto = __UI_Type_CheckBox
+'--------------------------------------------------------------
 
 CONST True = -1, False = 0
 '$INCLUDE:'InFormVersion.bas'
@@ -266,13 +317,16 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, M, O, P, R, S, T, V, X, Y, Z
+    'A, B, C, D, E, G, H, I, L, M, N, O, P, R, S, T, V, X, Y, Z
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNewMenuBar", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuNewMenuBar"), "Add &menu bar control-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
     ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuConvertType", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to type-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuImageOriginalSize", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
@@ -1716,6 +1770,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
@@ -1776,6 +1831,12 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuCut")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuCopy")).Disabled = False
                     Control(__UI_GetID("__UI_PreviewMenuDelete")).Disabled = False
+                    IF __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto THEN
+                        Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = False
+                        SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto).Name) + "-"
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
+                    END IF
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
@@ -1796,6 +1857,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
+                    GOTO AddConvertMenu
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
@@ -1816,6 +1878,29 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
+
+                    AddConvertMenu:
+                    IF __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto THEN
+                        DIM SearchType AS INTEGER, AddConvertMenuCheck AS _BYTE
+                        SearchType = Control(__UI_FirstSelectedID).Type
+                        AddConvertMenuCheck = True
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                IF Control(i).Type <> SearchType THEN
+                                    AddConvertMenuCheck = False
+                                    EXIT FOR
+                                END IF
+                            END IF
+                        NEXT
+                        IF AddConvertMenuCheck THEN
+                            Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = False
+                            SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto).Name) + "-"
+                        ELSE
+                            Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
+                        END IF
+                    ELSE
+                        Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
+                    END IF
                 END IF
 
                 IF LEFT$(_CLIPBOARD$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
@@ -2530,6 +2615,8 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE UCASE$("__UI_PreviewMenuNewMenuBar")
                                 __UI_KeyPress 224
+                            CASE UCASE$("__UI_PreviewMenuConvertType")
+                                __UI_KeyPress 225
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
