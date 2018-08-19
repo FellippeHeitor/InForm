@@ -120,7 +120,7 @@ DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameContr
 DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
-DIM SHARED RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
+DIM SHARED PropertySent AS _BYTE, RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED InstanceHost AS LONG, InstanceClient AS LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
@@ -756,15 +756,7 @@ END SUB
 SUB __UI_FocusOut (id AS LONG)
     SELECT CASE id
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
-            DIM ThisInputBox AS LONG
-            ThisInputBox = GetInputBoxFromID(id)
-            IF InputBoxText(ThisInputBox) <> Text(id) AND InputBox(ThisInputBox).Sent = False THEN
-                __UI_KeepFocus = True
-                Caption(StatusBar) = "Hit ENTER to confirm new property value or ESC to cancel changes..."
-                BlinkStatusBar = TIMER
-            ELSE
-                Caption(StatusBar) = "Ready."
-            END IF
+            ConfirmEdits id
     END SELECT
 END SUB
 
@@ -854,6 +846,7 @@ END SUB
 SUB LoseFocus
     IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
     IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
+    IF __UI_Focus > 0 THEN __UI_FocusOut __UI_Focus
     __UI_Focus = 0
     __UI_ForceRedraw = True
 END SUB
@@ -1024,7 +1017,7 @@ SUB __UI_BeforeUpdateDisplay
     STATIC bytesIn~&&, refreshes~&
     refreshes~& = refreshes~& + 1
     bytesIn~&& = bytesIn~&& + LEN(incomingData$)
-    Caption(StatusBar) = "Received:" + STR$(bytesIn~&&) + " bytes | Sent:" + STR$(totalBytesSent) + " bytes"
+    'Caption(StatusBar) = "Received:" + STR$(bytesIn~&&) + " bytes | Sent:" + STR$(totalBytesSent) + " bytes"
 
     $IF WIN THEN
         IF PreviewAttached THEN
@@ -1113,9 +1106,7 @@ SUB __UI_BeforeUpdateDisplay
                 ELSE
                     Edited = True
                     IF __UI_Focus > 0 THEN
-                        IF TIMER - InputBox(GetInputBoxFromID(__UI_Focus)).LastEdited > 1 THEN
-                            LoseFocus
-                        END IF
+                        IF PropertySent THEN PropertySent = False ELSE LoseFocus
                     END IF
                 END IF
             CASE "UNDOPOINTER"
@@ -1170,9 +1161,9 @@ SUB __UI_BeforeUpdateDisplay
     LOOP
 
     IF PrevFirstSelected <> FirstSelected THEN
+        LoseFocus
         PrevFirstSelected = FirstSelected
         __UI_ForceRedraw = True
-        LoseFocus
         IF ZOrderingDialogOpen AND FirstSelected <> PreviewFormID THEN
             FOR j = 1 TO UBOUND(zOrderIDs)
                 IF zOrderIDs(j) = FirstSelected THEN Control(ControlList).Value = j: __UI_ValueChanged ControlList: EXIT FOR
@@ -1975,23 +1966,18 @@ SUB __UI_BeforeUpdateDisplay
     Control(FontSizeList).Disabled = Control(FontList).Disabled
     Control(FontSizeList).Hidden = Control(FontList).Hidden
     Control(FontSizeList).Top = Control(FontList).Top
+    Control(PasteListBT).Hidden = True
 
     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
         IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
             Control(PasteListBT).Top = Control(TextTB).Top
             Control(PasteListBT).Hidden = False
-        ELSE
-            Control(PasteListBT).Hidden = True
         END IF
     ELSEIF (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
         IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
             Control(PasteListBT).Top = Control(CaptionTB).Top
             Control(PasteListBT).Hidden = False
-        ELSE
-            Control(PasteListBT).Hidden = True
         END IF
-    ELSE
-        Control(PasteListBT).Hidden = True
     END IF
 
     'Update the color mixer
@@ -2639,33 +2625,12 @@ SUB __UI_KeyPress (id AS LONG)
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
             IF __UI_KeyHit = 13 THEN
                 'Send the preview the new property value
-                DIM FloatValue AS _FLOAT, b$, TempValue AS LONG, i AS LONG
-                STATIC PreviousValue$, PreviousControl AS LONG, PreviousProperty AS INTEGER
-
-                IF InputBox(GetInputBoxFromID(id)).Sent = False THEN
-                    PreviousValue$ = Text(id)
-                    PreviousControl = FirstSelected
-                    PreviousProperty = id
-                    TempValue = GetPropertySignal(id)
-                    SELECT CASE TempValue
-                        CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
-                            b$ = MKL$(LEN(Text(id))) + Text(id)
-                        CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
-                            b$ = MKI$(VAL(Text(id)))
-                        CASE 10, 11, 12, 13, 36 'Value, min, max, interval, mininterval
-                            b$ = _MK$(_FLOAT, VAL(Text(id)))
-                    END SELECT
-                    SendData b$, TempValue
-                    SelectPropertyFully id
-                    InputBoxText(GetInputBoxFromID(id)) = Text(id)
-                    InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
-                    InputBox(GetInputBoxFromID(id)).Sent = True
-                    Caption(StatusBar) = "Ready."
-                END IF
+                ConfirmEdits id
             ELSEIF __UI_KeyHit = 32 THEN
                 IF id = NameTB THEN
                     __UI_KeyHit = 0
                     Caption(StatusBar) = "Control names cannot contain spaces"
+                    BlinkStatusBar = TIMER
                 ELSE
                     InputBox(GetInputBoxFromID(id)).Sent = False
                 END IF
@@ -2676,6 +2641,30 @@ SUB __UI_KeyPress (id AS LONG)
                 InputBox(GetInputBoxFromID(id)).Sent = False
             END IF
     END SELECT
+END SUB
+
+SUB ConfirmEdits (id AS LONG)
+    DIM b$, TempValue AS LONG
+
+    IF InputBoxText(GetInputBoxFromID(id)) <> Text(id) AND _
+       InputBox(GetInputBoxFromID(id)).Sent = False THEN
+        TempValue = GetPropertySignal(id)
+        SELECT CASE TempValue
+            CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
+                b$ = MKL$(LEN(Text(id))) + Text(id)
+            CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
+                b$ = MKI$(VAL(Text(id)))
+            CASE 10, 11, 12, 13, 36 'Value, min, max, interval, mininterval
+                b$ = _MK$(_FLOAT, VAL(Text(id)))
+        END SELECT
+        SendData b$, TempValue
+        PropertySent = True
+        SelectPropertyFully id
+        InputBoxText(GetInputBoxFromID(id)) = Text(id)
+        InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
+        InputBox(GetInputBoxFromID(id)).Sent = True
+        Caption(StatusBar) = "Ready."
+    END IF
 END SUB
 
 FUNCTION GetPropertySignal& (id AS LONG)
@@ -2710,21 +2699,26 @@ SUB __UI_ValueChanged (id AS LONG)
             IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(AlignOptions).Value - 1)
             SendData b$, 22
+            PropertySent = True
         CASE VAlignOptions
             IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(VAlignOptions).Value - 1)
             SendData b$, 32
+            PropertySent = True
         CASE BulletOptions
             IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(BulletOptions).Value - 1)
             SendData b$, 37
+            PropertySent = True
         CASE BooleanOptions
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
+            PropertySent = True
         CASE FontList, FontSizeList
             b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
             b$ = MKL$(LEN(b$)) + b$
             SendData b$, 8
+            PropertySent = True
         CASE Red
             Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
         CASE Green
