@@ -630,10 +630,17 @@ SUB __UI_Click (id AS LONG)
             Clip$ = _CLIPBOARD$
             Clip$ = Replace$(Clip$, CHR$(13) + CHR$(10), CHR$(10), 0, 0)
             Clip$ = Replace$(Clip$, CHR$(10), "\n", 0, 0)
-            Text(TextTB) = Clip$
-            __UI_Focus = TextTB
-            Control(TextTB).Cursor = LEN(Text(TextTB))
-            Control(TextTB).TextIsSelected = False
+
+            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
+                Dummy = TextTB
+            ELSEIF (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
+                Dummy = CaptionTB
+            END IF
+
+            Text(Dummy) = Clip$
+            __UI_Focus = Dummy
+            Control(Dummy).Cursor = LEN(Text(Dummy))
+            Control(Dummy).TextIsSelected = False
     END SELECT
 
     LastClickedID = id
@@ -1969,10 +1976,16 @@ SUB __UI_BeforeUpdateDisplay
     Control(FontSizeList).Hidden = Control(FontList).Hidden
     Control(FontSizeList).Top = Control(FontList).Top
 
-    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR _
-       (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
+    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
         IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
             Control(PasteListBT).Top = Control(TextTB).Top
+            Control(PasteListBT).Hidden = False
+        ELSE
+            Control(PasteListBT).Hidden = True
+        END IF
+    ELSEIF (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
+        IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
+            Control(PasteListBT).Top = Control(CaptionTB).Top
             Control(PasteListBT).Hidden = False
         ELSE
             Control(PasteListBT).Hidden = True
