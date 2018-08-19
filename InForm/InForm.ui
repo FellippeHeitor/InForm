@@ -1670,7 +1670,7 @@ SUB __UI_EventDispatcher
                     EXIT DO
                 END IF
 
-                IF Control(__UI_FocusSearch).CanHaveFocus AND NOT Control(__UI_FocusSearch).Disabled THEN
+                IF Control(__UI_FocusSearch).CanHaveFocus AND Control(__UI_FocusSearch).Disabled = False AND Control(__UI_FocusSearch).Hidden = False AND Control(Control(__UI_FocusSearch).ParentID).Disabled = False AND Control(Control(__UI_FocusSearch).ParentID).Hidden = False THEN
                     IF __UI_Focus <> __UI_FocusSearch THEN __UI_KeepFocus = False: __UI_FocusOut __UI_Focus
                     IF __UI_KeepFocus = False THEN
                         __UI_Focus = __UI_FocusSearch
