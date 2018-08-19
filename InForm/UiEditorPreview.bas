@@ -979,6 +979,8 @@ SUB __UI_BeforeUpdateDisplay
             CASE 223
                 b$ = ReadSequential$(Property$, 2)
                 AlternateNumericOnlyProperty
+            CASE 225
+                ConvertControlToAlternativeType
         END SELECT
         __UI_ForceRedraw = True
     LOOP
@@ -1990,6 +1992,8 @@ SUB LoadPreview (Destination AS _BYTE)
                     Control(TempValue).BulletStyle = __UI_Bullet
                 CASE -41
                     Control(TempValue).AutoScroll = True
+                CASE -42
+                    'ControlIsSelected; ignored;
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2696,6 +2700,14 @@ SUB SavePreview (Destination AS _BYTE)
                     b$ = MKI$(-41)
                     IF Disk THEN
                         PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).ControlIsSelected THEN
+                    b$ = MKI$(-42)
+                    IF Disk THEN
+                        'Don't save this property (design time only)
                     ELSE
                         Clip$ = Clip$ + b$
                     END IF

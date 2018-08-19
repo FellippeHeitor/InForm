@@ -76,5 +76,7 @@ FOR EACH CONTROL (FORM INCLUDED):
     INTEGER -40 (BulletStyle = __UI_Bullet)
     INTEGER -41 (AutoScroll = True)
                 For ListBox controls
+    INTEGER -42 ControlIsSelected
+                (doesn't get saved; used at design time only)
     -------------------
 INTEGER -1024 (End of file)

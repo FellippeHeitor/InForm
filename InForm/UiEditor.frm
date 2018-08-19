@@ -110,6 +110,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Use code page &Windows-1252-"
     Control(__UI_NewID).BulletStyle = __UI_Bullet
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuConvertType", 103, 18, 0, 88, __UI_GetID("EditMenu"))
+    SetCaption __UI_NewID, "Co&nvert type"
+    Control(__UI_NewID).Disabled = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuSetDefaultButton", 103, 18, 0, 88, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Set as &default button"
     Control(__UI_NewID).Disabled = True
@@ -816,4 +820,5 @@ SUB __UI_AssignIDs
     FontSwitchMenu = __UI_GetID("FontSwitchMenu")
     AutoScroll = __UI_GetID("AutoScroll")
     PasteListBT = __UI_GetID("PasteListBT")
+    EditMenuConvertType = __UI_GetID("EditMenuConvertType")
 END SUB

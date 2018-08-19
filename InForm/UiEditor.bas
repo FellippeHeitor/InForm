@@ -26,7 +26,7 @@ DIM SHARED EditMenuUndo AS LONG, EditMenuRedo AS LONG, EditMenuCut AS LONG
 DIM SHARED EditMenuCopy AS LONG, EditMenuPaste AS LONG
 DIM SHARED EditMenuDelete AS LONG, EditMenuSelectAll AS LONG
 DIM SHARED EditMenuCP437 AS LONG, EditMenuCP1252 AS LONG
-DIM SHARED EditMenuSetDefaultButton AS LONG
+DIM SHARED EditMenuConvertType AS LONG, EditMenuSetDefaultButton AS LONG
 DIM SHARED EditMenuRestoreDimensions AS LONG
 DIM SHARED EditMenuAllowMinMax AS LONG, EditMenuZOrdering AS LONG
 
@@ -289,6 +289,9 @@ SUB __UI_Click (id AS LONG)
             CheckUpdates = NOT CheckUpdates
             Control(id).Value = CheckUpdates
             SaveSettings
+        CASE EditMenuConvertType
+            b$ = MKI$(0)
+            SendData b$, 225
         CASE EditMenuSetDefaultButton
             SendSignal -6
         CASE EditMenuRestoreDimensions
@@ -670,6 +673,8 @@ SUB __UI_MouseEnter (id AS LONG)
             Caption(StatusBar) = "Applies code page 437 to the current form."
         CASE EditMenuCP1252
             Caption(StatusBar) = "Applies code page 1252 to the current form."
+        CASE EditMenuConvertType
+            Caption(StatusBar) = "Converts this control's type into another similar in functionality."
         CASE EditMenuSetDefaultButton
             Caption(StatusBar) = "Makes the currently selected button the default button."
         CASE EditMenuRestoreDimensions
@@ -1223,6 +1228,8 @@ SUB __UI_BeforeUpdateDisplay
         Control(InsertMenuMenuItem).Disabled = True
     END IF
 
+    Control(EditMenuConvertType).Disabled = True
+    SetCaption EditMenuConvertType, "Co&nvert type"
     Control(EditMenuSetDefaultButton).Disabled = True
     Control(EditMenuSetDefaultButton).Value = False
     Control(EditMenuAllowMinMax).Disabled = True
@@ -1305,6 +1312,11 @@ SUB __UI_BeforeUpdateDisplay
                     IF INSTR(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 THEN Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
                 END IF
             END IF
+
+            IF __UI_Type(PreviewControls(FirstSelected).Type).TurnsInto THEN
+                Control(EditMenuConvertType).Disabled = False
+                SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(PreviewControls(FirstSelected).Type).TurnsInto).Name)
+            END IF
         END IF
 
     ELSEIF TotalSelected = 2 THEN
@@ -1325,6 +1337,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuDistributeV).Disabled = True
         Control(AlignMenuDistributeH).Disabled = True
 
+        GOTO EnableConvertMenuItem
     ELSE
         SetCaption ControlProperties, "Control properties: (multiple selection)"
 
@@ -1343,6 +1356,24 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuDistributeV).Disabled = False
         Control(AlignMenuDistributeH).Disabled = False
 
+        EnableConvertMenuItem:
+        IF __UI_Type(PreviewControls(FirstSelected).Type).TurnsInto THEN
+            DIM SearchType AS INTEGER, EnableConvertMenuItemCheck AS _BYTE
+            SearchType = PreviewControls(FirstSelected).Type
+            EnableConvertMenuItemCheck = True
+            FOR i = 1 TO UBOUND(PreviewControls)
+                IF PreviewControls(i).ControlIsSelected THEN
+                    IF PreviewControls(i).Type <> SearchType THEN
+                        EnableConvertMenuItemCheck = False
+                        EXIT FOR
+                    END IF
+                END IF
+            NEXT
+            IF EnableConvertMenuItemCheck THEN
+                Control(EditMenuConvertType).Disabled = False
+                SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(PreviewControls(FirstSelected).Type).TurnsInto).Name)
+            END IF
+        END IF
     END IF
 
     IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
@@ -3121,6 +3152,8 @@ SUB LoadPreview
                     PreviewControls(Dummy).BulletStyle = __UI_Bullet
                 CASE -41
                     PreviewControls(Dummy).AutoScroll = True
+                CASE -42
+                    PreviewControls(Dummy).ControlIsSelected = True
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
