@@ -858,7 +858,7 @@ SUB __UI_BeforeUpdateDisplay
     DIM thisData$, thisCommand$
     STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
     STATIC PrevFirstSelected AS LONG, PreviewHasMenuActive AS INTEGER
-    STATIC CheckUpdateDone AS _BYTE
+    STATIC CheckUpdateDone AS _BYTE, ThisControlTurnsInto AS INTEGER
     STATIC LastChange AS SINGLE
 
     IF TIMER - BlinkStatusBar < 1 THEN
@@ -1091,6 +1091,8 @@ SUB __UI_BeforeUpdateDisplay
                 OriginalImageWidth = CVI(thisData$)
             CASE "ORIGINALIMAGEHEIGHT"
                 OriginalImageHeight = CVI(thisData$)
+            CASE "TURNSINTO"
+                ThisControlTurnsInto = CVI(thisData$)
             CASE "SELECTIONRECTANGLE"
                 PreviewSelectionRectangle = CVI(thisData$)
                 LoseFocus
@@ -1126,6 +1128,14 @@ SUB __UI_BeforeUpdateDisplay
             Control(EditMenuRestoreDimensions).Disabled = False
             SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(OriginalImageWidth)) + "x" + LTRIM$(STR$(OriginalImageHeight)) + ")"
         END IF
+    END IF
+
+    IF ThisControlTurnsInto > 0 THEN
+        Control(EditMenuConvertType).Disabled = False
+        SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(ThisControlTurnsInto).Name)
+    ELSE
+        Control(EditMenuConvertType).Disabled = True
+        SetCaption EditMenuConvertType, "Co&nvert type"
     END IF
 
     DO WHILE LEN(Signal$)
@@ -1226,8 +1236,6 @@ SUB __UI_BeforeUpdateDisplay
         Control(InsertMenuMenuItem).Disabled = True
     END IF
 
-    Control(EditMenuConvertType).Disabled = True
-    SetCaption EditMenuConvertType, "Co&nvert type"
     Control(EditMenuSetDefaultButton).Disabled = True
     Control(EditMenuSetDefaultButton).Value = False
     Control(EditMenuAllowMinMax).Disabled = True
@@ -1310,13 +1318,7 @@ SUB __UI_BeforeUpdateDisplay
                     IF INSTR(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 THEN Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
                 END IF
             END IF
-
-            IF __UI_Type(PreviewControls(FirstSelected).Type).TurnsInto THEN
-                Control(EditMenuConvertType).Disabled = False
-                SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(PreviewControls(FirstSelected).Type).TurnsInto).Name)
-            END IF
         END IF
-
     ELSEIF TotalSelected = 2 THEN
         Caption(ControlProperties) = "Control properties: (multiple selection)"
 
@@ -1334,8 +1336,6 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuAlignCentersH).Disabled = False
         Control(AlignMenuDistributeV).Disabled = True
         Control(AlignMenuDistributeH).Disabled = True
-
-        GOTO EnableConvertMenuItem
     ELSE
         SetCaption ControlProperties, "Control properties: (multiple selection)"
 
@@ -1353,25 +1353,6 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuAlignCentersH).Disabled = False
         Control(AlignMenuDistributeV).Disabled = False
         Control(AlignMenuDistributeH).Disabled = False
-
-        EnableConvertMenuItem:
-        IF __UI_Type(PreviewControls(FirstSelected).Type).TurnsInto THEN
-            DIM SearchType AS INTEGER, EnableConvertMenuItemCheck AS _BYTE
-            SearchType = PreviewControls(FirstSelected).Type
-            EnableConvertMenuItemCheck = True
-            FOR i = 1 TO UBOUND(PreviewControls)
-                IF PreviewControls(i).ControlIsSelected THEN
-                    IF PreviewControls(i).Type <> SearchType THEN
-                        EnableConvertMenuItemCheck = False
-                        EXIT FOR
-                    END IF
-                END IF
-            NEXT
-            IF EnableConvertMenuItemCheck THEN
-                Control(EditMenuConvertType).Disabled = False
-                SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(PreviewControls(FirstSelected).Type).TurnsInto).Name)
-            END IF
-        END IF
     END IF
 
     IF FirstSelected = 0 THEN FirstSelected = PreviewFormID

@@ -333,6 +333,7 @@ SUB __UI_BeforeUpdateDisplay
     END IF
 
     STATIC prevImgWidthSent AS INTEGER, prevImgHeightSent AS INTEGER
+    STATIC prevTurnsInto AS INTEGER
     IF __UI_FirstSelectedID > 0 THEN
         IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
             IF prevImgWidthSent <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) OR _
@@ -353,6 +354,33 @@ SUB __UI_BeforeUpdateDisplay
                 b$ = MKI$(0)
                 SendData b$, "ORIGINALIMAGEWIDTH"
                 SendData b$, "ORIGINALIMAGEHEIGHT"
+            END IF
+        END IF
+
+        IF __UI_TotalSelectedControls = 1 THEN
+            IF prevTurnsInto <> __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto THEN
+                prevTurnsInto = __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto
+                b$ = MKI$(prevTurnsInto)
+                SendData b$, "TURNSINTO"
+            END IF
+        ELSEIF __UI_TotalSelectedControls > 1 THEN
+            DIM SearchType AS INTEGER, AllControlsTurnInto AS _BYTE
+            SearchType = Control(__UI_FirstSelectedID).Type
+            AllControlsTurnInto = True
+            FOR i = 1 TO UBOUND(Control)
+                IF Control(i).ControlIsSelected THEN
+                    IF Control(i).Type <> SearchType THEN
+                        AllControlsTurnInto = False
+                        EXIT FOR
+                    END IF
+                END IF
+            NEXT
+            SearchType = __UI_Type(SearchType).TurnsInto
+            IF NOT AllControlsTurnInto THEN SearchType = 0
+            IF prevTurnsInto <> SearchType THEN
+                prevTurnsInto = SearchType
+                b$ = MKI$(prevTurnsInto)
+                SendData b$, "TURNSINTO"
             END IF
         END IF
     END IF
