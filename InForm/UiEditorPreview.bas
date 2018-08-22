@@ -8,6 +8,7 @@ DIM SHARED IsCreating AS _BYTE
 DIM SHARED Host AS LONG, HostPort AS STRING
 DIM SHARED Stream$, RestoreCrashData$
 DIM SHARED LastPreviewDataSent$
+REDIM SHARED LockedControls(0) AS LONG, TotalLockedControls AS LONG
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -157,6 +158,10 @@ SUB __UI_BeforeUpdateDisplay
 
     SavePreview ToEditor
 
+    IF UBOUND(LockedControls) <> UBOUND(Control) THEN
+        REDIM _PRESERVE LockedControls(UBOUND(Control)) AS LONG
+    END IF
+
     STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
     STATIC prevSelectionRectangle AS INTEGER, prevUndoPointer AS INTEGER
     STATIC prevTotalUndoImages AS INTEGER
@@ -278,6 +283,19 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                     SelectNewControl TempValue
                 END IF
+            CASE "LOCKCONTROLS"
+                'When the user starts editing a property in UiEditor,
+                'a list of the currently selected controls is built so
+                'that the property can be applied to the same controls
+                'later; allows for"
+                '    "click control, change property, click another control"
+                TotalLockedControls = 0
+                FOR i = 1 TO UBOUND(Control)
+                    IF Control(i).ControlIsSelected THEN
+                        TotalLockedControls = TotalLockedControls + 1
+                        LockedControls(TotalLockedControls) = i
+                    END IF
+                NEXT
         END SELECT
     LOOP
 
@@ -460,43 +478,60 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     LOOP
 
+    DIM PropertyApplied AS _BYTE, LockedControlsGOSUB AS _BYTE
+    PropertyApplied = False
+    IF TotalLockedControls THEN LockedControlsGOSUB = True ELSE LockedControlsGOSUB = False
     DO WHILE LEN(Property$)
         DIM FloatValue AS _FLOAT
         'Editor sent property value
         b$ = ReadSequential$(Property$, 2)
         TempValue = CVI(b$)
         SaveUndoImage
+        PropertyApplied = True
         SELECT CASE TempValue
             CASE 1 'Name
                 b$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, CVL(b$))
-                IF __UI_TotalSelectedControls = 1 THEN
-                    Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
-                ELSEIF __UI_TotalSelectedControls = 0 THEN
-                    Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
+                IF TotalLockedControls = 1 THEN
+                    Control(LockedControls(1)).Name = AdaptName$(b$, LockedControls(1))
+                ELSE
+                    IF __UI_TotalSelectedControls = 1 THEN
+                        Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
+                    ELSEIF __UI_TotalSelectedControls = 0 THEN
+                        Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
+                    END IF
                 END IF
             CASE 2 'Caption
                 b$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, CVL(b$))
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            IF Control(i).Type = __UI_Type_Label THEN
-                                DIM TotalReplacements AS LONG
-                                b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
-                            END IF
-                            SetCaption i, b$
-                            IF Control(i).Type = __UI_Type_Label THEN AutoSizeLabel Control(i)
-                            IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
-                            IF Control(i).Type = __UI_Type_MenuItem THEN
-                                __UI_ActivateMenu Control(Control(i).ParentID), False
-                            END IF
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeCaption
                     NEXT
                 ELSE
-                    Caption(__UI_FormID) = b$
-                    i = __UI_FormID
-                    IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                ChangeCaption:
+                                IF Control(i).Type = __UI_Type_Label THEN
+                                    DIM TotalReplacements AS LONG
+                                    b$ = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
+                                END IF
+                                SetCaption i, b$
+                                IF Control(i).Type = __UI_Type_Label THEN AutoSizeLabel Control(i)
+                                IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                                IF Control(i).Type = __UI_Type_MenuItem THEN
+                                    __UI_ActivateMenu Control(Control(i).ParentID), False
+                                END IF
+                                IF LockedControlsGOSUB THEN RETURN
+                            END IF
+                        NEXT
+                    ELSE
+                        Caption(__UI_FormID) = b$
+                        i = __UI_FormID
+                        IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                    END IF
                 END IF
 
                 GOTO SkipAutoName
@@ -533,93 +568,126 @@ SUB __UI_BeforeUpdateDisplay
             CASE 3 'Text
                 b$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, CVL(b$))
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Text(i) = b$
-                            IF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
-                                Text(i) = LEFT$(b$, Control(i).Max)
-                            END IF
-                            IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
-                                LoadImage Control(i), b$
-                            ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
-                                LoadImage Control(i), b$
-                                IF LEN(Text(i)) > 0 THEN 'Load successful
-                                    'Keep aspect ratio at load
-                                    Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
-                                END IF
-                                IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
-                            ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
-                                Text(i) = Replace(b$, "\n", CHR$(13), False, TotalReplacements)
-                                IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
-                                Control(i).LastVisibleItem = 0 'Reset it so it's recalculated
-                            END IF
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeText
                     NEXT
                 ELSE
-                    IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
-                    ExeIcon = IconPreview&(b$)
-                    IF ExeIcon < -1 THEN
-                        _ICON ExeIcon
-                        Text(__UI_FormID) = b$
-                    ELSE
-                        _ICON
-                        IF _FILEEXISTS(b$) THEN
-                            IF LCASE$(RIGHT$(b$, 4)) <> ".ico" THEN
-                                SendSignal -6
-                                Text(__UI_FormID) = ""
-                            ELSE
-                                SendSignal -4
-                                Text(__UI_FormID) = b$
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                ChangeText:
+                                Text(i) = b$
+                                IF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
+                                    Text(i) = LEFT$(b$, Control(i).Max)
+                                END IF
+                                IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
+                                    LoadImage Control(i), b$
+                                ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
+                                    LoadImage Control(i), b$
+                                    IF LEN(Text(i)) > 0 THEN 'Load successful
+                                        'Keep aspect ratio at load
+                                        Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                                    END IF
+                                    IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
+                                ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
+                                    Text(i) = Replace(b$, "\n", CHR$(13), False, TotalReplacements)
+                                    IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
+                                    Control(i).LastVisibleItem = 0 'Reset it so it's recalculated
+                                END IF
+                                IF LockedControlsGOSUB THEN RETURN
                             END IF
+                        NEXT
+                    ELSE
+                        IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
+                        ExeIcon = IconPreview&(b$)
+                        IF ExeIcon < -1 THEN
+                            _ICON ExeIcon
+                            Text(__UI_FormID) = b$
                         ELSE
-                            Text(__UI_FormID) = ""
+                            _ICON
+                            IF _FILEEXISTS(b$) THEN
+                                IF LCASE$(RIGHT$(b$, 4)) <> ".ico" THEN
+                                    SendSignal -6
+                                    Text(__UI_FormID) = ""
+                                ELSE
+                                    SendSignal -4
+                                    Text(__UI_FormID) = b$
+                                END IF
+                            ELSE
+                                Text(__UI_FormID) = ""
+                            END IF
                         END IF
                     END IF
                 END IF
             CASE 4 'Top
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Top = TempValue
-                    END IF
-                NEXT
+                IF TotalLockedControls > 0 THEN
+                    FOR i = 1 TO TotalLockedControls
+                        Control(LockedControls(i)).Top = TempValue
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Top = TempValue
+                        END IF
+                    NEXT
+                END IF
             CASE 5 'Left
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Left = TempValue
-                    END IF
-                NEXT
+                IF TotalLockedControls > 0 THEN
+                    FOR i = 1 TO TotalLockedControls
+                        Control(LockedControls(i)).Left = TempValue
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Left = TempValue
+                        END IF
+                    NEXT
+                END IF
             CASE 6 'Width
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
                 IF TempValue < 1 THEN TempValue = 1
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Width = TempValue
-                        END IF
+                IF TotalLockedControls > 0 THEN
+                    FOR i = 1 TO TotalLockedControls
+                        Control(LockedControls(i)).Width = TempValue
                     NEXT
                 ELSE
-                    IF TempValue < 20 THEN TempValue = 20
-                    Control(__UI_FormID).Width = TempValue
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).Width = TempValue
+                            END IF
+                        NEXT
+                    ELSE
+                        IF TempValue < 20 THEN TempValue = 20
+                        Control(__UI_FormID).Width = TempValue
+                    END IF
                 END IF
             CASE 7 'Height
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
                 IF TempValue < 1 THEN TempValue = 1
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).Height = TempValue
-                        END IF
+                IF TotalLockedControls > 0 THEN
+                    FOR i = 1 TO TotalLockedControls
+                        Control(LockedControls(i)).Height = TempValue
                     NEXT
                 ELSE
-                    IF TempValue < 20 THEN TempValue = 20
-                    Control(__UI_FormID).Height = TempValue
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).Height = TempValue
+                            END IF
+                        NEXT
+                    ELSE
+                        IF TempValue < 20 THEN TempValue = 20
+                        Control(__UI_FormID).Height = TempValue
+                    END IF
                 END IF
             CASE 8 'Font
                 b$ = ReadSequential$(Property$, 4)
@@ -1012,6 +1080,7 @@ SUB __UI_BeforeUpdateDisplay
         END SELECT
         __UI_ForceRedraw = True
     LOOP
+    IF PropertyApplied THEN TotalLockedControls = 0
 
     IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
         __UI_DestroyControl Control(__UI_ActiveMenu)
@@ -2020,8 +2089,6 @@ SUB LoadPreview (Destination AS _BYTE)
                     Control(TempValue).BulletStyle = __UI_Bullet
                 CASE -41
                     Control(TempValue).AutoScroll = True
-                CASE -42
-                    'ControlIsSelected; ignored;
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2728,14 +2795,6 @@ SUB SavePreview (Destination AS _BYTE)
                     b$ = MKI$(-41)
                     IF Disk THEN
                         PUT #BinFileNum, , b$
-                    ELSE
-                        Clip$ = Clip$ + b$
-                    END IF
-                END IF
-                IF Control(i).ControlIsSelected THEN
-                    b$ = MKI$(-42)
-                    IF Disk THEN
-                        'Don't save this property (design time only)
                     ELSE
                         Clip$ = Clip$ + b$
                     END IF

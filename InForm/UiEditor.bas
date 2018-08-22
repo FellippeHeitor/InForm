@@ -2614,12 +2614,14 @@ SUB __UI_KeyPress (id AS LONG)
                     BlinkStatusBar = TIMER
                 ELSE
                     InputBox(GetInputBoxFromID(id)).Sent = False
+                    Send Client, "LOCKCONTROLS><END>"
                 END IF
             ELSEIF __UI_KeyHit = 27 THEN
                 RevertEdit = True
                 Caption(StatusBar) = "Previous property value restored."
             ELSE
                 InputBox(GetInputBoxFromID(id)).Sent = False
+                Send Client, "LOCKCONTROLS><END>"
             END IF
     END SELECT
 END SUB
@@ -2730,6 +2732,8 @@ SUB __UI_ValueChanged (id AS LONG)
             SendData b$, 213
         CASE FileList
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+            Send Client, "LOCKCONTROLS><END>"
     END SELECT
 END SUB
 
@@ -3140,8 +3144,6 @@ SUB LoadPreview
                     PreviewControls(Dummy).BulletStyle = __UI_Bullet
                 CASE -41
                     PreviewControls(Dummy).AutoScroll = True
-                CASE -42
-                    PreviewControls(Dummy).ControlIsSelected = True
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3158,7 +3160,7 @@ SUB LoadPreview
 END SUB
 
 SUB SendData (b$, Property AS INTEGER)
-    IF PreviewSelectionRectangle THEN EXIT SUB
+    'IF PreviewSelectionRectangle THEN EXIT SUB
     b$ = "PROPERTY>" + MKI$(Property) + b$ + "<END>"
     Send Client, b$
 END SUB
