@@ -71,6 +71,7 @@ DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
 DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
 DIM SHARED Resizable AS LONG, AutoScroll AS LONG
+DIM SHARED AutoSize AS LONG
 
 'Open dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -350,6 +351,12 @@ SUB __UI_Click (id AS LONG)
         CASE WordWrap
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
+
+            'Also: disable autosize
+            IF Control(id).Value THEN
+                b$ = MKI$(0)
+                SendData b$, 39
+            END IF
         CASE CanHaveFocus
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
@@ -373,6 +380,9 @@ SUB __UI_Click (id AS LONG)
         CASE AutoScroll
             b$ = MKI$(Control(id).Value)
             SendData b$, 38
+        CASE AutoSize
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 39
         CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
@@ -1689,6 +1699,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(Transparent).Value = PreviewControls(FirstSelected).BackStyle
     Control(Resizable).Value = PreviewControls(FirstSelected).CanResize
     Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
+    Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
 
     'Disable properties that don't apply
     Control(AlignOptions).Disabled = True
@@ -1761,6 +1772,7 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
             CASE __UI_Type_Label
                 Control(Transparent).Disabled = False
+                Control(AutoSize).Disabled = False
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
                         CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, PaddingTB, AlignOptions, VAlignOptions, FontList
@@ -1943,6 +1955,7 @@ SUB __UI_BeforeUpdateDisplay
             Control(Toggles(i)).Top = LastTopForInputBox
         END IF
     NEXT
+    Control(AutoSize).Disabled = Control(WordWrap).Value
 
     Control(FontSizeList).Disabled = Control(FontList).Disabled
     Control(FontSizeList).Hidden = Control(FontList).Hidden
@@ -2414,6 +2427,7 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = CenteredWindow
     i = i + 1: Toggles(i) = Resizable
     i = i + 1: Toggles(i) = AutoScroll
+    i = i + 1: Toggles(i) = AutoSize
     REDIM _PRESERVE Toggles(1 TO i) AS LONG
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
@@ -3146,6 +3160,8 @@ SUB LoadPreview
                     PreviewControls(Dummy).BulletStyle = __UI_Bullet
                 CASE -41
                     PreviewControls(Dummy).AutoScroll = True
+                CASE -42
+                    PreviewControls(Dummy).AutoSize = True
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3581,6 +3597,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).AutoScroll THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).AutoScroll = True"
+                END IF
+                IF PreviewControls(i).AutoSize THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).AutoSize = True"
                 END IF
                 PRINT #TextFileNum,
             END IF

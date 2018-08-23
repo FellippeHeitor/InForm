@@ -104,22 +104,6 @@ END SUB
 SUB __UI_MouseUp (id AS LONG)
 END SUB
 
-SUB AutoSizeLabel (this AS __UI_ControlTYPE)
-    DIM tempFont AS LONG, tempCenter AS INTEGER
-    tempFont = _FONT
-    _FONT this.Font
-    IF this.WordWrap = False AND (this.Height = 23 OR this.Height = uspacing + 6) THEN
-        this.Width = __UI_PrintWidth(Caption(this.ID))
-        IF this.Height <> uspacing + 6 THEN
-            tempCenter = this.Top + this.Height / 2
-            this.Height = uspacing + 6
-            this.Top = tempCenter - this.Height / 2
-        END IF
-        this.Redraw = True
-    END IF
-    _FONT tempFont
-END SUB
-
 FUNCTION AddNewMenuBarControl&
     DIM i AS LONG, TempValue AS LONG
 
@@ -273,7 +257,7 @@ SUB __UI_BeforeUpdateDisplay
 
                     SELECT CASE tempType
                         CASE __UI_Type_Label
-                            AutoSizeLabel Control(TempValue)
+                            Control(TempValue).AutoSize = True
                         CASE __UI_Type_ListBox
                             Control(TempValue).HasBorder = True
                     END SELECT
@@ -1191,6 +1175,19 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).AutoScroll = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 39 'AutoSize
+                b$ = ReadSequential$(Property$, 2)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).AutoSize = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).AutoSize = CVI(b$)
                         END IF
                     NEXT
                 END IF
@@ -2271,6 +2268,8 @@ SUB LoadPreview (Destination AS _BYTE)
                     Control(TempValue).BulletStyle = __UI_Bullet
                 CASE -41
                     Control(TempValue).AutoScroll = True
+                CASE -42
+                    Control(TempValue).AutoSize = True
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2535,6 +2534,8 @@ SUB LoadPreviewText
                             END IF
                         CASE "AutoScroll"
                             Control(TempValue).AutoScroll = (DummyText$ = "True")
+                        CASE "AutoSize"
+                            Control(TempValue).AutoSize = (DummyText$ = "True")
                     END SELECT
                 ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
                     __UI_DefaultButtonID = TempValue
@@ -2975,6 +2976,14 @@ SUB SavePreview (Destination AS _BYTE)
                 END IF
                 IF Control(i).AutoScroll = True THEN
                     b$ = MKI$(-41)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).AutoSize = True THEN
+                    b$ = MKI$(-42)
                     IF Disk THEN
                         PUT #BinFileNum, , b$
                     ELSE

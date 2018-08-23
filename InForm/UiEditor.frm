@@ -509,6 +509,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Word wrap"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoSize", 181, 20, 12, 100, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Auto-size"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "CanHaveFocus", 181, 20, 12, 122, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Can have focus"
     Control(__UI_NewID).CanHaveFocus = True
@@ -534,7 +538,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoScroll", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
-    SetCaption __UI_NewID, "AutoScroll"
+    SetCaption __UI_NewID, "Auto-scroll"
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))
@@ -821,4 +825,5 @@ SUB __UI_AssignIDs
     AutoScroll = __UI_GetID("AutoScroll")
     PasteListBT = __UI_GetID("PasteListBT")
     EditMenuConvertType = __UI_GetID("EditMenuConvertType")
+    AutoSize = __UI_GetID("AutoSize")
 END SUB

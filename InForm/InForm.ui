@@ -76,6 +76,7 @@ TYPE __UI_ControlTYPE
     HotKeyPosition AS INTEGER
     ShowPercentage AS _BYTE
     AutoScroll AS _BYTE
+    AutoSize AS _BYTE
     InputViewStart AS LONG
     PreviousInputViewStart AS LONG
     LastVisibleItem AS INTEGER
@@ -994,6 +995,7 @@ SUB __UI_UpdateDisplay
                     __UI_DrawButton Control(i), ControlState
                 CASE __UI_Type_Label
                     'Labels
+                    AutoSizeLabel Control(i)
                     __UI_DrawLabel Control(i), ControlState
                 CASE __UI_Type_RadioButton
                     'Radio buttons
@@ -1486,11 +1488,33 @@ SUB __UI_UpdateDisplay
     NEXT i 'run that a couple times for good measure
     _DISPLAY
 END SUB
+
+'---------------------------------------------------------------------------------
+SUB AutoSizeLabel (this AS __UI_ControlTYPE)
+    DIM tempFont AS LONG, tempCenter AS INTEGER
+    IF this.AutoSize = False THEN EXIT SUB
+    IF this.WordWrap = False THEN
+        tempFont = _FONT
+        _FONT this.Font
+        IF this.Width <> __UI_PrintWidth(Caption(this.ID)) OR this.Height <> uspacing + 6 THEN
+            this.Width = __UI_PrintWidth(Caption(this.ID))
+            IF this.Height <> uspacing + 6 THEN
+                tempCenter = this.Top + this.Height / 2
+                this.Height = uspacing + 6
+                this.Top = tempCenter - this.Height / 2
+            END IF
+            this.Redraw = True
+        END IF
+        _FONT tempFont
+    END IF
+END SUB
+
 '---------------------------------------------------------------------------------
 FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
     Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
 END FUNCTION
 
+'---------------------------------------------------------------------------------
 FUNCTION isNumber%% (__a$)
     'This function adapted from qb64.bas
     DIM i AS LONG, a AS INTEGER, dp AS _BYTE, a$
