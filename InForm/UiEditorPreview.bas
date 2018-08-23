@@ -705,259 +705,402 @@ SUB __UI_BeforeUpdateDisplay
                 NewFontSize = VAL(b$)
 
                 IF TotalSep = 1 AND NewFontSize > 0 THEN
-                    IF __UI_TotalSelectedControls > 0 THEN
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).ControlIsSelected THEN
-                                Control(i).Font = SetFont(NewFontFile, NewFontSize)
-                                DIM tempFont AS LONG
-                                tempFont = _FONT
-                                _FONT Control(i).Font
-                                SELECT CASE Control(i).Type
-                                    CASE __UI_Type_Label
-                                        IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6: AutoSizeLabel Control(i)
-                                    CASE __UI_Type_TextBox
-                                        IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6
-                                    CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
-                                        Control(i).Height = uspacing + 6
-                                END SELECT
-                                IF Control(i).HotKey > 0 THEN
-                                    IF Control(i).HotKeyPosition = 1 THEN
-                                        Control(i).HotKeyOffset = 0
-                                    ELSE
-                                        Control(i).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(i), Control(i).HotKeyPosition - 1))
-                                    END IF
-                                END IF
-                                _FONT tempFont
-                            END IF
+                    IF TotalLockedControls THEN
+                        FOR j = 1 TO TotalLockedControls
+                            i = LockedControls(j)
+                            GOSUB ChangeFont
                         NEXT
                     ELSE
-                        Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize)
-                        DIM MustRedrawMenus AS _BYTE
-                        FOR i = 1 TO UBOUND(Control)
-                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                                Control(i).Font = SetFont(NewFontFile, NewFontSize)
-                                MustRedrawMenus = True
-                            END IF
-                        NEXT
-                        IF MustRedrawMenus THEN __UI_RefreshMenuBar
+                        IF __UI_TotalSelectedControls > 0 THEN
+                            FOR i = 1 TO UBOUND(Control)
+                                IF Control(i).ControlIsSelected THEN
+                                    ChangeFont:
+                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
+                                    DIM tempFont AS LONG
+                                    tempFont = _FONT
+                                    _FONT Control(i).Font
+                                    SELECT CASE Control(i).Type
+                                        CASE __UI_Type_Label
+                                            IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6: AutoSizeLabel Control(i)
+                                        CASE __UI_Type_TextBox
+                                            IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6
+                                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
+                                            Control(i).Height = uspacing + 6
+                                    END SELECT
+                                    IF Control(i).HotKey > 0 THEN
+                                        IF Control(i).HotKeyPosition = 1 THEN
+                                            Control(i).HotKeyOffset = 0
+                                        ELSE
+                                            Control(i).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(i), Control(i).HotKeyPosition - 1))
+                                        END IF
+                                    END IF
+                                    _FONT tempFont
+                                    IF LockedControlsGOSUB THEN RETURN
+                                END IF
+                            NEXT
+                        ELSE
+                            Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize)
+                            DIM MustRedrawMenus AS _BYTE
+                            FOR i = 1 TO UBOUND(Control)
+                                IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
+                                    MustRedrawMenus = True
+                                END IF
+                            NEXT
+                            IF MustRedrawMenus THEN __UI_RefreshMenuBar
+                        END IF
                     END IF
                 END IF
             CASE 9 'Tooltip
                 b$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, CVL(b$))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
-                    END IF
-                NEXT
+
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeTooltip
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            ChangeTooltip:
+                            ToolTip(i) = Replace(b$, "\n", CHR$(10), False, 0)
+                            IF LockedControlsGOSUB THEN RETURN
+                        END IF
+                    NEXT
+                END IF
             CASE 10 'Value
                 b$ = ReadSequential$(Property$, LEN(FloatValue))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
-                            IF _CV(_FLOAT, b$) <> 0 THEN
-                                Control(i).Value = True
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeValue
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            ChangeValue:
+                            IF Control(i).Type = __UI_Type_CheckBox OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_CheckMark) OR Control(i).Type = __UI_Type_ToggleSwitch THEN
+                                IF _CV(_FLOAT, b$) <> 0 THEN
+                                    Control(i).Value = True
+                                ELSE
+                                    Control(i).Value = False
+                                END IF
+                            ELSEIF Control(i).Type = __UI_Type_RadioButton OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_Bullet) THEN
+                                IF _CV(_FLOAT, b$) <> 0 THEN
+                                    SetRadioButtonValue i
+                                ELSE
+                                    Control(i).Value = False
+                                END IF
                             ELSE
-                                Control(i).Value = False
+                                Control(i).Value = _CV(_FLOAT, b$)
                             END IF
-                        ELSEIF Control(i).Type = __UI_Type_RadioButton OR (Control(i).Type = __UI_Type_MenuItem AND Control(i).BulletStyle = __UI_Bullet) THEN
-                            IF _CV(_FLOAT, b$) <> 0 THEN
-                                SetRadioButtonValue i
-                            ELSE
-                                Control(i).Value = False
-                            END IF
-                        ELSE
-                            Control(i).Value = _CV(_FLOAT, b$)
+                            IF LockedControlsGOSUB THEN RETURN
                         END IF
-                    END IF
-                NEXT
+                    NEXT
+                END IF
             CASE 11 'Min
                 b$ = ReadSequential$(Property$, LEN(FloatValue))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Min = _CV(_FLOAT, b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).Min = _CV(_FLOAT, b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Min = _CV(_FLOAT, b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 12 'Max
                 b$ = ReadSequential$(Property$, LEN(FloatValue))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Max = _CV(_FLOAT, b$)
-                        IF Control(i).Type = __UI_Type_TextBox THEN
-                            Text(i) = LEFT$(Text(i), INT(Control(i).Max))
-                            IF LEN(Mask(i)) > 0 THEN Mask(i) = ""
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeMax
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            ChangeMax:
+                            Control(i).Max = _CV(_FLOAT, b$)
+                            IF Control(i).Type = __UI_Type_TextBox THEN
+                                Text(i) = LEFT$(Text(i), INT(Control(i).Max))
+                                IF LEN(Mask(i)) > 0 THEN Mask(i) = ""
+                            END IF
+                            IF LockedControlsGOSUB THEN RETURN
                         END IF
-                    END IF
-                NEXT
+                    NEXT
+                END IF
             CASE 13 'Interval
                 b$ = ReadSequential$(Property$, LEN(FloatValue))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Interval = _CV(_FLOAT, b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).Interval = _CV(_FLOAT, b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Interval = _CV(_FLOAT, b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 14 'Stretch
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Stretch = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).Stretch = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Stretch = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 15 'Has border
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).HasBorder = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).HasBorder = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).HasBorder = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 16 'Show percentage
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).ShowPercentage = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).ShowPercentage = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).ShowPercentage = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 17 'Word wrap
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).WordWrap = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).WordWrap = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).WordWrap = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 18 'Can have focus
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).CanHaveFocus = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).CanHaveFocus = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).CanHaveFocus = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 19 'Disabled
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Disabled = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).Disabled = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).Disabled = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 20 'Hidden
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Hidden = CVI(b$)
-                        IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = Control(i).ParentID THEN
-                            __UI_ActivateMenu Control(Control(i).ParentID), False
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeHidden
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            ChangeHidden:
+                            Control(i).Hidden = CVI(b$)
+                            IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = Control(i).ParentID THEN
+                                __UI_ActivateMenu Control(Control(i).ParentID), False
+                            END IF
+                            IF LockedControlsGOSUB THEN RETURN
                         END IF
-                    END IF
-                NEXT
-            CASE 21 'CenteredWindow
+                    NEXT
+                END IF
+            CASE 21 'CenteredWindow - Form only
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
-                IF __UI_TotalSelectedControls = 0 THEN
+                IF TotalLockedControls = 0 AND __UI_TotalSelectedControls = 0 THEN
                     Control(__UI_FormID).CenteredWindow = TempValue
                 END IF
             CASE 22 'Alignment
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).Align = CVI(b$)
-                        IF Control(i).Type = __UI_Type_MenuBar THEN
-                            IF Control(i).Align <> __UI_Left THEN Control(i).Align = __UI_Right
-                            IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
-                            __UI_RefreshMenuBar
-                        END IF
-                    END IF
-                NEXT
-            CASE 23 'ForeColor
-                b$ = ReadSequential$(Property$, 4)
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeAlignment
                     NEXT
                 ELSE
-                    Control(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
                     FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).Type = __UI_Type_MenuBar THEN
-                            Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        IF Control(i).ControlIsSelected THEN
+                            ChangeAlignment:
+                            Control(i).Align = CVI(b$)
+                            IF Control(i).Type = __UI_Type_MenuBar THEN
+                                IF Control(i).Align <> __UI_Left THEN Control(i).Align = __UI_Right
+                                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+                                __UI_RefreshMenuBar
+                            END IF
+                            IF LockedControlsGOSUB THEN RETURN
                         END IF
                     NEXT
+                END IF
+            CASE 23 'ForeColor
+                b$ = ReadSequential$(Property$, 4)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).ForeColor = _CV(_UNSIGNED LONG, b$)
+                    NEXT
+                ELSE
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).ForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar THEN
+                                Control(i).ForeColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    END IF
                 END IF
             CASE 24 'BackColor
                 b$ = ReadSequential$(Property$, 4)
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).BackColor = _CV(_UNSIGNED LONG, b$)
                     NEXT
                 ELSE
-                    Control(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).Type = __UI_Type_MenuBar THEN
-                            Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
-                    NEXT
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).BackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar THEN
+                                Control(i).BackColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    END IF
                 END IF
             CASE 25 'SelectedForeColor
                 b$ = ReadSequential$(Property$, 4)
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
                     NEXT
                 ELSE
-                    Control(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                            Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
-                    NEXT
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                Control(i).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    END IF
                 END IF
             CASE 26 'SelectedBackColor
                 b$ = ReadSequential$(Property$, 4)
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
                     NEXT
                 ELSE
-                    Control(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
-                            Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
-                    NEXT
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
+                                Control(i).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    END IF
                 END IF
             CASE 27 'BorderColor
                 b$ = ReadSequential$(Property$, 4)
-                IF __UI_TotalSelectedControls > 0 THEN
-                    FOR i = 1 TO UBOUND(Control)
-                        IF Control(i).ControlIsSelected THEN
-                            Control(i).BorderColor = _CV(_UNSIGNED LONG, b$)
-                        END IF
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).BorderColor = _CV(_UNSIGNED LONG, b$)
                     NEXT
                 ELSE
-                    Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).BorderColor = _CV(_UNSIGNED LONG, b$)
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).BorderColor = _CV(_UNSIGNED LONG, b$)
+                    END IF
                 END IF
             CASE 28 'BackStyle
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).BackStyle = CVI(b$)
-                    END IF
-                NEXT
-            CASE 29 'CanResize
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).BackStyle = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BackStyle = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 29 'CanResize - Form only
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
-                IF __UI_TotalSelectedControls = 0 THEN
+                IF TotalLockedControls = 0 AND __UI_TotalSelectedControls = 0 THEN
                     Control(__UI_FormID).CanResize = TempValue
                 END IF
             CASE 31 'Padding
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
-                IF __UI_TotalSelectedControls > 0 THEN
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).Padding = TempValue
+                    NEXT
+                ELSEIF __UI_TotalSelectedControls > 0 THEN
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).Padding = TempValue
@@ -966,52 +1109,91 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
             CASE 32 'Vertical Alignment
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).VAlign = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).VAlign = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).VAlign = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 33 'Password field
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_TextBox THEN
-                        Control(i).PasswordField = CVI(b$)
-                    END IF
-                NEXT
-            CASE 34 'Encoding
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).PasswordField = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).PasswordField = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 34 'Encoding - Form only
                 b$ = ReadSequential$(Property$, 4)
                 Control(__UI_FormID).Encoding = CVL(b$)
             CASE 35 'Mask
                 b$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, CVL(b$))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Mask(i) = b$
-                        Text(i) = ""
-                        IF LEN(Mask(i)) THEN Control(i).Max = 0
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        GOSUB ChangeMask
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            ChangeMask:
+                            Mask(i) = b$
+                            Text(i) = ""
+                            IF LEN(Mask(i)) THEN Control(i).Max = 0
+                            IF LockedControlsGOSUB THEN RETURN
+                        END IF
+                    NEXT
+                END IF
             CASE 36 'MinInterval
                 b$ = ReadSequential$(Property$, LEN(FloatValue))
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).MinInterval = _CV(_FLOAT, b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).MinInterval = _CV(_FLOAT, b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).MinInterval = _CV(_FLOAT, b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 37 'BulletStyle
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).BulletStyle = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).BulletStyle = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BulletStyle = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 38 'AutoScroll
                 b$ = ReadSequential$(Property$, 2)
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ControlIsSelected THEN
-                        Control(i).AutoScroll = CVI(b$)
-                    END IF
-                NEXT
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).AutoScroll = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).AutoScroll = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
             CASE 201 TO 210
                 'Alignment commands
                 b$ = ReadSequential$(Property$, 2)
