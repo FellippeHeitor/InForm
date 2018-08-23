@@ -2676,6 +2676,8 @@ SUB __UI_TextChanged (id AS LONG)
 END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
+    IF __UI_StateHasChanged THEN EXIT SUB 'skip values changed programmatically
+
     DIM b$
     SELECT EVERYCASE id
         CASE AlignOptions
