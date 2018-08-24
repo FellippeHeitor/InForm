@@ -260,6 +260,8 @@ SUB __UI_BeforeUpdateDisplay
                             Control(TempValue).AutoSize = True
                         CASE __UI_Type_ListBox
                             Control(TempValue).HasBorder = True
+                        CASE __UI_Type_ProgressBar
+                            SetCaption TempValue, "\#"
                     END SELECT
 
                     IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
