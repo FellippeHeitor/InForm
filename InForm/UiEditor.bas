@@ -1708,6 +1708,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(BulletOptions).Disabled = True
     Caption(TextLB) = "Text"
     Caption(ValueLB) = "Value"
+    Caption(MaxLB) = "Max"
     IF TotalSelected > 0 THEN
         SELECT EVERYCASE PreviewControls(FirstSelected).Type
             CASE __UI_Type_ToggleSwitch
@@ -1795,7 +1796,6 @@ SUB __UI_BeforeUpdateDisplay
                 STATIC PreviousNumericState AS _BYTE
                 Control(Transparent).Disabled = False
                 Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False)
-                Caption(MaxLB) = "Max"
                 IF PreviousNumericState <> PreviewControls(FirstSelected).NumericOnly THEN
                     PreviousNumericState = PreviewControls(FirstSelected).NumericOnly
                     __UI_ForceRedraw = True
