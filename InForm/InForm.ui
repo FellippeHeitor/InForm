@@ -1409,14 +1409,13 @@ SUB __UI_UpdateDisplay
         _PUTIMAGE (__UI_ActiveTipLeft, __UI_ActiveTipTop), ActiveTipPanel
     END IF
 
-    IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID AND __UI_TotalSelectedControls = 1 AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
         STATIC DragTip AS LONG, TipPanelWidth AS INTEGER
 
         IF DragTip = 0 THEN
             _FONT Control(__UI_FormID).Font
 
             TempCaption$ = "Hold Ctrl to bypass snapping"
-
             TipPanelWidth = __UI_PrintWidth(TempCaption$) + 10
             PanelHeight = uspacing& + 5 + 5
 
@@ -1441,6 +1440,36 @@ SUB __UI_UpdateDisplay
             ELSE
                 _PUTIMAGE (X1, 0), DragTip
             END IF
+        END IF
+    ELSEIF __UI_IsResizing AND Control(__UI_ResizingID).Type = __UI_Type_Label AND Control(__UI_ResizingID).AutoSize = True THEN
+        STATIC ResizeTip AS LONG, ResizeTipPanelWidth AS INTEGER
+
+        IF ResizeTip = 0 THEN
+            _FONT Control(__UI_FormID).Font
+
+            TempCaption$ = "Can't resize a label when .AutoSize = True"
+            ResizeTipPanelWidth = __UI_PrintWidth(TempCaption$) + 10
+            PanelHeight = uspacing& + 5 + 5
+
+            ResizeTip = _NEWIMAGE(ResizeTipPanelWidth, PanelHeight, 32)
+            _DEST ResizeTip
+            _FONT Control(__UI_FormID).Font
+            __UI_ShadowBox 0, 0, ResizeTipPanelWidth - 6, PanelHeight - 6, __UI_DefaultColor(__UI_Type_Form, 6), 40, 5
+            COLOR __UI_DefaultColor(__UI_Type_Form, 1)
+
+            __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - uspacing& \ 2 - 1.75, TempCaption$
+
+            LINE (0, 0)-(_WIDTH - 6, _HEIGHT - 6), __UI_DefaultColor(__UI_Type_Form, 5), B
+            __UI_MakeHardwareImage ResizeTip
+        END IF
+        _DEST 0
+
+        X1 = _WIDTH \ 2 - ResizeTipPanelWidth \ 2
+        Y1 = 0
+        IF Control(__UI_ResizingID).Top <= _HEIGHT(ResizeTip) THEN
+            _PUTIMAGE (X1, Control(__UI_FormID).Height - _HEIGHT(ResizeTip)), ResizeTip
+        ELSE
+            _PUTIMAGE (X1, 0), ResizeTip
         END IF
     END IF
 
