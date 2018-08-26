@@ -256,8 +256,6 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
 
                     SELECT CASE tempType
-                        CASE __UI_Type_Label
-                            Control(TempValue).AutoSize = True
                         CASE __UI_Type_ListBox
                             Control(TempValue).HasBorder = True
                         CASE __UI_Type_ProgressBar
