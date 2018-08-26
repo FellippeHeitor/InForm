@@ -3486,8 +3486,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).Stretch = True THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = True"
-                ELSE
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = False"
                 END IF
                 'Fonts
                 IF LEN(PreviewFonts(i)) > 0 THEN
