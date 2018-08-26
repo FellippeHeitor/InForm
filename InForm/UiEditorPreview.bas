@@ -2103,7 +2103,10 @@ SUB LoadPreview (Destination AS _BYTE)
             __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
             IF __UI_TotalSelectedControls = 1 THEN FirstToBeSelected = TempValue
         END IF
-        IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
+        IF NewType = __UI_Type_PictureBox THEN
+            Control(TempValue).HasBorder = False
+            Control(TempValue).Stretch = False
+        END IF
 
         DO 'read properties
             IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
@@ -2393,7 +2396,10 @@ SUB LoadPreviewText
             END IF
 
             TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
-            IF NewType = __UI_Type_PictureBox THEN Control(TempValue).HasBorder = False
+            IF NewType = __UI_Type_PictureBox THEN
+                Control(TempValue).HasBorder = False
+                Control(TempValue).Stretch = False
+            END IF
             IF NewType = __UI_Type_Label THEN Control(TempValue).VAlign = __UI_Top
 
             DO 'read properties
