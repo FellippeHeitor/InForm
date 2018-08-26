@@ -11,6 +11,7 @@ SUB __UI_ThemeSetup
     __UI_ScrollbarButtonHeight = 17
     __UI_MenuBarOffset = 8
     __UI_MenuItemOffset = 22
+    __UI_DefaultCaptionIndent = 5
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -175,7 +176,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _DEST This.Canvas
         _FONT This.Font
 
-        IF This.HasBorder THEN CaptionIndent = 5 ELSE CaptionIndent = 0
+        IF This.HasBorder THEN CaptionIndent = __UI_DefaultCaptionIndent ELSE CaptionIndent = 0
 
         IF This.BackStyle = __UI_Opaque THEN
             CLS , This.BackColor
