@@ -60,7 +60,7 @@ TYPE __UI_ControlTYPE
     SelectedBackColor AS _UNSIGNED LONG
     BackStyle AS _BYTE
     HasBorder AS _BYTE
-    BorderThickness AS INTEGER
+    BorderSize AS INTEGER
     Padding AS INTEGER
     Encoding AS LONG
     Align AS _BYTE
@@ -213,7 +213,7 @@ DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
 DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDistanceFromForm AS INTEGER
 DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Offset AS INTEGER
 DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
-DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderThickness AS INTEGER
+DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
 
 'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -288,7 +288,7 @@ CONST True = -1, False = 0
 '$INCLUDE:'InFormVersion.bas'
 __UI_SnapDistance = 5
 __UI_SnapDistanceFromForm = 10
-__UI_MaxBorderThickness = 10
+__UI_MaxBorderSize = 10
 __UI_Font8Offset = 5
 __UI_Font16Offset = 3
 __UI_ClipboardCheck$ = "InForm" + STRING$(2, 10) + "BEGIN CONTROL DATA" + CHR$(10) + STRING$(60, 45) + CHR$(10)
@@ -4510,7 +4510,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     IF (ControlType = __UI_Type_PictureBox AND __UI_DesignMode) OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Frame OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
         Control(NextSlot).HasBorder = True
-        Control(NextSlot).BorderThickness = 1
+        Control(NextSlot).BorderSize = 1
     END IF
 
     IF ControlType = __UI_Type_PictureBox THEN
@@ -5455,7 +5455,7 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         Control(__UI_ActiveDropdownList).SelectedBackColor = This.SelectedBackColor
         Control(__UI_ActiveDropdownList).Font = This.Font
         Control(__UI_ActiveDropdownList).HasBorder = True
-        Control(__UI_ActiveDropdownList).BorderThickness = 1
+        Control(__UI_ActiveDropdownList).BorderSize = 1
         Control(__UI_ActiveDropdownList).BorderColor = _RGB32(0, 0, 0)
         Control(__UI_ActiveDropdownList).CanHaveFocus = True
         Control(__UI_ActiveDropdownList).InputViewStart = 1

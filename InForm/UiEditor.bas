@@ -71,7 +71,7 @@ DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
 DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
 DIM SHARED Resizable AS LONG, AutoScroll AS LONG
-DIM SHARED AutoSize AS LONG, ThicknessTB AS LONG
+DIM SHARED AutoSize AS LONG, SizeTB AS LONG
 
 'Open dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -747,7 +747,7 @@ END SUB
 
 SUB __UI_FocusIn (id AS LONG)
     SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             DIM ThisInputBox AS LONG
             ThisInputBox = GetInputBoxFromID(id)
             InputBoxText(ThisInputBox) = Text(id)
@@ -770,7 +770,7 @@ END SUB
 
 SUB __UI_FocusOut (id AS LONG)
     SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             ConfirmEdits id
     END SELECT
 END SUB
@@ -1397,11 +1397,11 @@ SUB __UI_BeforeUpdateDisplay
         IF __UI_Focus = InputBox(i).ID THEN
             Control(InputBox(i).ID).Height = 22
             Control(InputBox(i).ID).BorderColor = _RGB32(0, 0, 0)
-            Control(InputBox(i).ID).BorderThickness = 2
+            Control(InputBox(i).ID).BorderSize = 2
         ELSE
             Control(InputBox(i).ID).Height = 23
             Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-            Control(InputBox(i).ID).BorderThickness = 1
+            Control(InputBox(i).ID).BorderSize = 1
         END IF
     NEXT
     Control(FontSizeList).Hidden = True
@@ -1696,12 +1696,12 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
             END IF
         END IF
-        IF __UI_Focus <> ThicknessTB OR (__UI_Focus = ThicknessTB AND RevertEdit = True) THEN
-            Text(ThicknessTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderThickness))
-            IF (__UI_Focus = ThicknessTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = ThicknessTB THEN
-            IF PropertyFullySelected(ThicknessTB) THEN
-                IF Text(ThicknessTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderThickness)) THEN
+        IF __UI_Focus <> SizeTB OR (__UI_Focus = SizeTB AND RevertEdit = True) THEN
+            Text(SizeTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize))
+            IF (__UI_Focus = SizeTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+        ELSEIF __UI_Focus = SizeTB THEN
+            IF PropertyFullySelected(SizeTB) THEN
+                IF Text(SizeTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize)) THEN
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
                 ELSE
                     IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
@@ -1724,6 +1724,7 @@ SUB __UI_BeforeUpdateDisplay
     'Update checkboxes:
     Control(Stretch).Value = PreviewControls(FirstSelected).Stretch
     Control(HasBorder).Value = PreviewControls(FirstSelected).HasBorder
+    Caption(HasBorder) = "Has border"
     Control(ShowPercentage).Value = PreviewControls(FirstSelected).ShowPercentage
     Control(WordWrap).Value = PreviewControls(FirstSelected).WordWrap
     Control(CanHaveFocus).Value = PreviewControls(FirstSelected).CanHaveFocus
@@ -1748,7 +1749,7 @@ SUB __UI_BeforeUpdateDisplay
     Caption(TextLB) = "Text"
     Caption(ValueLB) = "Value"
     Caption(MaxLB) = "Max"
-    Control(ThicknessTB).Disabled = True
+    Control(SizeTB).Disabled = True
     IF TotalSelected > 0 THEN
         SELECT EVERYCASE PreviewControls(FirstSelected).Type
             CASE __UI_Type_ToggleSwitch
@@ -1976,8 +1977,8 @@ SUB __UI_BeforeUpdateDisplay
     LastTopForInputBox = -12
     CONST TopIncrementForInputBox = 22
     FOR i = 1 TO UBOUND(InputBox)
-        'Exception for ThicknessTB:
-        IF InputBox(i).ID = ThicknessTB THEN _CONTINUE
+        'Exception for SizeTB:
+        IF InputBox(i).ID = SizeTB THEN _CONTINUE
 
         IF Control(InputBox(i).ID).Disabled THEN
             Control(InputBox(i).ID).Hidden = True
@@ -2001,9 +2002,12 @@ SUB __UI_BeforeUpdateDisplay
 
     'Custom cases
     Control(AutoSize).Disabled = Control(WordWrap).Value
-    Control(ThicknessTB).Disabled = NOT Control(HasBorder).Value
-    Control(ThicknessTB).Hidden = Control(ThicknessTB).Disabled
-    Control(ThicknessTB).Top = Control(HasBorder).Top
+    Control(SizeTB).Disabled = NOT Control(HasBorder).Value
+    Control(SizeTB).Hidden = Control(SizeTB).Disabled
+    Control(SizeTB).Top = Control(HasBorder).Top
+    IF Control(HasBorder).Value = True THEN
+        Caption(HasBorder) = "Has border     Size:"
+    END IF
 
     Control(FontSizeList).Disabled = Control(FontList).Disabled
     Control(FontSizeList).Hidden = Control(FontList).Hidden
@@ -2458,7 +2462,7 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
     i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
-    i = i + 1: InputBox(i).ID = ThicknessTB: InputBox(i).Signal = 40: InputBox(i).DataType = DT_Integer
+    i = i + 1: InputBox(i).ID = SizeTB: InputBox(i).Signal = 40: InputBox(i).DataType = DT_Integer
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
     REDIM InputBoxText(1 TO i) AS STRING
 
@@ -2666,7 +2670,7 @@ SUB __UI_KeyPress (id AS LONG)
             IF __UI_KeyHit = 27 THEN
                 __UI_Click CloseZOrderingBT
             END IF
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             IF __UI_KeyHit = 13 THEN
                 'Send the preview the new property value
                 ConfirmEdits id
@@ -2792,7 +2796,7 @@ SUB __UI_ValueChanged (id AS LONG)
             SendData b$, 213
         CASE FileList
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             Send Client, "LOCKCONTROLS><END>"
     END SELECT
 END SUB
@@ -3208,7 +3212,7 @@ SUB LoadPreview
                     PreviewControls(Dummy).AutoSize = True
                 CASE -43
                     b$ = ReadSequential$(FormData$, 2)
-                    PreviewControls(Dummy).BorderThickness = CVI(b$)
+                    PreviewControls(Dummy).BorderSize = CVI(b$)
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3626,8 +3630,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF PreviewControls(i).Padding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
                 END IF
-                IF PreviewControls(i).BorderThickness > 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).BorderThickness = " + LTRIM$(STR$(PreviewControls(i).BorderThickness))
+                IF PreviewControls(i).BorderSize > 0 THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).BorderSize = " + LTRIM$(STR$(PreviewControls(i).BorderSize))
                 END IF
                 IF PreviewControls(i).Encoding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTRIM$(STR$(PreviewControls(i).Encoding))

@@ -497,9 +497,9 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Has border"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "ThicknessTB", 61, 20, 132, 34, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "SizeTB", 51, 19, 142, 34, __UI_GetID("ControlToggles"))
     Text(__UI_NewID) = "1"
-    ToolTip(__UI_NewID) = "Border thickness"
+    ToolTip(__UI_NewID) = "Border Size"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds
     Control(__UI_NewID).Min = 1
@@ -835,5 +835,5 @@ SUB __UI_AssignIDs
     PasteListBT = __UI_GetID("PasteListBT")
     EditMenuConvertType = __UI_GetID("EditMenuConvertType")
     AutoSize = __UI_GetID("AutoSize")
-    ThicknessTB = __UI_GetID("ThicknessTB")
+    SizeTB = __UI_GetID("SizeTB")
 END SUB
