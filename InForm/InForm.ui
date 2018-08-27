@@ -1611,7 +1611,11 @@ SUB __UI_EventDispatcher
             ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ uspacing&) + Control(__UI_HoveringID).InputViewStart
             IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
                 Control(__UI_HoveringID).Value = ThisItem%
-                IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_HoveringID
+                IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN
+                    __UI_ValueChanged __UI_HoveringID
+                    Control(__UI_HoveringID).PreviousValue = Control(__UI_HoveringID).Value
+                    Control(__UI_HoveringID).Redraw = True
+                END IF
             END IF
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND LastMouseLeft <> __UI_MouseLeft THEN
             LastMouseLeft = __UI_MouseLeft
@@ -1774,7 +1778,11 @@ SUB __UI_EventDispatcher
             Control(__UI_Focus).Value = Control(__UI_Focus).Value + __UI_MouseWheel
             IF Control(__UI_Focus).Value < 1 THEN Control(__UI_Focus).Value = 1
             IF Control(__UI_Focus).Value > Control(__UI_Focus).Max THEN Control(__UI_Focus).Value = Control(__UI_Focus).Max
-            IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+            IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                __UI_ValueChanged __UI_Focus
+                Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                Control(__UI_Focus).Redraw = True
+            END IF
         ELSEIF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).MultiLine THEN
             DIM TotalLines AS LONG
             TotalLines = __UI_CountLines(__UI_Focus)
@@ -2579,10 +2587,18 @@ SUB __UI_EventDispatcher
                                 IF __UI_HoveringID = __UI_ActiveDropdownList THEN
                                     __UI_Focus = __UI_ParentDropdownList
                                     Control(__UI_ParentDropdownList).Value = Control(__UI_ActiveDropdownList).Value
-                                    IF Control(__UI_ParentDropdownList).PreviousValue <> Control(__UI_ParentDropdownList).Value THEN __UI_ValueChanged __UI_ParentDropdownList
+                                    IF Control(__UI_ParentDropdownList).PreviousValue <> Control(__UI_ParentDropdownList).Value THEN
+                                        __UI_ValueChanged __UI_ParentDropdownList
+                                        Control(__UI_ParentDropdownList).PreviousValue = Control(__UI_ParentDropdownList).Value
+                                        Control(__UI_ParentDropdownList).Redraw = True
+                                    END IF
                                     __UI_DestroyControl Control(__UI_ActiveDropdownList)
                                 ELSE
-                                    IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_HoveringID
+                                    IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN
+                                        __UI_ValueChanged __UI_HoveringID
+                                        Control(__UI_HoveringID).PreviousValue = Control(__UI_HoveringID).Value
+                                        Control(__UI_HoveringID).Redraw = True
+                                    END IF
                                 END IF
                             END IF
                         CASE __UI_Type_DropdownList
@@ -3341,7 +3357,11 @@ SUB __UI_EventDispatcher
                 __UI_Focus = __UI_ParentDropdownList
                 Control(__UI_ParentDropdownList).Value = Control(__UI_ActiveDropdownList).Value
                 __UI_DestroyControl Control(__UI_ActiveDropdownList)
-                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                    __UI_ValueChanged __UI_Focus
+                    Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                    Control(__UI_Focus).Redraw = True
+                END IF
             ELSEIF Control(__UI_Focus).Type = __UI_Type_MenuBar THEN
                 __UI_ActivateMenu Control(__UI_Focus), True
             ELSEIF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline THEN
@@ -3536,7 +3556,11 @@ SUB __UI_EventDispatcher
                             CASE 18432 'Up
                                 IF Control(__UI_Focus).Value > 1 THEN
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Value - 1
-                                    IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                    IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                                        __UI_ValueChanged __UI_Focus
+                                        Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                                        Control(__UI_Focus).Redraw = True
+                                    END IF
                                 END IF
                             CASE 20480 'Down
                                 IF __UI_AltIsDown THEN
@@ -3546,26 +3570,46 @@ SUB __UI_EventDispatcher
                                 ELSE
                                     IF Control(__UI_Focus).Value < Control(__UI_Focus).Max THEN
                                         Control(__UI_Focus).Value = Control(__UI_Focus).Value + 1
-                                        IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                        IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                                            __UI_ValueChanged __UI_Focus
+                                            Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                                            Control(__UI_Focus).Redraw = True
+                                        END IF
                                     END IF
                                 END IF
                             CASE 18688 'Page up
                                 Control(__UI_Focus).Value = Control(__UI_Focus).Value - Control(__UI_Focus).LastVisibleItem
                                 IF Control(__UI_Focus).Value < 1 THEN Control(__UI_Focus).Value = 1
-                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                                    __UI_ValueChanged __UI_Focus
+                                    Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                                    Control(__UI_Focus).Redraw = True
+                                END IF
                             CASE 20736 'Page down
                                 IF Control(__UI_Focus).Value < Control(__UI_Focus).Max - Control(__UI_Focus).LastVisibleItem THEN
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Value + Control(__UI_Focus).LastVisibleItem - 1
                                 ELSE
                                     Control(__UI_Focus).Value = Control(__UI_Focus).Max
                                 END IF
-                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                                    __UI_ValueChanged __UI_Focus
+                                    Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                                    Control(__UI_Focus).Redraw = True
+                                END IF
                             CASE 18176 'Home
                                 Control(__UI_Focus).Value = 1
-                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                                    __UI_ValueChanged __UI_Focus
+                                    Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                                    Control(__UI_Focus).Redraw = True
+                                END IF
                             CASE 20224 'End
                                 Control(__UI_Focus).Value = Control(__UI_Focus).Max
-                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN __UI_ValueChanged __UI_Focus
+                                IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
+                                    __UI_ValueChanged __UI_Focus
+                                    Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
+                                    Control(__UI_Focus).Redraw = True
+                                END IF
                             CASE 18432, 20480, 18688, 20736, 18176, 20224
                                 'Adjust view:
                                 IF Control(__UI_Focus).Value < Control(__UI_Focus).InputViewStart THEN
