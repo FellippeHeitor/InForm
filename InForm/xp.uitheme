@@ -764,7 +764,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
         CaptionIndent = 0
 
-        IF This.HasBorder THEN CaptionIndent = 5
+        IF This.HasBorder THEN CaptionIndent = 5 + This.BorderThickness
 
         IF NOT This.Disabled AND (LEN(Text(This.ID)) OR This.Multiline) THEN
             COLOR This.ForeColor, This.BackColor
@@ -934,9 +934,11 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         END IF
 
         IF This.HasBorder = True THEN
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
-        ELSEIF This.HasBorder > 0 THEN
-            FOR i = 0 TO This.HasBorder
+            IF This.BorderThickness > __UI_MaxBorderThickness THEN
+                This.BorderThickness = __UI_MaxBorderThickness
+            END IF
+
+            FOR i = 0 TO This.BorderThickness - 1
                 LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
             NEXT
         END IF

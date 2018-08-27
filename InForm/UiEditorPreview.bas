@@ -256,8 +256,9 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
 
                     SELECT CASE tempType
-                        CASE __UI_Type_ListBox
-                            Control(TempValue).HasBorder = True
+                        'CASE __UI_Type_ListBox
+                        '    Control(TempValue).HasBorder = True
+                        '    Control(TempValue).BorderThickness = 1
                         CASE __UI_Type_ProgressBar
                             SetCaption TempValue, "\#"
                     END SELECT
@@ -847,11 +848,21 @@ SUB __UI_BeforeUpdateDisplay
                 IF TotalLockedControls THEN
                     FOR j = 1 TO TotalLockedControls
                         Control(LockedControls(j)).HasBorder = CVI(b$)
+                        IF CVI(b$) THEN
+                            IF Control(LockedControls(j)).BorderThickness = 0 THEN
+                                Control(LockedControls(j)).BorderThickness = 1
+                            END IF
+                        END IF
                     NEXT
                 ELSE
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).HasBorder = CVI(b$)
+                            IF CVI(b$) THEN
+                                IF Control(i).BorderThickness = 0 THEN
+                                    Control(i).BorderThickness = 1
+                                END IF
+                            END IF
                         END IF
                     NEXT
                 END IF
@@ -1188,6 +1199,20 @@ SUB __UI_BeforeUpdateDisplay
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
                             Control(i).AutoSize = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 40 'BorderThickness
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        Control(LockedControls(j)).BorderThickness = TempValue
+                    NEXT
+                ELSEIF __UI_TotalSelectedControls > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            Control(i).BorderThickness = TempValue
                         END IF
                     NEXT
                 END IF
@@ -2178,6 +2203,9 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF LogFileLoad THEN PRINT #LogFileNum, "BACKSTYLE:TRANSPARENT"
                 CASE -12
                     Control(TempValue).HasBorder = True
+                    IF Control(TempValue).BorderThickness = 0 THEN
+                        Control(TempValue).BorderThickness = 1
+                    END IF
                     IF LogFileLoad THEN PRINT #LogFileNum, "HASBORDER"
                 CASE -13
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 1) ELSE b$ = SPACE$(1): GET #BinaryFileNum, , b$
@@ -2273,6 +2301,10 @@ SUB LoadPreview (Destination AS _BYTE)
                     Control(TempValue).AutoScroll = True
                 CASE -42
                     Control(TempValue).AutoSize = True
+                CASE -43
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    Control(TempValue).BorderThickness = CVI(b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "BORDER THICKNESS" + STR$(CVI(b$))
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2473,7 +2505,12 @@ SUB LoadPreviewText
                                 Control(TempValue).BackStyle = __UI_Transparent
                             END IF
                         CASE "HasBorder"
-                            Control(TempValue).HasBorder = (DummyText$ = "True")
+                            IF DummyText$ = "True" THEN
+                                Control(TempValue).HasBorder = True
+                                IF Control(TempValue).BorderThickness = 0 THEN
+                                    Control(TempValue).BorderThickness = 1
+                                END IF
+                            END IF
                         CASE "Align"
                             SELECT CASE DummyText$
                                 CASE "__UI_Center": Control(TempValue).Align = __UI_Center
@@ -2517,6 +2554,8 @@ SUB LoadPreviewText
                             Control(TempValue).CanResize = (DummyText$ = "True")
                         CASE "Padding"
                             Control(TempValue).Padding = VAL(DummyText$)
+                        CASE "BorderThickness"
+                            Control(TempValue).BorderThickness = VAL(DummyText$)
                         CASE "VAlign"
                             SELECT CASE DummyText$
                                 CASE "__UI_Middle": Control(TempValue).VAlign = __UI_Middle
@@ -2995,6 +3034,10 @@ SUB SavePreview (Destination AS _BYTE)
                     ELSE
                         Clip$ = Clip$ + b$
                     END IF
+                END IF
+                IF Control(i).BorderThickness > 0 THEN
+                    b$ = MKI$(-43) + MKI$(Control(i).BorderThickness)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
             END IF
         NEXT

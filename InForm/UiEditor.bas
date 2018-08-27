@@ -71,7 +71,7 @@ DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
 DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
 DIM SHARED Resizable AS LONG, AutoScroll AS LONG
-DIM SHARED AutoSize AS LONG
+DIM SHARED AutoSize AS LONG, ThicknessTB AS LONG
 
 'Open dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -135,8 +135,13 @@ TYPE newInputBox
     LabelID AS LONG
     Signal AS INTEGER
     LastEdited AS SINGLE
+    DataType AS INTEGER
     Sent AS _BYTE
 END TYPE
+
+CONST DT_Text = 1
+CONST DT_Integer = 2
+CONST DT_Float = 3
 
 REDIM SHARED PreviewCaptions(0) AS STRING
 REDIM SHARED PreviewTexts(0) AS STRING
@@ -742,7 +747,7 @@ END SUB
 
 SUB __UI_FocusIn (id AS LONG)
     SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
             DIM ThisInputBox AS LONG
             ThisInputBox = GetInputBoxFromID(id)
             InputBoxText(ThisInputBox) = Text(id)
@@ -765,7 +770,7 @@ END SUB
 
 SUB __UI_FocusOut (id AS LONG)
     SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
             ConfirmEdits id
     END SELECT
 END SUB
@@ -888,6 +893,24 @@ SUB __UI_BeforeUpdateDisplay
 
     IF __UI_Focus = 0 THEN
         IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
+    END IF
+
+    IF __UI_MouseDownOnID = Red OR __UI_MouseDownOnID = Green OR __UI_MouseDownOnID = Blue OR _
+       __UI_PreviousMouseDownOnID = Red OR __UI_PreviousMouseDownOnID = Green OR __UI_PreviousMouseDownOnID = Blue THEN
+
+        SELECT CASE __UI_MouseDownOnID + __UI_PreviousMouseDownOnID
+            CASE Red
+                Text(RedValue) = LTRIM$(STR$(FIX(Control(Red).Value)))
+            CASE Green
+                Text(GreenValue) = LTRIM$(STR$(FIX(Control(Green).Value)))
+            CASE Blue
+                Text(BlueValue) = LTRIM$(STR$(FIX(Control(Blue).Value)))
+        END SELECT
+
+        'Compose a new color and preview it
+        DIM NewColor AS _UNSIGNED LONG
+        NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
+        QuickColorPreview NewColor
     END IF
 
     'Check if another instance was launched and is passing
@@ -1374,11 +1397,11 @@ SUB __UI_BeforeUpdateDisplay
         IF __UI_Focus = InputBox(i).ID THEN
             Control(InputBox(i).ID).Height = 22
             Control(InputBox(i).ID).BorderColor = _RGB32(0, 0, 0)
-            Control(InputBox(i).ID).HasBorder = 1
+            Control(InputBox(i).ID).BorderThickness = 2
         ELSE
             Control(InputBox(i).ID).Height = 23
             Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-            Control(InputBox(i).ID).HasBorder = True
+            Control(InputBox(i).ID).BorderThickness = 1
         END IF
     NEXT
     Control(FontSizeList).Hidden = True
@@ -1673,6 +1696,22 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
             END IF
         END IF
+        IF __UI_Focus <> ThicknessTB OR (__UI_Focus = ThicknessTB AND RevertEdit = True) THEN
+            Text(ThicknessTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderThickness))
+            IF (__UI_Focus = ThicknessTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
+        ELSEIF __UI_Focus = ThicknessTB THEN
+            IF PropertyFullySelected(ThicknessTB) THEN
+                IF Text(ThicknessTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderThickness)) THEN
+                    Control(__UI_Focus).BorderColor = ShadeOfGreen
+                ELSE
+                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                    ELSE
+                        Control(__UI_Focus).BorderColor = ShadeOfRed
+                    END IF
+                END IF
+            END IF
+        END IF
     END IF
 
     Control(TextTB).Max = 0
@@ -1709,6 +1748,7 @@ SUB __UI_BeforeUpdateDisplay
     Caption(TextLB) = "Text"
     Caption(ValueLB) = "Value"
     Caption(MaxLB) = "Max"
+    Control(ThicknessTB).Disabled = True
     IF TotalSelected > 0 THEN
         SELECT EVERYCASE PreviewControls(FirstSelected).Type
             CASE __UI_Type_ToggleSwitch
@@ -1936,6 +1976,9 @@ SUB __UI_BeforeUpdateDisplay
     LastTopForInputBox = -12
     CONST TopIncrementForInputBox = 22
     FOR i = 1 TO UBOUND(InputBox)
+        'Exception for ThicknessTB:
+        IF InputBox(i).ID = ThicknessTB THEN _CONTINUE
+
         IF Control(InputBox(i).ID).Disabled THEN
             Control(InputBox(i).ID).Hidden = True
             Control(InputBox(i).LabelID).Hidden = True
@@ -1955,7 +1998,12 @@ SUB __UI_BeforeUpdateDisplay
             Control(Toggles(i)).Top = LastTopForInputBox
         END IF
     NEXT
+
+    'Custom cases
     Control(AutoSize).Disabled = Control(WordWrap).Value
+    Control(ThicknessTB).Disabled = NOT Control(HasBorder).Value
+    Control(ThicknessTB).Hidden = Control(ThicknessTB).Disabled
+    Control(ThicknessTB).Top = Control(HasBorder).Top
 
     Control(FontSizeList).Disabled = Control(FontList).Disabled
     Control(FontSizeList).Hidden = Control(FontList).Hidden
@@ -2389,27 +2437,28 @@ SUB __UI_OnLoad
 
     'Assign InputBox IDs:
     i = 0
-    i = i + 1: InputBox(i).ID = NameTB: InputBox(i).LabelID = NameLB: InputBox(i).Signal = 1
-    i = i + 1: InputBox(i).ID = CaptionTB: InputBox(i).LabelID = CaptionLB: InputBox(i).Signal = 2
-    i = i + 1: InputBox(i).ID = TextTB: InputBox(i).LabelID = TextLB: InputBox(i).Signal = 3
-    i = i + 1: InputBox(i).ID = MaskTB: InputBox(i).LabelID = MaskLB: InputBox(i).Signal = 35
-    i = i + 1: InputBox(i).ID = TopTB: InputBox(i).LabelID = TopLB: InputBox(i).Signal = 4
-    i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5
-    i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6
-    i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7
-    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8
-    i = i + 1: InputBox(i).ID = FontList: InputBox(i).LabelID = FontListLB: InputBox(i).Signal = 8
-    i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9
-    i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10
-    i = i + 1: InputBox(i).ID = BooleanOptions: InputBox(i).LabelID = BooleanLB: InputBox(i).Signal = 10
-    i = i + 1: InputBox(i).ID = MinTB: InputBox(i).LabelID = MinLB: InputBox(i).Signal = 11
-    i = i + 1: InputBox(i).ID = MaxTB: InputBox(i).LabelID = MaxLB: InputBox(i).Signal = 12
-    i = i + 1: InputBox(i).ID = IntervalTB: InputBox(i).LabelID = IntervalLB: InputBox(i).Signal = 13
-    i = i + 1: InputBox(i).ID = MinIntervalTB: InputBox(i).LabelID = MinIntervalLB: InputBox(i).Signal = 36
-    i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31
+    i = i + 1: InputBox(i).ID = NameTB: InputBox(i).LabelID = NameLB: InputBox(i).Signal = 1: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = CaptionTB: InputBox(i).LabelID = CaptionLB: InputBox(i).Signal = 2: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = TextTB: InputBox(i).LabelID = TextLB: InputBox(i).Signal = 3: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = MaskTB: InputBox(i).LabelID = MaskLB: InputBox(i).Signal = 35: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = TopTB: InputBox(i).LabelID = TopLB: InputBox(i).Signal = 4: InputBox(i).DataType = DT_Integer
+    i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5: InputBox(i).DataType = DT_Integer
+    i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6: InputBox(i).DataType = DT_Integer
+    i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7: InputBox(i).DataType = DT_Integer
+    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = FontList: InputBox(i).LabelID = FontListLB: InputBox(i).Signal = 8: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10: InputBox(i).DataType = DT_Float
+    i = i + 1: InputBox(i).ID = BooleanOptions: InputBox(i).LabelID = BooleanLB: InputBox(i).Signal = 10: InputBox(i).DataType = DT_Float
+    i = i + 1: InputBox(i).ID = MinTB: InputBox(i).LabelID = MinLB: InputBox(i).Signal = 11: InputBox(i).DataType = DT_Float
+    i = i + 1: InputBox(i).ID = MaxTB: InputBox(i).LabelID = MaxLB: InputBox(i).Signal = 12: InputBox(i).DataType = DT_Float
+    i = i + 1: InputBox(i).ID = IntervalTB: InputBox(i).LabelID = IntervalLB: InputBox(i).Signal = 13: InputBox(i).DataType = DT_Float
+    i = i + 1: InputBox(i).ID = MinIntervalTB: InputBox(i).LabelID = MinIntervalLB: InputBox(i).Signal = 36: InputBox(i).DataType = DT_Float
+    i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31: InputBox(i).DataType = DT_Integer
     i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
     i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
+    i = i + 1: InputBox(i).ID = ThicknessTB: InputBox(i).Signal = 40: InputBox(i).DataType = DT_Integer
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
     REDIM InputBoxText(1 TO i) AS STRING
 
@@ -2617,7 +2666,7 @@ SUB __UI_KeyPress (id AS LONG)
             IF __UI_KeyHit = 27 THEN
                 __UI_Click CloseZOrderingBT
             END IF
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
             IF __UI_KeyHit = 13 THEN
                 'Send the preview the new property value
                 ConfirmEdits id
@@ -2645,15 +2694,15 @@ SUB ConfirmEdits (id AS LONG)
 
     IF InputBoxText(GetInputBoxFromID(id)) <> Text(id) AND _
        InputBox(GetInputBoxFromID(id)).Sent = False THEN
-        TempValue = GetPropertySignal(id)
-        SELECT CASE TempValue
-            CASE 1, 2, 3, 8, 9, 35 'Name, caption, text, font, tooltips, mask
+        SELECT CASE InputBox(GetInputBoxFromID(id)).DataType
+            CASE DT_Text
                 b$ = MKL$(LEN(Text(id))) + Text(id)
-            CASE 4, 5, 6, 7, 31 'Top, left, width, height, padding
+            CASE DT_Integer
                 b$ = MKI$(VAL(Text(id)))
-            CASE 10, 11, 12, 13, 36 'Value, min, max, interval, mininterval
+            CASE DT_Float
                 b$ = _MK$(_FLOAT, VAL(Text(id)))
         END SELECT
+        TempValue = GetPropertySignal(id)
         SendData b$, TempValue
         PropertySent = True
         SelectPropertyFully id
@@ -2724,11 +2773,6 @@ SUB __UI_ValueChanged (id AS LONG)
             Text(GreenValue) = LTRIM$(STR$(Control(Green).Value))
         CASE Blue
             Text(BlueValue) = LTRIM$(STR$(Control(Blue).Value))
-        CASE Red, Green, Blue
-            'Compose a new color and preview it
-            DIM NewColor AS _UNSIGNED LONG
-            NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
-            IF __UI_MouseDownOnID = id THEN QuickColorPreview NewColor
         CASE ControlList
             Control(UpBT).Disabled = False
             Control(DownBT).Disabled = False
@@ -2748,7 +2792,7 @@ SUB __UI_ValueChanged (id AS LONG)
             SendData b$, 213
         CASE FileList
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, ThicknessTB
             Send Client, "LOCKCONTROLS><END>"
     END SELECT
 END SUB
@@ -3162,6 +3206,9 @@ SUB LoadPreview
                     PreviewControls(Dummy).AutoScroll = True
                 CASE -42
                     PreviewControls(Dummy).AutoSize = True
+                CASE -43
+                    b$ = ReadSequential$(FormData$, 2)
+                    PreviewControls(Dummy).BorderThickness = CVI(b$)
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3578,6 +3625,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).Padding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
+                END IF
+                IF PreviewControls(i).BorderThickness > 0 THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).BorderThickness = " + LTRIM$(STR$(PreviewControls(i).BorderThickness))
                 END IF
                 IF PreviewControls(i).Encoding > 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTRIM$(STR$(PreviewControls(i).Encoding))
