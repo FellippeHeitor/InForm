@@ -637,13 +637,17 @@ SUB __UI_BeforeUpdateDisplay
                 IF TempValue < 1 THEN TempValue = 1
                 IF TotalLockedControls > 0 THEN
                     FOR i = 1 TO TotalLockedControls
-                        Control(LockedControls(i)).Width = TempValue
+                        IF __UI_Type(Control(LockedControls(i)).Type).RestrictResize <> __UI_CantResizeH THEN
+                            Control(LockedControls(i)).Width = TempValue
+                        END IF
                     NEXT
                 ELSE
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
-                                Control(i).Width = TempValue
+                                IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH THEN
+                                    Control(i).Width = TempValue
+                                END IF
                             END IF
                         NEXT
                     ELSE
@@ -657,13 +661,17 @@ SUB __UI_BeforeUpdateDisplay
                 IF TempValue < 1 THEN TempValue = 1
                 IF TotalLockedControls > 0 THEN
                     FOR i = 1 TO TotalLockedControls
-                        Control(LockedControls(i)).Height = TempValue
+                        IF __UI_Type(Control(LockedControls(i)).Type).RestrictResize <> __UI_CantResizeV THEN
+                            Control(LockedControls(i)).Height = TempValue
+                        END IF
                     NEXT
                 ELSE
                     IF __UI_TotalSelectedControls > 0 THEN
                         FOR i = 1 TO UBOUND(Control)
                             IF Control(i).ControlIsSelected THEN
-                                Control(i).Height = TempValue
+                                IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV THEN
+                                    Control(i).Height = TempValue
+                                END IF
                             END IF
                         NEXT
                     ELSE
