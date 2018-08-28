@@ -4917,8 +4917,11 @@ END SUB
 SUB __UI_CursorAdjustments(This AS LONG)
     DIM i AS LONG, ThisLineStart AS LONG, ThisLineLen AS LONG
     IF NOT Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
-        IF Control(This).VisibleCursor >= Control(This).Width THEN Control(This).InputViewStart = Control(This).InputViewStart + Control(This).Width / 4
-        IF Control(This).VisibleCursor <= 0 THEN Control(This).InputViewStart = Control(This).InputViewStart - Control(This).Width / 4
+        IF Control(This).VisibleCursor >= (Control(This).Width - ((Control(This).BorderSize + __UI_DefaultCaptionIndent) * ABS(Control(This).HasBorder))) THEN
+            Control(This).InputViewStart = Control(This).InputViewStart + Control(This).Width / 4
+        ELSEIF Control(This).VisibleCursor <= 0 THEN
+            Control(This).InputViewStart = Control(This).InputViewStart - Control(This).Width / 4
+        END IF
         IF Control(This).InputViewStart < 0 THEN Control(This).InputViewStart = 0
     ELSEIF Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
         'ThisLineLen = LEN(__UI_GetTextBoxLine(This, Control(This).CurrentLine, ThisLineStart))
