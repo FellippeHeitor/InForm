@@ -155,7 +155,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG, Temp&
+    DIM PrevDest AS LONG, Temp&, i AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$, TempLine$
 
     IF This.Redraw OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
@@ -176,7 +176,14 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _DEST This.Canvas
         _FONT This.Font
 
-        IF This.HasBorder THEN CaptionIndent = __UI_DefaultCaptionIndent ELSE CaptionIndent = 0
+        IF This.HasBorder THEN
+            IF This.BorderSize > __UI_MaxBorderSize THEN
+                This.BorderSize = __UI_MaxBorderSize
+            ELSEIF This.BorderSize < 1 THEN
+                This.BorderSize = 1
+            END IF
+            CaptionIndent = __UI_DefaultCaptionIndent + This.BorderSize
+        END IF
 
         IF This.BackStyle = __UI_Opaque THEN
             CLS , This.BackColor
@@ -276,7 +283,9 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         IF This.HasBorder THEN
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+            FOR i = 0 TO This.BorderSize - 1
+                LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+            NEXT
         END IF
 
         __UI_MakeHardwareImageFromCanvas This
@@ -770,7 +779,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             ELSEIF This.BorderSize < 1 THEN
                 This.BorderSize = 1
             END IF
-            CaptionIndent = 5 + This.BorderSize
+            CaptionIndent = __UI_DefaultCaptionIndent + This.BorderSize
         END IF
 
         IF NOT This.Disabled AND (LEN(Text(This.ID)) OR This.Multiline) THEN
@@ -940,7 +949,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             END IF
         END IF
 
-        IF This.HasBorder = True THEN
+        IF This.HasBorder THEN
             FOR i = 0 TO This.BorderSize - 1
                 LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
             NEXT
@@ -956,7 +965,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG, Temp&
+    DIM PrevDest AS LONG, Temp&, i AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.PreviousValue <> This.Value OR Text(This.ID) <> __UI_TempTexts(This.ID) OR This.PreviousInputViewStart <> This.InputViewStart OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
@@ -994,8 +1003,14 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             CLS , _RGBA32(0, 0, 0, 0)
         END IF
 
-        CaptionIndent = 0
-        CaptionIndent = ABS(This.HasBorder) * 5
+        IF This.HasBorder THEN
+            IF This.BorderSize > __UI_MaxBorderSize THEN
+                This.BorderSize = __UI_MaxBorderSize
+            ELSEIF This.BorderSize < 1 THEN
+                This.BorderSize = 1
+            END IF
+            CaptionIndent = __UI_DefaultCaptionIndent + This.BorderSize
+        END IF
 
         IF LEN(Text(This.ID)) THEN
             DIM TempText$, FindLF&, ThisItem%, ThisItemTop%
@@ -1056,7 +1071,9 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         IF This.HasBorder THEN
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+            FOR i = 0 TO This.BorderSize - 1
+                LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+            NEXT
         END IF
         '------
 
@@ -1178,7 +1195,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG, Temp&
+    DIM PrevDest AS LONG, Temp&, i AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -1231,10 +1248,17 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
             CLS , _RGBA32(0, 0, 0, 0)
         END IF
 
-        CaptionIndent = 0
         IF This.HasBorder THEN
-            CaptionIndent = 5
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+            IF This.BorderSize > __UI_MaxBorderSize THEN
+                This.BorderSize = __UI_MaxBorderSize
+            ELSEIF This.BorderSize < 1 THEN
+                This.BorderSize = 1
+            END IF
+            CaptionIndent = __UI_DefaultCaptionIndent + This.BorderSize
+
+            FOR i = 0 TO This.BorderSize - 1
+                LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+            NEXT
         END IF
 
         DIM TempText$, ThisItem%, FindLF&, ThisItemTop%
@@ -1630,7 +1654,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, TheX AS INTEGER, TheY AS INTEGER
-    DIM CaptionIndent AS INTEGER, TempCaption$
+    DIM CaptionIndent AS INTEGER, TempCaption$, i AS LONG
 
     IF This.Redraw OR This.Stretch <> This.PreviousStretch OR This.PreviousValue <> This.HelperCanvas OR This.ControlState <> ControlState OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
@@ -1656,22 +1680,32 @@ SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             CLS , _RGBA32(0, 0, 0, 0)
         END IF
 
-        IF This.Stretch THEN
-            _PUTIMAGE (0, 0)-(This.Width - 1, This.Height - 1), This.HelperCanvas, This.Canvas
-        ELSE
-            TheX = 0 'Default = Left
-            IF This.Align = __UI_Center THEN TheX = This.Width / 2 - _WIDTH(This.HelperCanvas) / 2
-            IF This.Align = __UI_Right THEN TheX = This.Width - 1 - _WIDTH(This.HelperCanvas)
+        IF This.HasBorder THEN
+            IF This.BorderSize > __UI_MaxBorderSize THEN
+                This.BorderSize = __UI_MaxBorderSize
+            ELSEIF This.BorderSize < 1 THEN
+                This.BorderSize = 1
+            END IF
+        END IF
 
-            TheY = 0 'Default = Top
+        IF This.Stretch THEN
+            _PUTIMAGE (This.BorderSize * ABS(This.HasBorder), This.BorderSize * ABS(This.HasBorder))-(This.Width - (This.BorderSize * ABS(This.HasBorder) + 1), This.Height - (This.BorderSize * ABS(This.HasBorder) + 1)), This.HelperCanvas, This.Canvas
+        ELSE
+            TheX = This.BorderSize * ABS(This.HasBorder) 'Default = Left
+            IF This.Align = __UI_Center THEN TheX = This.Width / 2 - _WIDTH(This.HelperCanvas) / 2
+            IF This.Align = __UI_Right THEN TheX = This.Width - 1 - _WIDTH(This.HelperCanvas) - (This.BorderSize * ABS(This.HasBorder))
+
+            TheY = This.BorderSize * ABS(This.HasBorder) 'Default = Top
             IF This.VAlign = __UI_Middle THEN TheY = This.Height / 2 - _HEIGHT(This.HelperCanvas) / 2
-            IF This.VAlign = __UI_Bottom THEN TheY = This.Height - 1 - _HEIGHT(This.HelperCanvas)
+            IF This.VAlign = __UI_Bottom THEN TheY = This.Height - 1 - _HEIGHT(This.HelperCanvas) - (This.BorderSize * ABS(This.HasBorder))
 
             _PUTIMAGE (TheX, TheY), This.HelperCanvas, This.Canvas
         END IF
 
         IF This.HasBorder THEN
-            LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.BorderColor, B
+            FOR i = 0 TO This.BorderSize - 1
+                LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+            NEXT
         END IF
         '------
 

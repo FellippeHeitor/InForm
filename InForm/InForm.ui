@@ -1547,19 +1547,22 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB AutoSizeLabel (this AS __UI_ControlTYPE)
-    DIM tempFont AS LONG, tempCenter AS INTEGER, autoWidth AS INTEGER
+    DIM tempFont AS LONG, tempCenter AS INTEGER
+    DIM autoWidth AS INTEGER, autoHeight AS INTEGER
     IF this.AutoSize = False THEN EXIT SUB
     IF this.WordWrap = False THEN
         tempFont = _FONT
         _FONT this.Font
         autoWidth = __UI_PrintWidth(Caption(this.ID))
         IF this.Padding THEN autoWidth = autoWidth + this.Padding * 2
-        IF this.HasBorder THEN autoWidth = autoWidth + __UI_DefaultCaptionIndent * 2
+        IF this.HasBorder THEN autoWidth = autoWidth + (__UI_DefaultCaptionIndent + this.BorderSize) * 2
         IF this.Width <> autoWidth OR this.Height <> uspacing + 6 THEN
             this.Width = autoWidth
-            IF this.Height <> uspacing + 6 THEN
+            autoHeight = uspacing + 6
+            IF this.HasBorder THEN autoHeight = autoHeight + this.BorderSize * 2
+            IF this.Height <> autoHeight THEN
                 tempCenter = this.Top + this.Height / 2
-                this.Height = uspacing + 6
+                this.Height = autoHeight
                 this.Top = tempCenter - this.Height / 2
             END IF
             this.Redraw = True
@@ -1880,8 +1883,8 @@ SUB __UI_EventDispatcher
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
                     END IF
                     IF Control(__UI_FirstSelectedID).Type = __UI_Type_PictureBox AND LEN(Text(__UI_FirstSelectedID)) > 0 THEN
-                        IF Control(__UI_FirstSelectedID).Height <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
-                           Control(__UI_FirstSelectedID).Width <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
+                        IF Control(__UI_FirstSelectedID).Height - (Control(__UI_FirstSelectedID).BorderSize * ABS(Control(__UI_FirstSelectedID).HasBorder)) <> _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) OR _
+                           Control(__UI_FirstSelectedID).Width - (Control(__UI_FirstSelectedID).BorderSize * ABS(Control(__UI_FirstSelectedID).HasBorder)) <> _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) THEN
                             Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = False
                             SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions (" + LTRIM$(STR$(_WIDTH(Control(__UI_FirstSelectedID).HelperCanvas))) + "x" + LTRIM$(STR$(_HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas))) + ")-"
                         ELSE
@@ -4203,8 +4206,8 @@ SUB __UI_RestoreImageOriginalSize
     KeepCenterY = Control(__UI_FirstSelectedID).Top + Control(__UI_FirstSelectedID).Height / 2
     KeepCenterX = Control(__UI_FirstSelectedID).Left + Control(__UI_FirstSelectedID).Width / 2
 
-    Control(__UI_FirstSelectedID).Height = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas)
-    Control(__UI_FirstSelectedID).Width = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas)
+    Control(__UI_FirstSelectedID).Height = _HEIGHT(Control(__UI_FirstSelectedID).HelperCanvas) + Control(__UI_FirstSelectedID).BorderSize * ABS(Control(__UI_FirstSelectedID).HasBorder)
+    Control(__UI_FirstSelectedID).Width = _WIDTH(Control(__UI_FirstSelectedID).HelperCanvas) + Control(__UI_FirstSelectedID).BorderSize * ABS(Control(__UI_FirstSelectedID).HasBorder)
 
     Control(__UI_FirstSelectedID).Top = KeepCenterY - Control(__UI_FirstSelectedID).Height / 2
     Control(__UI_FirstSelectedID).Left = KeepCenterX - Control(__UI_FirstSelectedID).Width / 2
