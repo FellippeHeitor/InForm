@@ -1750,6 +1750,7 @@ SUB __UI_BeforeUpdateDisplay
     Caption(ValueLB) = "Value"
     Caption(MaxLB) = "Max"
     Control(SizeTB).Disabled = True
+    Control(SizeTB).Hidden = True
     IF TotalSelected > 0 THEN
         SELECT EVERYCASE PreviewControls(FirstSelected).Type
             CASE __UI_Type_ToggleSwitch
@@ -2002,11 +2003,11 @@ SUB __UI_BeforeUpdateDisplay
 
     'Custom cases
     Control(AutoSize).Disabled = Control(WordWrap).Value
-    Control(SizeTB).Disabled = NOT Control(HasBorder).Value
-    Control(SizeTB).Hidden = Control(SizeTB).Disabled
-    Control(SizeTB).Top = Control(HasBorder).Top
-    IF Control(HasBorder).Value = True THEN
-        Caption(HasBorder) = "Has border     Size:"
+    IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame THEN
+        Control(SizeTB).Disabled = False
+        Control(SizeTB).Hidden = False
+        Control(SizeTB).Top = Control(HasBorder).Top
+        Caption(HasBorder) = "Has border     Size"
     END IF
 
     Control(FontSizeList).Disabled = Control(FontList).Disabled

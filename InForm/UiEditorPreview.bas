@@ -256,9 +256,6 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
 
                     SELECT CASE tempType
-                        'CASE __UI_Type_ListBox
-                        '    Control(TempValue).HasBorder = True
-                        '    Control(TempValue).BorderSize = 1
                         CASE __UI_Type_ProgressBar
                             SetCaption TempValue, "\#"
                     END SELECT
@@ -1207,12 +1204,16 @@ SUB __UI_BeforeUpdateDisplay
                 TempValue = CVI(b$)
                 IF TotalLockedControls THEN
                     FOR j = 1 TO TotalLockedControls
-                        Control(LockedControls(j)).BorderSize = TempValue
+                        IF Control(LockedControls(j)).Type <> __UI_Type_Frame THEN
+                            Control(LockedControls(j)).BorderSize = TempValue
+                        END IF
                     NEXT
                 ELSEIF __UI_TotalSelectedControls > 0 THEN
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
-                            Control(i).BorderSize = TempValue
+                            IF Control(i).Type <> __UI_Type_Frame THEN
+                                Control(i).BorderSize = TempValue
+                            END IF
                         END IF
                     NEXT
                 END IF
