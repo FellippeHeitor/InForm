@@ -123,7 +123,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuAllowMinMax", 103, 18, 0, 88, __UI_GetID("EditMenu"))
-    SetCaption __UI_NewID, "Allow .Min/.Ma&x bounds-"
+    SetCaption __UI_NewID, "Validate .Min/.Ma&x bounds-"
     Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuZOrdering", 103, 18, 0, 88, __UI_GetID("EditMenu"))
@@ -497,7 +497,7 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Has border"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "SizeTB", 51, 19, 142, 34, __UI_GetID("ControlToggles"))
+    __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "SizeTB", 51, 22, 142, 34, __UI_GetID("ControlToggles"))
     Text(__UI_NewID) = "1"
     ToolTip(__UI_NewID) = "Border Size"
     Control(__UI_NewID).HasBorder = True

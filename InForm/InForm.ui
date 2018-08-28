@@ -338,7 +338,7 @@ SUB __UI_InternalMenus
     SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNumericOnly", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption __UI_GetID("__UI_PreviewMenuNumericOnly"), "Allow .Min/.Ma&x bounds-"
+    SetCaption __UI_GetID("__UI_PreviewMenuNumericOnly"), "Validate .Min/.Ma&x bounds-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAlignLeft", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuAlignLeft"), "Align &Left"
@@ -1928,6 +1928,14 @@ SUB __UI_EventDispatcher
                     IF __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto THEN
                         Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = False
                         SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto).Name) + "-"
+                    ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
+                        'Offer to turn text to numeric-only TextBox
+                        Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = False
+                        IF Control(__UI_FirstSelectedID).NumericOnly = False THEN
+                            SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to NumericTextBox-"
+                        ELSE
+                            SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to TextBox-"
+                        END IF
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     END IF
@@ -1974,7 +1982,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
 
                     AddConvertMenu:
-                    IF __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto THEN
+                    IF __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto OR Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
                         DIM SearchType AS INTEGER, AddConvertMenuCheck AS _BYTE
                         SearchType = Control(__UI_FirstSelectedID).Type
                         AddConvertMenuCheck = True
@@ -1988,7 +1996,15 @@ SUB __UI_EventDispatcher
                         NEXT
                         IF AddConvertMenuCheck THEN
                             Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = False
-                            SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto).Name) + "-"
+                            IF SearchType = __UI_Type_TextBox THEN
+                                IF Control(__UI_FirstSelectedID).NumericOnly = False THEN
+                                    SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to NumericTextBox-"
+                                ELSE
+                                    SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to TextBox-"
+                                END IF
+                            ELSE
+                                SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to " + RTRIM$(__UI_Type(__UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto).Name) + "-"
+                            END IF
                         ELSE
                             Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                         END IF

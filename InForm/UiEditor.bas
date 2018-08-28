@@ -702,7 +702,7 @@ SUB __UI_MouseEnter (id AS LONG)
         CASE EditMenuRestoreDimensions
             Caption(StatusBar) = "Makes this control have the same dimensions as the loaded image."
         CASE EditMenuAllowMinMax
-            Caption(StatusBar) = "Enables the .Min and .Max properties for NumericTextBox controls."
+            Caption(StatusBar) = "Enables and validates the .Min and .Max properties for NumericTextBox controls."
         CASE EditMenuZOrdering
             Caption(StatusBar) = "Allows you to change tab-order/z-ordering of controls."
         CASE ViewMenuPreviewDetach
@@ -1166,6 +1166,14 @@ SUB __UI_BeforeUpdateDisplay
     IF ThisControlTurnsInto > 0 THEN
         Control(EditMenuConvertType).Disabled = False
         SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(ThisControlTurnsInto).Name)
+    ELSEIF ThisControlTurnsInto = -1 THEN
+        'Offer to turn text to numeric-only TextBox
+        Control(EditMenuConvertType).Disabled = False
+        SetCaption EditMenuConvertType, "Co&nvert to NumericTextBox"
+    ELSEIF ThisControlTurnsInto = -2 THEN
+        'Offer to turn numeric-only to text TextBox
+        Control(EditMenuConvertType).Disabled = False
+        SetCaption EditMenuConvertType, "Co&nvert to TextBox"
     ELSE
         Control(EditMenuConvertType).Disabled = True
         SetCaption EditMenuConvertType, "Co&nvert type"
@@ -2006,6 +2014,7 @@ SUB __UI_BeforeUpdateDisplay
     IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame THEN
         Control(SizeTB).Disabled = False
         Control(SizeTB).Hidden = False
+        Control(SizeTB).Height = 22
         Control(SizeTB).Top = Control(HasBorder).Top
         Caption(HasBorder) = "Has border     Size"
     END IF
@@ -2031,6 +2040,10 @@ SUB __UI_BeforeUpdateDisplay
     DIM ThisColor AS _UNSIGNED LONG, ThisBackColor AS _UNSIGNED LONG
 
     SELECT EVERYCASE Control(ColorPropertiesList).Value
+        CASE 0
+            Control(ColorPropertiesList).Value = 1
+        CASE IS > 5
+            Control(ColorPropertiesList).Value = 5
         CASE 1, 2 'ForeColor, BackColor
             ThisColor = PreviewControls(FirstSelected).ForeColor
             IF ThisColor = 0 THEN ThisColor = PreviewControls(PreviewFormID).ForeColor

@@ -358,8 +358,16 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         IF __UI_TotalSelectedControls = 1 THEN
-            IF prevTurnsInto <> __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto THEN
+            IF prevTurnsInto <> __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto OR Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
                 prevTurnsInto = __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto
+                IF Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
+                    'Offer to turn text to numeric-only TextBox and vice-versa
+                    IF Control(__UI_FirstSelectedID).NumericOnly = False THEN
+                        prevTurnsInto = -1
+                    ELSE
+                        prevTurnsInto = -2
+                    END IF
+                END IF
                 b$ = MKI$(prevTurnsInto)
                 SendData b$, "TURNSINTO"
             END IF
@@ -369,13 +377,27 @@ SUB __UI_BeforeUpdateDisplay
             AllControlsTurnInto = True
             FOR i = 1 TO UBOUND(Control)
                 IF Control(i).ControlIsSelected THEN
-                    IF Control(i).Type <> SearchType THEN
-                        AllControlsTurnInto = False
-                        EXIT FOR
+                    IF SearchType = __UI_Type_TextBox THEN
+                        IF Control(i).NumericOnly <> Control(__UI_FirstSelectedID).NumericOnly THEN
+                            AllControlsTurnInto = False
+                            EXIT FOR
+                        END IF
+                    ELSE
+                        IF Control(i).Type <> SearchType THEN
+                            AllControlsTurnInto = False
+                            EXIT FOR
+                        END IF
                     END IF
                 END IF
             NEXT
             SearchType = __UI_Type(SearchType).TurnsInto
+            IF SearchType = 0 AND Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
+                IF Control(__UI_FirstSelectedID).NumericOnly = False THEN
+                    SearchType = -1
+                ELSE
+                    SearchType = -2
+                END IF
+            END IF
             IF NOT AllControlsTurnInto THEN SearchType = 0
             IF prevTurnsInto <> SearchType THEN
                 prevTurnsInto = SearchType
@@ -711,9 +733,9 @@ SUB __UI_BeforeUpdateDisplay
                                     _FONT Control(i).Font
                                     SELECT CASE Control(i).Type
                                         CASE __UI_Type_Label
-                                            IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6: AutoSizeLabel Control(i)
+                                            IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize): AutoSizeLabel Control(i)
                                         CASE __UI_Type_TextBox
-                                            IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6
+                                            IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
                                         CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
                                             Control(i).Height = uspacing + 6
                                     END SELECT
@@ -1214,6 +1236,12 @@ SUB __UI_BeforeUpdateDisplay
                     FOR j = 1 TO TotalLockedControls
                         IF Control(LockedControls(j)).Type <> __UI_Type_Frame THEN
                             Control(LockedControls(j)).BorderSize = TempValue
+                            IF Control(LockedControls(j)).Type = __UI_Type_TextBox THEN
+                                tempFont = _FONT
+                                _FONT Control(LockedControls(j)).Font
+                                IF Control(LockedControls(j)).Multiline = False THEN Control(LockedControls(j)).Height = uspacing + 6 + (ABS(Control(LockedControls(j)).HasBorder) * Control(LockedControls(j)).BorderSize)
+                                _FONT tempFont
+                            END IF
                         END IF
                     NEXT
                 ELSEIF __UI_TotalSelectedControls > 0 THEN
@@ -1221,6 +1249,12 @@ SUB __UI_BeforeUpdateDisplay
                         IF Control(i).ControlIsSelected THEN
                             IF Control(i).Type <> __UI_Type_Frame THEN
                                 Control(i).BorderSize = TempValue
+                                IF Control(i).Type = __UI_Type_TextBox THEN
+                                    tempFont = _FONT
+                                    _FONT Control(i).Font
+                                    IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
+                                _FONT tempFont
+                                END IF
                             END IF
                         END IF
                     NEXT
@@ -1271,7 +1305,7 @@ SUB __UI_BeforeUpdateDisplay
                 TempValue = __UI_NewControl(__UI_Type_TextBox, "", 120, 23, TempWidth \ 2 - 60, TempTop - 12, ThisContainer)
                 Control(TempValue).Name = "Numeric" + Control(TempValue).Name
                 SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                Control(TempValue).NumericOnly = True
+                Control(TempValue).NumericOnly = __UI_NumericWithBounds
                 Control(TempValue).Min = -32768
                 Control(TempValue).Max = 32767
 
@@ -1749,6 +1783,27 @@ SUB ConvertControlToAlternativeType
     DIM NewType AS INTEGER
 
     NewType = __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto
+    IF NewType = 0 AND Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ControlIsSelected THEN
+                IF Control(i).NumericOnly = False THEN
+                    Control(i).NumericOnly = __UI_NumericWithBounds
+                    IF Control(i).Min = 0 AND Control(i).Max = 0 THEN
+                        Control(i).Min = -32768
+                        Control(i).Max = 32767
+                    END IF
+                ELSE
+                    Control(i).NumericOnly = False
+                    IF Control(i).Min = -32768 AND Control(i).Max = 32767 THEN
+                        Control(i).Min = 0
+                        Control(i).Max = 0
+                    END IF
+                END IF
+            END IF
+        NEXT
+        __UI_ForceRedraw = True
+        EXIT SUB
+    END IF
 
     FOR i = 1 TO UBOUND(Control)
         IF Control(i).ControlIsSelected THEN
