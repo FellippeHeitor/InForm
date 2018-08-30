@@ -146,6 +146,9 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuBar", 96, 18, 0, 4, __UI_GetID("InsertMenu"))
     SetCaption __UI_NewID, "Menu &Bar"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuContextMenu", 96, 18, 0, 4, __UI_GetID("InsertMenu"))
+    SetCaption __UI_NewID, "&Context Menu-"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuItem", 101, 18, 0, 22, __UI_GetID("InsertMenu"))
     SetCaption __UI_NewID, "Menu &Item"
     Control(__UI_NewID).Disabled = True
@@ -721,6 +724,7 @@ SUB __UI_AssignIDs
     ViewMenuPreview = __UI_GetID("ViewMenuPreview")
     ViewMenuLoadedFonts = __UI_GetID("ViewMenuLoadedFonts")
     InsertMenuMenuBar = __UI_GetID("InsertMenuMenuBar")
+    InsertMenuContextMenu = __UI_GetID("InsertMenuContextMenu")
     InsertMenuMenuItem = __UI_GetID("InsertMenuMenuItem")
     OptionsMenuSnapLines = __UI_GetID("OptionsMenuSnapLines")
     AlignMenuAlignLeft = __UI_GetID("AlignMenuAlignLeft")

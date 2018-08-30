@@ -34,7 +34,8 @@ DIM SHARED ViewMenuPreviewDetach AS LONG
 DIM SHARED ViewMenuShowPositionAndSize AS LONG
 DIM SHARED ViewMenuPreview AS LONG, ViewMenuLoadedFonts AS LONG
 
-DIM SHARED InsertMenuMenuBar AS LONG, InsertMenuMenuItem AS LONG
+DIM SHARED InsertMenuMenuBar AS LONG, InsertMenuContextMenu AS LONG
+DIM SHARED InsertMenuMenuItem AS LONG
 
 DIM SHARED OptionsMenuSnapLines AS LONG
 DIM SHARED AlignMenuAlignLeft AS LONG
@@ -315,6 +316,9 @@ SUB __UI_Click (id AS LONG)
             Send Client, b$
         CASE InsertMenuMenuItem
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuItem) + "<END>"
+            Send Client, b$
+        CASE InsertMenuContextMenu
+            b$ = "NEWCONTROL>" + MKI$(__UI_Type_ContextMenu) + "<END>"
             Send Client, b$
         CASE ViewMenuPreviewDetach
             PreviewAttached = NOT PreviewAttached

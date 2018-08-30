@@ -218,72 +218,72 @@ DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
 
 'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
-__UI_Type(1).Name = "Form"
+__UI_Type(__UI_Type_Form).Name = "Form"
 
-__UI_Type(2).Name = "Frame"
-__UI_Type(2).DefaultWidth = 230
-__UI_Type(2).DefaultHeight = 150
+__UI_Type(__UI_Type_Frame).Name = "Frame"
+__UI_Type(__UI_Type_Frame).DefaultWidth = 230
+__UI_Type(__UI_Type_Frame).DefaultHeight = 150
 
-__UI_Type(3).Name = "Button"
-__UI_Type(3).DefaultWidth = 80
-__UI_Type(3).DefaultHeight = 23
+__UI_Type(__UI_Type_Button).Name = "Button"
+__UI_Type(__UI_Type_Button).DefaultWidth = 80
+__UI_Type(__UI_Type_Button).DefaultHeight = 23
 
-__UI_Type(4).Name = "Label"
-__UI_Type(4).DefaultWidth = 150
-__UI_Type(4).DefaultHeight = 23
+__UI_Type(__UI_Type_Label).Name = "Label"
+__UI_Type(__UI_Type_Label).DefaultWidth = 150
+__UI_Type(__UI_Type_Label).DefaultHeight = 23
 
-__UI_Type(5).Name = "CheckBox"
-__UI_Type(5).DefaultWidth = 150
-__UI_Type(5).DefaultHeight = 23
-__UI_Type(5).TurnsInto = __UI_Type_ToggleSwitch
+__UI_Type(__UI_Type_CheckBox).Name = "CheckBox"
+__UI_Type(__UI_Type_CheckBox).DefaultWidth = 150
+__UI_Type(__UI_Type_CheckBox).DefaultHeight = 23
+__UI_Type(__UI_Type_CheckBox).TurnsInto = __UI_Type_ToggleSwitch
 
-__UI_Type(6).Name = "RadioButton"
-__UI_Type(6).DefaultWidth = 150
-__UI_Type(6).DefaultHeight = 23
+__UI_Type(__UI_Type_RadioButton).Name = "RadioButton"
+__UI_Type(__UI_Type_RadioButton).DefaultWidth = 150
+__UI_Type(__UI_Type_RadioButton).DefaultHeight = 23
 
-__UI_Type(7).Name = "TextBox"
-__UI_Type(7).DefaultWidth = 120
-__UI_Type(7).DefaultHeight = 23
+__UI_Type(__UI_Type_TextBox).Name = "TextBox"
+__UI_Type(__UI_Type_TextBox).DefaultWidth = 120
+__UI_Type(__UI_Type_TextBox).DefaultHeight = 23
 
-__UI_Type(8).Name = "ProgressBar"
-__UI_Type(8).DefaultWidth = 300
-__UI_Type(8).DefaultHeight = 23
+__UI_Type(__UI_Type_ProgressBar).Name = "ProgressBar"
+__UI_Type(__UI_Type_ProgressBar).DefaultWidth = 300
+__UI_Type(__UI_Type_ProgressBar).DefaultHeight = 23
 
-__UI_Type(9).Name = "ListBox"
-__UI_Type(9).DefaultWidth = 200
-__UI_Type(9).DefaultHeight = 200
-__UI_Type(9).TurnsInto = __UI_Type_DropdownList
+__UI_Type(__UI_Type_ListBox).Name = "ListBox"
+__UI_Type(__UI_Type_ListBox).DefaultWidth = 200
+__UI_Type(__UI_Type_ListBox).DefaultHeight = 200
+__UI_Type(__UI_Type_ListBox).TurnsInto = __UI_Type_DropdownList
 
-__UI_Type(10).Name = "DropdownList"
-__UI_Type(10).DefaultWidth = 200
-__UI_Type(10).DefaultHeight = 23
-__UI_Type(10).TurnsInto = __UI_Type_ListBox
+__UI_Type(__UI_Type_DropdownList).Name = "DropdownList"
+__UI_Type(__UI_Type_DropdownList).DefaultWidth = 200
+__UI_Type(__UI_Type_DropdownList).DefaultHeight = 23
+__UI_Type(__UI_Type_DropdownList).TurnsInto = __UI_Type_ListBox
 
-__UI_Type(11).Name = "MenuBar"
-__UI_Type(11).TurnsInto = __UI_Type_ContextMenu
+__UI_Type(__UI_Type_MenuBar).Name = "MenuBar"
+__UI_Type(__UI_Type_MenuBar).TurnsInto = __UI_Type_ContextMenu
 
-__UI_Type(12).Name = "MenuItem"
+__UI_Type(__UI_Type_MenuItem).Name = "MenuItem"
 
-__UI_Type(13).Name = "MenuPanel"
+__UI_Type(__UI_Type_MenuPanel).Name = "MenuPanel"
 
-__UI_Type(14).Name = "PictureBox"
-__UI_Type(14).DefaultWidth = 230
-__UI_Type(14).DefaultHeight = 150
+__UI_Type(__UI_Type_PictureBox).Name = "PictureBox"
+__UI_Type(__UI_Type_PictureBox).DefaultWidth = 230
+__UI_Type(__UI_Type_PictureBox).DefaultHeight = 150
 
-__UI_Type(15).Name = "TrackBar"
-__UI_Type(15).DefaultWidth = 300
-__UI_Type(15).DefaultHeight = 45
-__UI_Type(15).RestrictResize = __UI_CantResizeV
+__UI_Type(__UI_Type_TrackBar).Name = "TrackBar"
+__UI_Type(__UI_Type_TrackBar).DefaultWidth = 300
+__UI_Type(__UI_Type_TrackBar).DefaultHeight = 45
+__UI_Type(__UI_Type_TrackBar).RestrictResize = __UI_CantResizeV
 
-__UI_Type(16).Name = "ContextMenuPanel"
-__UI_Type(16).TurnsInto = __UI_Type_MenuBar
+__UI_Type(__UI_Type_ContextMenu).Name = "ContextMenuPanel"
+__UI_Type(__UI_Type_ContextMenu).TurnsInto = __UI_Type_MenuBar
 
-__UI_Type(17).Name = "Font"
+__UI_Type(__UI_Type_Font).Name = "Font"
 
-__UI_Type(18).Name = "ToggleSwitch"
-__UI_Type(18).DefaultWidth = 40
-__UI_Type(18).DefaultHeight = 17
-__UI_Type(18).TurnsInto = __UI_Type_CheckBox
+__UI_Type(__UI_Type_ToggleSwitch).Name = "ToggleSwitch"
+__UI_Type(__UI_Type_ToggleSwitch).DefaultWidth = 40
+__UI_Type(__UI_Type_ToggleSwitch).DefaultHeight = 17
+__UI_Type(__UI_Type_ToggleSwitch).TurnsInto = __UI_Type_CheckBox
 '--------------------------------------------------------------
 
 CONST True = -1, False = 0
@@ -980,9 +980,9 @@ SUB __UI_UpdateDisplay
     END IF
 
     'Control drawing
-    DIM icount AS LONG
-    FOR icount = 1 TO UBOUND(ControlDrawOrder)
-        i = ControlDrawOrder(icount)
+    DIM iCount AS LONG, ctxMenuCount AS LONG
+    FOR iCount = 1 TO UBOUND(ControlDrawOrder)
+        i = ControlDrawOrder(iCount)
         IF Control(i).ID > 0 AND NOT Control(i).Hidden THEN
             'Direct the drawing to the appropriate canvas (main or container)
             IF Control(i).ParentID > 0 AND Control(i).Type <> __UI_Type_MenuItem THEN
@@ -1066,6 +1066,14 @@ SUB __UI_UpdateDisplay
                     IF __UI_StateHasChanged THEN __UI_ValueChanged i
                 CASE __UI_Type_MenuBar
                     __UI_DrawMenuBar Control(i), ControlState
+                CASE __UI_Type_ContextMenu
+                    IF __UI_DesignMode = True AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                        ctxMenuCount = ctxMenuCount + 1
+                        Control(i).Top = Control(__UI_FormID).Height - Control(i).Height - __UI_SnapDistanceFromForm
+                        Control(i).Left = __UI_SnapDistanceFromForm + ((ctxMenuCount - 1) * Control(i).Width)
+                        Control(i).Left = Control(i).Left + ((ctxMenuCount - 1) * __UI_SnapDistance)
+                        __UI_DrawContextMenuHandle Control(i), ControlState
+                    END IF
                 CASE __UI_Type_PictureBox
                     __UI_DrawPictureBox Control(i), ControlState
                 CASE __UI_Type_ToggleSwitch

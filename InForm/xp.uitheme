@@ -1652,6 +1652,61 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
+SUB __UI_DrawContextMenuHandle (This AS __UI_ControlTYPE, ControlState AS _BYTE)
+    DIM PrevDest AS LONG
+    DIM i AS LONG
+
+    IF This.Redraw OR This.ControlState <> ControlState OR __UI_ForceRedraw THEN
+        'Last time this control was drawn it had a different state/caption, so it'll be redrawn
+        This.Redraw = False
+        This.ControlState = ControlState
+
+        IF This.Canvas <> 0 THEN
+            _FREEIMAGE This.Canvas
+        END IF
+
+        This.Width = 48
+        This.Height = 48
+
+        This.Canvas = _NEWIMAGE(This.Width, This.Height, 32)
+
+        PrevDest = _DEST
+        _DEST This.Canvas
+        _FONT This.Font
+        '------
+        SELECT CASE This.ControlState
+        '1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled;
+            CASE 1
+                COLOR This.SelectedBackColor, This.SelectedForeColor
+            CASE 2
+                COLOR This.SelectedForeColor, This.SelectedBackColor
+        END SELECT
+
+        CLS
+
+        DIM m$, c$, x AS INTEGER, y AS INTEGER
+        m$ = RTRIM$(This.Name)
+        x = 2: y = 2
+        FOR i = 1 TO LEN(m$)
+            c$ = MID$(m$, i, 1)
+            __UI_PrintString x, y, c$
+            x = x + __UI_PrintWidth(c$)
+            IF x >= _WIDTH - __UI_PrintWidth(c$) THEN x = 2: y = y + uspacing
+            IF y > _HEIGHT THEN EXIT FOR
+        NEXT
+
+        i = 0
+        LINE (i, i)-STEP(This.Width - 1 - i * 2, This.Height - 1 - i * 2), This.BorderColor, B
+        '------
+
+        __UI_MakeHardwareImageFromCanvas This
+        _DEST PrevDest
+    END IF
+
+    IF This.Canvas THEN _PUTIMAGE (This.Left, This.Top), This.Canvas
+END SUB
+
+'---------------------------------------------------------------------------------
 SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, TheX AS INTEGER, TheY AS INTEGER
     DIM CaptionIndent AS INTEGER, TempCaption$, i AS LONG
