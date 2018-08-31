@@ -1391,7 +1391,7 @@ SUB __UI_UpdateDisplay
             DIM FindLF AS LONG, TotalLines AS INTEGER, LongestLine AS INTEGER, TempLine$
             _FONT Control(__UI_FormID).Font
 
-            TempCaption$ = __UI_WordWrap(ToolTip(__UI_ActiveTipID), Control(__UI_FormID).Width / 2, LongestLine, TotalLines)
+            TempCaption$ = __UI_WordWrap(Replace(ToolTip(__UI_ActiveTipID), "\n", CHR$(10), False, 0), Control(__UI_FormID).Width / 2, LongestLine, TotalLines)
 
             PanelWidth = LongestLine + 16
             IF TotalLines = 1 THEN
