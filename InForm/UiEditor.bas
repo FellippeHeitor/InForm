@@ -1802,6 +1802,15 @@ SUB __UI_BeforeUpdateDisplay
                             Control(InputBox(i).ID).Disabled = True
                     END SELECT
                 NEXT
+            CASE __UI_Type_ContextMenu
+                FOR i = 1 TO UBOUND(InputBox)
+                    SELECT CASE InputBox(i).ID
+                        CASE NameTB
+                            Control(InputBox(i).ID).Disabled = False
+                        CASE ELSE
+                            Control(InputBox(i).ID).Disabled = True
+                    END SELECT
+                NEXT
             CASE __UI_Type_MenuItem
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
@@ -3483,7 +3492,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     CASE __UI_Type_MenuItem: a$ = a$ + "__UI_Type_MenuItem, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                     CASE __UI_Type_PictureBox: a$ = a$ + "__UI_Type_PictureBox, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                     CASE __UI_Type_TrackBar: a$ = a$ + "__UI_Type_TrackBar, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
+                    CASE __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
                     CASE __UI_Type_ToggleSwitch: a$ = a$ + "__UI_Type_ToggleSwitch, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                 END SELECT
                 a$ = a$ + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ","
@@ -3497,6 +3506,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     a$ = a$ + " 0)"
                 END IF
                 PRINT #TextFileNum, a$
+
+                IF PreviewControls(i).Type = __UI_Type_ContextMenu THEN PRINT #TextFileNum,: _CONTINUE
 
                 IF PreviewDefaultButtonID = i THEN
                     PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_NewID"
@@ -3681,7 +3692,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     PRINT #TextFileNum,
     PRINT #TextFileNum, "SUB __UI_AssignIDs"
     FOR i = 1 TO UBOUND(PreviewControls)
-        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_ContextMenu THEN
+        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
             PRINT #TextFileNum, "    " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " = __UI_GetID(" + CHR$(34) + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + ")"
         END IF
     NEXT
@@ -3706,7 +3717,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             PRINT #TextFileNum, "': ---------------------------------------------------------------------------------"
         END IF
         FOR i = 1 TO UBOUND(PreviewControls)
-            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_ContextMenu THEN
+            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
                 PRINT #TextFileNum, "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
             END IF
         NEXT

@@ -8,6 +8,7 @@ DIM SHARED IsCreating AS _BYTE
 DIM SHARED Host AS LONG, HostPort AS STRING
 DIM SHARED Stream$, RestoreCrashData$
 DIM SHARED LastPreviewDataSent$
+DIM SHARED ContextMenuIcon AS LONG
 REDIM SHARED LockedControls(0) AS LONG, TotalLockedControls AS LONG
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
@@ -43,6 +44,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 '   223 = Switch .NumericOnly between True/__UI_NumericWithBounds
 '   224 = Add new MenuBar control
 '   225 = Convert control type to alternative type
+'   226 = Add new ContextMenu control
 
 'SavePreview parameters:
 CONST InDisk = 1
@@ -77,6 +79,10 @@ $ELSE
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
 $END IF
+
+'Load context menu icon image:
+ContextMenuIcon = LoadEditorImage("contextmenu.bmp")
+__UI_ClearColor ContextMenuIcon, 0, 0
 
 '$include:'InForm.ui'
 '$include:'xp.uitheme'
@@ -258,9 +264,15 @@ SUB __UI_BeforeUpdateDisplay
                     SELECT CASE tempType
                         CASE __UI_Type_ProgressBar
                             SetCaption TempValue, "\#"
+                        CASE __UI_Type_ContextMenu
+                            Control(TempValue).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
+                            Control(TempValue).Width = 22
+                            Control(TempValue).Height = 22
+                            RefreshContextMenus
+                            __UI_ActivateMenu Control(TempValue), False
                     END SELECT
 
-                    IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
+                    IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_ContextMenu AND Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
                         __UI_DestroyControl Control(__UI_ActiveMenu)
                     END IF
                     SelectNewControl TempValue
@@ -1253,7 +1265,7 @@ SUB __UI_BeforeUpdateDisplay
                                     tempFont = _FONT
                                     _FONT Control(i).Font
                                     IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
-                                _FONT tempFont
+                                    _FONT tempFont
                                 END IF
                             END IF
                         END IF
@@ -1495,11 +1507,17 @@ SUB __UI_KeyPress (id AS LONG)
         CASE 223
             AlternateNumericOnlyProperty
         CASE 224
-            DIM TempID AS LONG
-            TempID = AddNewMenuBarControl
-            SelectNewControl TempID
+            DIM TempValue AS LONG
+            TempValue = AddNewMenuBarControl
+            SelectNewControl TempValue
         CASE 225
             ConvertControlToAlternativeType
+        CASE 226 'Add new ContextMenu control
+            TempValue = __UI_NewControl(__UI_Type_ContextMenu, "", 22, 22, 0, 0, 0)
+            Control(TempValue).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
+            RefreshContextMenus
+            __UI_ActivateMenu Control(TempValue), False
+            SelectNewControl TempValue
     END SELECT
 END SUB
 
@@ -1866,9 +1884,13 @@ SUB DeleteSelectedControls
     FOR i = UBOUND(Control) TO 1 STEP -1
         IF Control(i).Type = __UI_Type_Form THEN _CONTINUE
         IF Control(i).ControlIsSelected THEN
-            IF Control(i).Type = __UI_Type_MenuBar THEN
-                DIM MustRefreshMenuBar AS _BYTE
-                MustRefreshMenuBar = True
+            IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_ContextMenu THEN
+                DIM MustRefreshMenuBar AS _BYTE, MustRefreshContextMenus AS _BYTE
+                IF Control(i).Type = __UI_Type_MenuBar THEN
+                    MustRefreshMenuBar = True
+                ELSE
+                    MustRefreshContextMenus = True
+                END IF
                 FOR j = 1 TO UBOUND(Control)
                     IF Control(j).ParentID = i THEN
                         __UI_DestroyControl Control(j)
@@ -1880,6 +1902,7 @@ SUB DeleteSelectedControls
             END IF
             __UI_DestroyControl Control(i)
             IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
+            IF MustRefreshContextMenus THEN RefreshContextMenus
             __UI_ForceRedraw = True
             __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
             didDelete = True
@@ -1888,6 +1911,20 @@ SUB DeleteSelectedControls
     IF didDelete THEN
         IF __UI_TotalSelectedControls > 0 THEN __UI_TotalSelectedControls = 0
     END IF
+END SUB
+
+SUB RefreshContextMenus
+    DIM i AS LONG
+    DIM ctxMenuCount AS LONG
+
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).Type = __UI_Type_ContextMenu AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+            ctxMenuCount = ctxMenuCount + 1
+            Control(i).Left = __UI_SnapDistanceFromForm + ((ctxMenuCount - 1) * Control(i).Width)
+            Control(i).Left = Control(i).Left + ((ctxMenuCount - 1) * __UI_SnapDistance)
+            Control(i).Top = Control(__UI_FormID).Height - Control(i).Height - __UI_SnapDistanceFromForm
+        END IF
+    NEXT
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
@@ -2195,6 +2232,11 @@ SUB LoadPreview (Destination AS _BYTE)
         IF NewType = __UI_Type_PictureBox THEN
             Control(TempValue).HasBorder = False
             Control(TempValue).Stretch = False
+        ELSEIF NewType = __UI_Type_ContextMenu THEN
+            Control(TempValue).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
+            Control(TempValue).Width = 22
+            Control(TempValue).Height = 22
+            RefreshContextMenus
         END IF
 
         DO 'read properties
@@ -2495,6 +2537,11 @@ SUB LoadPreviewText
             IF NewType = __UI_Type_PictureBox THEN
                 Control(TempValue).HasBorder = False
                 Control(TempValue).Stretch = False
+            ELSEIF NewType = __UI_Type_ContextMenu THEN
+                Control(TempValue).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
+                Control(TempValue).Width = 22
+                Control(TempValue).Height = 22
+                RefreshContextMenus
             END IF
             IF NewType = __UI_Type_Label THEN Control(TempValue).VAlign = __UI_Top
 
@@ -3392,3 +3439,59 @@ SUB LoadDefaultFonts
         Control(__UI_FormID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12)
     END IF
 END SUB
+
+FUNCTION EditorImageData$ (FileName$)
+    DIM A$
+
+    SELECT CASE LCASE$(FileName$)
+        CASE "contextmenu.bmp"
+            A$ = MKI$(16) + MKI$(16)
+            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
+            A$ = A$ + "okXMWm_UVJjoFNj[oKiYWn?XXnjoGR:ZoS9Z`n?VYVjoQVJ\oSIZYnOVZ6ko"
+            A$ = A$ + "IZZZoo?0oooo0looo3`ooo?0oooQ^meo0000oK_mfo_mfKoogOomoOomgo?n"
+            A$ = A$ + "hSooiWOnoWOnioOniWooj[_noWYZanoo0looo3`ooo?0oooo0loo>JgIoGOm"
+            A$ = A$ + "eo?000`o>o[]o3:RgmoSgQfo827HoSGH8m?L@1doiWOno[_njoOVZZjoo3`o"
+            A$ = A$ + "oo?0oooo0looo3`ooOXKOmOmeGoofK_mo3000lomgOoogOomoS?nhoOniWoo"
+            A$ = A$ + "iWOnoWOnio_nj[ooIZJ\oo?0oooo0looo3`ooo?0oo_SfMfoeGOmoK_mfo_m"
+            A$ = A$ + "fKoo0000o3l[Xn?R`QeohQ5Bo37D0mOniWooj[_noWYZZnoo0looo3`ooo?0"
+            A$ = A$ + "oooo0loo7jfGoGOmeo_mfKoofK_moOomgo?000`ohS?noWOnioOniWooiWOn"
+            A$ = A$ + "o[_njoOVZ6koo3`ooo?0oooo0looo3`ookXMWmOmeGoofK_moK_mfo?000`o"
+            A$ = A$ + "0000o3000lO\QRio`15@oWOnio_nj[ooIZZZoo?0oooo0looo3`ooo?0oooQ"
+            A$ = A$ + "^meo0000o3000l_mfKoo0000oolc?o?b8SloiWOnoWOnioOniWooj[_noWYZ"
+            A$ = A$ + "anoo0looo3`ooo?0oooo0loo>JgIok\c>o_c>klo7n6HoOomgo?000`oHR8P"
+            A$ = A$ + "oS7F8m?LH1doiWOno[_njoOVZZjoo3`ooo?0oooo0looo3`ooKgQ7nOmeGoo"
+            A$ = A$ + "fK_moohMPmomgOoo0000oS<b8oOniWooiWOnoWOnio_nj[ooIZJ\oo?0oooo"
+            A$ = A$ + "0looo3`ooo?0oo_UVjjoeGOmoK_mfo_coJko?N7Jo3000l?V@2hoh56Bo37D"
+            A$ = A$ + "0mOniWooj[_noWYZZnoo0looo3`ooo?0oooo0looFJZYoGOmeo_mfKoofK_m"
+            A$ = A$ + "oS<b8ooc?olo8S<boWOnioOniWooiWOno[_njoOVZ6koo3`ooo?0oooo0loo"
+            A$ = A$ + "o3`oooYY^n_UVJjoFNj[oKiYWn?XXnjoGR:ZoS9Z`n?VYVjoQVJ\oSIZYnOV"
+            A$ = A$ + "Z6koIZZZoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
+            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o%%o3"
+    END SELECT
+    EditorImageData$ = A$
+END FUNCTION
+
+FUNCTION LoadEditorImage& (FileName$)
+    DIM MemoryBlock AS _MEM, TempImage AS LONG, NextSlot AS LONG
+    DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
+
+    A$ = EditorImageData$(FileName$)
+    IF LEN(A$) = 0 THEN EXIT FUNCTION
+
+    NewWidth = CVI(LEFT$(A$, 2))
+    NewHeight = CVI(MID$(A$, 3, 2))
+    A$ = MID$(A$, 5)
+
+    BASFILE$ = Unpack$(A$)
+
+    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
+    MemoryBlock = _MEMIMAGE(TempImage)
+
+    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
+    _MEMFREE MemoryBlock
+
+    LoadEditorImage& = TempImage
+END FUNCTION
+

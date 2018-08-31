@@ -215,6 +215,7 @@ DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDista
 DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Offset AS INTEGER
 DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
 DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
+DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
 
 'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -275,8 +276,9 @@ __UI_Type(__UI_Type_TrackBar).DefaultWidth = 300
 __UI_Type(__UI_Type_TrackBar).DefaultHeight = 45
 __UI_Type(__UI_Type_TrackBar).RestrictResize = __UI_CantResizeV
 
-__UI_Type(__UI_Type_ContextMenu).Name = "ContextMenuPanel"
+__UI_Type(__UI_Type_ContextMenu).Name = "ContextMenu"
 __UI_Type(__UI_Type_ContextMenu).TurnsInto = __UI_Type_MenuBar
+__UI_Type(__UI_Type_ContextMenu).RestrictResize = __UI_CantResize
 
 __UI_Type(__UI_Type_Font).Name = "Font"
 
@@ -323,9 +325,12 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, M, N, O, P, R, S, T, V, X, Y, Z
+    'A, B, C, D, E, G, H, I, L, M, N, O, P, R, S, T, U, V, X, Y, Z
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNewMenuBar", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption __UI_GetID("__UI_PreviewMenuNewMenuBar"), "Add &menu bar control-"
+    SetCaption __UI_GetID("__UI_PreviewMenuNewMenuBar"), "New &MenuBar control"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNewContextMenu", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuNewContextMenu"), "New ContextMen&u control-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
@@ -785,19 +790,19 @@ SUB __UI_ProcessInput
             __UI_ResizeHandleHover = 0
             IF Control(__UI_HoveringID).ControlIsSelected AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem THEN
                 IF __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width - 8 AND __UI_MouseTop >= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 - 4 AND __UI_MouseTop <= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 + 4 THEN
-                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeH THEN
+                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                         __UI_ResizeHandleHover = 1 'Right
                     END IF
                 ELSEIF __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width / 2 - 4 AND __UI_MouseLeft <= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width / 2 + 4 AND __UI_MouseTop >= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 - 4 AND __UI_MouseTop >= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height - 8 THEN
-                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeV THEN
+                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                         __UI_ResizeHandleHover = 2 'Bottom
                     END IF
                 ELSEIF __UI_MouseLeft <= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + 8 AND __UI_MouseTop >= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 - 4 AND __UI_MouseTop <= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).Height / 2 + 4 THEN
-                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeH THEN
+                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                         __UI_ResizeHandleHover = 3 'Left
                     END IF
                 ELSEIF __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width / 2 - 4 AND __UI_MouseLeft <= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width / 2 + 4 AND __UI_MouseTop <= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + 8 THEN
-                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeV THEN
+                    IF __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                         __UI_ResizeHandleHover = 4 'Top
                     END IF
                 ELSEIF __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width - 8 AND __UI_MouseTop <= Control(__UI_HoveringID).Top + Control(Control(__UI_HoveringID).ParentID).Top + 8 THEN
@@ -1069,10 +1074,6 @@ SUB __UI_UpdateDisplay
                     __UI_DrawMenuBar Control(i), ControlState
                 CASE __UI_Type_ContextMenu
                     IF __UI_DesignMode = True AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
-                        ctxMenuCount = ctxMenuCount + 1
-                        Control(i).Top = Control(__UI_FormID).Height - Control(i).Height - __UI_SnapDistanceFromForm
-                        Control(i).Left = __UI_SnapDistanceFromForm + ((ctxMenuCount - 1) * Control(i).Width)
-                        Control(i).Left = Control(i).Left + ((ctxMenuCount - 1) * __UI_SnapDistance)
                         __UI_DrawContextMenuHandle Control(i), ControlState
                     END IF
                 CASE __UI_Type_PictureBox
@@ -1213,7 +1214,7 @@ SUB __UI_UpdateDisplay
             LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(i).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
 
             IF NOT __UI_IsDragging THEN
-                IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH THEN
+                IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResize THEN
                     'Right resize handle:
                     LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
                     LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
@@ -1223,7 +1224,7 @@ SUB __UI_UpdateDisplay
                     LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
                 END IF
 
-                IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV THEN
+                IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResize THEN
                     'Bottom resize handle:
                     LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(255, 255, 255), BF
                     LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width / 2 - 4, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height - 8)-STEP(7, 7), _RGB32(0, 0, 0), B
@@ -1319,7 +1320,7 @@ SUB __UI_UpdateDisplay
             i = __UI_FirstSelectedID
             IF Control(__UI_HoveringID).ControlIsSelected THEN i = __UI_HoveringID
 
-            IF Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
+            IF Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem THEN
                 OverlayisVisible = True
                 DIM SizeAndPosition1$, SizeAndPosition2$, pw&
                 DIM InfoLeft AS INTEGER, InfoTop AS INTEGER
@@ -1876,6 +1877,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
+                    Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = False
                 ELSEIF __UI_TotalSelectedControls = 1 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
@@ -1887,8 +1889,10 @@ SUB __UI_EventDispatcher
                         SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically"
                         SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally-"
                         Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
+                        Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
+                        Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
                     END IF
@@ -1951,6 +1955,7 @@ SUB __UI_EventDispatcher
                     END IF
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
@@ -1972,6 +1977,7 @@ SUB __UI_EventDispatcher
                     GOTO AddConvertMenu
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
@@ -2138,11 +2144,11 @@ SUB __UI_EventDispatcher
                             NEXT
                             __UI_TotalSelectedControls = 0
                             __UI_FirstSelectedID = 0
-                            IF Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
+                            IF Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
                                 Control(__UI_HoveringID).ControlIsSelected = True
                                 __UI_TotalSelectedControls = 1
                                 __UI_FirstSelectedID = __UI_HoveringID
-                                IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
+                                IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar OR Control(__UI_HoveringID).Type = __UI_Type_ContextMenu THEN
                                     __UI_ActivateMenu Control(__UI_HoveringID), False
                                     __UI_JustOpenedMenu = True
                                 END IF
@@ -2355,7 +2361,7 @@ SUB __UI_EventDispatcher
                                 EXIT FOR
                             END IF
                         NEXT
-                        IF Control(__UI_FirstSelectedID).Type = __UI_Type_MenuBar OR Control(__UI_FirstSelectedID).Type = __UI_Type_MenuItem THEN
+                        IF Control(__UI_FirstSelectedID).Type = __UI_Type_ContextMenu OR Control(__UI_FirstSelectedID).Type = __UI_Type_MenuBar OR Control(__UI_FirstSelectedID).Type = __UI_Type_MenuItem THEN
                             __UI_DraggingID = 0
                             __UI_IsDragging = False
                             __UI_MouseDownOnID = 0
@@ -2746,6 +2752,8 @@ SUB __UI_EventDispatcher
                                 __UI_KeyPress 224
                             CASE UCASE$("__UI_PreviewMenuConvertType")
                                 __UI_KeyPress 225
+                            CASE UCASE$("__UI_PreviewMenuNewContextMenu")
+                                __UI_KeyPress 226
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
@@ -3053,7 +3061,7 @@ SUB __UI_EventDispatcher
             IF Control(i).ControlIsSelected THEN
                 'Right
                 IF __UI_ResizeHandleHover = 1 THEN
-                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH THEN _CONTINUE
+                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                     IF __UI_ShiftIsDown THEN
                         Control(i).Width = Control(i).Width + (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                         IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left - (__UI_MouseLeft - __UI_DragX)
@@ -3063,7 +3071,7 @@ SUB __UI_EventDispatcher
                 END IF
                 'Bottom
                 IF __UI_ResizeHandleHover = 2 THEN
-                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV THEN _CONTINUE
+                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                     IF __UI_ShiftIsDown THEN
                         Control(i).Height = Control(i).Height + (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top - (__UI_MouseTop - __UI_DragY)
@@ -3073,7 +3081,7 @@ SUB __UI_EventDispatcher
                 END IF
                 'Left
                 IF __UI_ResizeHandleHover = 3 THEN
-                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH THEN _CONTINUE
+                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                     IF __UI_ShiftIsDown THEN
                         Control(i).Width = Control(i).Width - (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                         IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
@@ -3083,7 +3091,7 @@ SUB __UI_EventDispatcher
                 END IF
                 'Top
                 IF __UI_ResizeHandleHover = 4 THEN
-                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV THEN _CONTINUE
+                    IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                     IF __UI_ShiftIsDown THEN
                         Control(i).Height = Control(i).Height - (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
@@ -3096,12 +3104,12 @@ SUB __UI_EventDispatcher
                 'Top-right
                 IF __UI_ResizeHandleHover = 5 THEN
                     IF __UI_ShiftIsDown THEN
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Width = Control(i).Width + (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                             IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left - (__UI_MouseLeft - __UI_DragX)
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Height = Control(i).Height - (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
 
@@ -3111,11 +3119,11 @@ SUB __UI_EventDispatcher
                             Control(i).Top = OldAlignmentY - Control(i).Height / 2
                         END IF
                     ELSE
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
 
                         IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
@@ -3128,12 +3136,12 @@ SUB __UI_EventDispatcher
                 'Top-left
                 IF __UI_ResizeHandleHover = 6 THEN
                     IF __UI_ShiftIsDown THEN
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Width = Control(i).Width - (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                             IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Height = Control(i).Height - (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
 
@@ -3143,11 +3151,11 @@ SUB __UI_EventDispatcher
                             Control(i).Top = OldAlignmentY - Control(i).Height / 2
                         END IF
                     ELSE
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
 
                         IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
@@ -3160,12 +3168,12 @@ SUB __UI_EventDispatcher
                 'Bottom-right
                 IF __UI_ResizeHandleHover = 7 THEN
                     IF __UI_ShiftIsDown THEN
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Width = Control(i).Width + (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                             IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left - (__UI_MouseLeft - __UI_DragX)
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Height = Control(i).Height + (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top - (__UI_MouseTop - __UI_DragY)
 
@@ -3175,11 +3183,11 @@ SUB __UI_EventDispatcher
                             Control(i).Top = OldAlignmentY - Control(i).Height / 2
                         END IF
                     ELSE
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
 
                         IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
@@ -3190,12 +3198,12 @@ SUB __UI_EventDispatcher
                 'Bottom-left
                 IF __UI_ResizeHandleHover = 8 THEN
                     IF __UI_ShiftIsDown THEN
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Width = Control(i).Width - (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                             IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeV OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Height = Control(i).Height + (2 * (__UI_MouseTop - __UI_DragY)): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top - (__UI_MouseTop - __UI_DragY)
 
@@ -3205,11 +3213,11 @@ SUB __UI_EventDispatcher
                             Control(i).Top = OldAlignmentY - Control(i).Height / 2
                         END IF
                     ELSE
-                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV THEN
+                        IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeV AND __UI_Type(Control(__UI_HoveringID).Type).RestrictResize <> __UI_CantResize THEN
                             Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
                         END IF
 
-                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH THEN _CONTINUE
+                        IF __UI_Type(Control(i).Type).RestrictResize = __UI_CantResizeH OR __UI_Type(Control(__UI_HoveringID).Type).RestrictResize = __UI_CantResize THEN _CONTINUE
                         Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
 
                         IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
@@ -4446,9 +4454,12 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     'Give control a generic name, if none is provided
     IF ControlType = __UI_Type_MenuItem AND LEFT$(ControlName, 5) = "__UI_" THEN InternalMenus = InternalMenus + 1
+    IF ControlType = __UI_Type_ContextMenu AND LEFT$(ControlName, 5) = "__UI_" THEN __UI_InternalContextMenus = __UI_InternalContextMenus + 1
     IF ControlName = "" THEN
         IF ControlType = __UI_Type_MenuItem THEN
             ControlName = RTRIM$(__UI_Type(ControlType).Name) + LTRIM$(STR$(__UI_Type(ControlType).Count - InternalMenus))
+        ELSEIF ControlType = __UI_Type_ContextMenu THEN
+            ControlName = RTRIM$(__UI_Type(ControlType).Name) + LTRIM$(STR$(__UI_Type(ControlType).Count - __UI_InternalContextMenus))
         ELSE
             ControlName = RTRIM$(__UI_Type(ControlType).Name) + LTRIM$(STR$(__UI_Type(ControlType).Count))
         END IF
@@ -5579,8 +5590,13 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
             Control(__UI_ActiveMenu).Top = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
             __UI_ActiveMenuIsContextMenu = False
         ELSEIF This.Type = __UI_Type_ContextMenu THEN
-            Control(__UI_ActiveMenu).Left = __UI_MouseLeft
-            Control(__UI_ActiveMenu).Top = __UI_MouseTop
+            IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN
+                Control(__UI_ActiveMenu).Left = This.Left + This.Width
+                Control(__UI_ActiveMenu).Top = This.Top
+            ELSE
+                Control(__UI_ActiveMenu).Left = __UI_MouseLeft
+                Control(__UI_ActiveMenu).Top = __UI_MouseTop
+            END IF
             __UI_ActiveMenuIsContextMenu = True
         END IF
 
@@ -6287,5 +6303,6 @@ FUNCTION MsgBox_Continue%%: MsgBox_Continue%% = 11: END FUNCTION
 FUNCTION __UI_ToolTipTimeOut!: __UI_ToolTipTimeOut! = .8: END FUNCTION
 FUNCTION __UI_CantResizeV%%: __UI_CantResizeV%% = 1: END FUNCTION
 FUNCTION __UI_CantResizeH%%: __UI_CantResizeH%% = 2: END FUNCTION
+FUNCTION __UI_CantResize%%: __UI_CantResize%% = 3: END FUNCTION
 
 'VWATCH64:ON
