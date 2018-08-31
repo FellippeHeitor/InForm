@@ -32,6 +32,7 @@ DIM SHARED EditMenuAllowMinMax AS LONG, EditMenuZOrdering AS LONG
 
 DIM SHARED ViewMenuPreviewDetach AS LONG
 DIM SHARED ViewMenuShowPositionAndSize AS LONG
+DIM SHARED ViewMenuShowInvisibleControls AS LONG
 DIM SHARED ViewMenuPreview AS LONG, ViewMenuLoadedFonts AS LONG
 
 DIM SHARED InsertMenuMenuBar AS LONG, InsertMenuContextMenu AS LONG
@@ -639,6 +640,10 @@ SUB __UI_Click (id AS LONG)
             __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
+        CASE ViewMenuShowInvisibleControls
+            __UI_ShowInvisibleControls = NOT __UI_ShowInvisibleControls
+            Control(id).Value = __UI_ShowInvisibleControls
+            SaveSettings
         CASE FontSwitchMenuSwitch, FontLB, FontListLB
             ShowFontList = NOT ShowFontList
             IF id <> FontSwitchMenuSwitch THEN __UI_MouseEnter FontLB
@@ -713,6 +718,8 @@ SUB __UI_MouseEnter (id AS LONG)
             Caption(StatusBar) = "Toggles whether the preview form will be moved with the editor."
         CASE ViewMenuShowPositionAndSize
             Caption(StatusBar) = "Toggles whether size and position indicators will be shown in the preview."
+        CASE ViewMenuShowInvisibleControls
+            Caption(StatusBar) = "Toggles whether invisible controls (e.g. ContextMenus) will be shown in the preview."
         CASE ViewMenuPreview
             Caption(StatusBar) = "Launches the preview window in case it's been closed accidentaly."
         CASE ViewMenuLoadedFonts
@@ -1083,7 +1090,7 @@ SUB __UI_BeforeUpdateDisplay
 
     STATIC prevAutoName AS _BYTE, prevMouseSwap AS _BYTE
     STATIC prevShowPos AS _BYTE, prevSnapLines AS _BYTE
-    STATIC SignalsFirstSent AS _BYTE
+    STATIC prevShowInvisible AS _BYTE, SignalsFirstSent AS _BYTE
 
     IF prevAutoName <> AutoNameControls OR SignalsFirstSent = False THEN
         prevAutoName = AutoNameControls
@@ -1100,6 +1107,12 @@ SUB __UI_BeforeUpdateDisplay
     IF prevShowPos <> __UI_ShowPositionAndSize OR SignalsFirstSent = False THEN
         prevShowPos = __UI_ShowPositionAndSize
         b$ = "SHOWPOSSIZE>" + MKI$(__UI_ShowPositionAndSize) + "<END>"
+        Send Client, b$
+    END IF
+
+    IF prevShowInvisible <> __UI_ShowInvisibleControls OR SignalsFirstSent = False THEN
+        prevShowInvisible = __UI_ShowInvisibleControls
+        b$ = "SHOWINVISIBLECONTROLS>" + MKI$(__UI_ShowInvisibleControls) + "<END>"
         Send Client, b$
     END IF
 
@@ -1124,6 +1137,9 @@ SUB __UI_BeforeUpdateDisplay
                 FirstSelected = CVL(thisData$)
             CASE "DEFAULTBUTTONID"
                 PreviewDefaultButtonID = CVL(thisData$)
+            CASE "SHOWINVISIBLECONTROLS"
+                __UI_ShowInvisibleControls = CVI(thisData$)
+                Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
             CASE "ORIGINALIMAGEWIDTH"
                 OriginalImageWidth = CVI(thisData$)
             CASE "ORIGINALIMAGEHEIGHT"
@@ -2154,6 +2170,9 @@ SUB SaveSettings
     IF __UI_ShowPositionAndSize THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", value$
 
+    IF __UI_ShowInvisibleControls THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", value$
+
     IF CheckUpdates THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
 
@@ -2268,6 +2287,7 @@ SUB __UI_OnLoad
     AutoNameControls = True
     CheckUpdates = True
     __UI_ShowPositionAndSize = True
+    __UI_ShowInvisibleControls = True
     __UI_SnapLines = True
 
     DIM FileToOpen$, FreeFileNum AS INTEGER
@@ -2310,6 +2330,14 @@ SUB __UI_OnLoad
         __UI_ShowPositionAndSize = True
     END IF
 
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show invisible controls")
+    IF LEN(value$) THEN
+        __UI_ShowInvisibleControls = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", "True"
+        __UI_ShowInvisibleControls = True
+    END IF
+
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Check for updates")
     IF LEN(value$) THEN
         CheckUpdates = (value$ = "True")
@@ -2348,6 +2376,7 @@ SUB __UI_OnLoad
     Control(OptionsMenuCheckUpdates).Value = CheckUpdates
     Control(OptionsMenuSnapLines).Value = __UI_SnapLines
     Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
+    Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
 
     IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
 
@@ -4404,4 +4433,3 @@ FUNCTION SpecialCharsToEscapeCode$ (Text$)
     NEXT
     SpecialCharsToEscapeCode$ = Temp$ + CHR$(34)
 END FUNCTION
-
