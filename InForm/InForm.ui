@@ -207,7 +207,7 @@ DIM SHARED __UI_LastRenderedLineWidth AS LONG, __UI_LastRenderedCharCount AS LON
 DIM SHARED __UI_SelectionRectangleTop AS INTEGER, __UI_SelectionRectangleLeft AS INTEGER
 DIM SHARED __UI_SelectionRectangle AS _BYTE
 DIM SHARED __UI_CantShowContextMenu AS _BYTE, __UI_ShowPositionAndSize AS _BYTE
-DIM SHARED __UI_Snapped AS _BYTE
+DIM SHARED __UI_ShowInvisibleControls AS _BYTE, __UI_Snapped AS _BYTE
 DIM SHARED __UI_SnappedByProximityX AS _BYTE, __UI_SnappedByProximityY AS _BYTE
 DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
 DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
@@ -325,12 +325,16 @@ SUB __UI_InternalMenus
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
     'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, M, N, O, P, R, S, T, U, V, X, Y, Z
+    'A, B, C, D, E, G, H, I, L, M, N, O, P, R, S, T, U, V, W, X, Y, Z
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNewMenuBar", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuNewMenuBar"), "New &MenuBar control"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNewContextMenu", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuNewContextMenu"), "New ContextMen&u control-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuShowInvisibleControls", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuShowInvisibleControls"), "Sho&w invisible controls-"
+    ToolTip(__UI_NewID) = "Toogles the display of invisible items (e.g. ContextMenu controls)"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
@@ -1073,7 +1077,7 @@ SUB __UI_UpdateDisplay
                 CASE __UI_Type_MenuBar
                     __UI_DrawMenuBar Control(i), ControlState
                 CASE __UI_Type_ContextMenu
-                    IF __UI_DesignMode = True AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                    IF __UI_DesignMode = True AND __UI_ShowInvisibleControls = True AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
                         __UI_DrawContextMenuHandle Control(i), ControlState
                     END IF
                 CASE __UI_Type_PictureBox
@@ -1858,6 +1862,7 @@ SUB __UI_EventDispatcher
                 RightClickSelect = True
                 GOSUB DesignModeClickToSelect
                 RightClickSelect = False
+                Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Value = __UI_ShowInvisibleControls
                 IF __UI_TotalSelectedControls = 0 THEN
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
@@ -1875,6 +1880,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = False
@@ -1883,7 +1889,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).Hidden = True
-                    IF Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
+                    IF Control(__UI_FirstSelectedID).Type <> __UI_Type_ContextMenu AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = False
                         SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterV"), "Center &Vertically"
@@ -1893,6 +1899,7 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = False
+                        Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterV")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuAlignCenterH")).Hidden = True
                     END IF
@@ -1956,6 +1963,7 @@ SUB __UI_EventDispatcher
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
@@ -1978,6 +1986,7 @@ SUB __UI_EventDispatcher
                 ELSE
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignRight")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuAlignTops")).Hidden = False
@@ -2750,6 +2759,8 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE UCASE$("__UI_PreviewMenuNewMenuBar")
                                 __UI_KeyPress 224
+                            CASE UCASE$("__UI_PreviewMenuShowInvisibleControls")
+                                __UI_KeyPress 227
                             CASE UCASE$("__UI_PreviewMenuConvertType")
                                 __UI_KeyPress 225
                             CASE UCASE$("__UI_PreviewMenuNewContextMenu")
