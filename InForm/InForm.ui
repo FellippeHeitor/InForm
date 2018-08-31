@@ -5592,7 +5592,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         ELSEIF This.Type = __UI_Type_ContextMenu THEN
             IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN
                 Control(__UI_ActiveMenu).Left = This.Left + This.Width
-                Control(__UI_ActiveMenu).Top = This.Top
+                Control(__UI_ActiveMenu).Top = Control(__UI_FormID).Height
             ELSE
                 Control(__UI_ActiveMenu).Left = __UI_MouseLeft
                 Control(__UI_ActiveMenu).Top = __UI_MouseTop
@@ -5641,6 +5641,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
         IF Control(__UI_ActiveMenu).Top + Control(__UI_ActiveMenu).Height > Control(__UI_FormID).Height THEN
             Control(__UI_ActiveMenu).Top = Control(__UI_FormID).Height - Control(__UI_ActiveMenu).Height - 5
+            IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN Control(__UI_ActiveMenu).Top = Control(__UI_ActiveMenu).Top - This.Height
         END IF
 
         IF SelectFirstItem AND NOT __UI_DesignMode AND TotalItems > 0 THEN
