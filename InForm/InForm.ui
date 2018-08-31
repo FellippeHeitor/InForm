@@ -1842,6 +1842,7 @@ SUB __UI_EventDispatcher
         'Second mouse button is first pressed
         IF __UI_Mouse2IsDown = False THEN
             __UI_Mouse2IsDown = True
+            __UI_DidClick = True
             __UI_Mouse2DownOnID = __UI_HoveringID
         ELSE
             'Second mouse button is still pressed
@@ -1852,7 +1853,6 @@ SUB __UI_EventDispatcher
             __UI_Mouse2IsDown = False
             __UI_Mouse2DownOnID = 0
             'Click (second mouse button)
-            __UI_DidClick = True
             IF __UI_DesignMode THEN
                 DIM RightClickSelect AS _BYTE
                 RightClickSelect = True
@@ -2078,6 +2078,7 @@ SUB __UI_EventDispatcher
     IF __UI_MouseButton1 THEN
         'Mouse button is first pressed
         IF __UI_MouseIsDown = False THEN
+            __UI_DidClick = True
             __UI_MouseDownTop = __UI_MouseTop
             __UI_MouseDownLeft = __UI_MouseLeft
             IF __UI_DesignMode THEN
@@ -2576,7 +2577,6 @@ SUB __UI_EventDispatcher
             END IF
 
             'Click
-            __UI_DidClick = True
             IF NOT __UI_DesignMode AND __UI_MouseDownOnID = __UI_HoveringID AND __UI_HoveringID > 0 THEN
                 IF NOT Control(__UI_HoveringID).Disabled THEN
                     SELECT CASE Control(__UI_HoveringID).Type
