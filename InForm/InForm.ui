@@ -667,9 +667,10 @@ SUB __UI_ProcessInput
     END IF
 
     'Hover detection
-    IF __UI_PrevMouseLeft <> __UI_MouseLeft OR __UI_PrevMouseTop <> __UI_MouseTop THEN
+    IF __UI_PrevMouseLeft <> __UI_MouseLeft OR __UI_PrevMouseTop <> __UI_MouseTop OR __UI_DidClick THEN
         __UI_PrevMouseLeft = __UI_MouseLeft
         __UI_PrevMouseTop = __UI_MouseTop
+        __UI_DidClick = False
         DIM TempHover AS LONG
         __UI_BelowHoveringID = 0
         FOR i = 1 TO UBOUND(Control)
@@ -1850,6 +1851,7 @@ SUB __UI_EventDispatcher
             __UI_Mouse2IsDown = False
             __UI_Mouse2DownOnID = 0
             'Click (second mouse button)
+            __UI_DidClick = True
             IF __UI_DesignMode THEN
                 DIM RightClickSelect AS _BYTE
                 RightClickSelect = True
@@ -2568,6 +2570,7 @@ SUB __UI_EventDispatcher
             END IF
 
             'Click
+            __UI_DidClick = True
             IF NOT __UI_DesignMode AND __UI_MouseDownOnID = __UI_HoveringID AND __UI_HoveringID > 0 THEN
                 IF NOT Control(__UI_HoveringID).Disabled THEN
                     SELECT CASE Control(__UI_HoveringID).Type
