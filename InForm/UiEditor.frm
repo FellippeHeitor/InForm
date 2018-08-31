@@ -6,11 +6,11 @@ SUB __UI_LoadForm
 
     DIM __UI_NewID AS LONG
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 578, 0, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 601, 0, 0, 0)
     SetCaption __UI_NewID, UiEditorTitle$
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf?/usr/share/fonts/TTF/arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "StatusBar", 600, 23, 0, 555, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "StatusBar", 600, 23, 0, 578, 0)
     SetCaption __UI_NewID, "Ready."
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).VAlign = __UI_Middle
@@ -42,24 +42,24 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 12
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ColorMixer", 579, 175, 10, 371, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ColorMixer", 579, 175, 10, 394, 0)
     SetCaption __UI_NewID, "Color mixer"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 8
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "OpenFrame", 563, 497, -600, -600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "OpenFrame", 563, 520, -600, -600, 0)
     SetCaption __UI_NewID, "Open"
     Control(__UI_NewID).HasBorder = True
     
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ZOrdering", 563, 497, -600, -600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ZOrdering", 563, 520, -600, -600, 0)
     SetCaption __UI_NewID, "Z-Ordering"
     Control(__UI_NewID).HasBorder = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlProperties", 366, 263, 10, 93, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlProperties", 366, 286, 10, 93, 0)
     SetCaption __UI_NewID, "Control properties: Main form"
     Control(__UI_NewID).HasBorder = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlToggles", 208, 263, 381, 93, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "ControlToggles", 208, 286, 381, 93, 0)
     SetCaption __UI_NewID, "Control toggles"
     Control(__UI_NewID).HasBorder = True
 
@@ -135,6 +135,10 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuShowPositionAndSize", 253, 18, 0, 22, __UI_GetID("ViewMenu"))
     SetCaption __UI_NewID, "&Show position and size on the preview"
+    Control(__UI_NewID).Value = -1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuShowInvisibleControls", 253, 18, 0, 22, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "&Show invisible controls on the preview"
     Control(__UI_NewID).Value = -1
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreview", 168, 18, 0, 40, __UI_GetID("ViewMenu"))
@@ -609,7 +613,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Min = 0
     Control(__UI_NewID).Max = 255
 
-    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "DialogBG", 600, 555, -600, -600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "DialogBG", 600, 578, -600, -600, 0)
     Control(__UI_NewID).Stretch = True
     Control(__UI_NewID).Align = __UI_Center
     Control(__UI_NewID).VAlign = __UI_Middle
@@ -721,6 +725,7 @@ SUB __UI_AssignIDs
     EditMenuZOrdering = __UI_GetID("EditMenuZOrdering")
     ViewMenuPreviewDetach = __UI_GetID("ViewMenuPreviewDetach")
     ViewMenuShowPositionAndSize = __UI_GetID("ViewMenuShowPositionAndSize")
+    ViewMenuShowInvisibleControls = __UI_GetID("ViewMenuShowInvisibleControls")
     ViewMenuPreview = __UI_GetID("ViewMenuPreview")
     ViewMenuLoadedFonts = __UI_GetID("ViewMenuLoadedFonts")
     InsertMenuMenuBar = __UI_GetID("InsertMenuMenuBar")
