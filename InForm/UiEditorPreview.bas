@@ -45,6 +45,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 '   224 = Add new MenuBar control
 '   225 = Convert control type to alternative type
 '   226 = Add new ContextMenu control
+'   227 = Toggle __UI_ShowInvisibleControls
 
 'SavePreview parameters:
 CONST InDisk = 1
@@ -154,12 +155,18 @@ SUB __UI_BeforeUpdateDisplay
 
     STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
     STATIC prevSelectionRectangle AS INTEGER, prevUndoPointer AS INTEGER
-    STATIC prevTotalUndoImages AS INTEGER
+    STATIC prevTotalUndoImages AS INTEGER, prevShowInvisibleControls AS _BYTE
 
     IF __UI_DefaultButtonID <> prevDefaultButton THEN
         prevDefaultButton = __UI_DefaultButtonID
         b$ = MKL$(__UI_DefaultButtonID)
         SendData b$, "DEFAULTBUTTONID"
+    END IF
+
+    IF prevShowInvisibleControls <> __UI_ShowInvisibleControls THEN
+        prevShowInvisibleControls = __UI_ShowInvisibleControls
+        b$ = MKI$(__UI_ShowInvisibleControls)
+        SendData b$, "SHOWINVISIBLECONTROLS"
     END IF
 
     IF prevMenuPanelActive <> (__UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_") THEN
@@ -229,6 +236,8 @@ SUB __UI_BeforeUpdateDisplay
                 __UI_MouseButtonsSwap = CVI(thisData$)
             CASE "SHOWPOSSIZE"
                 __UI_ShowPositionAndSize = CVI(thisData$)
+            CASE "SHOWINVISIBLECONTROLS"
+                __UI_ShowInvisibleControls = CVI(thisData$)
             CASE "SNAPLINES"
                 __UI_SnapLines = CVI(thisData$)
             CASE "SIGNAL"
@@ -1518,6 +1527,8 @@ SUB __UI_KeyPress (id AS LONG)
             RefreshContextMenus
             __UI_ActivateMenu Control(TempValue), False
             SelectNewControl TempValue
+        CASE 227 'Toggle __UI_ShowInvisibleControls
+            __UI_ShowInvisibleControls = NOT __UI_ShowInvisibleControls
     END SELECT
 END SUB
 
@@ -3494,4 +3505,3 @@ FUNCTION LoadEditorImage& (FileName$)
 
     LoadEditorImage& = TempImage
 END FUNCTION
-
