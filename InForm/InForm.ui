@@ -684,6 +684,7 @@ SUB __UI_ProcessInput
         __UI_BelowHoveringID = 0
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ID AND Control(i).Type <> __UI_Type_MenuItem AND ((Control(i).Hidden = False AND __UI_DesignMode = False) OR (__UI_DesignMode = True)) THEN
+                IF Control(i).Type = __UI_Type_ContextMenu AND __UI_DesignMode AND __UI_ShowInvisibleControls = False THEN _CONTINUE
                 Control(i).HoveringVScrollbarButton = 0
                 IF Control(i).ParentID > 0 THEN
                     ContainerOffsetTop = Control(Control(i).ParentID).Top
@@ -1896,6 +1897,7 @@ SUB __UI_EventDispatcher
                         SetCaption __UI_GetID("__UI_PreviewMenuAlignCenterH"), "Center &Horizontally-"
                         Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                         Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
+                        Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = True
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
                         Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = False
@@ -2155,13 +2157,15 @@ SUB __UI_EventDispatcher
                             __UI_TotalSelectedControls = 0
                             __UI_FirstSelectedID = 0
                             IF Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
+                                IF Control(__UI_HoveringID).Type = __UI_Type_ContextMenu AND __UI_ShowInvisibleControls = False THEN GOTO SkipInvisibleControl
                                 Control(__UI_HoveringID).ControlIsSelected = True
                                 __UI_TotalSelectedControls = 1
                                 __UI_FirstSelectedID = __UI_HoveringID
-                                IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar OR Control(__UI_HoveringID).Type = __UI_Type_ContextMenu THEN
+                                IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar OR (Control(__UI_HoveringID).Type = __UI_Type_ContextMenu AND __UI_ShowInvisibleControls) THEN
                                     __UI_ActivateMenu Control(__UI_HoveringID), False
                                     __UI_JustOpenedMenu = True
                                 END IF
+                                SkipInvisibleControl:
                             END IF
                         ELSE
                             IF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame AND (TIMER - __UI_LastMouseDownEvent < .5 AND (__UI_MouseTop = __UI_MouseDownTop AND __UI_MouseLeft = __UI_MouseDownLeft)) THEN
