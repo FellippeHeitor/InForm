@@ -5268,6 +5268,29 @@ SUB ReplaceItem (WhichListBox AS LONG, ItemToReplace AS INTEGER, NewText$)
 END SUB
 
 '---------------------------------------------------------------------------------
+FUNCTION SelectItem%% (id AS LONG, __Item$)
+    'Locates first item in ListBox 'id' that matches Item$;
+    'Sets .Value; returns True when found;
+    DIM b$, Item$, i AS LONG
+
+    IF Control(id).Type <> __UI_Type_ListBox AND Control(id).Type <> __UI_Type_DropdownList THEN
+        EXIT FUNCTION
+    END IF
+
+    Item$ = RTRIM$(LTRIM$(__Item$))
+    IF LEN(Item$) = 0 THEN EXIT FUNCTION
+
+    FOR i = 1 TO Control(id).Max
+        b$ = GetItem$(id, i)
+        IF b$ = Item$ THEN
+            Control(id).Value = i
+            SelectItem%% = True
+            EXIT FUNCTION
+        END IF
+    NEXT
+END FUNCTION
+
+'---------------------------------------------------------------------------------
 FUNCTION GetItem$ (id AS LONG, Item AS LONG)
     DIM This AS __UI_ControlTYPE, ThisItem AS LONG, FindLF AS LONG, LastLF AS LONG
 
