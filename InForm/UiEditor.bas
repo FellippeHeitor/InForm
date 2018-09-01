@@ -2019,8 +2019,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(FontList).Disabled = True
     END IF
 
-    IF Control(ContextMenuControlsList).Max = 0 OR _
-       PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR _
+    IF PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR _
        PreviewControls(FirstSelected).Type = __UI_Type_MenuBar OR _
         PreviewControls(FirstSelected).Type = __UI_Type_MenuItem THEN
         Control(ContextMenuControlsList).Disabled = True
