@@ -216,6 +216,7 @@ DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Off
 DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
 DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
 DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
+DIM SHARED __UI_ContextMenuSourceID AS LONG
 
 'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -262,8 +263,10 @@ __UI_Type(__UI_Type_DropdownList).TurnsInto = __UI_Type_ListBox
 
 __UI_Type(__UI_Type_MenuBar).Name = "MenuBar"
 __UI_Type(__UI_Type_MenuBar).TurnsInto = __UI_Type_ContextMenu
+__UI_Type(__UI_Type_MenuBar).RestrictResize = __UI_CantResizeV
 
 __UI_Type(__UI_Type_MenuItem).Name = "MenuItem"
+__UI_Type(__UI_Type_MenuItem).RestrictResize = __UI_CantResizeV
 
 __UI_Type(__UI_Type_MenuPanel).Name = "MenuPanel"
 
@@ -1218,6 +1221,21 @@ SUB __UI_UpdateDisplay
             'Dotted outline:
             LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(i).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
 
+            'IF __UI_DesignMode AND __UI_ShowInvisibleControls AND _
+            '   (Control(i).Type = __UI_Type_ContextMenu OR _
+            '   (Control(__UI_ParentMenu).Type = __UI_Type_ContextMenu AND _
+            '   Control(i).Type = __UI_Type_MenuItem)) THEN
+            '    'Visually connect this control to all
+            '    'controls bound to it:
+            '    DIM j AS LONG
+            '    FOR j = 1 TO UBOUND(Control)
+            '        IF Control(j).ContextMenuID = i OR Control(j).ContextMenuID = __UI_ParentMenu THEN
+            '            LINE(Control(j).Left + Control(Control(j).ParentID).Left - 5, Control(j).Top + Control(Control(j).ParentID).Top - 5)-(Control(j).Left + Control(Control(j).ParentID).Left + Control(j).Width + 5, Control(j).Top + Control(Control(j).ParentID).Top + Control(j).Height + 5), _RGBA32(0, 177, 255, 150), BF
+            '            LINE(Control(j).Left + Control(Control(j).ParentID).Left - 5, Control(j).Top + Control(Control(j).ParentID).Top - 5)-(Control(j).Left + Control(Control(j).ParentID).Left + Control(j).Width + 5, Control(j).Top + Control(Control(j).ParentID).Top + Control(j).Height + 5), _RGB32(39, 188, 244), B
+            '        END IF
+            '    NEXT
+            'END IF
+
             IF NOT __UI_IsDragging THEN
                 IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResize THEN
                     'Right resize handle:
@@ -2081,6 +2099,7 @@ SUB __UI_EventDispatcher
                         Control(__UI_GetID("__UI_TextMenuPaste")).Disabled = True
                     END IF
                 END IF
+                __UI_ContextMenuSourceID = __UI_HoveringID
                 __UI_ActivateMenu Control(Control(__UI_HoveringID).ContextMenuID), False
             END IF
         END IF
