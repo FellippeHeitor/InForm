@@ -1280,6 +1280,25 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 END IF
+            CASE 41 'ContextMenuID
+                b$ = ReadSequential$(Property$, 2)
+                b$ = ReadSequential$(Property$, CVI(b$))
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = LockedControls(j)
+                        Control(i).ContextMenuID = __UI_GetID(b$)
+                    NEXT
+                ELSE
+                    IF __UI_TotalSelectedControls > 0 THEN
+                        FOR i = 1 TO UBOUND(Control)
+                            IF Control(i).ControlIsSelected THEN
+                                Control(i).ContextMenuID = __UI_GetID(b$)
+                            END IF
+                        NEXT
+                    ELSE
+                        Control(__UI_FormID).ContextMenuID = __UI_GetID(b$)
+                    END IF
+                END IF
             CASE 201 TO 210
                 'Alignment commands
                 b$ = ReadSequential$(Property$, 2)
@@ -2655,6 +2674,7 @@ SUB LoadPreviewText
                         CASE "CenteredWindow"
                             Control(TempValue).CenteredWindow = (DummyText$ = "True")
                         CASE "ContextMenuID"
+                            Control(TempValue).ContextMenuID = __UI_GetID(nextParameter(DummyText$))
                         CASE "Interval"
                             Control(TempValue).Interval = VAL(DummyText$)
                         CASE "MinInterval"
@@ -3505,3 +3525,4 @@ FUNCTION LoadEditorImage& (FileName$)
 
     LoadEditorImage& = TempImage
 END FUNCTION
+

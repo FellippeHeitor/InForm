@@ -113,7 +113,8 @@ DIM SHARED MaskTB AS LONG, MaskLB AS LONG
 DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
 DIM SHARED BooleanLB AS LONG, BooleanOptions AS LONG
 DIM SHARED FontListLB AS LONG, FontList AS LONG, FontSizeList
-DIM SHARED PasteListBT AS LONG
+DIM SHARED PasteListBT AS LONG, ContextMenuLB AS LONG
+DIM SHARED ContextMenuControlsList AS LONG
 '------------------------------------------------------------------------------
 
 'Other shared variables:
@@ -153,6 +154,7 @@ REDIM SHARED PreviewFonts(0) AS STRING
 REDIM SHARED PreviewActualFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
+REDIM SHARED PreviewContextMenu(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED Toggles(1 TO 100) AS LONG
@@ -1768,6 +1770,12 @@ SUB __UI_BeforeUpdateDisplay
     Control(Resizable).Value = PreviewControls(FirstSelected).CanResize
     Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
     Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
+    IF LEN(PreviewContextMenu(FirstSelected)) THEN
+        DIM ItemFound AS _BYTE
+        ItemFound = SelectItem(ContextMenuControlsList, PreviewContextMenu(FirstSelected))
+    ELSE
+        Control(ContextMenuControlsList).Value = 0
+    END IF
 
     'Disable properties that don't apply
     Control(AlignOptions).Disabled = True
@@ -2009,6 +2017,15 @@ SUB __UI_BeforeUpdateDisplay
         Control(FontTB).Disabled = True
     ELSE
         Control(FontList).Disabled = True
+    END IF
+
+    IF Control(ContextMenuControlsList).Max = 0 OR _
+       PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR _
+       PreviewControls(FirstSelected).Type = __UI_Type_MenuBar OR _
+        PreviewControls(FirstSelected).Type = __UI_Type_MenuItem THEN
+        Control(ContextMenuControlsList).Disabled = True
+    ELSE
+        Control(ContextMenuControlsList).Disabled = False
     END IF
 
     DIM LastTopForInputBox AS INTEGER
@@ -2519,6 +2536,7 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
     i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
     i = i + 1: InputBox(i).ID = SizeTB: InputBox(i).Signal = 40: InputBox(i).DataType = DT_Integer
+    i = i + 1: InputBox(i).ID = ContextMenuControlsList: InputBox(i).LabelID = ContextMenuLB: InputBox(i).DataType = DT_Text
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
     REDIM InputBoxText(1 TO i) AS STRING
 
@@ -2801,7 +2819,7 @@ END SUB
 SUB __UI_ValueChanged (id AS LONG)
     IF __UI_StateHasChanged THEN EXIT SUB 'skip values changed programmatically
 
-    DIM b$
+    DIM b$, i AS LONG
     SELECT EVERYCASE id
         CASE AlignOptions
             IF __UI_Focus <> id THEN EXIT SUB
@@ -2822,6 +2840,13 @@ SUB __UI_ValueChanged (id AS LONG)
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
             PropertySent = True
+        CASE ContextMenuControlsList
+            i = Control(ContextMenuControlsList).Value
+            IF i > 0 THEN
+                b$ = GetItem(ContextMenuControlsList, i)
+                b$ = MKI$(LEN(b$)) + b$
+                SendData b$, 41
+            END IF
         CASE FontList, FontSizeList
             b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
             b$ = MKL$(LEN(b$)) + b$
@@ -3125,6 +3150,9 @@ SUB LoadPreview
     REDIM PreviewActualFonts(1 TO CVL(b$)) AS STRING
     REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
+    REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
+
+    ResetList ContextMenuControlsList
 
     b$ = ReadSequential$(FormData$, 2)
     IF CVI(b$) <> -1 THEN GOTO LoadError
@@ -3150,6 +3178,10 @@ SUB LoadPreview
             NewParentID = ReadSequential$(FormData$, CVI(b$))
         ELSE
             NewParentID = ""
+        END IF
+
+        IF NewType = __UI_Type_ContextMenu THEN
+            AddItem ContextMenuControlsList, NewName
         END IF
 
         PreviewControls(Dummy).ID = Dummy
@@ -3229,6 +3261,10 @@ SUB LoadPreview
                     b$ = ReadSequential$(FormData$, 4)
                     b$ = ReadSequential$(FormData$, CVL(b$))
                     PreviewTips(Dummy) = b$
+                CASE -25 'ContextMenu
+                    b$ = ReadSequential$(FormData$, 2)
+                    b$ = ReadSequential$(FormData$, CVI(b$))
+                    PreviewContextMenu(Dummy) = b$
                 CASE -26
                     b$ = ReadSequential$(FormData$, LEN(FloatValue))
                     PreviewControls(Dummy).Interval = _CV(_FLOAT, b$)
@@ -3670,8 +3706,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF PreviewControls(i).CenteredWindow THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = True"
                 END IF
-                IF PreviewControls(i).ContextMenuID THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + RTRIM$(PreviewControls(PreviewControls(i).ContextMenuID).Name) + CHR$(34) + ")"
+                IF LEN(PreviewContextMenu(i)) THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + PreviewContextMenu(i) + CHR$(34) + ")"
                 END IF
                 IF PreviewControls(i).Interval THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))

@@ -496,6 +496,15 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Value = 1
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "ContextMenuLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Context menu"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ContextMenuControlsList", 230, 23, 129, 362, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 12, 12, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Stretch"
     Control(__UI_NewID).CanHaveFocus = True
@@ -845,4 +854,6 @@ SUB __UI_AssignIDs
     EditMenuConvertType = __UI_GetID("EditMenuConvertType")
     AutoSize = __UI_GetID("AutoSize")
     SizeTB = __UI_GetID("SizeTB")
+    ContextMenuLB = __UI_GetID("ContextMenuLB")
+    ContextMenuControlsList = __UI_GetID("ContextMenuControlsList")
 END SUB
