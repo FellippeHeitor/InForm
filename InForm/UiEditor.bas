@@ -1774,7 +1774,7 @@ SUB __UI_BeforeUpdateDisplay
         DIM ItemFound AS _BYTE
         ItemFound = SelectItem(ContextMenuControlsList, PreviewContextMenu(FirstSelected))
     ELSE
-        Control(ContextMenuControlsList).Value = 0
+        Control(ContextMenuControlsList).Value = 1
     END IF
 
     'Disable properties that don't apply
@@ -2842,11 +2842,13 @@ SUB __UI_ValueChanged (id AS LONG)
             PropertySent = True
         CASE ContextMenuControlsList
             i = Control(ContextMenuControlsList).Value
-            IF i > 0 THEN
+            IF i > 1 THEN
                 b$ = GetItem(ContextMenuControlsList, i)
                 b$ = MKI$(LEN(b$)) + b$
-                SendData b$, 41
+            ELSE
+                b$ = MKI$(0)
             END IF
+            SendData b$, 41
         CASE FontList, FontSizeList
             b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
             b$ = MKL$(LEN(b$)) + b$
@@ -3153,6 +3155,7 @@ SUB LoadPreview
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
 
     ResetList ContextMenuControlsList
+    AddItem ContextMenuControlsList, "(none)"
 
     b$ = ReadSequential$(FormData$, 2)
     IF CVI(b$) <> -1 THEN GOTO LoadError
