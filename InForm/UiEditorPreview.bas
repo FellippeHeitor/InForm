@@ -257,6 +257,14 @@ SUB __UI_BeforeUpdateDisplay
                     tempType = TempValue
                     SaveUndoImage
 
+                    'Enforce no frame inside frame:
+                    IF tempType = __UI_Type_Frame THEN
+                        ThisContainer = 0
+                        TempWidth = Control(__UI_FormID).Width
+                        TempHeight = Control(__UI_FormID).Height
+                        TempTop = (TempHeight - __UI_MenuBarOffsetV) \ 2 + __UI_MenuBarOffsetV
+                    END IF
+
                     IF tempType = __UI_Type_MenuBar THEN
                         TempValue = AddNewMenuBarControl
                     ELSEIF tempType = __UI_Type_MenuItem THEN

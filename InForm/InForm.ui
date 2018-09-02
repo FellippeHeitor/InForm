@@ -955,6 +955,7 @@ SUB __UI_UpdateDisplay
     'Clear frames canvases and count its children;
     FOR i = 1 TO UBOUND(Control)
         IF Control(i).Type = __UI_Type_Frame THEN
+            Control(i).ParentID = 0 'Enforce no frames inside frames
             Control(i).Value = 0 'Reset children counter
             IF _WIDTH(Control(i).Canvas) <> Control(i).Width OR _HEIGHT(Control(i).Canvas) <> Control(i).Height THEN
                 _FREEIMAGE Control(i).Canvas
