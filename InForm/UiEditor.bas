@@ -74,6 +74,7 @@ DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
 DIM SHARED Resizable AS LONG, AutoScroll AS LONG
 DIM SHARED AutoSize AS LONG, SizeTB AS LONG
+DIM SHARED HideTicks AS LONG
 
 'Open dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -395,6 +396,9 @@ SUB __UI_Click (id AS LONG)
         CASE AutoSize
             b$ = MKI$(Control(id).Value)
             SendData b$, 39
+        CASE HideTicks
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 42
         CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
@@ -1770,6 +1774,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(Resizable).Value = PreviewControls(FirstSelected).CanResize
     Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
     Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
+    Control(HideTicks).Value = (PreviewControls(FirstSelected).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight)
     IF LEN(PreviewContextMenu(FirstSelected)) THEN
         DIM ItemFound AS _BYTE
         ItemFound = SelectItem(ContextMenuControlsList, PreviewContextMenu(FirstSelected))
@@ -1957,6 +1962,7 @@ SUB __UI_BeforeUpdateDisplay
                     END SELECT
                 NEXT
             CASE __UI_Type_TrackBar
+                Control(HideTicks).Disabled = False
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
                         CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList
@@ -2554,6 +2560,7 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = Resizable
     i = i + 1: Toggles(i) = AutoScroll
     i = i + 1: Toggles(i) = AutoSize
+    i = i + 1: Toggles(i) = HideTicks
     REDIM _PRESERVE Toggles(1 TO i) AS LONG
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."

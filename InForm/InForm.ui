@@ -127,7 +127,9 @@ TYPE __UI_Types
     Count AS LONG
     TurnsInto AS INTEGER
     DefaultHeight AS INTEGER
+    MinimumHeight AS INTEGER
     DefaultWidth AS INTEGER
+    MinimumWidth AS INTEGER
     RestrictResize AS _BYTE
 END TYPE
 
@@ -276,7 +278,8 @@ __UI_Type(__UI_Type_PictureBox).DefaultHeight = 150
 
 __UI_Type(__UI_Type_TrackBar).Name = "TrackBar"
 __UI_Type(__UI_Type_TrackBar).DefaultWidth = 300
-__UI_Type(__UI_Type_TrackBar).DefaultHeight = 45
+__UI_Type(__UI_Type_TrackBar).DefaultHeight = 40
+__UI_Type(__UI_Type_TrackBar).MinimumHeight = 30
 __UI_Type(__UI_Type_TrackBar).RestrictResize = __UI_CantResizeV
 
 __UI_Type(__UI_Type_ContextMenu).Name = "ContextMenu"
@@ -4628,7 +4631,6 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     IF ControlType = __UI_Type_TrackBar THEN
         Control(NextSlot).Max = 10
         Control(NextSlot).Interval = 1
-        Control(NextSlot).Height = 40
     END IF
 
     IF ControlType = __UI_Type_Form THEN

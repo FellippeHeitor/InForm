@@ -1307,6 +1307,27 @@ SUB __UI_BeforeUpdateDisplay
                         Control(__UI_FormID).ContextMenuID = __UI_GetID(b$)
                     END IF
                 END IF
+            CASE 42 'HideTicks
+                b$ = ReadSequential$(Property$, 2)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        IF CVI(b$) THEN
+                            Control(LockedControls(j)).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight
+                        ELSE
+                            Control(LockedControls(j)).Height = __UI_Type(__UI_Type_TrackBar).DefaultHeight
+                        END IF
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            IF CVI(b$) THEN
+                                Control(i).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight
+                            ELSE
+                                Control(i).Height = __UI_Type(__UI_Type_TrackBar).DefaultHeight
+                            END IF
+                        END IF
+                    NEXT
+                END IF
             CASE 201 TO 210
                 'Alignment commands
                 b$ = ReadSequential$(Property$, 2)

@@ -566,6 +566,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Auto-scroll"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "HideTicks", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Hide ticks"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))
     AddItem __UI_NewID, "ForeColor"
     AddItem __UI_NewID, "BackColor"
@@ -856,4 +860,5 @@ SUB __UI_AssignIDs
     SizeTB = __UI_GetID("SizeTB")
     ContextMenuLB = __UI_GetID("ContextMenuLB")
     ContextMenuControlsList = __UI_GetID("ContextMenuControlsList")
+    HideTicks = __UI_GetID("HideTicks")
 END SUB
