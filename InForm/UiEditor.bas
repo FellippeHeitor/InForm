@@ -3545,7 +3545,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     'First pass is for the main form and containers (frames and menubars).
     'Second pass is for the rest of controls.
     'Controls named __UI_+anything are ignored, as they are automatically created.
-    DIM ThisPass AS _BYTE
+    DIM ThisPass AS _BYTE, AddContextMenuToForm AS STRING
     FOR ThisPass = 1 TO 2
         FOR i = 1 TO UBOUND(PreviewControls)
             IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(PreviewControls(i).Name)) > 0 THEN
@@ -3581,7 +3581,15 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 PRINT #TextFileNum, a$
 
-                IF PreviewControls(i).Type = __UI_Type_ContextMenu THEN PRINT #TextFileNum,: _CONTINUE
+                IF PreviewControls(i).Type = __UI_Type_ContextMenu THEN
+                    PRINT #TextFileNum,
+                    IF LEN(AddContextMenuToForm) > 0 AND RTRIM$(PreviewControls(i).Name) = AddContextMenuToForm THEN
+                        PRINT #TextFileNum, "    Control(__UI_FormID).ContextMenuID = __UI_GetID(" + CHR$(34) + AddContextMenuToForm + CHR$(34) + ")"
+                        PRINT #TextFileNum,
+                        AddContextMenuToForm = ""
+                    END IF
+                    _CONTINUE
+                END IF
 
                 IF PreviewDefaultButtonID = i THEN
                     PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_NewID"
@@ -3716,7 +3724,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = True"
                 END IF
                 IF LEN(PreviewContextMenu(i)) THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + PreviewContextMenu(i) + CHR$(34) + ")"
+                    IF PreviewControls(i).Type = __UI_Type_Form THEN
+                        AddContextMenuToForm = PreviewContextMenu(i)
+                    ELSE
+                        PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + PreviewContextMenu(i) + CHR$(34) + ")"
+                    END IF
                 END IF
                 IF PreviewControls(i).Interval THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
