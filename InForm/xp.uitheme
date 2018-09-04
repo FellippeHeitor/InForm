@@ -1014,8 +1014,10 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
 
         IF LEN(Text(This.ID)) THEN
             DIM TempText$, FindLF&, ThisItem%, ThisItemTop%
-            DIM LastVisibleItem AS INTEGER
+            DIM ItemHeight AS INTEGER, LastVisibleItem AS INTEGER
 
+            ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+            This.ItemHeight = ItemHeight
             TempText$ = __UI_TrimAt0$(Text(This.ID))
             ThisItem% = 0
             DO WHILE LEN(TempText$)
@@ -1029,8 +1031,8 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                     TempText$ = ""
                 END IF
                 IF ThisItem% >= This.InputViewStart THEN
-                    ThisItemTop% = ((ThisItem% - This.InputViewStart + 1) * uspacing& - uspacing&) + CaptionIndent
-                    IF ThisItemTop% + uspacing& > This.Height THEN EXIT DO
+                    ThisItemTop% = ((ThisItem% - This.InputViewStart + 1) * ItemHeight - ItemHeight) + CaptionIndent
+                    IF ThisItemTop% + ItemHeight > This.Height THEN EXIT DO
                     LastVisibleItem = LastVisibleItem + 1
 
                     IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
@@ -1044,19 +1046,19 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                     IF ThisItem% = This.Value THEN
                         IF __UI_Focus = This.ID THEN
                             COLOR This.SelectedForeColor, This.SelectedBackColor
-                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, uspacing&), This.SelectedBackColor, BF
+                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, ItemHeight), This.SelectedBackColor, BF
                         ELSE
-                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, uspacing&), _RGBA32(0, 0, 0, 50), BF
+                            LINE (CaptionIndent, ThisItemTop% - 1)-STEP(This.Width - CaptionIndent * 2, ItemHeight), _RGBA32(0, 0, 0, 50), BF
                         END IF
                     END IF
 
                     SELECT CASE This.Align
                         CASE __UI_Left
-                            __UI_PrintString CaptionIndent * 2, ThisItemTop%, TempCaption$
+                            __UI_PrintString CaptionIndent * 2, ThisItemTop% + ((ItemHeight - uspacing&) / 2), TempCaption$
                         CASE __UI_Center
-                            __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$
+                            __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop% + ((ItemHeight - uspacing&) / 2), TempCaption$
                         CASE __UI_Right
-                            __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
+                            __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop% + ((ItemHeight - uspacing&) / 2), TempCaption$
                     END SELECT
                 END IF
             LOOP

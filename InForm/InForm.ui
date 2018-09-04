@@ -81,6 +81,7 @@ TYPE __UI_ControlTYPE
     InputViewStart AS LONG
     PreviousInputViewStart AS LONG
     LastVisibleItem AS INTEGER
+    ItemHeight AS INTEGER
     HasVScrollbar AS _BYTE
     VScrollbarButton2Top AS INTEGER
     HoveringVScrollbarButton AS _BYTE
@@ -1677,7 +1678,7 @@ SUB __UI_EventDispatcher
             'Dropdown list items are preselected when hovered
             LastMouseTop = __UI_MouseTop
             IF Control(__UI_HoveringID).Font > 0 THEN _FONT Control(__UI_HoveringID).Font
-            ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ uspacing&) + Control(__UI_HoveringID).InputViewStart
+            ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top) - (ABS(Control(__UI_HoveringID).HasBorder) * __UI_DefaultCaptionIndent)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
             IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
                 Control(__UI_HoveringID).Value = ThisItem%
                 IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN
@@ -2678,7 +2679,7 @@ SUB __UI_EventDispatcher
                                 END IF
                             ELSE
                                 _FONT Control(__UI_HoveringID).Font
-                                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ uspacing&) + Control(__UI_HoveringID).InputViewStart
+                                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
                                 IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
                                     Control(__UI_HoveringID).Value = ThisItem%
                                 ELSE
@@ -3674,7 +3675,7 @@ SUB __UI_EventDispatcher
                             END IF
                     END SELECT
                 CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                    DIM ThisItemTop%, CaptionIndent AS INTEGER
+                    DIM CaptionIndent AS INTEGER
                     IF NOT Control(__UI_Focus).Disabled AND Control(__UI_Focus).Max > 0 THEN
                         _FONT (Control(__UI_Focus).Font)
                         SELECT EVERYCASE __UI_KeyHit
@@ -5204,8 +5205,8 @@ SUB AddItem (WhichListBox AS LONG, TempItem$)
         BorderOffset = ABS(Control(ThisID).HasBorder) * 5
 
         _FONT Control(ThisID).Font
-        IF Control(ThisID).Max > FIX((Control(ThisID).Height - BorderOffset) \ uspacing) THEN
-            Control(ThisID).InputViewStart = Control(ThisID).Max - FIX((Control(ThisID).Height - BorderOffset) \ uspacing) + 1
+        IF Control(ThisID).Max > FIX((Control(ThisID).Height - BorderOffset) \ Control(ThisID).ItemHeight) THEN
+            Control(ThisID).InputViewStart = Control(ThisID).Max - FIX((Control(ThisID).Height - BorderOffset) \ Control(ThisID).ItemHeight) + 1
         END IF
         _FONT prevFont
     END IF
@@ -5612,7 +5613,7 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         IF This.Max > 14 THEN MaxVisible = 14 ELSE MaxVisible = This.Max
 
         _FONT This.Font
-        Control(__UI_ActiveDropdownList).Height = uspacing& * (MaxVisible + .5)
+        Control(__UI_ActiveDropdownList).Height = (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3) * (MaxVisible + .5)
 
         IF Control(__UI_ActiveDropdownList).Top + Control(__UI_ActiveDropdownList).Height > Control(__UI_FormID).Height THEN
             Control(__UI_ActiveDropdownList).Top = Control(__UI_FormID).Height - Control(__UI_ActiveDropdownList).Height
