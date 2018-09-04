@@ -283,8 +283,6 @@ SUB __UI_BeforeUpdateDisplay
                             SetCaption TempValue, "\#"
                         CASE __UI_Type_ContextMenu
                             Control(TempValue).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
-                            Control(TempValue).Width = 22
-                            Control(TempValue).Height = 22
                             RefreshContextMenus
                             __UI_ActivateMenu Control(TempValue), False
                     END SELECT
@@ -1860,9 +1858,23 @@ SUB ConvertControlToAlternativeType
     DIM NewType AS INTEGER
 
     NewType = __UI_Type(Control(__UI_FirstSelectedID).Type).TurnsInto
-    IF NewType = 0 AND Control(__UI_FirstSelectedID).Type = __UI_Type_TextBox THEN
-        FOR i = 1 TO UBOUND(Control)
-            IF Control(i).ControlIsSelected THEN
+    IF NewType = 0 THEN NewType = __UI_Type_TextBox
+
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ControlIsSelected THEN
+
+            Control(i).Type = NewType
+            Control(i).Width = __UI_Type(NewType).DefaultWidth
+            Control(i).Height = __UI_Type(NewType).DefaultHeight
+
+            IF NewType = __UI_Type_MenuBar THEN
+                Caption(i) = RTRIM$(Control(i).Name)
+                __UI_AdjustNewMenuBarTopHeight i
+            ELSEIF NewType = __UI_Type_ContextMenu THEN
+                IF Control(i).HelperCanvas = 0 THEN
+                    Control(i).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
+                END IF
+            ELSEIF NewType = __UI_Type_TextBox THEN
                 IF Control(i).NumericOnly = False THEN
                     Control(i).NumericOnly = __UI_NumericWithBounds
                     IF Control(i).Min = 0 AND Control(i).Max = 0 THEN
@@ -1877,18 +1889,15 @@ SUB ConvertControlToAlternativeType
                     END IF
                 END IF
             END IF
-        NEXT
-        __UI_ForceRedraw = True
-        EXIT SUB
-    END IF
-
-    FOR i = 1 TO UBOUND(Control)
-        IF Control(i).ControlIsSelected THEN
-            Control(i).Type = NewType
-            Control(i).Width = __UI_Type(NewType).DefaultWidth
-            Control(i).Height = __UI_Type(NewType).DefaultHeight
         END IF
     NEXT
+
+    IF NewType = __UI_Type_MenuBar OR NewType = __UI_Type_ContextMenu THEN
+        __UI_RefreshMenuBar
+        __UI_HasMenuBar = (__UI_FirstMenuBarControl > 0)
+        RefreshContextMenus
+        __UI_ActivateMenu Control(__UI_FirstSelectedID), False
+    END IF
 
     __UI_ForceRedraw = True
 END SUB

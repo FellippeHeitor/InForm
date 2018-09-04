@@ -285,6 +285,8 @@ __UI_Type(__UI_Type_TrackBar).RestrictResize = __UI_CantResizeV
 __UI_Type(__UI_Type_ContextMenu).Name = "ContextMenu"
 __UI_Type(__UI_Type_ContextMenu).TurnsInto = __UI_Type_MenuBar
 __UI_Type(__UI_Type_ContextMenu).RestrictResize = __UI_CantResize
+__UI_Type(__UI_Type_ContextMenu).DefaultWidth = 22
+__UI_Type(__UI_Type_ContextMenu).DefaultHeight = 22
 
 __UI_Type(__UI_Type_Font).Name = "Font"
 
@@ -4481,6 +4483,43 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
+SUB __UI_AdjustNewMenuBarTopHeight (NextSlot AS LONG)
+    DIM TempCanvas AS LONG, PrevDest AS LONG
+
+    IF _PIXELSIZE = 0 THEN
+        'Temporarily create a 32bit screen for proper font handling, in case
+        'we're still at form setup (SCREEN 0)
+        TempCanvas = _NEWIMAGE(10, 10, 32)
+        PrevDest = _DEST
+        _DEST TempCanvas
+    END IF
+
+    IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
+    Control(NextSlot).Height = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5
+    Control(NextSlot).Top = 0
+
+    IF TempCanvas <> 0 THEN
+        _DEST PrevDest
+        _FREEIMAGE TempCanvas
+    END IF
+
+    IF __UI_HasMenuBar = False THEN
+        __UI_HasMenuBar = True
+        'Add menubar div to main form's canvas
+        IF Control(__UI_FormID).Canvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).Canvas
+        Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+        _DEST Control(__UI_FormID).Canvas
+        COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
+        CLS
+        IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
+        __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
+        LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+        LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+        _DEST 0
+    END IF
+END SUB
+
+'---------------------------------------------------------------------------------
 FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidth AS INTEGER, NewHeight AS INTEGER, NewLeft AS INTEGER, NewTop AS INTEGER, ParentID AS LONG)
     DIM NextSlot AS LONG, i AS LONG, Temp$, PrevDest AS LONG, TempCanvas AS LONG
     STATIC InternalMenus AS LONG, FirstControl AS _BYTE
@@ -4570,36 +4609,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     Control(NextSlot).BorderColor = __UI_DefaultColor(ControlType, 5)
 
     IF ControlType = __UI_Type_MenuBar THEN
-        IF _PIXELSIZE = 0 THEN
-            'Temporarily create a 32bit screen for proper font handling, in case
-            'we're still at form setup (SCREEN 0)
-            TempCanvas = _NEWIMAGE(10, 10, 32)
-            PrevDest = _DEST
-            _DEST TempCanvas
-        END IF
-
-        IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
-        Control(NextSlot).Height = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5
-
-        IF TempCanvas <> 0 THEN
-            _DEST PrevDest
-            _FREEIMAGE TempCanvas
-        END IF
-
-        IF __UI_HasMenuBar = False THEN
-            __UI_HasMenuBar = True
-            'Add menubar div to main form's canvas
-            IF Control(__UI_FormID).Canvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).Canvas
-            Control(__UI_FormID).Canvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
-            _DEST Control(__UI_FormID).Canvas
-            COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
-            CLS
-            IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
-            __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
-            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
-            _DEST 0
-        END IF
+        __UI_AdjustNewMenuBarTopHeight NextSlot
     END IF
 
     IF ControlType = __UI_Type_ToggleSwitch OR ControlType = __UI_Type_TrackBar OR ControlType = __UI_Type_TextBox OR ControlType = __UI_Type_Button OR ControlType = __UI_Type_CheckBox OR ControlType = __UI_Type_RadioButton OR ControlType = __UI_Type_ListBox OR ControlType = __UI_Type_DropdownList THEN
