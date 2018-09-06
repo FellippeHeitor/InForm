@@ -693,7 +693,7 @@ SUB __UI_ProcessInput
         DIM TempHover AS LONG
         __UI_BelowHoveringID = 0
         FOR i = 1 TO UBOUND(Control)
-            IF Control(i).ID AND Control(i).Type <> __UI_Type_MenuItem AND ((Control(i).Hidden = False AND __UI_DesignMode = False) OR (__UI_DesignMode = True)) THEN
+            IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuItem AND ((Control(i).Hidden = False AND __UI_DesignMode = False) OR (__UI_DesignMode = True)) THEN
                 IF Control(i).Type = __UI_Type_ContextMenu AND __UI_DesignMode AND __UI_ShowInvisibleControls = False THEN _CONTINUE
                 Control(i).HoveringVScrollbarButton = 0
                 IF Control(i).ParentID > 0 THEN
