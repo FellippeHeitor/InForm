@@ -650,7 +650,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "FileList", 256, 355, 25, 99, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "FileList", 256, 378, 25, 99, __UI_GetID("OpenFrame"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
@@ -659,45 +659,45 @@ SUB __UI_LoadForm
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "DirList", 256, 355, 296, 99, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "DirList", 256, 378, 296, 99, __UI_GetID("OpenFrame"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 200, 23, 25, 461, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 200, 23, 25, 484, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Show only compatible files"
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).Value = -1
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "OpenBT", 80, 23, 382, 461, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "OpenBT", 80, 23, 382, 484, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Open"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBT", 80, 23, 470, 461, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBT", 80, 23, 470, 484, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "&Cancel"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "ZDescriptionLB", 484, 58, 15, 396, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "ZDescriptionLB", 484, 58, 15, 419, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "Select a control in the list and use the up/down buttons to change the z-ordering/tab order. This affects both the order in which the controls are drawn (in case there are overlaps) and also the tab order for keyboard navigation by your users. "
     Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).WordWrap = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 485, 376, 15, 15, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "ControlList", 485, 399, 15, 15, __UI_GetID("ZOrdering"))
     Control(__UI_NewID).Font = SetFont("cour.ttf?/Library/Fonts/Courier New.ttf", 12)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "UpBT", 40, 42, 511, 151, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "UpBT", 40, 42, 511, 162, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "^"
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).Disabled = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "DownBT", 40, 42, 511, 213, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "DownBT", 40, 42, 511, 224, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "v"
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).Disabled = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CloseZOrderingBT", 80, 23, 242, 460, __UI_GetID("ZOrdering"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CloseZOrderingBT", 80, 23, 242, 483, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "Close"
     Control(__UI_NewID).CanHaveFocus = True
 
