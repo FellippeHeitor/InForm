@@ -54,6 +54,7 @@ TYPE __UI_ControlTYPE
     Stretch AS _BYTE
     PreviousStretch AS _BYTE
     Font AS INTEGER
+    PreviousFont AS INTEGER
     BackColor AS _UNSIGNED LONG
     ForeColor AS _UNSIGNED LONG
     SelectedForeColor AS _UNSIGNED LONG
@@ -4855,6 +4856,7 @@ SUB LoadImage (This AS __UI_ControlTYPE, File$)
             Text(This.ID) = File$
         END IF
     END IF
+    This.Redraw = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -4978,6 +4980,7 @@ SUB SetRadioButtonValue (id AS LONG)
         NEXT
         Control(id).Value = True
         IF Control(id).Type = __UI_Type_RadioButton THEN __UI_ValueChanged id
+        Control(id).Redraw = True
     END IF
 END SUB
 
@@ -5211,6 +5214,7 @@ SUB AddItem (WhichListBox AS LONG, TempItem$)
         _FONT prevFont
     END IF
     Control(ThisID).LastVisibleItem = 0 'Reset this var so it'll be recalculated
+    Control(ThisID).Redraw = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -5249,6 +5253,7 @@ SUB RemoveItem (WhichListBox AS LONG, ItemToRemove AS INTEGER)
     END IF
 
     Control(This.ID) = This
+    Control(This.ID).Redraw = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -5266,6 +5271,7 @@ SUB ResetList (WhichListBox AS LONG)
     This.Value = 0
 
     Control(This.ID) = This
+    Control(This.ID).Redraw = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -5298,6 +5304,7 @@ SUB ReplaceItem (WhichListBox AS LONG, ItemToReplace AS INTEGER, NewText$)
             Text(This.ID) = Text(This.ID) + NewText$ + CHR$(13)
         END IF
     LOOP
+    Control(This.ID).Redraw = True
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -5317,6 +5324,7 @@ FUNCTION SelectItem%% (id AS LONG, __Item$)
         b$ = GetItem$(id, i)
         IF b$ = Item$ THEN
             Control(id).Value = i
+            Control(id).Redraw = True
             SelectItem%% = True
             EXIT FUNCTION
         END IF
