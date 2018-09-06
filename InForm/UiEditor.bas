@@ -1782,6 +1782,17 @@ SUB __UI_BeforeUpdateDisplay
         Control(ContextMenuControlsList).Value = 1
     END IF
 
+    STATIC ShowInvalidValueWarning AS _BYTE
+    IF Control(__UI_Focus).BorderColor = ShadeOfRed THEN
+        IF ShowInvalidValueWarning = False THEN
+            ShowInvalidValueWarning = True
+            Caption(StatusBar) = "Invalid value; ESC for previous or adjusted value"
+            BlinkStatusBar = TIMER
+        END IF
+    ELSE
+        ShowInvalidValueWarning = False
+    END IF
+
     'Disable properties that don't apply
     Control(AlignOptions).Disabled = True
     Control(BooleanOptions).Disabled = True
