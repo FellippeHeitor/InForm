@@ -206,7 +206,7 @@ DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
 DIM SHARED __UI_CurrentTitle AS STRING, __UI_WindowHandle AS LONG
 DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG
 DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
-DIM SHARED __UI_WaitMessageHandle AS LONG
+DIM SHARED __UI_WaitMessageHandle AS LONG, __UI_EditorMode AS _BYTE
 DIM SHARED __UI_LastRenderedLineWidth AS LONG, __UI_LastRenderedCharCount AS LONG
 DIM SHARED __UI_SelectionRectangleTop AS INTEGER, __UI_SelectionRectangleLeft AS INTEGER
 DIM SHARED __UI_SelectionRectangle AS _BYTE
@@ -6290,6 +6290,12 @@ FUNCTION RestoreCHR$ (__Text$)
 
         SemiColon = INSTR(BackSlash + 1, Text$, ";")
         IF SemiColon = 0 THEN _CONTINUE
+
+        IF MID$(Text$, BackSlash + 1, 1) = "\" THEN
+            'Skip this code as the backslash is doubled \\
+            Text$ = LEFT$(Text$, BackSlash) + MID$(Text$, BackSlash + 2)
+            _CONTINUE
+        END IF
 
         tempNum$ = ""
         FOR j = BackSlash + 1 TO SemiColon - 1

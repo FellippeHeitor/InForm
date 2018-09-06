@@ -2221,6 +2221,7 @@ END SUB
 
 SUB __UI_BeforeInit
     __UI_KeepScreenHidden = True
+    __UI_EditorMode = True
 END SUB
 
 SUB __UI_FormResized
@@ -2800,6 +2801,7 @@ SUB ConfirmEdits (id AS LONG)
         TempValue = GetPropertySignal(id)
         SendData b$, TempValue
         PropertySent = True
+        Text(id) = RestoreCHR(Text(id))
         SelectPropertyFully id
         InputBoxText(GetInputBoxFromID(id)) = Text(id)
         InputBox(GetInputBoxFromID(id)).LastEdited = TIMER

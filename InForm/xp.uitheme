@@ -755,13 +755,13 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
         This.FocusState = __UI_Focus = This.ID
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         IF Mask(This.ID) <> __UI_TempMask(This.ID) THEN
-            Mask(This.ID) = RestoreCHR$(Mask(This.ID))
+            IF NOT __UI_EditorMode THEN Mask(This.ID) = RestoreCHR$(Mask(This.ID))
             __UI_TempMask(This.ID) = Mask(This.ID)
             Text(This.ID) = __UI_EmptyMask(This.ID)
         END IF
         IF __UI_TempTexts(This.ID) <> Text(This.ID) THEN
             __UI_StateHasChanged = True
-            Text(This.ID) = RestoreCHR$(Text(This.ID))
+            IF NOT __UI_EditorMode THEN Text(This.ID) = RestoreCHR$(Text(This.ID))
             __UI_TempTexts(This.ID) = Text(This.ID)
         END IF
         This.SelectionLength = __UI_SelectionLength
