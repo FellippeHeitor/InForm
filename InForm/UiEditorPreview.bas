@@ -3289,6 +3289,7 @@ SUB SendSignal (Value AS INTEGER)
     PUT #Host, , b$
 END SUB
 
+
 FUNCTION AdaptName$ (tName$, TargetID AS LONG)
     DIM Name$, NewName$, i AS LONG, c$, NextIsCapital AS _BYTE, CheckID AS LONG
     Name$ = RTRIM$(tName$)
@@ -3352,7 +3353,7 @@ END FUNCTION
 
 'READ_KEYWORDS and IS_KEYWORD come from vWATCH64:
 SUB READ_KEYWORDS
-    DIM ThisKeyword$, TotalKeywords AS INTEGER
+    DIM ThisKeyword$, TotalKeywords AS LONG
 
     RESTORE QB64KeywordsDATA
     'Populate QB64KEYWORDS():
@@ -3363,7 +3364,7 @@ SUB READ_KEYWORDS
         END IF
         TotalKeywords = TotalKeywords + 1
         REDIM _PRESERVE QB64KEYWORDS(1 TO TotalKeywords) AS STRING
-        QB64KEYWORDS(TotalKeywords) = ThisKeyword$
+        QB64KEYWORDS(TotalKeywords) = UCASE$(ThisKeyword$)
     LOOP
 
     QB64KeywordsDATA:
@@ -3467,11 +3468,36 @@ SUB READ_KEYWORDS
     DATA _GLUPERSPECTIVE,_HARDWARE,_HARDWARE1,_KEEPBACKGROUND,_NONE,_OFF,_ONLY,_ONLYBACKGROUND
     DATA _ONTOP,_SEAMLESS,_SMOOTH,_SMOOTHSHRUNK,_SMOOTHSTRETCHED,_SOFTWARE,_SQUAREPIXELS
     DATA _STRETCH
+    DATA uprint_extra,uprint,uprintwidth,uheight&,uheight,falcon_uspacing&
+    DATA falcon_uspacing,uascension&,uascension,GetSystemMetrics&
+    DATA GetSystemMetrics,uspacing&,uspacing,SetFrameRate,SetFocus
+    DATA AutoSizeLabel,Darken~&,Darken,isNumber%%,isNumber,RawText$,RawText
+    DATA SetFont&,SetFont,SetCaption,BeginDraw,EndDraw,LoadImage
+    DATA SetRadioButtonValue,Replace$,Replace,AddItem,RemoveItem,ResetList
+    DATA ReplaceItem,SelectItem%%,SelectItem,GetItem$,GetItem,MessageBox&
+    DATA MessageBox,FromCP437$,FromCP437,FromCP1252$,FromCP1252,UTF8$,UTF8
+    DATA GetControlDrawOrder&,GetControlDrawOrder,IconPreview&,IconPreview
+    DATA RestoreCHR$,RestoreCHR,MsgBox_OkOnly%%,MsgBox_OkOnly
+    DATA MsgBox_OkCancel%%,MsgBox_OkCancel,MsgBox_AbortRetryIgnore%%
+    DATA MsgBox_AbortRetryIgnore,MsgBox_YesNoCancel%%,MsgBox_YesNoCancel
+    DATA MsgBox_YesNo%%,MsgBox_YesNo,MsgBox_RetryCancel%%,MsgBox_RetryCancel
+    DATA MsgBox_CancelTryagainContinue%%,MsgBox_CancelTryagainContinue
+    DATA MsgBox_Critical%,MsgBox_Critical,MsgBox_Question%,MsgBox_Question
+    DATA MsgBox_Exclamation%,MsgBox_Exclamation,MsgBox_Information%
+    DATA MsgBox_Information,MsgBox_DefaultButton1%,MsgBox_DefaultButton1
+    DATA MsgBox_DefaultButton2%,MsgBox_DefaultButton2,MsgBox_DefaultButton3%
+    DATA MsgBox_DefaultButton3,MsgBox_Defaultbutton4%,MsgBox_Defaultbutton4
+    DATA MsgBox_AppModal%%,MsgBox_AppModal,MsgBox_SystemModal%
+    DATA MsgBox_SystemModal,MsgBox_SetForeground&,MsgBox_SetForeground
+    DATA MsgBox_Ok%%,MsgBox_Ok,MsgBox_Cancel%%,MsgBox_Cancel,MsgBox_Abort%%
+    DATA MsgBox_Abort,MsgBox_Retry%%,MsgBox_Retry,MsgBox_Ignore%%
+    DATA MsgBox_Ignore,MsgBox_Yes%%,MsgBox_Yes,MsgBox_No%%,MsgBox_No
+    DATA MsgBox_Tryagain%%,MsgBox_Tryagain,MsgBox_Continue%%,MsgBox_Continue
     DATA **END**
 END SUB
 
 FUNCTION IS_KEYWORD (Text$)
-    DIM uText$, i AS INTEGER
+    DIM uText$, i AS LONG
     uText$ = UCASE$(RTRIM$(LTRIM$(Text$)))
     FOR i = 1 TO UBOUND(QB64KEYWORDS)
         IF QB64KEYWORDS(i) = uText$ THEN IS_KEYWORD = True: EXIT FUNCTION
