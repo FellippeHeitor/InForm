@@ -3293,33 +3293,43 @@ FUNCTION AdaptName$ (tName$, TargetID AS LONG)
     DIM Name$, NewName$, i AS LONG, c$, NextIsCapital AS _BYTE, CheckID AS LONG
     Name$ = RTRIM$(tName$)
 
-    IF LEN(Name$) = 0 THEN EXIT FUNCTION
+    '"__UI_" is reserved:
+    IF UCASE$(LEFT$(Name$, 5)) = "__UI_" THEN Name$ = MID$(Name$, 6)
 
-    DO
-        IF Alpha(ASC(Name$, 1)) OR ASC(Name$, 1) = 38 THEN
-            IF LEFT$(Name$, 1) = "_" AND MID$(Name$, 2, 1) <> "_" THEN Name$ = "_" + Name$
-            EXIT DO
+    IF LEN(Name$) > 0 THEN
+        'First valid character must be a letter or "_":
+        DO WHILE NOT Alpha(ASC(Name$, 1))
+            Name$ = MID$(Name$, 2)
+            IF LEN(Name$) = 0 THEN Name$ = Control(TargetID).Name: GOTO CheckDuplicates
+        LOOP
+
+        'Single "_" to start a variable name is reserved;
+        'Double "_" is valid:
+        IF LEFT$(Name$, 1) = "_" AND MID$(Name$, 2, 1) <> "_" THEN
+            Name$ = "_" + Name$
         END IF
-        Name$ = MID$(Name$, 2)
-        IF LEN(Name$) = 0 THEN Name$ = Control(TargetID).Name: EXIT DO
-    LOOP
 
-    FOR i = 1 TO LEN(Name$)
-        IF AlphaNumeric(ASC(Name$, i)) THEN
-            IF NextIsCapital THEN
-                NewName$ = NewName$ + UCASE$(CHR$(ASC(Name$, i)))
-                IF ASC(RIGHT$(NewName$, 1)) >= 65 AND ASC(RIGHT$(NewName$, 1)) <= 90 THEN NextIsCapital = False
+        'Other valid characters must be alphanumeric:
+        FOR i = 1 TO LEN(Name$)
+            IF AlphaNumeric(ASC(Name$, i)) THEN
+                IF NextIsCapital THEN
+                    NewName$ = NewName$ + UCASE$(MID$(Name$, i, 1))
+                    IF ASC(RIGHT$(NewName$, 1)) >= 65 AND ASC(RIGHT$(NewName$, 1)) <= 90 THEN NextIsCapital = False
+                ELSE
+                    NewName$ = NewName$ + MID$(Name$, i, 1)
+                END IF
             ELSE
-                NewName$ = NewName$ + CHR$(ASC(Name$, i))
+                IF ASC(Name$, i) = 32 THEN NextIsCapital = True
             END IF
-        ELSE
-            IF ASC(Name$, i) = 32 THEN NextIsCapital = True
-        END IF
-    NEXT
+        NEXT
+    ELSE
+        Name$ = Control(TargetID).Name
+    END IF
 
     IF LEN(NewName$) > 40 THEN NewName$ = LEFT$(NewName$, 40)
     Name$ = NewName$
 
+    CheckDuplicates:
     i = 1
     DO
         CheckID = __UI_GetID(NewName$)
