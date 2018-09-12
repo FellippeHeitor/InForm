@@ -44,6 +44,9 @@ TYPE __UI_ControlTYPE
     Type AS INTEGER
     Name AS STRING * 40
     ParentName AS STRING * 40
+    SubMenu AS _BYTE
+    MenuPanelID AS LONG
+    SourceControl AS LONG
     Top AS INTEGER
     Left AS INTEGER
     Width AS INTEGER
@@ -118,7 +121,7 @@ TYPE __UI_ControlTYPE
     ControlState AS _BYTE
     ChildrenRedrawn AS _BYTE
     FocusState AS LONG
-    LastChange AS DOUBLE
+    LastChange AS SINGLE
     Redraw AS _BYTE
     BulletStyle AS _BYTE
     MenuItemGroup AS INTEGER
@@ -163,6 +166,7 @@ REDIM SHARED __UI_WordWrapHistoryTexts(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistoryResults(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistory(1 TO 100) AS __UI_WordWrapHistoryType
 REDIM SHARED __UI_ThisLineChars(0) AS LONG
+REDIM SHARED __UI_ActiveMenu(0 TO 100) AS LONG, __UI_ParentMenu(0 TO 100) AS LONG
 DIM SHARED table1252$(255), table437$(255)
 
 DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
@@ -175,7 +179,7 @@ DIM SHARED __UI_PreviousMouseDownOnID AS LONG
 DIM SHARED __UI_KeyIsDown AS _BYTE, __UI_KeyDownOnID AS LONG
 DIM SHARED __UI_ShiftIsDown AS _BYTE, __UI_CtrlIsDown AS _BYTE
 DIM SHARED __UI_AltIsDown AS _BYTE, __UI_ShowHotKeys AS _BYTE, __UI_AltCombo$
-DIM SHARED __UI_LastMouseClick AS DOUBLE, __UI_MouseDownOnScrollbar AS DOUBLE
+DIM SHARED __UI_LastMouseClick AS SINGLE, __UI_MouseDownOnScrollbar AS SINGLE
 DIM SHARED __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
 DIM SHARED __UI_DefaultButtonID AS LONG
 DIM SHARED __UI_KeyHit AS LONG, __UI_KeepFocus AS _BYTE
@@ -189,14 +193,15 @@ DIM SHARED __UI_SelectedText AS STRING, __UI_SelectionLength AS LONG
 DIM SHARED __UI_StateHasChanged AS _BYTE
 DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_ThumbDragTop AS INTEGER
 DIM SHARED __UI_DraggingThumbOnID AS LONG
-DIM SHARED __UI_HasInput AS _BYTE, __UI_ProcessInputTimer AS DOUBLE
+DIM SHARED __UI_HasInput AS _BYTE, __UI_ProcessInputTimer AS SINGLE
 DIM SHARED __UI_UnloadSignal AS _BYTE, __UI_HasResized AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
 DIM SHARED __UI_Loaded AS _BYTE
 DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
-DIM SHARED __UI_ActiveMenu AS LONG, __UI_ParentMenu AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
-DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS DOUBLE, __UI_PreviousTipID AS LONG
+DIM SHARED __UI_TotalActiveMenus AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
+DIM SHARED __UI_SubMenuDelay AS SINGLE, __UI_HoveringSubMenu AS _BYTE
+DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS SINGLE, __UI_PreviousTipID AS LONG
 DIM SHARED __UI_ActiveTipTop AS INTEGER, __UI_ActiveTipLeft AS INTEGER
 DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
 DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
@@ -300,6 +305,7 @@ __UI_Type(__UI_Type_ToggleSwitch).TurnsInto = __UI_Type_CheckBox
 
 CONST True = -1, False = 0
 '$INCLUDE:'InFormVersion.bas'
+__UI_SubMenuDelay = .4
 __UI_SnapDistance = 5
 __UI_SnapDistanceFromForm = 10
 __UI_MaxBorderSize = 10
@@ -653,7 +659,7 @@ FUNCTION __UI_GetProperMouseButton%%(Which%%)
 END FUNCTION
 
 SUB __UI_ProcessInput
-    DIM OldScreen&, i AS LONG
+    DIM OldScreen&, i AS LONG, j AS LONG
     DIM ContainerOffsetTop AS INTEGER, ContainerOffsetLeft AS INTEGER
     STATIC __UI_CurrentResizeStatus AS _BYTE, __UI_CurrentBackColor AS _UNSIGNED LONG
 
@@ -686,7 +692,7 @@ SUB __UI_ProcessInput
     END IF
 
     'Hover detection
-    IF __UI_PrevMouseLeft <> __UI_MouseLeft OR __UI_PrevMouseTop <> __UI_MouseTop OR __UI_DidClick THEN
+    IF __UI_PrevMouseLeft <> __UI_MouseLeft OR __UI_PrevMouseTop <> __UI_MouseTop OR __UI_DidClick OR __UI_HoveringSubMenu THEN
         __UI_PrevMouseLeft = __UI_MouseLeft
         __UI_PrevMouseTop = __UI_MouseTop
         __UI_DidClick = False
@@ -775,21 +781,38 @@ SUB __UI_ProcessInput
             END IF
         NEXT
 
-        IF __UI_ActiveMenu > 0 THEN
-            IF Control(TempHover).Type = __UI_Type_MenuPanel THEN
-                'For an active menu, we'll detect individual menu items being hovered
-                _FONT Control(TempHover).Font
-                FOR i = 1 TO UBOUND(Control)
-                    IF Control(i).ParentID = __UI_ParentMenu AND Control(i).Hidden = False THEN
-                        IF __UI_MouseTop >= Control(__UI_ActiveMenu).Top + Control(i).Top AND __UI_MouseTop <= Control(__UI_ActiveMenu).Top + Control(i).Top + Control(i).Height - 1 THEN
-                            TempHover = Control(i).ID
-                            __UI_Focus = Control(i).ID
-                            Control(__UI_ActiveMenu).Value = __UI_Focus
-                            EXIT FOR 'as no menu items will overlap
-                        END IF
+        IF Control(TempHover).Type = __UI_Type_MenuPanel THEN
+            DIM ParentMenu AS LONG
+
+            FOR i = __UI_TotalActiveMenus TO 1 STEP -1
+                IF __UI_ActiveMenu(i) = TempHover THEN
+                    ParentMenu = __UI_ParentMenu(i)
+                    EXIT FOR
+                END IF
+            NEXT
+
+            'For an active menu, we'll detect individual menu items being hovered
+            _FONT Control(TempHover).Font
+            FOR i = 1 TO UBOUND(Control)
+                IF Control(i).ParentID = ParentMenu AND Control(i).Hidden = False THEN
+                    IF __UI_MouseTop >= Control(TempHover).Top + Control(i).Top AND __UI_MouseTop <= Control(TempHover).Top + Control(i).Top + Control(i).Height - 1 THEN
+                        Control(TempHover).Value = __UI_Focus
+                        TempHover = Control(i).ID
+                        __UI_Focus = Control(i).ID
+
+                        'Close any unrelated sub-menus:
+                        FOR j = __UI_TotalActiveMenus TO 1 STEP -1
+                            IF __UI_ParentMenu(j) = Control(i).ID OR __UI_ParentMenu(j) = ParentMenu THEN
+                                EXIT FOR
+                            ELSE
+                                __UI_DestroyControl Control(__UI_ActiveMenu(j))
+                            END IF
+                        NEXT
+
+                        EXIT FOR 'as no menu items will overlap in a panel
                     END IF
-                NEXT
-            END IF
+                END IF
+            NEXT
         END IF
 
         __UI_HoveringID = TempHover
@@ -841,16 +864,27 @@ SUB __UI_ProcessInput
         END IF
 
         IF Control(__UI_Focus).Type = __UI_Type_MenuBar AND Control(__UI_HoveringID).Type = __UI_Type_MenuBar THEN
-            IF __UI_ActiveMenu = 0 THEN
+            IF __UI_TotalActiveMenus = 0 THEN
                 __UI_Focus = __UI_HoveringID
             END IF
-        ELSEIF Control(__UI_Focus).Type = __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenuIsContextMenu = False AND __UI_DesignMode = False THEN
-            IF __UI_ParentMenu <> __UI_HoveringID AND NOT Control(__UI_HoveringID).Disabled THEN
+        ELSEIF __UI_TotalActiveMenus > 0 AND Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenuIsContextMenu = False AND __UI_DesignMode = False THEN
+            IF __UI_ParentMenu(__UI_TotalActiveMenus) <> __UI_HoveringID AND NOT Control(__UI_HoveringID).Disabled THEN
+                __UI_CloseAllMenus
                 __UI_ActivateMenu Control(__UI_HoveringID), False
                 __UI_ForceRedraw = True
             ELSEIF Control(__UI_HoveringID).Disabled THEN
-                __UI_DestroyControl Control(__UI_ActiveMenu)
+                __UI_DestroyControl Control(__UI_Focus)
                 __UI_Focus = __UI_HoveringID
+            END IF
+        ELSE
+            IF __UI_HoveringID <> __UI_LastHoveringID AND Control(__UI_HoveringID).Type = __UI_Type_MenuItem AND Control(__UI_HoveringID).SubMenu THEN
+                Control(__UI_HoveringID).LastChange = TIMER
+                __UI_HoveringSubMenu = True
+            ELSEIF __UI_HoveringID = __UI_LastHoveringID AND Control(__UI_HoveringID).Type = __UI_Type_MenuItem AND Control(__UI_HoveringID).SubMenu THEN
+                IF TIMER - Control(__UI_HoveringID).LastChange >= __UI_SubMenuDelay THEN
+                    __UI_ActivateMenu Control(__UI_HoveringID), False
+                    __UI_HoveringSubMenu = False
+                END IF
             END IF
         END IF
     END IF
@@ -1221,28 +1255,13 @@ SUB __UI_UpdateDisplay
 
             IF Control(i).Type = __UI_Type_MenuItem THEN
                 TempParentID = Control(i).ParentID
-                Control(i).ParentID = __UI_ActiveMenu
+                Control(i).ParentID = __UI_ActiveMenu(__UI_TotalActiveMenus)
             ELSE
                 TempParentID = 0
             END IF
 
             'Dotted outline:
             LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(i).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
-
-            'IF __UI_DesignMode AND __UI_ShowInvisibleControls AND _
-            '   (Control(i).Type = __UI_Type_ContextMenu OR _
-            '   (Control(__UI_ParentMenu).Type = __UI_Type_ContextMenu AND _
-            '   Control(i).Type = __UI_Type_MenuItem)) THEN
-            '    'Visually connect this control to all
-            '    'controls bound to it:
-            '    DIM j AS LONG
-            '    FOR j = 1 TO UBOUND(Control)
-            '        IF Control(j).ContextMenuID = i OR Control(j).ContextMenuID = __UI_ParentMenu THEN
-            '            LINE(Control(j).Left + Control(Control(j).ParentID).Left - 5, Control(j).Top + Control(Control(j).ParentID).Top - 5)-(Control(j).Left + Control(Control(j).ParentID).Left + Control(j).Width + 5, Control(j).Top + Control(Control(j).ParentID).Top + Control(j).Height + 5), _RGBA32(0, 177, 255, 150), BF
-            '            LINE(Control(j).Left + Control(Control(j).ParentID).Left - 5, Control(j).Top + Control(Control(j).ParentID).Top - 5)-(Control(j).Left + Control(Control(j).ParentID).Left + Control(j).Width + 5, Control(j).Top + Control(Control(j).ParentID).Top + Control(j).Height + 5), _RGB32(39, 188, 244), B
-            '        END IF
-            '    NEXT
-            'END IF
 
             IF NOT __UI_IsDragging THEN
                 IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResize THEN
@@ -1398,9 +1417,11 @@ SUB __UI_UpdateDisplay
         END IF
     END IF
 
-    IF __UI_ActiveMenu > 0 THEN
-        __UI_DrawMenuPanel Control(__UI_ActiveMenu), ControlState
-    END IF
+    FOR i = 1 TO __UI_TotalActiveMenus
+        IF LEFT$(Control(__UI_ActiveMenu(i)).Name, 5) <> "__UI_" THEN
+            __UI_DrawMenuPanel Control(__UI_ActiveMenu(i)), __UI_ParentMenu(i)
+        END IF
+    NEXT
 
     IF OverlayisVisible THEN
         IF Control(__UI_FormID).HelperCanvas < -1 THEN
@@ -1409,9 +1430,12 @@ SUB __UI_UpdateDisplay
         END IF
     END IF
 
-    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
-        __UI_DrawMenuPanel Control(__UI_ActiveMenu), ControlState
-    END IF
+    'Keep DesignMode context menus on top by drawing them last:
+    FOR i = 1 TO __UI_TotalActiveMenus
+        IF LEFT$(Control(__UI_ActiveMenu(i)).Name, 5) = "__UI_" THEN
+            __UI_DrawMenuPanel Control(__UI_ActiveMenu(i)), __UI_ParentMenu(i)
+        END IF
+    NEXT
 
     STATIC PanelWidth AS INTEGER, PanelHeight AS INTEGER
     IF __UI_ActiveTipID > 0 THEN
@@ -1644,7 +1668,7 @@ END FUNCTION
 
 SUB __UI_EventDispatcher
     STATIC __UI_LastMouseIconSet AS _BYTE
-    STATIC __UI_LastMouseDownEvent AS DOUBLE
+    STATIC __UI_LastMouseDownEvent AS SINGLE
     STATIC __UI_MouseDownTop AS INTEGER, __UI_MouseDownLeft AS INTEGER
     STATIC __UI_JustOpenedMenu AS _BYTE
     STATIC ControlClipboard$
@@ -1690,7 +1714,7 @@ SUB __UI_EventDispatcher
             END IF
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND LastMouseLeft <> __UI_MouseLeft THEN
             LastMouseLeft = __UI_MouseLeft
-            IF __UI_ActiveMenu > 0 AND __UI_ParentMenu <> Control(__UI_HoveringID).ID AND __UI_ParentMenu > 0 THEN
+            IF __UI_TotalActiveMenus > 0 AND __UI_ParentMenu(__UI_TotalActiveMenus) <> __UI_HoveringID THEN
                 IF __UI_ActiveMenuIsContextMenu = False AND __UI_DesignMode = False THEN
                     __UI_ActivateMenu Control(__UI_HoveringID), False
                     __UI_ForceRedraw = True
@@ -1699,7 +1723,7 @@ SUB __UI_EventDispatcher
         END IF
 
         IF Control(__UI_Focus).Type = __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem THEN
-            __UI_Focus = __UI_ActiveMenu
+            __UI_Focus = __UI_ActiveMenu(__UI_TotalActiveMenus)
         END IF
     END IF
 
@@ -1776,7 +1800,7 @@ SUB __UI_EventDispatcher
                         Control(__UI_FocusSearch).ControlIsSelected = True
                         EXIT DO
                     ELSE
-                        IF __UI_ParentMenu = Control(__UI_FocusSearch).ParentID THEN
+                        IF __UI_ParentMenu(__UI_TotalActiveMenus) = Control(__UI_FocusSearch).ParentID THEN
                             __UI_TotalSelectedControls = 1
                             __UI_FirstSelectedID = __UI_FocusSearch
                             Control(__UI_FocusSearch).ControlIsSelected = True
@@ -1825,9 +1849,9 @@ SUB __UI_EventDispatcher
             __UI_Focus = __UI_ParentDropdownList
             __UI_DestroyControl Control(__UI_ActiveDropdownList)
             __UI_KeyHit = 0
-        ELSEIF __UI_ActiveMenu > 0 AND (__UI_Focus <> __UI_ActiveMenu AND __UI_Focus <> __UI_ParentMenu) THEN
+        ELSEIF __UI_TotalActiveMenus > 0 AND (__UI_Focus <> __UI_ActiveMenu(__UI_TotalActiveMenus) AND __UI_Focus <> __UI_ParentMenu(__UI_TotalActiveMenus)) THEN
             IF Control(__UI_Focus).Type <> __UI_Type_MenuItem THEN
-                __UI_DestroyControl Control(__UI_ActiveMenu)
+                __UI_CloseAllMenus
                 __UI_ForceRedraw = True
             END IF
         END IF
@@ -2080,10 +2104,8 @@ SUB __UI_EventDispatcher
                 IF __UI_HoveringID > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN __UI_ActivateMenu Control(__UI_GetID("__UI_PreviewMenu")), False
                 __UI_CantShowContextMenu = False
 
-                IF __UI_ActiveMenu > 0 THEN
-                    IF Control(__UI_ActiveMenu).Height > Control(__UI_FormID).Height OR Control(__UI_ActiveMenu).Width > Control(__UI_FormID).Width THEN
-                        __UI_CantShowContextMenu = True
-                    END IF
+                IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height > Control(__UI_FormID).Height OR Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width > Control(__UI_FormID).Width THEN
+                    __UI_CantShowContextMenu = True
                 END IF
             ELSEIF Control(__UI_HoveringID).ContextMenuID > 0 AND Control(__UI_HoveringID).Disabled = False THEN
                 __UI_Focus = __UI_HoveringID
@@ -2123,9 +2145,9 @@ SUB __UI_EventDispatcher
                 IF LEFT$(Control(__UI_HoveringID).Name, 5) = "__UI_" THEN GOTO ProcessClick
                 DesignModeClickToSelect:
                 IF RightClickSelect AND (Control(__UI_HoveringID).Type = __UI_Type_MenuPanel OR LEFT$(Control(__UI_HoveringID).Name, 5) = "__UI_") THEN RETURN
-                IF __UI_ActiveMenu > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
+                IF __UI_TotalActiveMenus > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel THEN
                     IF Control(__UI_Focus).Type <> __UI_Type_MenuItem THEN
-                        __UI_DestroyControl Control(__UI_ActiveMenu)
+                        __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
                         __UI_ForceRedraw = True
                     END IF
                 END IF
@@ -2161,11 +2183,11 @@ SUB __UI_EventDispatcher
                         END IF
                     END IF
                 ELSE
-                    IF Control(__UI_HoveringID).Type = __UI_Type_MenuPanel AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                    IF Control(__UI_HoveringID).Type = __UI_Type_MenuPanel AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_" THEN
                         DIM TempValue AS LONG
-                        TempValue = __UI_NewControl(__UI_Type_MenuItem, "", 0, 0, 0, 0, __UI_ParentMenu)
+                        TempValue = __UI_NewControl(__UI_Type_MenuItem, "", 0, 0, 0, 0, __UI_ParentMenu(__UI_TotalActiveMenus))
                         SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                        __UI_ActivateMenu Control(__UI_ParentMenu), False
+                        __UI_ActivateMenu Control(__UI_ParentMenu(__UI_TotalActiveMenus)), False
                         FOR i = 1 TO UBOUND(Control)
                             Control(i).ControlIsSelected = False
                         NEXT
@@ -2204,7 +2226,7 @@ SUB __UI_EventDispatcher
                 END IF
                 IF RightClickSelect THEN RETURN
             ELSEIF Control(__UI_HoveringID).CanHaveFocus AND NOT Control(__UI_HoveringID).Disabled THEN
-                STATIC JustEnteredTextBox AS DOUBLE
+                STATIC JustEnteredTextBox AS SINGLE
                 IF __UI_Focus <> __UI_HoveringID THEN
                     __UI_KeepFocus = False: __UI_FocusOut __UI_Focus
                     IF __UI_KeepFocus = False THEN
@@ -2214,9 +2236,9 @@ SUB __UI_EventDispatcher
                     END IF
                 END IF
             ELSE
-                IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenu > 0 AND __UI_HoveringID = __UI_ParentMenu THEN
+                IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_TotalActiveMenus > 0 AND __UI_HoveringID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
                     __UI_Focus = __UI_PreviousFocus
-                ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenu = 0 THEN
+                ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_TotalActiveMenus = 0 THEN
                     __UI_ActivateMenu Control(__UI_HoveringID), False
                     __UI_JustOpenedMenu = True
                 ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuItem THEN
@@ -2628,7 +2650,7 @@ SUB __UI_EventDispatcher
                             Control(__UI_HoveringID).LastChange = TIMER
                         CASE __UI_Type_TextBox
                             DIM TempNewCursor AS LONG
-                            STATIC LastTextBoxClick AS DOUBLE, LastTextBoxClickID AS LONG
+                            STATIC LastTextBoxClick AS SINGLE, LastTextBoxClickID AS LONG
 
                             IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(__UI_HoveringID).Width - 25 + ContainerOffsetLeft THEN
                                 'Control has a vertical scrollbar and it's been clicked
@@ -2711,14 +2733,18 @@ SUB __UI_EventDispatcher
                                 __UI_DestroyControl Control(__UI_ActiveDropdownList)
                             END IF
                         CASE __UI_Type_MenuBar
-                            IF __UI_ActiveMenu > 0 AND NOT __UI_JustOpenedMenu THEN
+                            IF __UI_TotalActiveMenus > 0 AND NOT __UI_JustOpenedMenu THEN
                                 __UI_Focus = __UI_PreviousFocus
                             END IF
                         CASE __UI_Type_MenuItem
-                            __UI_Focus = __UI_PreviousFocus
-                            __UI_DestroyControl Control(__UI_ActiveMenu)
-                            __UI_ForceRedraw = True
-                            IF Control(__UI_HoveringID).BulletStyle = __UI_Bullet THEN SetRadioButtonValue __UI_HoveringID
+                            IF Control(__UI_HoveringID).SubMenu THEN
+                                __UI_ActivateMenu Control(__UI_HoveringID), False
+                            ELSE
+                                __UI_Focus = __UI_PreviousFocus
+                                __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
+                                __UI_ForceRedraw = True
+                                IF Control(__UI_HoveringID).BulletStyle = __UI_Bullet THEN SetRadioButtonValue __UI_HoveringID
+                            END IF
                     END SELECT
                     __UI_LastMouseClick = TIMER
                     __UI_JustOpenedMenu = False
@@ -2730,7 +2756,7 @@ SUB __UI_EventDispatcher
                         IF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" THEN
                             __UI_Focus = __UI_PreviousFocus
                         ELSEIF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenu" THEN
-                            __UI_DestroyControl Control(__UI_ActiveMenu)
+                            __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
                         END IF
 
                         ProcessHotkey:
@@ -2808,11 +2834,9 @@ SUB __UI_EventDispatcher
                         __UI_KeyHit = 0
                     END IF
                 ELSE
-                    IF __UI_ActiveMenu > 0 THEN
-                        __UI_DestroyControl Control(__UI_ActiveMenu)
-                        __UI_Focus = __UI_PreviousFocus
-                        __UI_ForceRedraw = True
-                    END IF
+                    __UI_CloseAllMenus
+                    __UI_Focus = __UI_PreviousFocus
+                    __UI_ForceRedraw = True
                 END IF
             END IF
             __UI_IsSelectingText = False
@@ -3371,9 +3395,9 @@ SUB __UI_EventDispatcher
             __UI_Focus = __UI_PreviousFocus
             __UI_AltIsDown = False
             __UI_ForceRedraw = True 'Trigger a global redraw
-        ELSEIF __UI_AltIsDown AND __UI_ActiveMenu > 0 THEN
+        ELSEIF __UI_AltIsDown AND __UI_TotalActiveMenus > 0 THEN
             __UI_Focus = __UI_PreviousFocus
-            __UI_DestroyControl Control(__UI_ActiveMenu)
+            __UI_CloseAllMenus
             __UI_ForceRedraw = True
             __UI_KeyHit = 0
             __UI_AltIsDown = False
@@ -3425,11 +3449,11 @@ SUB __UI_EventDispatcher
                                             END IF
                                         NEXT
                                     CASE __UI_Type_MenuBar
-                                        IF __UI_ActiveMenu = 0 THEN
+                                        IF __UI_TotalActiveMenus = 0 THEN
                                             __UI_PreviousFocus = __UI_Focus
                                             __UI_ActivateMenu Control(i), True
                                             __UI_ForceRedraw = True
-                                            Control(__UI_ActiveMenu).Value = __UI_Focus
+                                            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Value = __UI_Focus
                                             __UI_KeyHit = 0
                                             __UI_AltIsDown = False
                                         END IF
@@ -3486,7 +3510,7 @@ SUB __UI_EventDispatcher
                 i = __UI_Focus
                 IF Control(__UI_Focus).Type = __UI_Type_MenuItem THEN
                     __UI_Focus = __UI_PreviousFocus
-                    __UI_DestroyControl Control(__UI_ActiveMenu)
+                    __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
                     __UI_ForceRedraw = True
                     __UI_KeyHit = 0
                 END IF
@@ -3552,9 +3576,9 @@ SUB __UI_EventDispatcher
                             'Search for a matching hot key in menu bar items
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuBar THEN
-                                    IF __UI_ActiveMenu = 0 THEN
+                                    IF __UI_TotalActiveMenus = 0 THEN
                                         __UI_ActivateMenu Control(i), True
-                                        Control(__UI_ActiveMenu).Value = __UI_Focus
+                                        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Value = __UI_Focus
                                         __UI_ForceRedraw = True
                                         __UI_KeyHit = 0
                                     END IF
@@ -3581,7 +3605,7 @@ SUB __UI_EventDispatcher
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu THEN
                                     __UI_Focus = __UI_PreviousFocus
-                                    __UI_DestroyControl Control(__UI_ActiveMenu)
+                                    __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
                                     __UI_ForceRedraw = True
                                     __UI_KeyHit = 0
                                     IF LEFT$(Control(i).Name, 5) = "__UI_" THEN
@@ -3594,31 +3618,31 @@ SUB __UI_EventDispatcher
                                 END IF
                             NEXT
                         CASE 27 'Esc
-                            IF Control(__UI_ParentMenu).Type = __UI_Type_MenuBar THEN
-                                __UI_Focus = __UI_ParentMenu
+                            IF Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Type = __UI_Type_MenuBar THEN
+                                __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)
                             ELSE
                                 __UI_Focus = __UI_PreviousFocus
                             END IF
-                            __UI_DestroyControl Control(__UI_ActiveMenu)
+                            __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
                             __UI_KeyHit = 0
                         CASE 19200 'Left
                             IF __UI_ActiveMenuIsContextMenu = False THEN
-                                __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_ParentMenu)), True
+                                __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_ParentMenu(__UI_TotalActiveMenus))), True
                                 __UI_ForceRedraw = True
                             END IF
                             __UI_KeyHit = 0
                         CASE 19712 'Right
                             IF __UI_ActiveMenuIsContextMenu = False THEN
-                                __UI_ActivateMenu Control(__UI_NextMenuBarControl(__UI_ParentMenu)), True
+                                __UI_ActivateMenu Control(__UI_NextMenuBarControl(__UI_ParentMenu(__UI_TotalActiveMenus))), True
                                 __UI_ForceRedraw = True
                             END IF
                             __UI_KeyHit = 0
                         CASE 18432 'Up
                             __UI_Focus = __UI_PreviousMenuItem(__UI_Focus)
-                            Control(__UI_ActiveMenu).Value = Control(__UI_Focus).ID
+                            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Value = Control(__UI_Focus).ID
                         CASE 20480 'Down
                             __UI_Focus = __UI_NextMenuItem(__UI_Focus)
-                            Control(__UI_ActiveMenu).Value = Control(__UI_Focus).ID
+                            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Value = Control(__UI_Focus).ID
                     END SELECT
                 CASE __UI_Type_Button, __UI_Type_RadioButton, __UI_Type_CheckBox, __UI_Type_ToggleSwitch
                     SELECT CASE __UI_KeyHit
@@ -4172,7 +4196,7 @@ SUB __UI_EventDispatcher
         END IF
     ELSEIF __UI_DesignMode AND __UI_KeyHit <> 0 THEN 'No buttons will respond while in design mode
         'But the design menu must respond:
-        IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN GOTO HandleDesignMenu
+        IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) = "__UI_" THEN GOTO HandleDesignMenu
 
         SELECT CASE  __UI_Keyhit
             CASE ASC("Z"), ASC("z")
@@ -4264,7 +4288,7 @@ SUB __UI_EventDispatcher
                     END IF
                 NEXT
         END SELECT
-        IF __UI_ActiveMenu > 0 THEN __UI_ActivateMenu Control(__UI_ParentMenu), False
+        IF __UI_TotalActiveMenus > 0 THEN __UI_ActivateMenu Control(__UI_ParentMenu(__UI_TotalActiveMenus)), False
     ELSEIF __UI_KeyHit <> 0 THEN 'No control has focus
         'Enter activates the default button, if any
         IF __UI_IsDragging = False AND __UI_KeyHit = -13 AND __UI_DefaultButtonID > 0 THEN
@@ -4592,6 +4616,12 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
 
     Control(NextSlot).ParentID = ParentID
     Control(NextSlot).ParentName = Control(ParentID).Name
+    IF ControlType = __UI_Type_MenuItem THEN
+        IF Control(ParentID).Type = __UI_Type_MenuItem THEN
+            Control(ParentID).SubMenu = True
+        END IF
+    END IF
+
     IF (ControlType <> __UI_Type_Form AND ParentID = 0) THEN
         'Inherit main form's font
         Control(NextSlot).Font = Control(__UI_FormID).Font
@@ -4692,10 +4722,10 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
                 __UI_ParentDropdownList = 0
             END IF
         ELSEIF This.Type = __UI_Type_MenuPanel THEN
-            IF __UI_ActiveMenu = This.ID THEN
-                __UI_ActiveMenu = 0
-                __UI_ParentMenu = 0
+            IF Control(This.SourceControl).Type = __UI_Type_ContextMenu THEN
+                __UI_ActiveMenuIsContextMenu = False
             END IF
+            __UI_TotalActiveMenus = __UI_TotalActiveMenus - 1
         END IF
 
         __UI_Type(This.Type).Count = __UI_Type(This.Type).Count - 1
@@ -5372,7 +5402,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB __UI_ListBoxSearchItem (This AS __UI_ControlTYPE)
-    STATIC SearchPattern$, LastListKeyHit AS DOUBLE
+    STATIC SearchPattern$, LastListKeyHit AS SINGLE
     DIM ThisItem%, FindLF&, TempCaption$, TempText$
     DIM ListItems$(1 TO This.Max)
 
@@ -5651,85 +5681,118 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
 END SUB
 
 '---------------------------------------------------------------------------------
+SUB __UI_CloseAllMenus
+    DIM i AS LONG
+    FOR i = 1 TO __UI_TotalActiveMenus
+        __UI_DestroyControl Control(__UI_ActiveMenu(i))
+    NEXT
+END SUB
+
+'---------------------------------------------------------------------------------
 SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
     DIM i AS LONG, ItemHeight AS SINGLE, TotalItems AS INTEGER
     DIM CurrentGroup AS INTEGER
 
     IF NOT This.Disabled THEN
-        IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
-        __UI_ActiveMenu = __UI_NewControl(__UI_Type_MenuPanel, RTRIM$(This.Name) + CHR$(254) + "Panel", 0, 0, 0, 0, 0)
-        IF __UI_ActiveMenu = 0 THEN EXIT SUB
+        'Check that this menu hasn't yet been activated:
+        FOR i = 1 TO __UI_TotalActiveMenus
+            IF __UI_ParentMenu(i) = This.ID THEN
+                EXIT SUB
+            END IF
+        NEXT
 
-        __UI_ParentMenu = This.ID
-        Control(__UI_ActiveMenu).Font = This.Font
+        IF This.Type = __UI_Type_ContextMenu THEN __UI_CloseAllMenus: __UI_ForceRedraw = True
+
+        IF __UI_TotalActiveMenus + 1 > UBOUND(__UI_ActiveMenu) THEN
+            EXIT SUB
+        END IF
+        __UI_TotalActiveMenus = __UI_TotalActiveMenus + 1
+        __UI_ActiveMenu(__UI_TotalActiveMenus) = __UI_NewControl(__UI_Type_MenuPanel, RTRIM$(This.Name) + CHR$(254) + "Panel", 0, 0, 0, 0, 0)
+        IF __UI_ActiveMenu(__UI_TotalActiveMenus) = 0 THEN
+            __UI_TotalActiveMenus = __UI_TotalActiveMenus - 1
+            EXIT SUB
+        END IF
+
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).SourceControl = This.ID
+        __UI_ParentMenu(__UI_TotalActiveMenus) = This.ID
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Font = This.Font
         _FONT (This.Font)
 
         IF This.Type = __UI_Type_MenuBar THEN
-            Control(__UI_ActiveMenu).Left = This.Left
-            Control(__UI_ActiveMenu).Top = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
-            __UI_ActiveMenuIsContextMenu = False
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = This.Left
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+        ELSEIF This.Type = __UI_Type_MenuItem THEN
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = Control(This.MenuPanelID).Left + This.Width - __UI_MenuItemOffset / 4
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = Control(This.MenuPanelID).Top + This.Top
         ELSEIF This.Type = __UI_Type_ContextMenu THEN
             IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN
-                Control(__UI_ActiveMenu).Left = This.Left + This.Width
-                Control(__UI_ActiveMenu).Top = Control(__UI_FormID).Height
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = This.Left + This.Width
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = Control(__UI_FormID).Height
             ELSE
-                Control(__UI_ActiveMenu).Left = __UI_MouseLeft
-                Control(__UI_ActiveMenu).Top = __UI_MouseTop
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = __UI_MouseLeft
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = __UI_MouseTop
             END IF
             __UI_ActiveMenuIsContextMenu = True
         END IF
 
         'Calculate panel's width and position the menu items
         ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
-        Control(__UI_ActiveMenu).Height = (((_FONT = 8) * -1) * 3 + falcon_uspacing&) / 4
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = (((_FONT = 8) * -1) * 3 + falcon_uspacing&) / 4
         CurrentGroup = 1
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ParentID = This.ID AND NOT Control(i).Hidden THEN
                 TotalItems = TotalItems + 1
                 Control(i).Width = __UI_MenuItemOffset * 2 + __UI_PrintWidth(Caption(i))
-                IF Control(__UI_ActiveMenu).Width < Control(i).Width THEN
-                    Control(__UI_ActiveMenu).Width = Control(i).Width
+                IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width < Control(i).Width THEN
+                    Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = Control(i).Width
                 END IF
 
                 'Reposition menu items:
-                Control(i).Top = Control(__UI_ActiveMenu).Height
+                Control(i).Top = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height
                 Control(i).Height = ItemHeight
 
+                'Link menu item to this panel
+                Control(i).MenuPanelID = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).ID
+
                 'Grow the panel:
-                Control(__UI_ActiveMenu).Height = Control(__UI_ActiveMenu).Height + ItemHeight
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + ItemHeight
 
                 'Assign MenuItemGroup to properly handle Bullet items
                 Control(i).MenuItemGroup = CurrentGroup
 
                 IF RIGHT$(Caption(i), 1) = "-" THEN 'Separator
-                    Control(__UI_ActiveMenu).Height = Control(__UI_ActiveMenu).Height + ItemHeight / 3
+                    Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + ItemHeight / 3
                     CurrentGroup = CurrentGroup + 1
                 END IF
             END IF
         NEXT
 
-        Control(__UI_ActiveMenu).Height = Control(__UI_ActiveMenu).Height + (((((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + falcon_uspacing&) / 4)
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + (((((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + falcon_uspacing&) / 4)
 
-        IF Control(__UI_ActiveMenu).Width = 0 THEN Control(__UI_ActiveMenu).Width = Control(__UI_FormID).Width / 4
+        IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = 0 THEN Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = Control(__UI_FormID).Width / 4
 
-        IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN Control(__UI_ActiveMenu).Height = Control(__UI_ActiveMenu).Height + ItemHeight
+        IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + ItemHeight
 
-        IF Control(__UI_ActiveMenu).Left + Control(__UI_ActiveMenu).Width > Control(__UI_FormID).Width THEN
-            Control(__UI_ActiveMenu).Left = Control(__UI_FormID).Width - Control(__UI_ActiveMenu).Width - 5
+        IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left + Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width > Control(__UI_FormID).Width THEN
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = Control(__UI_FormID).Width - Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width - 5
+            IF This.Type = __UI_Type_MenuItem THEN
+                'Sub-menus must not overlap their parent menu panel
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = Control(This.MenuPanelID).Left - Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width + __UI_MenuItemOffset / 4
+            END IF
         END IF
 
-        IF Control(__UI_ActiveMenu).Top + Control(__UI_ActiveMenu).Height > Control(__UI_FormID).Height THEN
-            Control(__UI_ActiveMenu).Top = Control(__UI_FormID).Height - Control(__UI_ActiveMenu).Height - 5
-            IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN Control(__UI_ActiveMenu).Top = Control(__UI_ActiveMenu).Top - This.Height
+        IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top + Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height > Control(__UI_FormID).Height THEN
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = Control(__UI_FormID).Height - Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height - 5
+            IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top - This.Height
         END IF
 
         IF SelectFirstItem AND NOT __UI_DesignMode AND TotalItems > 0 THEN
             __UI_Focus = __UI_NextMenuItem(0)
         ELSE
             IF TotalItems = 0 THEN
-                Control(__UI_ActiveMenu).Width = __UI_MenuItemOffset * 2 + __UI_PrintWidth("Add new")
+                Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = __UI_MenuItemOffset * 2 + __UI_PrintWidth("Add new")
             END IF
-            __UI_Focus = __UI_ActiveMenu
+            __UI_Focus = __UI_ActiveMenu(__UI_TotalActiveMenus)
         END IF
     END IF
 END SUB
@@ -5825,7 +5888,7 @@ FUNCTION __UI_NextMenuItem (CurrentMenuItemControl)
         i = i + 1
         IF i > UBOUND(Control) THEN i = 1
         IF i = CurrentMenuItemControl THEN EXIT DO
-        IF Control(i).Type = __UI_Type_MenuItem AND NOT Control(i).Hidden AND Control(i).ParentID = __UI_ParentMenu THEN
+        IF Control(i).Type = __UI_Type_MenuItem AND NOT Control(i).Hidden AND Control(i).ParentID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
             EXIT DO
         END IF
     LOOP
@@ -5840,7 +5903,7 @@ FUNCTION __UI_PreviousMenuItem (CurrentMenuItemControl)
         i = i - 1
         IF i < 1 THEN i = UBOUND(Control)
         IF i = CurrentMenuItemControl THEN EXIT DO
-        IF Control(i).Type = __UI_Type_MenuItem AND NOT Control(i).Hidden AND Control(i).ParentID = __UI_ParentMenu THEN
+        IF Control(i).Type = __UI_Type_MenuItem AND NOT Control(i).Hidden AND Control(i).ParentID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
             EXIT DO
         END IF
     LOOP

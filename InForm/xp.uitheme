@@ -818,7 +818,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                 ThisTempText$ = STRING$(LEN(ThisTempText$), 7)
             END IF
 
-            IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu = This.ContextMenuID)) AND NOT This.Disabled THEN
+            IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu(__UI_TotalActiveMenus) = This.ContextMenuID)) AND NOT This.Disabled THEN
                 IF LEN(Text(This.ID)) THEN
                     __UI_PrintString CaptionIndent - This.InputViewStart, ((This.Height \ 2) - uspacing& \ 2), ThisTempText$
                 ELSE
@@ -1331,7 +1331,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
 
         'Draw "dropdown" button
         DIM DropdownState AS _BYTE
-        IF __UI_ActiveMenu > 0 AND __UI_ParentDropdownList = This.ID THEN
+        IF __UI_TotalActiveMenus > 0 AND __UI_ParentDropdownList = This.ID THEN
             DropdownState = 3
         ELSEIF (This.ID = __UI_HoveringID OR This.ID = __UI_ParentDropdownList) AND NOT This.Disabled THEN
             DropdownState = 2
@@ -1508,7 +1508,7 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
 
         IF __UI_Focus = This.ID OR _
-           (__UI_ParentMenu = This.ID AND (Control(__UI_Focus).Type = __UI_Type_MenuPanel OR Control(__UI_Focus).Type = __UI_Type_MenuItem)) OR _
+           (__UI_ParentMenu(__UI_TotalActiveMenus) = This.ID AND (Control(__UI_Focus).Type = __UI_Type_MenuPanel OR Control(__UI_Focus).Type = __UI_Type_MenuItem)) OR _
            (__UI_HoveringID = This.ID AND (Control(__UI_Focus).Type <> __UI_Type_MenuPanel AND Control(__UI_Focus).Type <> __UI_Type_MenuBar AND Control(__UI_Focus).Type <> __UI_Type_MenuItem)) THEN
             LINE (0, 0)-STEP(This.Width - 1, This.Height - 1), This.SelectedBackColor, BF
             COLOR This.SelectedForeColor
@@ -1547,7 +1547,7 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
+SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
     DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
     DIM Temp&
 
@@ -1560,12 +1560,11 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         __UI_ClearColor ControlImage, 0, 0
     END IF
 
-    IF This.Redraw OR This.Value <> This.PreviousValue OR This.FocusState <> (__UI_Focus = This.ID) OR This.ControlState <> ControlState _
+    IF This.Redraw OR This.Value <> This.PreviousValue OR This.FocusState <> (__UI_Focus = This.ID) _
        OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.Redraw = False
         This.FocusState = (__UI_Focus = This.ID)
-        This.ControlState = ControlState
         This.PreviousFont = This.Font
         This.PreviousValue = This.Value
 
@@ -1589,7 +1588,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         DIM i AS LONG, HasSeparator as _BYTE
         FOR i = 1 TO UBOUND(Control)
-            IF Control(i).Type = __UI_Type_MenuItem AND NOT Control(i).Hidden AND Control(i).ParentID = __UI_ParentMenu THEN
+            IF Control(i).Type = __UI_Type_MenuItem AND NOT Control(i).Hidden AND Control(i).ParentID = Parent THEN
                 TempCaption$ = __UI_TrimAt0$(Caption(i))
 
                 IF RIGHT$(TempCaption$, 1) = "-" THEN
@@ -1613,6 +1612,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                     CheckMarkIndex = 3
                 END IF
 
+                IF Control(i).SubMenu THEN TempCaption$ = TempCaption$ + " >"
                 __UI_PrintString Control(i).Left + __UI_MenuItemOffset, Control(i).Top + Control(i).Height \ 2 - uheight& \ 2, TempCaption$
 
                 IF Control(i).HotKey > 0 THEN
