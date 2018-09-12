@@ -201,6 +201,7 @@ DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
 DIM SHARED __UI_TotalActiveMenus AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
 DIM SHARED __UI_SubMenuDelay AS SINGLE, __UI_HoveringSubMenu AS _BYTE
+DIM SHARED __UI_TopMenuBarItem AS LONG
 DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS SINGLE, __UI_PreviousTipID AS LONG
 DIM SHARED __UI_ActiveTipTop AS INTEGER, __UI_ActiveTipLeft AS INTEGER
 DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
@@ -3454,10 +3455,14 @@ SUB __UI_EventDispatcher
             IF Control(__UI_Focus).Type = __UI_Type_Button OR Control(__UI_Focus).Type = __UI_Type_MenuItem THEN
                 i = __UI_Focus
                 IF Control(__UI_Focus).Type = __UI_Type_MenuItem THEN
-                    __UI_Focus = __UI_PreviousFocus
-                    __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
-                    __UI_ForceRedraw = True
-                    __UI_KeyHit = 0
+                    IF Control(__UI_Focus).SubMenu THEN
+                        __UI_ActivateMenu Control(__UI_Focus), True
+                    ELSE
+                        __UI_Focus = __UI_PreviousFocus
+                        __UI_CloseAllMenus
+                        __UI_ForceRedraw = True
+                        __UI_KeyHit = 0
+                    END IF
                 END IF
                 __UI_HoveringID = i
                 GOTO ProcessClick
@@ -3550,7 +3555,7 @@ SUB __UI_EventDispatcher
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu THEN
                                     __UI_Focus = __UI_PreviousFocus
-                                    __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
+                                    __UI_CloseAllMenus
                                     __UI_ForceRedraw = True
                                     __UI_KeyHit = 0
                                     IF LEFT$(Control(i).Name, 5) = "__UI_" THEN
@@ -3563,23 +3568,40 @@ SUB __UI_EventDispatcher
                                 END IF
                             NEXT
                         CASE 27 'Esc
-                            IF Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Type = __UI_Type_MenuBar THEN
+                            IF __UI_TotalActiveMenus > 1 THEN
                                 __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)
-                            ELSE
+                                __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
+                            ELSEIF __UI_TotalActiveMenus = 1 THEN
+                                __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)
+                                __UI_CloseAllMenus
+                            ELSEIF __UI_TotalActiveMenus > 0 AND __UI_ActiveMenuIsContextMenu THEN
+                                __UI_CloseAllMenus
                                 __UI_Focus = __UI_PreviousFocus
                             END IF
-                            __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
                             __UI_KeyHit = 0
                         CASE 19200 'Left
                             IF __UI_ActiveMenuIsContextMenu = False THEN
-                                __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_ParentMenu(__UI_TotalActiveMenus))), True
-                                __UI_ForceRedraw = True
+                                IF __UI_TotalActiveMenus > 1 THEN
+                                    'close sub-menu
+                                    __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)
+                                    __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
+                                ELSEIF __UI_TotalActiveMenus = 1 THEN
+                                    'activate left neighbor menubar item
+                                    __UI_CloseAllMenus
+                                    __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_TopMenuBarItem)), True
+                                    __UI_ForceRedraw = True
+                                END IF
                             END IF
                             __UI_KeyHit = 0
                         CASE 19712 'Right
-                            IF __UI_ActiveMenuIsContextMenu = False THEN
-                                __UI_ActivateMenu Control(__UI_NextMenuBarControl(__UI_ParentMenu(__UI_TotalActiveMenus))), True
-                                __UI_ForceRedraw = True
+                            IF Control(__UI_Focus).SubMenu THEN
+                                __UI_ActivateMenu Control(__UI_Focus), True
+                            ELSE
+                                IF __UI_ActiveMenuIsContextMenu = False THEN
+                                    __UI_CloseAllMenus
+                                    __UI_ActivateMenu Control(__UI_NextMenuBarControl(__UI_TopMenuBarItem)), True
+                                    __UI_ForceRedraw = True
+                                END IF
                             END IF
                             __UI_KeyHit = 0
                         CASE 18432 'Up
@@ -4727,6 +4749,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
                 __UI_ActiveMenuIsContextMenu = False
             END IF
             __UI_TotalActiveMenus = __UI_TotalActiveMenus - 1
+            IF __UI_TotalActiveMenus < 0 THEN __UI_TotalActiveMenus = 0
         END IF
 
         __UI_Type(This.Type).Count = __UI_Type(This.Type).Count - 1
@@ -5722,6 +5745,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         IF This.Type = __UI_Type_MenuBar THEN
             Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = This.Left
             Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+            __UI_TopMenuBarItem = This.ID
         ELSEIF This.Type = __UI_Type_MenuItem THEN
             Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = Control(This.MenuPanelID).Left + This.Width - __UI_MenuItemOffset / 4
             Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = Control(This.MenuPanelID).Top + This.Top
