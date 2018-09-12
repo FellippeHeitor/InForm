@@ -3580,12 +3580,12 @@ SUB __UI_EventDispatcher
                             END IF
                             __UI_KeyHit = 0
                         CASE 19200 'Left
-                            IF __UI_ActiveMenuIsContextMenu = False THEN
-                                IF __UI_TotalActiveMenus > 1 THEN
-                                    'close sub-menu
-                                    __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)
-                                    __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
-                                ELSEIF __UI_TotalActiveMenus = 1 THEN
+                            IF __UI_TotalActiveMenus > 1 THEN
+                                'close sub-menu
+                                __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)
+                                __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
+                            ELSEIF __UI_TotalActiveMenus = 1 THEN
+                                IF __UI_ActiveMenuIsContextMenu = False THEN
                                     'activate left neighbor menubar item
                                     __UI_CloseAllMenus
                                     __UI_ActivateMenu Control(__UI_PreviousMenuBarControl(__UI_TopMenuBarItem)), True
