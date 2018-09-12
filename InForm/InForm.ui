@@ -868,12 +868,11 @@ SUB __UI_ProcessInput
                 __UI_Focus = __UI_HoveringID
             END IF
         ELSEIF __UI_TotalActiveMenus > 0 AND Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_ActiveMenuIsContextMenu = False AND __UI_DesignMode = False THEN
+            __UI_CloseAllMenus
             IF __UI_ParentMenu(__UI_TotalActiveMenus) <> __UI_HoveringID AND NOT Control(__UI_HoveringID).Disabled THEN
-                __UI_CloseAllMenus
                 __UI_ActivateMenu Control(__UI_HoveringID), False
                 __UI_ForceRedraw = True
             ELSEIF Control(__UI_HoveringID).Disabled THEN
-                __UI_DestroyControl Control(__UI_Focus)
                 __UI_Focus = __UI_HoveringID
             END IF
         ELSE
@@ -1611,61 +1610,6 @@ SUB __UI_UpdateDisplay
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB AutoSizeLabel (this AS __UI_ControlTYPE)
-    DIM tempFont AS LONG, tempCenter AS INTEGER
-    DIM autoWidth AS INTEGER, autoHeight AS INTEGER
-    IF this.AutoSize = False THEN EXIT SUB
-    IF this.WordWrap = False THEN
-        tempFont = _FONT
-        _FONT this.Font
-        autoWidth = __UI_PrintWidth(Caption(this.ID))
-        IF this.Padding THEN autoWidth = autoWidth + this.Padding * 2
-        IF this.HasBorder THEN autoWidth = autoWidth + (__UI_DefaultCaptionIndent + this.BorderSize) * 2
-        IF this.Width <> autoWidth OR this.Height <> uspacing + 6 THEN
-            this.Width = autoWidth
-            autoHeight = uspacing + 6
-            IF this.HasBorder THEN autoHeight = autoHeight + this.BorderSize * 2
-            IF this.Height <> autoHeight THEN
-                tempCenter = this.Top + this.Height / 2
-                this.Height = autoHeight
-                this.Top = tempCenter - this.Height / 2
-            END IF
-            this.Redraw = True
-        END IF
-        _FONT tempFont
-    END IF
-END SUB
-
-'---------------------------------------------------------------------------------
-FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
-    Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
-END FUNCTION
-
-'---------------------------------------------------------------------------------
-FUNCTION isNumber%% (__a$)
-    'This function adapted from qb64.bas
-    DIM i AS LONG, a AS INTEGER, dp AS _BYTE, a$
-
-    a$ = LTRIM$(RTRIM$(__a$))
-
-    IF LEN(a$) = 0 THEN EXIT FUNCTION
-    FOR i = 1 TO LEN(a$)
-        a = ASC(MID$(a$, i, 1))
-        IF a = 45 THEN
-            IF i <> 1 THEN EXIT FUNCTION
-            _CONTINUE
-        END IF
-        IF a = 46 THEN
-            IF dp = 1 THEN EXIT FUNCTION
-            dp = 1
-            _CONTINUE
-        END IF
-        IF a >= 48 AND a <= 57 THEN _CONTINUE
-        EXIT FUNCTION
-    NEXT
-    isNumber%% = True
-END FUNCTION
-
 SUB __UI_EventDispatcher
     STATIC __UI_LastMouseIconSet AS _BYTE
     STATIC __UI_LastMouseDownEvent AS SINGLE
@@ -2238,7 +2182,8 @@ SUB __UI_EventDispatcher
             ELSE
                 IF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_TotalActiveMenus > 0 AND __UI_HoveringID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
                     __UI_Focus = __UI_PreviousFocus
-                ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND __UI_TotalActiveMenus = 0 THEN
+                ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND (__UI_TotalActiveMenus = 0 OR __UI_ActiveMenuIsContextMenu) THEN
+                    __UI_CloseAllMenus
                     __UI_ActivateMenu Control(__UI_HoveringID), False
                     __UI_JustOpenedMenu = True
                 ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuItem THEN
@@ -4300,6 +4245,62 @@ SUB __UI_EventDispatcher
 
     __UI_LastHoveringID = __UI_HoveringID
 END SUB
+
+'---------------------------------------------------------------------------------
+SUB AutoSizeLabel (this AS __UI_ControlTYPE)
+    DIM tempFont AS LONG, tempCenter AS INTEGER
+    DIM autoWidth AS INTEGER, autoHeight AS INTEGER
+    IF this.AutoSize = False THEN EXIT SUB
+    IF this.WordWrap = False THEN
+        tempFont = _FONT
+        _FONT this.Font
+        autoWidth = __UI_PrintWidth(Caption(this.ID))
+        IF this.Padding THEN autoWidth = autoWidth + this.Padding * 2
+        IF this.HasBorder THEN autoWidth = autoWidth + (__UI_DefaultCaptionIndent + this.BorderSize) * 2
+        IF this.Width <> autoWidth OR this.Height <> uspacing + 6 THEN
+            this.Width = autoWidth
+            autoHeight = uspacing + 6
+            IF this.HasBorder THEN autoHeight = autoHeight + this.BorderSize * 2
+            IF this.Height <> autoHeight THEN
+                tempCenter = this.Top + this.Height / 2
+                this.Height = autoHeight
+                this.Top = tempCenter - this.Height / 2
+            END IF
+            this.Redraw = True
+        END IF
+        _FONT tempFont
+    END IF
+END SUB
+
+'---------------------------------------------------------------------------------
+FUNCTION Darken~& (WhichColor~&, ByHowMuch%)
+    Darken~& = _RGB32(_RED32(WhichColor~&) * (ByHowMuch% / 100), _GREEN32(WhichColor~&) * (ByHowMuch% / 100), _BLUE32(WhichColor~&) * (ByHowMuch% / 100))
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION isNumber%% (__a$)
+    'This function adapted from qb64.bas
+    DIM i AS LONG, a AS INTEGER, dp AS _BYTE, a$
+
+    a$ = LTRIM$(RTRIM$(__a$))
+
+    IF LEN(a$) = 0 THEN EXIT FUNCTION
+    FOR i = 1 TO LEN(a$)
+        a = ASC(MID$(a$, i, 1))
+        IF a = 45 THEN
+            IF i <> 1 THEN EXIT FUNCTION
+            _CONTINUE
+        END IF
+        IF a = 46 THEN
+            IF dp = 1 THEN EXIT FUNCTION
+            dp = 1
+            _CONTINUE
+        END IF
+        IF a >= 48 AND a <= 57 THEN _CONTINUE
+        EXIT FUNCTION
+    NEXT
+    isNumber%% = True
+END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB __UI_RestoreImageOriginalSize
