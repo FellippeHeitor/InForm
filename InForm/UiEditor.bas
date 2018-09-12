@@ -876,7 +876,7 @@ SUB SelectFontInList (FontSetup$)
 END SUB
 
 SUB LoseFocus
-    IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+    IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
     IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
     IF __UI_Focus > 0 THEN __UI_FocusOut __UI_Focus
     __UI_Focus = 0
@@ -1221,7 +1221,7 @@ SUB __UI_BeforeUpdateDisplay
             Answer = MessageBox("Icon couldn't be previewed. Make sure it's a valid icon file.", "", MsgBox_OkOnly + MsgBox_Exclamation)
         ELSEIF CVI(b$) = -5 THEN
             'Context menu was successfully shown on the preview
-            IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+            IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
             __UI_Focus = 0
             __UI_ForceRedraw = True
         ELSEIF CVI(b$) = -6 THEN

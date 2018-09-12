@@ -3553,7 +3553,7 @@ SUB __UI_EventDispatcher
                             IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
                             'Search for a matching hot key in menu bar items
                             FOR i = 1 TO UBOUND(Control)
-                                IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu THEN
+                                IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
                                     __UI_Focus = __UI_PreviousFocus
                                     __UI_CloseAllMenus
                                     __UI_ForceRedraw = True

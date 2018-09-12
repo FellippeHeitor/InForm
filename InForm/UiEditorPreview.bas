@@ -169,8 +169,8 @@ SUB __UI_BeforeUpdateDisplay
         SendData b$, "SHOWINVISIBLECONTROLS"
     END IF
 
-    IF prevMenuPanelActive <> (__UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_") THEN
-        prevMenuPanelActive = (__UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_")
+    IF prevMenuPanelActive <> (__UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_") THEN
+        prevMenuPanelActive = (__UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_")
         b$ = MKI$(prevMenuPanelActive)
         SendData b$, "MENUPANELACTIVE"
     END IF
@@ -268,10 +268,10 @@ SUB __UI_BeforeUpdateDisplay
                     IF tempType = __UI_Type_MenuBar THEN
                         TempValue = AddNewMenuBarControl
                     ELSEIF tempType = __UI_Type_MenuItem THEN
-                        IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
-                            TempValue = __UI_NewControl(tempType, "", 0, 0, 0, 0, __UI_ParentMenu)
+                        IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_" THEN
+                            TempValue = __UI_NewControl(tempType, "", 0, 0, 0, 0, __UI_ParentMenu(__UI_TotalActiveMenus))
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            __UI_ActivateMenu Control(__UI_ParentMenu), False
+                            __UI_ActivateMenu Control(__UI_ParentMenu(__UI_TotalActiveMenus)), False
                         END IF
                     ELSE
                         TempValue = __UI_NewControl(TempValue, "", defW, defH, TempWidth \ 2 - defW \ 2, TempTop - defH \ 2, ThisContainer)
@@ -287,8 +287,8 @@ SUB __UI_BeforeUpdateDisplay
                             __UI_ActivateMenu Control(TempValue), False
                     END SELECT
 
-                    IF __UI_ActiveMenu > 0 AND (Control(TempValue).Type <> __UI_Type_ContextMenu AND Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
-                        __UI_DestroyControl Control(__UI_ActiveMenu)
+                    IF __UI_TotalActiveMenus > 0 AND (Control(TempValue).Type <> __UI_Type_ContextMenu AND Control(TempValue).Type <> __UI_Type_MenuBar AND Control(TempValue).Type <> __UI_Type_MenuItem) THEN
+                        __UI_CloseAllMenus
                     END IF
                     SelectNewControl TempValue
                 END IF
@@ -499,8 +499,8 @@ SUB __UI_BeforeUpdateDisplay
             __UI_RestoreImageOriginalSize
         ELSEIF TempValue = -8 THEN
             'Editor is manipulated, preview menus must be closed.
-            IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
-                __UI_DestroyControl Control(__UI_ActiveMenu)
+            IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) = "__UI_" THEN
+                __UI_CloseAllMenus
             END IF
         ELSEIF TempValue = 214 THEN
             RestoreUndoImage
@@ -984,7 +984,7 @@ SUB __UI_BeforeUpdateDisplay
                         IF Control(i).ControlIsSelected THEN
                             ChangeHidden:
                             Control(i).Hidden = CVI(b$)
-                            IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu = Control(i).ParentID THEN
+                            IF Control(i).Type = __UI_Type_MenuItem AND __UI_ParentMenu(__UI_TotalActiveMenus) = Control(i).ParentID THEN
                                 __UI_ActivateMenu Control(Control(i).ParentID), False
                             END IF
                             IF LockedControlsGOSUB THEN RETURN
@@ -1011,7 +1011,7 @@ SUB __UI_BeforeUpdateDisplay
                             Control(i).Align = CVI(b$)
                             IF Control(i).Type = __UI_Type_MenuBar THEN
                                 IF Control(i).Align <> __UI_Left THEN Control(i).Align = __UI_Right
-                                IF __UI_ActiveMenu > 0 THEN __UI_DestroyControl Control(__UI_ActiveMenu)
+                                IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
                                 __UI_RefreshMenuBar
                             END IF
                             IF LockedControlsGOSUB THEN RETURN
@@ -1348,11 +1348,11 @@ SUB __UI_BeforeUpdateDisplay
                     Control(i).ParentID = __UI_GetID(Control(i).ParentName)
                 NEXT
 
-                IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) <> "__UI_" THEN
+                IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_" THEN
                     IF Control(CVL(a$)).Type = __UI_Type_MenuItem OR Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
-                        __UI_ActivateMenu Control(__UI_ParentMenu), False
+                        __UI_ActivateMenu Control(__UI_ParentMenu(__UI_TotalActiveMenus)), False
                     ELSE
-                        __UI_DestroyControl Control(__UI_ActiveMenu)
+                        __UI_CloseAllMenus
                     END IF
                 END IF
             CASE 213
@@ -1376,9 +1376,10 @@ SUB __UI_BeforeUpdateDisplay
                 Control(TempValue).Min = -32768
                 Control(TempValue).Max = 32767
 
-                IF __UI_ActiveMenu > 0 THEN
-                    __UI_DestroyControl Control(__UI_ActiveMenu)
+                IF __UI_TotalActiveMenus > 0 THEN
+                    __UI_CloseAllMenus
                 END IF
+
                 FOR i = 1 TO UBOUND(Control)
                     Control(i).ControlIsSelected = False
                 NEXT
@@ -1396,11 +1397,11 @@ SUB __UI_BeforeUpdateDisplay
     LOOP
     IF PropertyApplied THEN TotalLockedControls = 0
 
-    IF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
-        __UI_DestroyControl Control(__UI_ActiveMenu)
+    IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) = "__UI_" AND __UI_CantShowContextMenu THEN
+        __UI_CloseAllMenus
         b$ = "SIGNAL>" + MKI$(-2) + "<END>" 'Signal to the editor that the preview can't show the context menu
         PUT #Host, , b$
-    ELSEIF __UI_ActiveMenu > 0 AND LEFT$(Control(__UI_ParentMenu).Name, 5) = "__UI_" THEN
+    ELSEIF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) = "__UI_" THEN
         STATIC LocalMenuShown AS _BYTE, LocalMenuShownSignalSent AS _BYTE
         LocalMenuShown = True
     ELSE
@@ -1965,8 +1966,8 @@ SUB DeleteSelectedControls
                     END IF
                 NEXT
             END IF
-            IF __UI_ActiveMenu > 0 AND __UI_ParentMenu = Control(i).ID THEN
-                __UI_DestroyControl Control(__UI_ActiveMenu)
+            IF __UI_TotalActiveMenus > 0 AND __UI_ParentMenu(__UI_TotalActiveMenus) = Control(i).ID THEN
+                __UI_CloseAllMenus
             END IF
             __UI_DestroyControl Control(i)
             IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
