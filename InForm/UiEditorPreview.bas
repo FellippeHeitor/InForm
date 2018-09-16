@@ -271,7 +271,9 @@ SUB __UI_BeforeUpdateDisplay
                         IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_" THEN
                             TempValue = __UI_NewControl(tempType, "", 0, 0, 0, 0, __UI_ParentMenu(__UI_TotalActiveMenus))
                             SetCaption TempValue, RTRIM$(Control(TempValue).Name)
-                            __UI_ActivateMenu Control(__UI_ParentMenu(__UI_TotalActiveMenus)), False
+                            ThisContainer = __UI_ParentMenu(__UI_TotalActiveMenus)
+                            __UI_CloseAllMenus
+                            __UI_ActivateMenu Control(ThisContainer), False
                         END IF
                     ELSE
                         TempValue = __UI_NewControl(TempValue, "", defW, defH, TempWidth \ 2 - defW \ 2, TempTop - defH \ 2, ThisContainer)

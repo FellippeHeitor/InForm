@@ -1552,12 +1552,22 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
     DIM Temp&
 
     DIM CheckMarkIndex AS _BYTE
-    STATIC ControlImage AS LONG
+    STATIC ControlImage AS LONG, SubMenuArrow AS LONG
     CONST CheckMarkWidth = 7
     CONST CheckMarkHeight = 7
     IF ControlImage = 0 THEN
         ControlImage = __UI_LoadThemeImage("menucheckmark.bmp")
         __UI_ClearColor ControlImage, 0, 0
+    END IF
+    IF SubMenuArrow = 0 THEN
+        SubMenuArrow = _NEWIMAGE(4, 7, 32)
+        PrevDest = _DEST
+        _DEST SubMenuArrow
+        LINE (0, 0)-(3, 3), _RGB32(0, 0, 0)
+        LINE -(0, 6), _RGB32(0, 0, 0)
+        LINE -(0, 0), _RGB32(0, 0, 0)
+        PAINT (2, 3), _RGB32(0, 0, 0)
+        _DEST PrevDest
     END IF
 
     IF This.Redraw OR This.Value <> This.PreviousValue OR This.FocusState <> (__UI_Focus = This.ID) _
@@ -1612,8 +1622,11 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
                     CheckMarkIndex = 3
                 END IF
 
-                IF Control(i).SubMenu THEN TempCaption$ = TempCaption$ + " >"
                 __UI_PrintString Control(i).Left + __UI_MenuItemOffset, Control(i).Top + Control(i).Height \ 2 - uheight& \ 2, TempCaption$
+
+                IF Control(i).SubMenu THEN
+                    _PUTIMAGE (This.Width - __UI_MenuItemOffset / 2, Control(i).Top + Control(i).Height / 2 - 3), SubMenuArrow
+                END IF
 
                 IF Control(i).HotKey > 0 THEN
                     'Has "hot-key"
