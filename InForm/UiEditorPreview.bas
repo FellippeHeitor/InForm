@@ -1935,20 +1935,33 @@ SUB SelectAllControls
     END IF
 END SUB
 
+SUB SelectChildrenControls (id AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ParentID = id THEN
+            IF Control(i).ControlIsSelected = False THEN
+                Control(i).ControlIsSelected = True
+                __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
+                IF Control(i).Type = __UI_Type_MenuItem THEN
+                    'Recursively select children's children too:
+                    SelectChildrenControls Control(i).ID
+                END IF
+            END IF
+        END IF
+    NEXT
+END SUB
+
 SUB DeleteSelectedControls
     DIM i AS LONG, j AS LONG, didDelete AS _BYTE
 
-    'A frame's contents will be deleted with it if it's
+    'A container's contents will be deleted with it if it's
     'the only selected control.
-    IF __UI_TotalSelectedControls = 1 AND Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
-        FOR i = 1 TO UBOUND(Control)
-            IF Control(i).ParentID = __UI_FirstSelectedID THEN
-                IF Control(i).ControlIsSelected = False THEN
-                    Control(i).ControlIsSelected = True
-                    __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
-                END IF
-            END IF
-        NEXT
+    IF __UI_TotalSelectedControls = 1 AND _
+       (Control(__UI_FirstSelectedID).Type = __UI_Type_Frame OR _
+        Control(__UI_FirstSelectedID).Type = __UI_Type_MenuBar OR _
+        Control(__UI_FirstSelectedID).Type = __UI_Type_MenuItem OR _
+        Control(__UI_FirstSelectedID).Type = __UI_Type_ContextMenu) THEN
+        SelectChildrenControls __UI_FirstSelectedID
     END IF
 
     'Iterate over control list and delete selected controls.
@@ -1962,11 +1975,6 @@ SUB DeleteSelectedControls
                 ELSE
                     MustRefreshContextMenus = True
                 END IF
-                FOR j = 1 TO UBOUND(Control)
-                    IF Control(j).ParentID = i THEN
-                        __UI_DestroyControl Control(j)
-                    END IF
-                NEXT
             END IF
             IF __UI_TotalActiveMenus > 0 AND __UI_ParentMenu(__UI_TotalActiveMenus) = Control(i).ID THEN
                 __UI_CloseAllMenus
@@ -1975,13 +1983,10 @@ SUB DeleteSelectedControls
             IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
             IF MustRefreshContextMenus THEN RefreshContextMenus
             __UI_ForceRedraw = True
-            __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
             didDelete = True
         END IF
     NEXT
-    IF didDelete THEN
-        IF __UI_TotalSelectedControls > 0 THEN __UI_TotalSelectedControls = 0
-    END IF
+    IF didDelete THEN __UI_TotalSelectedControls = 0
 END SUB
 
 SUB RefreshContextMenus

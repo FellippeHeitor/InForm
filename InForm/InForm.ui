@@ -4752,6 +4752,13 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
                 __UI_ParentDropdownList = 0
             END IF
         ELSEIF This.Type = __UI_Type_MenuPanel THEN
+            FOR i = 1 TO UBOUND(Control)
+                IF Control(i).MenuPanelID = This.ID THEN
+                    IF Control(i).ControlIsSelected THEN
+                        Control(i).ControlIsSelected = False
+                    END IF
+                END IF
+            NEXT
             IF Control(This.SourceControl).Type = __UI_Type_ContextMenu THEN
                 __UI_ActiveMenuIsContextMenu = False
             END IF
