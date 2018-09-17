@@ -22,6 +22,17 @@ DIM SHARED FileMenuNew AS LONG, FileMenuOpen AS LONG
 DIM SHARED FileMenuSave AS LONG, FileMenuSaveFrm AS LONG
 DIM SHARED FileMenuExit AS LONG
 
+DIM SHARED FileMenuRecent AS LONG
+DIM SHARED FileMenuRecent1 AS LONG
+DIM SHARED FileMenuRecent2 AS LONG
+DIM SHARED FileMenuRecent3 AS LONG
+DIM SHARED FileMenuRecent4 AS LONG
+DIM SHARED FileMenuRecent5 AS LONG
+DIM SHARED FileMenuRecent6 AS LONG
+DIM SHARED FileMenuRecent7 AS LONG
+DIM SHARED FileMenuRecent8 AS LONG
+DIM SHARED FileMenuRecent9 AS LONG
+
 DIM SHARED EditMenuUndo AS LONG, EditMenuRedo AS LONG, EditMenuCut AS LONG
 DIM SHARED EditMenuCopy AS LONG, EditMenuPaste AS LONG
 DIM SHARED EditMenuDelete AS LONG, EditMenuSelectAll AS LONG
@@ -133,6 +144,7 @@ DIM SHARED Stream$, FormDataReceived AS _BYTE, LastFormData$
 DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
+DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
 
 TYPE newInputBox
     ID AS LONG
@@ -555,12 +567,51 @@ SUB __UI_Click (id AS LONG)
 
             __UI_Focus = 0
             __UI_ForceRedraw = True
+        CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, _
+             FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, _
+             FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
+            DIM RecentToOpen$
+            RecentToOpen$ = ToolTip(id)
+            IF _FILEEXISTS(RecentToOpen$) THEN
+                IF INSTR(RecentToOpen$, "/") > 0 OR INSTR(RecentToOpen$, "\") > 0 THEN
+                    FOR i = LEN(RecentToOpen$) TO 1 STEP -1
+                        IF ASC(RecentToOpen$, i) = 92 OR ASC(RecentToOpen$, i) = 47 THEN
+                            CurrentPath$ = LEFT$(RecentToOpen$, i - 1)
+                            RecentToOpen$ = MID$(RecentToOpen$, i + 1)
+                            EXIT FOR
+                        END IF
+                    NEXT
+                END IF
+
+                IF Edited THEN
+                    $IF WIN THEN
+                        Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
+                    $ELSE
+                        Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                    $END IF
+                    IF Answer = MsgBox_Cancel THEN
+                        EXIT SUB
+                    ELSEIF Answer = MsgBox_Yes THEN
+                        SaveForm False, False
+                    END IF
+                END IF
+
+                Text(FileNameTextBox) = RecentToOpen$
+                OpenDialogOpen = True
+                __UI_Click OpenBT
+            ELSE
+                Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
+                RemoveFromRecentList RecentToOpen$
+            END IF
         CASE OpenBT
             OpenFile:
             IF OpenDialogOpen THEN
                 DIM FileToOpen$, FreeFileNum AS INTEGER
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
                 IF _FILEEXISTS(FileToOpen$) THEN
+                    AddToRecentList FileToOpen$
+
+                    'Send open command
                     b$ = "OPENFILE>" + FileToOpen$ + "<END>"
                     Send Client, b$
 
@@ -763,6 +814,7 @@ SUB __UI_MouseLeave (id AS LONG)
 END SUB
 
 SUB __UI_FocusIn (id AS LONG)
+    DIM i AS LONG, b$
     SELECT CASE id
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             DIM ThisInputBox AS LONG
@@ -830,6 +882,51 @@ SUB __UI_MouseUp (id AS LONG)
             Caption(StatusBar) = "Color changed."
     END SELECT
 END SUB
+
+SUB AddToRecentList (FileName$)
+    DIM i AS LONG, j AS LONG, b$
+
+    'Check if this FileName$ is already in the list; if so, delete it.
+    FOR i = 1 TO 9
+        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+        IF b$ = FileName$ THEN
+            FOR j = i + 1 TO 9
+                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(j))
+                WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(j - 1), b$
+            NEXT
+            EXIT FOR
+        END IF
+    NEXT
+
+    'Make room for FileName$ by shifting existing list by one;
+    '1 is the most recent, 9 is the oldest;
+    FOR i = 8 TO 1 STEP -1
+        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+        WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(i + 1), b$
+    NEXT
+
+    WriteSetting "InForm/InForm.ini", "Recent Projects", "1", FileName$
+    RecentListBuilt = False
+END SUB
+
+SUB RemoveFromRecentList (FileName$)
+    DIM i AS LONG, j AS LONG, b$
+
+    'Check if this FileName$ is already in the list; if so, delete it.
+    FOR i = 1 TO 9
+        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+        IF b$ = FileName$ THEN
+            FOR j = i + 1 TO 9
+                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(j))
+                WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(j - 1), b$
+            NEXT
+            WriteSetting "InForm/InForm.ini", "Recent Projects", "9", ""
+            EXIT FOR
+        END IF
+    NEXT
+    RecentListBuilt = False
+END SUB
+
 
 SUB SendNewRGB
     DIM b$, NewColor AS _UNSIGNED LONG
@@ -906,6 +1003,37 @@ SUB __UI_BeforeUpdateDisplay
     ELSE
         Control(StatusBar).BackColor = StatusBarBackColor
         Control(StatusBar).Redraw = True
+    END IF
+
+    IF RecentListBuilt = False THEN
+        'Build list of recent projects
+        RecentListBuilt = True
+        FOR i = 1 TO 9
+            b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+            IF LEN(b$) THEN
+                ToolTip(RecentMenuItem(i)) = b$
+                IF INSTR(b$, PathSep$) > 0 THEN
+                    FOR j = LEN(b$) TO 1 STEP -1
+                        IF MID$(b$, j, 1) = PathSep$ THEN
+                            SetCaption RecentMenuItem(i), "&" + LTRIM$(STR$(i)) + " " + MID$(b$, j + 1)
+                            EXIT FOR
+                        END IF
+                    NEXT
+                ELSE
+                    SetCaption RecentMenuItem(i), "&" + LTRIM$(STR$(i)) + " " + b$
+                END IF
+                Control(RecentMenuItem(i)).Disabled = False
+                Control(RecentMenuItem(i)).Hidden = False
+            ELSE
+                IF i = 1 THEN
+                    SetCaption RecentMenuItem(i), "No recent projects"
+                    ToolTip(RecentMenuItem(i)) = ""
+                    Control(RecentMenuItem(i)).Disabled = True
+                ELSE
+                    Control(RecentMenuItem(i)).Hidden = True
+                END IF
+            END IF
+        NEXT
     END IF
 
     IF __UI_Focus = 0 THEN
@@ -2582,6 +2710,10 @@ SUB __UI_OnLoad
     StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
     Control(StatusBar).BackColor = StatusBarBackColor
 
+    FOR i = 1 TO 9
+        RecentMenuItem(i) = __UI_GetID("FileMenuRecent" + LTRIM$(STR$(i)))
+    NEXT
+
     b$ = "Loading images..."
     GOSUB ShowMessage
 
@@ -3917,6 +4049,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         BackupRestored:
         CLOSE #TextFileNum
     END IF
+
+    AddToRecentList BaseOutputFileName + ".frm"
 
     b$ = "Exporting successful. Files output:" + CHR$(10)
     IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".bas" + CHR$(10)

@@ -67,7 +67,37 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&New"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuOpen", 91, 18, 0, 22, __UI_GetID("FileMenu"))
-    SetCaption __UI_NewID, "&Open...-"
+    SetCaption __UI_NewID, "&Open..."
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent", 91, 18, 0, 22, __UI_GetID("FileMenu"))
+    SetCaption __UI_NewID, "Open &recent project-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent1", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent1"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent2", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent2"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent3", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent3"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent4", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent4"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent5", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent5"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent6", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent6"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent7", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent7"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent8", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent8"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent9", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "FileMenuRecent9"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "&Save project (.bas + .frm)"
@@ -861,4 +891,14 @@ SUB __UI_AssignIDs
     ContextMenuLB = __UI_GetID("ContextMenuLB")
     ContextMenuControlsList = __UI_GetID("ContextMenuControlsList")
     HideTicks = __UI_GetID("HideTicks")
+    FileMenuRecent = __UI_GetID("FileMenuRecent")
+    FileMenuRecent1 = __UI_GetID("FileMenuRecent1")
+    FileMenuRecent2 = __UI_GetID("FileMenuRecent2")
+    FileMenuRecent3 = __UI_GetID("FileMenuRecent3")
+    FileMenuRecent4 = __UI_GetID("FileMenuRecent4")
+    FileMenuRecent5 = __UI_GetID("FileMenuRecent5")
+    FileMenuRecent6 = __UI_GetID("FileMenuRecent6")
+    FileMenuRecent7 = __UI_GetID("FileMenuRecent7")
+    FileMenuRecent8 = __UI_GetID("FileMenuRecent8")
+    FileMenuRecent9 = __UI_GetID("FileMenuRecent9")
 END SUB
