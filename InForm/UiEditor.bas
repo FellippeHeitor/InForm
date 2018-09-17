@@ -3741,13 +3741,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
 
                 IF LEN(PreviewCaptions(i)) > 0 THEN
-                    'IF PreviewControls(i).HotKeyPosition > 0 THEN
-                    '    a$ = LEFT$(PreviewCaptions(i), PreviewControls(i).HotKeyPosition - 1) + "&" + MID$(PreviewCaptions(i), PreviewControls(i).HotKeyPosition)
-                    'ELSE
-                    '    a$ = PreviewCaptions(i)
-                    'END IF
-                    a$ = "    SetCaption __UI_NewID, " + SpecialCharsToEscapeCode$(PreviewCaptions(i))
-                    PRINT #TextFileNum, a$
+                    SELECT CASE PreviewControls(i).Type
+                        CASE __UI_Type_Form, __UI_Type_Frame, __UI_Type_Button, _
+                             __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton, _
+                             __UI_Type_TextBox, __UI_Type_ProgressBar, __UI_Type_MenuBar, _
+                             __UI_Type_MenuItem
+                            a$ = "    SetCaption __UI_NewID, " + SpecialCharsToEscapeCode$(PreviewCaptions(i))
+                            PRINT #TextFileNum, a$
+                    END SELECT
                 END IF
 
                 IF LEN(PreviewTips(i)) > 0 THEN
