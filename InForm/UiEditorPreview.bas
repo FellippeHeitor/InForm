@@ -400,6 +400,34 @@ SUB __UI_BeforeUpdateDisplay
                 b$ = MKI$(prevTurnsInto)
                 SendData b$, "TURNSINTO"
             END IF
+
+            IF __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
+                'Check if this control has a ContextMenu attached to it
+                'and indicate that
+                IF Control(__UI_FirstSelectedID).Type = __UI_Type_ContextMenu THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_ContextMenu THEN
+                            IF __UI_FirstSelectedID = Control(i).ID THEN
+                                Control(i).ControlState = 2
+                            ELSE
+                                Control(i).ControlState = 1
+                            END IF
+                            Control(i).Redraw = True
+                        END IF
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_ContextMenu THEN
+                            IF Control(__UI_FirstSelectedID).ContextMenuID = Control(i).ID THEN
+                                Control(i).ControlState = 2
+                            ELSE
+                                Control(i).ControlState = 1
+                            END IF
+                            Control(i).Redraw = True
+                        END IF
+                    NEXT
+                END IF
+            END IF
         ELSEIF __UI_TotalSelectedControls > 1 THEN
             DIM SearchType AS INTEGER, AllControlsTurnInto AS _BYTE
             SearchType = Control(__UI_FirstSelectedID).Type
@@ -433,7 +461,54 @@ SUB __UI_BeforeUpdateDisplay
                 b$ = MKI$(prevTurnsInto)
                 SendData b$, "TURNSINTO"
             END IF
+
+            IF __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
+                'Check if all selected controls have the same ContextMenu
+                'attached to them and indicate that
+                DIM SelectionContextMenu AS LONG, AllControlsHaveTheSameContextMenu AS _BYTE
+                AllControlsHaveTheSameContextMenu = True
+                SelectionContextMenu = Control(__UI_FirstSelectedID).ContextMenuID
+                IF SelectionContextMenu > 0 THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            IF Control(i).ContextMenuID <> SelectionContextMenu THEN
+                                AllControlsHaveTheSameContextMenu = False
+                                EXIT FOR
+                            END IF
+                        END IF
+                    NEXT
+                ELSE
+                    AllControlsHaveTheSameContextMenu = False
+                END IF
+
+                IF AllControlsHaveTheSameContextMenu THEN
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_ContextMenu THEN
+                            IF SelectionContextMenu = Control(i).ID THEN
+                                Control(i).ControlState = 2
+                            ELSE
+                                Control(i).ControlState = 1
+                            END IF
+                            Control(i).Redraw = True
+                        END IF
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).Type = __UI_Type_ContextMenu THEN
+                            Control(i).ControlState = 1
+                            Control(i).Redraw = True
+                        END IF
+                    NEXT
+                END IF
+            END IF
         END IF
+    ELSE
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).Type = __UI_Type_ContextMenu THEN
+                Control(i).ControlState = 1 'normal state
+                Control(i).Redraw = True
+            END IF
+        NEXT
     END IF
 
     DO WHILE LEN(Signal$)
@@ -1291,6 +1366,8 @@ SUB __UI_BeforeUpdateDisplay
             CASE 41 'ContextMenuID
                 b$ = ReadSequential$(Property$, 2)
                 b$ = ReadSequential$(Property$, CVI(b$))
+                Control(__UI_GetID(b$)).ControlState = 2 'highlight ContextMenu handle
+                Control(__UI_GetID(b$)).Redraw = True 'highlight ContextMenu handle
                 IF TotalLockedControls THEN
                     FOR j = 1 TO TotalLockedControls
                         i = LockedControls(j)

@@ -749,6 +749,12 @@ SUB __UI_ProcessInput
                         __UI_BelowHoveringID = TempHover
                         TempHover = Control(i).ID
 
+                        IF Control(i).Type = __UI_Type_ContextMenu AND __UI_DesignMode THEN
+                            'In design mode, ContextMenu handles take precedence over
+                            'any other controls
+                            EXIT FOR
+                        END IF
+
                         IF Control(i).HasVScrollbar AND __UI_IsDragging = False THEN
                             IF __UI_MouseLeft >= ContainerOffsetLeft + Control(i).Left + Control(i).Width - __UI_ScrollbarWidth THEN
                                 IF __UI_MouseTop <= Control(i).Top + ContainerOffsetTop + __UI_ScrollbarButtonHeight AND __UI_DraggingThumb = False THEN
@@ -1123,10 +1129,6 @@ SUB __UI_UpdateDisplay
                     IF __UI_StateHasChanged THEN __UI_ValueChanged i
                 CASE __UI_Type_MenuBar
                     __UI_DrawMenuBar Control(i), ControlState
-                CASE __UI_Type_ContextMenu
-                    IF __UI_DesignMode = True AND __UI_ShowInvisibleControls = True AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
-                        __UI_DrawContextMenuHandle Control(i), ControlState
-                    END IF
                 CASE __UI_Type_PictureBox
                     __UI_DrawPictureBox Control(i), ControlState
                 CASE __UI_Type_ToggleSwitch
@@ -1429,6 +1431,14 @@ SUB __UI_UpdateDisplay
             __UI_MakeHardwareImage Control(__UI_FormID).HelperCanvas
             _PUTIMAGE , Control(__UI_FormID).HelperCanvas
         END IF
+    END IF
+
+    IF __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).Type = __UI_Type_ContextMenu AND LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                __UI_DrawContextMenuHandle Control(i), Control(i).ControlState
+            END IF
+        NEXT
     END IF
 
     'Keep DesignMode context menus on top by drawing them last:
