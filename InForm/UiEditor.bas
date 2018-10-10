@@ -19,7 +19,7 @@ DIM SHARED ControlProperties AS LONG, ControlToggles AS LONG
 
 'Menu items
 DIM SHARED FileMenuNew AS LONG, FileMenuOpen AS LONG
-DIM SHARED FileMenuSave AS LONG, FileMenuSaveFrm AS LONG
+DIM SHARED FileMenuSave AS LONG, FileMenuSaveAs AS LONG
 DIM SHARED FileMenuExit AS LONG
 
 DIM SHARED FileMenuRecent AS LONG
@@ -87,13 +87,13 @@ DIM SHARED Resizable AS LONG, AutoScroll AS LONG
 DIM SHARED AutoSize AS LONG, SizeTB AS LONG
 DIM SHARED HideTicks AS LONG
 
-'Open dialog
+'Open/Save dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
 DIM SHARED FileNameTextBox AS LONG, PathLB AS LONG
 DIM SHARED FilesLB AS LONG, FileList AS LONG
 DIM SHARED PathsLB AS LONG, DirList AS LONG
-DIM SHARED OpenBT AS LONG, CancelBT AS LONG
-DIM SHARED ShowOnlyFrmbinFilesCB AS LONG
+DIM SHARED OpenBT AS LONG, SaveBT AS LONG, CancelBT AS LONG
+DIM SHARED ShowOnlyFrmbinFilesCB AS LONG, SaveFrmOnlyCB AS LONG
 
 'Z-ordering dialog
 DIM SHARED ControlList AS LONG, UpBT AS LONG
@@ -187,7 +187,7 @@ $END IF
 
 IF _FILEEXISTS("falcon.h") = 0 THEN RestoreFalcon
 
-DIM SHARED CurrentPath$
+DIM SHARED CurrentPath$, ThisFileName$
 DIM SHARED OpenDialog AS LONG
 
 'CheckPreviewTimer = _FREETIMER
@@ -447,14 +447,71 @@ SUB __UI_Click (id AS LONG)
 
             __UI_Focus = 0
             LastFormData$ = ""
+            ThisFileName$ = ""
             Stream$ = ""
             FormDataReceived = False
             Edited = False
             SendSignal -5
-        CASE FileMenuSaveFrm
-            SaveForm True, True
         CASE FileMenuSave
-            SaveForm True, False
+            IF LEN(ThisFileName$) THEN
+                SaveForm True, False
+            ELSE
+                GOTO SaveAs
+            END IF
+        CASE FileMenuSaveAs
+            SaveAs:
+            'Refresh the file list control's contents
+            DIM TotalFiles%
+            IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
+            Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
+            Control(FileList).Max = TotalFiles%
+            Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+
+            Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
+            Control(OpenFrame).Left = 18: Control(OpenFrame).Top = 40
+            Caption(OpenFrame) = "Save as"
+            Control(SaveBT).Hidden = False
+            Control(OpenBT).Hidden = True
+            Control(SaveFrmOnlyCB).Hidden = False
+            Control(ShowOnlyFrmbinFilesCB).Hidden = True
+            Control(SaveFrmOnlyCB).Value = False
+            OpenDialogOpen = True
+            Caption(StatusBar) = "Specify the name under which to save the current form..."
+            __UI_Focus = FileNameTextBox
+            IF LEN(ThisFileName$) THEN
+                Text(FileNameTextBox) = ThisFileName$
+            ELSE
+                Text(FileNameTextBox) = ""
+            END IF
+            IF LEN(Text(FileNameTextBox)) THEN
+                Control(FileNameTextBox).SelectionStart = 0
+                Control(FileNameTextBox).Cursor = LEN(Text(FileNameTextBox))
+                Control(FileNameTextBox).TextIsSelected = True
+            END IF
+            __UI_ForceRedraw = True
+        CASE SaveBT
+            IF OpenDialogOpen THEN
+                DIM FileToOpen$, FreeFileNum AS INTEGER
+                FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
+                ThisFileName$ = Text(FileNameTextBox)
+                IF UCASE$(RIGHT$(ThisFileName$, 4)) <> ".FRM" THEN
+                    ThisFileName$ = ThisFileName$ + ".frm"
+                END IF
+                Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
+                Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
+                Control(FileList).FirstVisibleLine = 1
+                Control(FileList).InputViewStart = 1
+                Control(FileList).Value = 0
+                Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
+                Control(DirList).FirstVisibleLine = 1
+                Control(DirList).InputViewStart = 1
+                Control(DirList).Value = 0
+                Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
+                OpenDialogOpen = False
+                Caption(StatusBar) = "Ready."
+                __UI_Focus = 0
+                SaveForm True, Control(SaveFrmOnlyCB).Value
+            END IF
         CASE HelpMenuAbout
             Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
         CASE HelpMenuHelp
@@ -539,7 +596,6 @@ SUB __UI_Click (id AS LONG)
             SendSignal -2
 
             'Refresh the file list control's contents
-            DIM TotalFiles%
             IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
             Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
@@ -547,6 +603,11 @@ SUB __UI_Click (id AS LONG)
 
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
             Control(OpenFrame).Left = 18: Control(OpenFrame).Top = 40
+            Caption(OpenFrame) = "Open"
+            Control(SaveBT).Hidden = True
+            Control(OpenBT).Hidden = False
+            Control(SaveFrmOnlyCB).Hidden = True
+            Control(ShowOnlyFrmbinFilesCB).Hidden = False
             OpenDialogOpen = True
             Caption(StatusBar) = "Select a form file to load..."
             __UI_Focus = FileNameTextBox
@@ -606,10 +667,10 @@ SUB __UI_Click (id AS LONG)
         CASE OpenBT
             OpenFile:
             IF OpenDialogOpen THEN
-                DIM FileToOpen$, FreeFileNum AS INTEGER
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
                 IF _FILEEXISTS(FileToOpen$) THEN
                     AddToRecentList FileToOpen$
+                    ThisFileName$ = Text(FileNameTextBox)
 
                     'Send open command
                     b$ = "OPENFILE>" + FileToOpen$ + "<END>"
@@ -739,10 +800,8 @@ SUB __UI_MouseEnter (id AS LONG)
             Caption(StatusBar) = "Exits the editor."
         CASE FileMenuSave
             Caption(StatusBar) = "Saves the current project to disk."
-        CASE FileMenuSaveFrm
-            Caption(StatusBar) = "Saves only the current .frm file to disk."
-        CASE FileMenuSave
-            Caption(StatusBar) = "Saves the current project to disk."
+        CASE FileMenuSaveAs
+            Caption(StatusBar) = "Saves a copy of the current project to disk."
         CASE EditMenuUndo
             Caption(StatusBar) = "Undoes the last edit."
         CASE EditMenuRedo
@@ -1376,9 +1435,12 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     END IF
 
-    IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
-        Caption(__UI_FormID) = UiEditorTitle$ + " - " + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm"
-        SetCaption FileMenuSaveFrm, "Save &form only ('" + RTRIM$(PreviewControls(PreviewFormID).Name) + ".frm')-"
+    IF LEN(ThisFileName$) THEN
+        Caption(__UI_FormID) = UiEditorTitle$ + " - " + ThisFileName$
+    ELSE
+        IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
+            Caption(__UI_FormID) = UiEditorTitle$ + " - Untitled.frm"
+        END IF
     END IF
 
     IF Edited THEN
@@ -2585,6 +2647,7 @@ SUB __UI_OnLoad
                 FOR i = LEN(FileToOpen$) TO 1 STEP -1
                     IF ASC(FileToOpen$, i) = 92 OR ASC(FileToOpen$, i) = 47 THEN
                         CurrentPath$ = LEFT$(FileToOpen$, i - 1)
+                        ThisFileName$ = MID$(FileToOpen$, i + 1)
                         EXIT FOR
                     END IF
                 NEXT
@@ -2869,26 +2932,36 @@ SUB __UI_KeyPress (id AS LONG)
                     __UI_Click CancelBT
                 ELSEIF __UI_KeyHit = 13 THEN
                     __UI_KeyHit = 0
-                    __UI_Click OpenBT
+                    IF Caption(OpenFrame) = "Open" THEN
+                        __UI_Click OpenBT
+                    ELSE
+                        __UI_Click SaveBT
+                    END IF
                 ELSEIF __UI_KeyHit = 18432 OR __UI_KeyHit = 20480 THEN
                     IF Control(FileList).Max > 0 THEN __UI_Focus = FileList
                 ELSE
                     IF Control(FileList).Max > 0 THEN
                         SELECT CASE __UI_KeyHit
                             CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
-                                __UI_ListBoxSearchItem Control(FileList)
+                                IF Caption(OpenFrame) = "Open" THEN
+                                    __UI_ListBoxSearchItem Control(FileList)
+                                END IF
                         END SELECT
                     END IF
                 END IF
             END IF
-        CASE FileList, DirList, CancelBT, OpenBT, ShowOnlyFrmbinFilesCB
+        CASE FileList, DirList, CancelBT, OpenBT, SaveBT, ShowOnlyFrmbinFilesCB, SaveFrmOnlyCB
             IF __UI_KeyHit = 27 THEN
                 __UI_Click CancelBT
             END IF
         CASE FileList
             IF __UI_KeyHit = 13 THEN
                 __UI_KeyHit = 0
-                __UI_Click OpenBT
+                IF Caption(OpenFrame) = "Open" THEN
+                    __UI_Click OpenBT
+                ELSE
+                    __UI_Click SaveBT
+                END IF
             END IF
         CASE ControlList, UpBT, DownBT, CloseZOrderingBT
             IF __UI_KeyHit = 27 THEN
@@ -3631,11 +3704,17 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
     DIM PreserveBackup AS _BYTE, BackupCode$
 
-    BaseOutputFileName = CurrentPath$ + PathSep$ + RTRIM$(PreviewControls(PreviewFormID).Name)
-    IF _FILEEXISTS(BaseOutputFileName + ".bas") OR _FILEEXISTS(BaseOutputFileName + ".frm") THEN
+    BaseOutputFileName = CurrentPath$ + PathSep$ + ThisFileName$
+    IF UCASE$(RIGHT$(BaseOutputFileName, 4)) = ".FRM" OR UCASE$(RIGHT$(BaseOutputFileName, 4)) = ".BAS" THEN
+        BaseOutputFileName = LEFT$(BaseOutputFileName, LEN(BaseOutputFileName) - 4)
+    END IF
+
+    IF (_FILEEXISTS(BaseOutputFileName + ".bas") AND SaveOnlyFrm = False) OR _FILEEXISTS(BaseOutputFileName + ".frm") THEN
         Answer = MessageBox("Some files will be overwritten. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN EXIT SUB
     END IF
+
+    AddToRecentList BaseOutputFileName + ".frm"
 
     'Backup existing files
     FOR i = 1 TO 2
