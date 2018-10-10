@@ -691,13 +691,13 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 200, 23, 25, 484, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ShowOnlyFrmbinFilesCB", 300, 23, 25, 484, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Show only compatible files"
     Control(__UI_NewID).BackStyle = __UI_Transparent
     Control(__UI_NewID).Value = -1
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "SaveFrmOnlyCB", 200, 23, 25, 484, __UI_GetID("OpenFrame"))
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "SaveFrmOnlyCB", 300, 23, 25, 484, __UI_GetID("OpenFrame"))
     SetCaption __UI_NewID, "Don't save .bas project (.frm only)"
     Control(__UI_NewID).Value = False
     Control(__UI_NewID).CanHaveFocus = True

@@ -490,6 +490,7 @@ SUB __UI_Click (id AS LONG)
             END IF
             __UI_ForceRedraw = True
         CASE SaveBT
+            SaveFile:
             IF OpenDialogOpen THEN
                 DIM FileToOpen$, FreeFileNum AS INTEGER
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
@@ -704,7 +705,13 @@ SUB __UI_Click (id AS LONG)
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
             Control(DirList).Value = 0
             IF Control(FileList).HoveringVScrollbarButton = 0 AND LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
-                IF LEN(Text(FileNameTextBox)) > 0 THEN GOTO OpenFile
+                IF LEN(Text(FileNameTextBox)) > 0 THEN
+                    IF Caption(OpenFrame) = "Open" THEN
+                        GOTO OpenFile
+                    ELSE
+                        GOTO SaveFile
+                    END IF
+                END IF
             END IF
         CASE DirList
             Text(FileNameTextBox) = GetItem(DirList, Control(DirList).Value)
@@ -2629,6 +2636,16 @@ SUB __UI_OnLoad
                                 uB$ = MID$(uB$, FirstMark + 1, SecondMark - FirstMark - 1)
                                 IF RIGHT$(uB$, 4) = ".FRM" THEN
                                     FileToOpen$ = MID$(b$, FirstMark + 1, SecondMark - FirstMark - 1)
+
+                                    IF INSTR(COMMAND$, "/") > 0 OR INSTR(COMMAND$, "\") > 0 THEN
+                                        FOR i = LEN(COMMAND$) TO 1 STEP -1
+                                            IF ASC(COMMAND$, i) = 92 OR ASC(COMMAND$, i) = 47 THEN
+                                                FileToOpen$ = LEFT$(COMMAND$, i - 1) + PathSep$ + FileToOpen$
+                                                EXIT FOR
+                                            END IF
+                                        NEXT
+                                    END IF
+
                                     EXIT DO
                                 END IF
                             END IF
@@ -2651,6 +2668,8 @@ SUB __UI_OnLoad
                         EXIT FOR
                     END IF
                 NEXT
+            ELSE
+                ThisFileName$ = FileToOpen$
             END IF
             FreeFileNum = FREEFILE
             OPEN FileToOpen$ FOR BINARY AS #FreeFileNum
@@ -3703,14 +3722,30 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
     DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
     DIM PreserveBackup AS _BYTE, BackupCode$
+    DIM tempThisFileName$
 
-    BaseOutputFileName = CurrentPath$ + PathSep$ + ThisFileName$
-    IF UCASE$(RIGHT$(BaseOutputFileName, 4)) = ".FRM" OR UCASE$(RIGHT$(BaseOutputFileName, 4)) = ".BAS" THEN
-        BaseOutputFileName = LEFT$(BaseOutputFileName, LEN(BaseOutputFileName) - 4)
+    tempThisFileName$ = ThisFileName$
+    IF UCASE$(RIGHT$(tempThisFileName$, 4)) = ".FRM" OR UCASE$(RIGHT$(tempThisFileName$, 4)) = ".BAS" THEN
+        tempThisFileName$ = LEFT$(tempThisFileName$, LEN(tempThisFileName$) - 4)
     END IF
 
-    IF (_FILEEXISTS(BaseOutputFileName + ".bas") AND SaveOnlyFrm = False) OR _FILEEXISTS(BaseOutputFileName + ".frm") THEN
-        Answer = MessageBox("Some files will be overwritten. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
+    BaseOutputFileName = CurrentPath$ + PathSep$ + tempThisFileName$
+
+    IF (_FILEEXISTS(BaseOutputFileName + ".bas") AND SaveOnlyFrm = False) AND _FILEEXISTS(BaseOutputFileName + ".frm") THEN
+        b$ = "These files will be overwritten:" + CHR$(10) + "    "
+        b$ = b$ + tempThisFileName$ + ".bas" + CHR$(10) + "    "
+        b$ = b$ + tempThisFileName$ + ".frm" + CHR$(10)
+        b$ = b$ + "Proceed?"
+    ELSEIF (_FILEEXISTS(BaseOutputFileName + ".bas") AND SaveOnlyFrm = False) AND _FILEEXISTS(BaseOutputFileName + ".frm") = 0 THEN
+        b$ = "'" + tempThisFileName$ + ".bas" + "' will be overwritten." + CHR$(10)
+        b$ = b$ + "Proceed?"
+    ELSEIF _FILEEXISTS(BaseOutputFileName + ".frm") THEN
+        b$ = "'" + tempThisFileName$ + ".frm" + "' will be overwritten." + CHR$(10)
+        b$ = b$ + "Proceed?"
+    END IF
+
+    IF LEN(b$) > 0 THEN
+        Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN EXIT SUB
     END IF
 
