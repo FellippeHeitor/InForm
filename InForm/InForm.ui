@@ -3390,20 +3390,20 @@ SUB __UI_EventDispatcher
                 IF VAL(MID$(ComboKey, 2)) >= 1 AND VAL(MID$(ComboKey, 2)) <= 12 THEN
                     'Function key
                     IF __UI_KeyHit = __UI_FKey(VAL(MID$(ComboKey, 2))) THEN
-                        __UI_Click __UI_KeyCombo(i).ControlID
+                        IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN __UI_Click __UI_KeyCombo(i).ControlID
                         EXIT SUB
                     END IF
                 ELSE
                     IF __UI_KeyHit = ASC("F") OR __UI_KeyHit = ASC("f") THEN
                         'Combo match
-                        __UI_Click __UI_KeyCombo(i).ControlID
+                        IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN __UI_Click __UI_KeyCombo(i).ControlID
                         EXIT SUB
                     END IF
                 END IF
             ELSE
                 IF __UI_KeyHit = ASC(ComboKey) OR __UI_KeyHit = ASC(LCASE$(ComboKey)) THEN
                     'Combo match
-                    __UI_Click __UI_KeyCombo(i).ControlID
+                    IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN __UI_Click __UI_KeyCombo(i).ControlID
                     EXIT SUB
                 END IF
             END IF
