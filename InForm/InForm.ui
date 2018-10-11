@@ -125,6 +125,7 @@ TYPE __UI_ControlTYPE
     Redraw AS _BYTE
     BulletStyle AS _BYTE
     MenuItemGroup AS INTEGER
+    KeyCombo AS LONG
 END TYPE
 
 TYPE __UI_Types
@@ -151,6 +152,12 @@ TYPE __UI_WordWrapHistoryType
     TotalLines AS INTEGER
 END TYPE
 
+TYPE __UI_KeyCombos
+    Combo AS STRING * 14 '         "CTRL+SHIFT+F12"
+    FriendlyCombo AS STRING * 14 ' "Ctrl+Shift+F12"
+    ControlID AS LONG
+END TYPE
+
 REDIM SHARED Caption(1 TO 100) AS STRING
 REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
 REDIM SHARED Text(1 TO 100) AS STRING
@@ -167,6 +174,7 @@ REDIM SHARED __UI_WordWrapHistoryResults(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistory(1 TO 100) AS __UI_WordWrapHistoryType
 REDIM SHARED __UI_ThisLineChars(0) AS LONG
 REDIM SHARED __UI_ActiveMenu(0 TO 100) AS LONG, __UI_ParentMenu(0 TO 100) AS LONG
+REDIM SHARED __UI_KeyCombo(0 TO 100) AS __UI_KeyCombos, __UI_TotalKeyCombos AS LONG
 DIM SHARED table1252$(255), table437$(255)
 
 DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
@@ -227,6 +235,17 @@ DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
 DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
 DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
 DIM SHARED __UI_ContextMenuSourceID AS LONG
+DIM SHARED __UI_FKey(1 TO 12) AS LONG
+
+RESTORE __UI_FKeysData
+DIM i AS LONG
+FOR i = 1 TO 12
+    READ __UI_FKey(i)
+NEXT
+
+__UI_FKeysData:
+DATA 15104,15360,15616,15872,16128,16384
+DATA 16640,16896,17152,17408,34048,34304
 
 'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
@@ -1629,7 +1648,7 @@ SUB __UI_EventDispatcher
     STATIC __UI_JustOpenedMenu AS _BYTE
     STATIC ControlClipboard$
     STATIC OriginalDragX AS INTEGER, OriginalDragY AS INTEGER
-    DIM i AS LONG, ThisItem%, TempParent AS LONG
+    DIM i AS LONG, j AS LONG, ThisItem%, TempParent AS LONG
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
 
     IF __UI_HoveringID = 0 AND __UI_Focus = 0 THEN EXIT SUB
@@ -3352,6 +3371,53 @@ SUB __UI_EventDispatcher
     IF __UI_KeyHit = 100307 OR __UI_KeyHit = 100308 THEN __UI_AltIsDown = True
     IF __UI_KeyHit = -100307 OR __UI_KeyHit = -100308 THEN __UI_AltIsDown = False
 
+    'Key combos can be associated with controls using the RegisterKeyCombo method;
+    'Key combos take precedence over other keyboard events:
+    IF __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 THEN
+        DIM ComboKey AS STRING
+        DIM tempCombo$
+
+        FOR i = 1 TO __UI_TotalKeyCombos
+            IF __UI_KeyCombo(i).ControlID <= 0 THEN _CONTINUE 'handled internally
+
+            ComboKey = ""
+            tempCombo$ = RTRIM$(UCASE$(__UI_KeyCombo(i).Combo))
+            FOR j = LEN(tempCombo$) TO 1 STEP -1
+                IF MID$(tempCombo$, j, 1) = "+" THEN
+                    ComboKey = MID$(tempCombo$, j + 1)
+                    EXIT FOR
+                END IF
+            NEXT
+
+            IF ComboKey = "" THEN ComboKey = tempCombo$
+
+            IF (INSTR(tempCombo$, "SHIFT+") > 0) <> __UI_ShiftIsDown THEN _CONTINUE
+            IF (INSTR(tempCombo$, "CTRL+") > 0) <> __UI_CtrlIsDown THEN _CONTINUE
+
+            IF LEFT$(ComboKey, 1) = "F" THEN
+                IF VAL(MID$(ComboKey, 2)) >= 1 AND VAL(MID$(ComboKey, 2)) <= 12 THEN
+                    'Function key
+                    IF __UI_KeyHit = __UI_FKey(VAL(MID$(ComboKey, 2))) THEN
+                        __UI_Click __UI_KeyCombo(i).ControlID
+                        EXIT SUB
+                    END IF
+                ELSE
+                    IF __UI_KeyHit = ASC("F") OR __UI_KeyHit = ASC("f") THEN
+                        'Combo match
+                        __UI_Click __UI_KeyCombo(i).ControlID
+                        EXIT SUB
+                    END IF
+                END IF
+            ELSE
+                IF __UI_KeyHit = ASC(ComboKey) OR __UI_KeyHit = ASC(LCASE$(ComboKey)) THEN
+                    'Combo match
+                    __UI_Click __UI_KeyCombo(i).ControlID
+                    EXIT SUB
+                END IF
+            END IF
+        NEXT
+    END IF
+
     'Alt:
     IF NOT __UI_DesignMode THEN
         IF __UI_AltIsDown AND Control(__UI_Focus).Type = __UI_Type_MenuBar THEN
@@ -3372,8 +3438,6 @@ SUB __UI_EventDispatcher
 
             SELECT CASE __UI_KeyHit
                 CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
-                    DIM j AS LONG
-
                     __UI_AltCombo$ = __UI_AltCombo$ + CHR$(__UI_KeyHit)
 
                     IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
@@ -4347,6 +4411,63 @@ FUNCTION isNumber%% (__a$)
         EXIT FUNCTION
     NEXT
     isNumber%% = True
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION RegisterKeyCombo (__Combo$, id AS LONG)
+    DIM i AS LONG, Combo$
+    IF LEN(LTRIM$(RTRIM$(__Combo$))) = 0 THEN EXIT FUNCTION
+
+    Combo$ = UCASE$(LTRIM$(RTRIM$(__Combo$)))
+    IF INSTR(Combo$, "CTRL+") = 0 THEN
+        IF LEFT$(Combo$, 1) = "F" AND (VAL(MID$(Combo$, 2)) >= 1 AND VAL(MID$(Combo$, 2)) <= 12) THEN
+            'valid
+        ELSEIF LEFT$(Combo$, 7) = "SHIFT+F" AND (VAL(MID$(Combo$, 8)) >= 1 AND VAL(MID$(Combo$, 8)) <= 12) THEN
+            'valid
+        ELSE
+            EXIT FUNCTION
+        END IF
+    END IF
+
+    FOR i = 1 TO __UI_TotalKeyCombos
+        IF RTRIM$(__UI_KeyCombo(i).Combo) = Combo$ AND __UI_KeyCombo(i).ControlID >= 0 THEN
+            'Reassign combo to different control
+            __UI_KeyCombo(i).ControlID = id
+            RegisterKeyCombo = True
+            EXIT FUNCTION
+        ELSEIF RTRIM$(__UI_KeyCombo(i).Combo) = Combo$ AND __UI_KeyCombo(i).ControlID < 0 THEN
+            EXIT FUNCTION
+        END IF
+    NEXT
+
+    IF __UI_TotalKeyCombos + 1 > UBOUND(__UI_KeyCombo) THEN
+        REDIM _PRESERVE __UI_KeyCombo(0 TO UBOUND(__UI_KeyCombo) + 100) AS __UI_KeyCombos
+    END IF
+
+    __UI_TotalKeyCombos = __UI_TotalKeyCombos + 1
+    __UI_KeyCombo(__UI_TotalKeyCombos).Combo = Combo$
+    __UI_KeyCombo(__UI_TotalKeyCombos).FriendlyCombo = __UI_FriendlyCombo(Combo$)
+    __UI_KeyCombo(__UI_TotalKeyCombos).ControlID = id
+    Control(id).KeyCombo = __UI_TotalKeyCombos
+    RegisterKeyCombo = True
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_FriendlyCombo$ (__Combo$)
+    DIM i AS LONG, isCapital AS _BYTE
+    DIM Combo$
+
+    isCapital = True
+    FOR i = 1 TO LEN(__Combo$)
+        IF isCapital THEN
+            Combo$ = Combo$ + UCASE$(MID$(__Combo$, i, 1))
+            isCapital = False
+        ELSE
+            Combo$ = Combo$ + LCASE$(MID$(__Combo$, i, 1))
+        END IF
+        IF RIGHT$(Combo$, 1) = "+" THEN isCapital = True
+    NEXT
+    __UI_FriendlyCombo$ = Combo$
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -5769,7 +5890,7 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
     DIM i AS LONG, ItemHeight AS SINGLE, TotalItems AS INTEGER
-    DIM CurrentGroup AS INTEGER
+    DIM CurrentGroup AS INTEGER, ComboSpacing AS INTEGER
 
     IF NOT This.Disabled THEN
         'Check that this menu hasn't yet been activated:
@@ -5818,10 +5939,17 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = (((_FONT = 8) * -1) * 3 + falcon_uspacing&) / 4
         CurrentGroup = 1
+        ComboSpacing = 0
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ParentID = This.ID AND NOT Control(i).Hidden THEN
                 TotalItems = TotalItems + 1
                 Control(i).Width = __UI_MenuItemOffset * 2 + __UI_PrintWidth(Caption(i))
+
+                IF Control(i).KeyCombo > 0 THEN
+                    IF __UI_MenuItemOffset + __UI_PrintWidth(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)) > ComboSpacing THEN
+                        ComboSpacing = __UI_MenuItemOffset + __UI_PrintWidth(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo))
+                    END IF
+                END IF
 
                 IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width < Control(i).Width THEN
                     Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = Control(i).Width
@@ -5850,6 +5978,8 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + (((((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + falcon_uspacing&) / 4)
 
         IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = 0 THEN Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = Control(__UI_FormID).Width / 4
+
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width + ComboSpacing
 
         IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + ItemHeight
 

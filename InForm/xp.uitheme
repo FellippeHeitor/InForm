@@ -1623,6 +1623,9 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
                 END IF
 
                 __UI_PrintString Control(i).Left + __UI_MenuItemOffset, Control(i).Top + Control(i).Height \ 2 - uheight& \ 2, TempCaption$
+                IF Control(i).KeyCombo > 0 THEN
+                    __UI_PrintString Control(i).Left + This.Width - __UI_MenuItemOffset - __UI_PrintWidth(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)), Control(i).Top + Control(i).Height \ 2 - uheight& \ 2, RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)
+                END IF
 
                 IF Control(i).SubMenu THEN
                     _PUTIMAGE (This.Width - __UI_MenuItemOffset / 2, Control(i).Top + Control(i).Height / 2 - 3), SubMenuArrow
