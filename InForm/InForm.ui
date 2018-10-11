@@ -3373,7 +3373,7 @@ SUB __UI_EventDispatcher
 
     'Key combos can be associated with controls using the RegisterKeyCombo method;
     'Key combos take precedence over other keyboard events:
-    IF __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 THEN
+    IF __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 AND __UI_TotalActiveMenus = 0 THEN
         DIM ComboKey AS STRING
         DIM tempCombo$
 
@@ -3605,17 +3605,19 @@ SUB __UI_EventDispatcher
                         CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
                             IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
                             'Search for a matching hot key in menu bar items
-                            FOR i = 1 TO UBOUND(Control)
-                                IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuBar THEN
-                                    IF __UI_TotalActiveMenus = 0 THEN
-                                        __UI_ActivateMenu Control(i), True
-                                        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Value = __UI_Focus
-                                        __UI_ForceRedraw = True
-                                        __UI_KeyHit = 0
+                            IF __UI_CtrlIsDown = False THEN
+                                FOR i = 1 TO UBOUND(Control)
+                                    IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuBar THEN
+                                        IF __UI_TotalActiveMenus = 0 THEN
+                                            __UI_ActivateMenu Control(i), True
+                                            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Value = __UI_Focus
+                                            __UI_ForceRedraw = True
+                                            __UI_KeyHit = 0
+                                        END IF
+                                        EXIT FOR
                                     END IF
-                                    EXIT FOR
-                                END IF
-                            NEXT
+                                NEXT
+                            END IF
                         CASE 27 'Esc
                             __UI_Focus = __UI_PreviousFocus
                             __UI_KeyHit = 0
@@ -3631,31 +3633,33 @@ SUB __UI_EventDispatcher
                     HandleDesignMenu:
                     SELECT CASE __UI_KeyHit
                         CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
-                            IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
-                            'Search for a matching hot key in menu bar items
-                            FOR i = 1 TO UBOUND(Control)
-                                IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
-                                    IF LEFT$(Control(i).Name, 5) = "__UI_" THEN
-                                        __UI_HoveringID = i
-                                        GOTO ProcessHotkey
-                                    ELSE
-                                        IF Control(i).SubMenu THEN
-                                            __UI_KeyHit = 0
-                                            __UI_Focus = Control(i).ID
-                                            __UI_ForceRedraw = True
-                                            _DELAY .1
-                                            __UI_ActivateMenu Control(i), True
+                            IF __UI_CtrlIsDown = False THEN
+                                IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
+                                'Search for a matching hot key in menu bar items
+                                FOR i = 1 TO UBOUND(Control)
+                                    IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuItem AND Control(i).ParentID = __UI_ParentMenu(__UI_TotalActiveMenus) THEN
+                                        IF LEFT$(Control(i).Name, 5) = "__UI_" THEN
+                                            __UI_HoveringID = i
+                                            GOTO ProcessHotkey
                                         ELSE
-                                            __UI_Focus = __UI_PreviousFocus
-                                            __UI_CloseAllMenus
-                                            __UI_ForceRedraw = True
-                                            __UI_KeyHit = 0
-                                            __UI_Click i
+                                            IF Control(i).SubMenu THEN
+                                                __UI_KeyHit = 0
+                                                __UI_Focus = Control(i).ID
+                                                __UI_ForceRedraw = True
+                                                _DELAY .1
+                                                __UI_ActivateMenu Control(i), True
+                                            ELSE
+                                                __UI_Focus = __UI_PreviousFocus
+                                                __UI_CloseAllMenus
+                                                __UI_ForceRedraw = True
+                                                __UI_KeyHit = 0
+                                                __UI_Click i
+                                            END IF
                                         END IF
+                                        EXIT FOR
                                     END IF
-                                    EXIT FOR
-                                END IF
-                            NEXT
+                                NEXT
+                            END IF
                         CASE 27 'Esc
                             IF __UI_TotalActiveMenus > 1 THEN
                                 __UI_Focus = __UI_ParentMenu(__UI_TotalActiveMenus)

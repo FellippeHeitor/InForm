@@ -2521,6 +2521,13 @@ SUB __UI_OnLoad
     __UI_ShowInvisibleControls = True
     __UI_SnapLines = True
 
+    i = RegisterKeyCombo("ctrl+n", FileMenuNew)
+    i = RegisterKeyCombo("ctrl+o", FileMenuOpen)
+    i = RegisterKeyCombo("ctrl+s", FileMenuSave)
+    i = RegisterKeyCombo("ctrl+z", EditMenuUndo)
+    i = RegisterKeyCombo("ctrl+y", EditMenuRedo)
+    i = RegisterKeyCombo("f1", HelpMenuHelp)
+
     DIM FileToOpen$, FreeFileNum AS INTEGER
 
     b$ = "Reading settings..."
