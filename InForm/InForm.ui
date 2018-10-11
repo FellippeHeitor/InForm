@@ -237,16 +237,6 @@ DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
 DIM SHARED __UI_ContextMenuSourceID AS LONG
 DIM SHARED __UI_FKey(1 TO 12) AS LONG
 
-RESTORE __UI_FKeysData
-DIM i AS LONG
-FOR i = 1 TO 12
-    READ __UI_FKey(i)
-NEXT
-
-__UI_FKeysData:
-DATA 15104,15360,15616,15872,16128,16384
-DATA 16640,16896,17152,17408,34048,34304
-
 'Control types: -----------------------------------------------
 DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
 __UI_Type(__UI_Type_Form).Name = "Form"
@@ -322,6 +312,8 @@ __UI_Type(__UI_Type_ToggleSwitch).DefaultWidth = 40
 __UI_Type(__UI_Type_ToggleSwitch).DefaultHeight = 17
 __UI_Type(__UI_Type_ToggleSwitch).TurnsInto = __UI_Type_CheckBox
 '--------------------------------------------------------------
+
+__UI_RestoreFKeys
 
 CONST True = -1, False = 0
 '$INCLUDE:'InFormVersion.bas'
@@ -4473,6 +4465,19 @@ FUNCTION __UI_FriendlyCombo$ (__Combo$)
     NEXT
     __UI_FriendlyCombo$ = Combo$
 END FUNCTION
+
+'---------------------------------------------------------------------------------
+SUB __UI_RestoreFKeys
+    RESTORE __UI_FKeysData
+    DIM i AS LONG
+    FOR i = 1 TO 12
+        READ __UI_FKey(i)
+    NEXT
+
+    __UI_FKeysData:
+    DATA 15104,15360,15616,15872,16128,16384
+    DATA 16640,16896,17152,17408,34048,34304
+END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_RestoreImageOriginalSize
