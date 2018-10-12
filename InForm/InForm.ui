@@ -174,9 +174,10 @@ REDIM SHARED __UI_WordWrapHistoryResults(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistory(1 TO 100) AS __UI_WordWrapHistoryType
 REDIM SHARED __UI_ThisLineChars(0) AS LONG
 REDIM SHARED __UI_ActiveMenu(0 TO 100) AS LONG, __UI_ParentMenu(0 TO 100) AS LONG
-REDIM SHARED __UI_KeyCombo(0 TO 100) AS __UI_KeyCombos, __UI_TotalKeyCombos AS LONG
-DIM SHARED table1252$(255), table437$(255)
+REDIM SHARED __UI_KeyCombo(0 TO 100) AS __UI_KeyCombos
 
+DIM SHARED __UI_TotalKeyCombos AS LONG, __UI_BypassKeyCombos AS _BYTE
+DIM SHARED table1252$(255), table437$(255)
 DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
 DIM SHARED __UI_MouseWheel AS INTEGER, __UI_MouseButtonsSwap AS _BYTE
 DIM SHARED __UI_PrevMouseLeft AS INTEGER, __UI_PrevMouseTop AS INTEGER
@@ -1270,18 +1271,24 @@ SUB __UI_UpdateDisplay
             IF Control(i).Type = __UI_Type_MenuItem THEN
                 TempParentID = Control(i).ParentID
                 Control(i).ParentID = Control(i).MenuPanelID
+                'Dotted outline:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(Control(i).ParentID).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
             ELSE
                 TempParentID = 0
+                'Dotted outline:
+                LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(i).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
             END IF
-
-            'Dotted outline:
-            LINE (Control(i).Left + Control(Control(i).ParentID).Left - 2, Control(i).Top + Control(Control(i).ParentID).Top - 2)-STEP(Control(i).Width + 3, Control(i).Height + 3), _RGB32(0, 0, 0), B , 21845
 
             IF NOT __UI_IsDragging THEN
                 IF __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResizeH AND __UI_Type(Control(i).Type).RestrictResize <> __UI_CantResize THEN
                     'Right resize handle:
-                    LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
-                    LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
+                    IF Control(i).Type = __UI_Type_MenuItem THEN
+                        LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(Control(i).ParentID).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                        LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(Control(i).ParentID).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
+                    ELSE
+                        LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
+                        LINE (Control(i).Left + Control(Control(i).ParentID).Left + Control(i).Width - 8, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(0, 0, 0), B
+                    END IF
 
                     'Left resize handle:
                     LINE (Control(i).Left + Control(Control(i).ParentID).Left, Control(i).Top + Control(Control(i).ParentID).Top + Control(i).Height / 2 - 4)-STEP(7, 7), _RGB32(255, 255, 255), BF
@@ -1762,9 +1769,13 @@ SUB __UI_EventDispatcher
 
                 IF Control(__UI_FocusSearch).ID > 0 AND Control(__UI_FocusSearch).Type <> __UI_Type_Form AND Control(__UI_FocusSearch).Type <> __UI_Type_MenuPanel AND Control(__UI_FocusSearch).Type <> __UI_Type_Font AND UCASE$(LEFT$(Control(__UI_FocusSearch).Name, 5)) <> "__UI_" THEN
                     IF Control(__UI_FocusSearch).Type <> __UI_Type_MenuItem THEN
+                        __UI_CloseAllMenus
                         __UI_TotalSelectedControls = 1
                         __UI_FirstSelectedID = __UI_FocusSearch
                         Control(__UI_FocusSearch).ControlIsSelected = True
+                        IF Control(__UI_FocusSearch).Type = __UI_Type_MenuBar OR Control(__UI_FocusSearch).Type = __UI_Type_ContextMenu THEN
+                            __UI_ActivateMenu Control(__UI_FocusSearch), False
+                        END IF
                         EXIT DO
                     ELSE
                         IF __UI_ParentMenu(__UI_TotalActiveMenus) = Control(__UI_FocusSearch).ParentID THEN
@@ -3365,7 +3376,7 @@ SUB __UI_EventDispatcher
 
     'Key combos can be associated with controls using the RegisterKeyCombo method;
     'Key combos take precedence over other keyboard events:
-    IF __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 AND __UI_TotalActiveMenus = 0 THEN
+    IF __UI_BypassKeyCombos = False AND __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 AND __UI_TotalActiveMenus = 0 THEN
         DIM ComboKey AS STRING
         DIM tempCombo$
 
@@ -4411,8 +4422,23 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION RegisterKeyCombo (__Combo$, id AS LONG)
-    DIM i AS LONG, Combo$
-    IF LEN(LTRIM$(RTRIM$(__Combo$))) = 0 THEN EXIT FUNCTION
+    DIM i AS LONG, j AS LONG, Combo$
+
+    IF Control(id).ID = 0 THEN EXIT FUNCTION
+
+    IF LEN(LTRIM$(RTRIM$(__Combo$))) = 0 THEN
+        IF id > 0 THEN
+            'delete assignment
+            FOR i = 1 TO __UI_TotalKeyCombos
+                IF __UI_KeyCombo(i).ControlID = id THEN
+                    Control(__UI_KeyCombo(i).ControlID).KeyCombo = 0
+                    __UI_KeyCombo(i).ControlID = 0
+                    EXIT FOR
+                END IF
+            NEXT
+        END IF
+        EXIT FUNCTION
+    END IF
 
     Combo$ = UCASE$(LTRIM$(RTRIM$(__Combo$)))
     IF INSTR(Combo$, "CTRL+") = 0 THEN
@@ -4426,13 +4452,25 @@ FUNCTION RegisterKeyCombo (__Combo$, id AS LONG)
     END IF
 
     FOR i = 1 TO __UI_TotalKeyCombos
-        IF RTRIM$(__UI_KeyCombo(i).Combo) = Combo$ AND __UI_KeyCombo(i).ControlID >= 0 THEN
-            'Reassign combo to different control
-            __UI_KeyCombo(i).ControlID = id
-            RegisterKeyCombo = True
-            EXIT FUNCTION
-        ELSEIF RTRIM$(__UI_KeyCombo(i).Combo) = Combo$ AND __UI_KeyCombo(i).ControlID < 0 THEN
-            EXIT FUNCTION
+        IF RTRIM$(__UI_KeyCombo(i).Combo) = Combo$ THEN
+            IF __UI_KeyCombo(i).ControlID >= 0 THEN
+                'Check if this id is already assigned to a combo
+                FOR j = 1 TO __UI_TotalKeyCombos
+                    IF __UI_KeyCombo(j).ControlID = id THEN
+                        Control(__UI_KeyCombo(j).ControlID).KeyCombo = 0
+                        __UI_KeyCombo(j).ControlID = 0
+                    END IF
+                NEXT
+
+                'Reassign combo to different control
+                Control(__UI_KeyCombo(i).ControlID).KeyCombo = 0
+                __UI_KeyCombo(i).ControlID = id
+                Control(id).KeyCombo = i
+                RegisterKeyCombo = True
+                EXIT FUNCTION
+            ELSE
+                EXIT FUNCTION
+            END IF
         END IF
     NEXT
 
@@ -4443,6 +4481,13 @@ FUNCTION RegisterKeyCombo (__Combo$, id AS LONG)
     __UI_TotalKeyCombos = __UI_TotalKeyCombos + 1
     __UI_KeyCombo(__UI_TotalKeyCombos).Combo = Combo$
     __UI_KeyCombo(__UI_TotalKeyCombos).FriendlyCombo = __UI_FriendlyCombo(Combo$)
+
+    FOR i = 1 TO __UI_TotalKeyCombos
+        IF __UI_KeyCombo(i).ControlID = id THEN
+            __UI_KeyCombo(i).ControlID = 0
+        END IF
+    NEXT
+
     __UI_KeyCombo(__UI_TotalKeyCombos).ControlID = id
     Control(id).KeyCombo = __UI_TotalKeyCombos
     RegisterKeyCombo = True
@@ -4562,7 +4607,7 @@ FUNCTION __UI_GetID (ControlName$)
     DIM i AS LONG, ControlSearch$
 
     ControlSearch$ = UCASE$(RTRIM$(ControlName$))
-
+    IF LEN(ControlSearch$) = 0 THEN EXIT FUNCTION
     FOR i = 1 TO UBOUND(Control)
         IF Control(i).ID > 0 AND UCASE$(RTRIM$(Control(i).Name)) = ControlSearch$ THEN
             __UI_GetID = i
@@ -4729,6 +4774,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     STATIC InternalMenus AS LONG, FirstControl AS _BYTE
 
     IF ControlType = 0 THEN EXIT SUB
+
     __UI_ExpandControlDrawOrder 1
     'Increase the global count of controls of this type
     __UI_Type(ControlType).Count = __UI_Type(ControlType).Count + 1
@@ -4736,6 +4782,7 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     'Give control a generic name, if none is provided
     IF ControlType = __UI_Type_MenuItem AND LEFT$(ControlName, 5) = "__UI_" THEN InternalMenus = InternalMenus + 1
     IF ControlType = __UI_Type_ContextMenu AND LEFT$(ControlName, 5) = "__UI_" THEN __UI_InternalContextMenus = __UI_InternalContextMenus + 1
+
     IF ControlName = "" THEN
         IF ControlType = __UI_Type_MenuItem THEN
             ControlName = RTRIM$(__UI_Type(ControlType).Name) + LTRIM$(STR$(__UI_Type(ControlType).Count - InternalMenus))
@@ -5869,8 +5916,10 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_CloseAllMenus
     DIM i AS LONG
-    FOR i = 1 TO __UI_TotalActiveMenus
-        __UI_DestroyControl Control(__UI_ActiveMenu(i))
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).Type = __UI_Type_MenuPanel THEN
+            __UI_DestroyControl Control(i)
+        END IF
     NEXT
 END SUB
 
@@ -5902,23 +5951,20 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
     DIM CurrentGroup AS INTEGER, ComboSpacing AS INTEGER
 
     IF NOT This.Disabled THEN
-        'Check that this menu hasn't yet been activated:
-        FOR i = 1 TO __UI_TotalActiveMenus
-            IF __UI_ParentMenu(i) = This.ID THEN
-                EXIT SUB
-            END IF
-        NEXT
-
         IF This.Type = __UI_Type_ContextMenu THEN __UI_CloseAllMenus: __UI_ForceRedraw = True
 
-        IF __UI_TotalActiveMenus + 1 > UBOUND(__UI_ActiveMenu) THEN
-            EXIT SUB
-        END IF
-        __UI_TotalActiveMenus = __UI_TotalActiveMenus + 1
-        __UI_ActiveMenu(__UI_TotalActiveMenus) = __UI_NewControl(__UI_Type_MenuPanel, RTRIM$(This.Name) + CHR$(254) + "Panel", 0, 0, 0, 0, 0)
-        IF __UI_ActiveMenu(__UI_TotalActiveMenus) = 0 THEN
-            __UI_TotalActiveMenus = __UI_TotalActiveMenus - 1
-            EXIT SUB
+        IF __UI_GetID(RTRIM$(This.Name) + CHR$(254) + "Panel") > 0 THEN
+            __UI_ActiveMenu(__UI_TotalActiveMenus) = __UI_GetID(RTRIM$(This.Name) + CHR$(254) + "Panel")
+        ELSE
+            IF __UI_TotalActiveMenus + 1 > UBOUND(__UI_ActiveMenu) THEN
+                EXIT SUB
+            END IF
+            __UI_ActiveMenu(__UI_TotalActiveMenus + 1) = __UI_NewControl(__UI_Type_MenuPanel, RTRIM$(This.Name) + CHR$(254) + "Panel", 0, 0, 0, 0, 0)
+            __UI_TotalActiveMenus = __UI_TotalActiveMenus + 1
+            IF __UI_ActiveMenu(__UI_TotalActiveMenus) = 0 THEN
+                __UI_TotalActiveMenus = __UI_TotalActiveMenus - 1
+                EXIT SUB
+            END IF
         END IF
 
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).SourceControl = This.ID
@@ -5947,6 +5993,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         'Calculate panel's width and position the menu items
         ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = (((_FONT = 8) * -1) * 3 + falcon_uspacing&) / 4
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = 0
         CurrentGroup = 1
         ComboSpacing = 0
         FOR i = 1 TO UBOUND(Control)

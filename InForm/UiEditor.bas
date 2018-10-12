@@ -127,6 +127,7 @@ DIM SHARED BooleanLB AS LONG, BooleanOptions AS LONG
 DIM SHARED FontListLB AS LONG, FontList AS LONG, FontSizeList
 DIM SHARED PasteListBT AS LONG, ContextMenuLB AS LONG
 DIM SHARED ContextMenuControlsList AS LONG
+DIM SHARED KeyboardComboLB AS LONG, KeyboardComboBT AS LONG
 '------------------------------------------------------------------------------
 
 'Other shared variables:
@@ -168,6 +169,7 @@ REDIM SHARED PreviewActualFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED PreviewContextMenu(0) AS STRING
+REDIM SHARED PreviewKeyCombos(0) AS STRING
 REDIM SHARED zOrderIDs(0) AS LONG
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED Toggles(1 TO 100) AS LONG
@@ -790,6 +792,10 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = Dummy
             Control(Dummy).Cursor = LEN(Text(Dummy))
             Control(Dummy).TextIsSelected = False
+        CASE KeyboardComboBT
+            __UI_BypassKeyCombos = True
+            Caption(KeyboardComboBT) = CHR$(7) + " hit a key combo... (ESC to clear)"
+            ToolTip(KeyboardComboBT) = "Press a key combination to assign to the selected control"
     END SELECT
 
     LastClickedID = id
@@ -900,6 +906,10 @@ SUB __UI_FocusIn (id AS LONG)
             IF ZOrderingDialogOpen THEN __UI_Focus = ControlList
         CASE CancelBT
             IF ZOrderingDialogOpen THEN __UI_Focus = CloseZOrderingBT
+        CASE KeyboardComboBT
+            __UI_BypassKeyCombos = True
+            Caption(KeyboardComboBT) = CHR$(7) + " hit a key combo... (ESC to clear)"
+            ToolTip(KeyboardComboBT) = "Press a key combination to assign to the selected control"
     END SELECT
 END SUB
 
@@ -907,6 +917,9 @@ SUB __UI_FocusOut (id AS LONG)
     SELECT CASE id
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             ConfirmEdits id
+        CASE KeyboardComboBT
+            __UI_BypassKeyCombos = False
+            Caption(KeyboardComboBT) = "Click to assign"
     END SELECT
 END SUB
 
@@ -1069,6 +1082,22 @@ SUB __UI_BeforeUpdateDisplay
     ELSE
         Control(StatusBar).BackColor = StatusBarBackColor
         Control(StatusBar).Redraw = True
+    END IF
+
+    IF __UI_BypassKeyCombos THEN
+        'Blink KeyCombo button
+        IF TIMER - LastChange > .4 THEN
+            IF Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1) THEN
+                Control(KeyboardComboBT).ForeColor = _RGB32(255, 0, 0)
+            ELSE
+                Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1)
+            END IF
+            Control(KeyboardComboBT).Redraw = True
+            LastChange = TIMER
+        END IF
+    ELSE
+        Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1)
+        Control(KeyboardComboBT).Redraw = True
     END IF
 
     IF RecentListBuilt = False THEN
@@ -1978,6 +2007,13 @@ SUB __UI_BeforeUpdateDisplay
     ELSE
         Control(ContextMenuControlsList).Value = 1
     END IF
+    IF __UI_BypassKeyCombos = False THEN
+        IF TotalSelected = 1 AND LEN(PreviewKeyCombos(FirstSelected)) THEN
+            Caption(KeyboardComboBT) = PreviewKeyCombos(FirstSelected)
+        ELSE
+            Caption(KeyboardComboBT) = "Click to assign"
+        END IF
+    END IF
 
     STATIC ShowInvalidValueWarning AS _BYTE
     IF Control(__UI_Focus).BorderColor = ShadeOfRed THEN
@@ -2051,7 +2087,7 @@ SUB __UI_BeforeUpdateDisplay
             CASE __UI_Type_MenuItem
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TextTB, TooltipTB, BulletOptions, BooleanOptions
+                        CASE NameTB, CaptionTB, TextTB, TooltipTB, BulletOptions, BooleanOptions, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = False
                         CASE ELSE
                             Control(InputBox(i).ID).Disabled = True
@@ -2103,7 +2139,7 @@ SUB __UI_BeforeUpdateDisplay
                 IF PreviewControls(FirstSelected).NumericOnly = True THEN
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
+                            CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -2112,7 +2148,7 @@ SUB __UI_BeforeUpdateDisplay
                 ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
+                            CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -2122,7 +2158,7 @@ SUB __UI_BeforeUpdateDisplay
                     Caption(MaxLB) = "Max length"
                     FOR i = 1 TO UBOUND(InputBox)
                         SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
+                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                                 Control(InputBox(i).ID).Disabled = True
                             CASE ELSE
                                 Control(InputBox(i).ID).Disabled = False
@@ -2163,7 +2199,7 @@ SUB __UI_BeforeUpdateDisplay
             CASE __UI_Type_ProgressBar
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
-                        CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
+                        CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = True
                         CASE ELSE
                             Control(InputBox(i).ID).Disabled = False
@@ -2173,7 +2209,7 @@ SUB __UI_BeforeUpdateDisplay
                 Control(HideTicks).Disabled = False
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
-                        CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList
+                        CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = True
                         CASE ELSE
                             Control(InputBox(i).ID).Disabled = False
@@ -2185,7 +2221,7 @@ SUB __UI_BeforeUpdateDisplay
                 Control(Transparent).Disabled = False
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
-                        CASE CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
+                        CASE CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = True
                         CASE ELSE
                             Control(InputBox(i).ID).Disabled = False
@@ -2771,6 +2807,8 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
     i = i + 1: InputBox(i).ID = SizeTB: InputBox(i).Signal = 40: InputBox(i).DataType = DT_Integer
     i = i + 1: InputBox(i).ID = ContextMenuControlsList: InputBox(i).LabelID = ContextMenuLB: InputBox(i).DataType = DT_Text
+    i = i + 1: InputBox(i).ID = KeyboardComboBT: InputBox(i).LabelID = KeyboardComboLB: InputBox(i).DataType = DT_Text
+
     REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
     REDIM InputBoxText(1 TO i) AS STRING
 
@@ -2795,6 +2833,7 @@ SUB __UI_OnLoad
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(FontList) = "System fonts may not be available in all computers. To specify a local font file, right-click 'Font' to the left of this list and disable 'Show system fonts list'."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
+    ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
 
     StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
     Control(StatusBar).BackColor = StatusBarBackColor
@@ -2924,6 +2963,7 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_KeyPress (id AS LONG)
+    DIM i AS LONG
     LastKeyPress = TIMER
     SELECT EVERYCASE id
         CASE RedValue, GreenValue, BlueValue
@@ -3013,6 +3053,40 @@ SUB __UI_KeyPress (id AS LONG)
                 InputBox(GetInputBoxFromID(id)).Sent = False
                 Send Client, "LOCKCONTROLS><END>"
             END IF
+        CASE KeyboardComboBT
+            DIM Combo$
+            IF __UI_CtrlIsDown THEN Combo$ = "Ctrl+"
+            IF __UI_ShiftIsDown THEN Combo$ = Combo$ + "Shift+"
+            SELECT CASE __UI_KeyHit
+                CASE 27
+                    __UI_Focus = 0
+                    __UI_BypassKeyCombos = False
+                    ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
+                    SendData MKI$(0), 43
+                    __UI_ForceRedraw = True
+                CASE __UI_FKey(1), __UI_FKey(2), __UI_FKey(3), __UI_FKey(4), __UI_FKey(5), __UI_FKey(6), _
+                     __UI_FKey(7), __UI_FKey(8), __UI_FKey(9), __UI_FKey(10), __UI_FKey(11), __UI_FKey(12)
+                    FOR i = 1 TO 12
+                        IF __UI_FKey(i) = __UI_KeyHit THEN
+                            Combo$ = Combo$ + "F" + LTRIM$(STR$(i))
+                            SendData MKI$(LEN(Combo$)) + Combo$, 43
+                            __UI_Focus = 0
+                            __UI_BypassKeyCombos = False
+                            ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
+                            __UI_ForceRedraw = True
+                            EXIT FOR
+                        END IF
+                    NEXT
+                CASE 65 TO 90, 97 TO 122 'Alphanumeric
+                    Combo$ = Combo$ + UCASE$(CHR$(__UI_KeyHit))
+                    IF INSTR(Combo$, "Ctrl+") > 0 THEN
+                        SendData MKI$(LEN(Combo$)) + Combo$, 43
+                        __UI_Focus = 0
+                        __UI_BypassKeyCombos = False
+                        ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
+                        __UI_ForceRedraw = True
+                    END IF
+            END SELECT
     END SELECT
 END SUB
 
@@ -3403,6 +3477,7 @@ SUB LoadPreview
     REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
+    REDIM PreviewKeyCombos(0 TO CVL(b$)) AS STRING
 
     ResetList ContextMenuControlsList
     AddItem ContextMenuControlsList, "(none)"
@@ -3558,6 +3633,10 @@ SUB LoadPreview
                 CASE -43
                     b$ = ReadSequential$(FormData$, 2)
                     PreviewControls(Dummy).BorderSize = CVI(b$)
+                CASE -44 'Key combo
+                    b$ = ReadSequential$(FormData$, 2)
+                    b$ = ReadSequential$(FormData$, CVI(b$))
+                    PreviewKeyCombos(Dummy) = b$
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3805,7 +3884,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF PreviewControls(PreviewFormID).CanResize THEN
         PRINT #TextFileNum, "    $RESIZE:ON"
     END IF
-    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG"
+    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG, __UI_Dummy AS LONG"
     PRINT #TextFileNum,
 
     'First pass is for the main form and containers (frames and menubars).
@@ -3996,6 +4075,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     ELSE
                         PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + PreviewContextMenu(i) + CHR$(34) + ")"
                     END IF
+                END IF
+                IF LEN(PreviewKeyCombos(i)) THEN
+                    PRINT #TextFileNum, "    __UI_Dummy = RegisterKeyCombo(" + CHR$(34) + PreviewKeyCombos(i) + CHR$(34) + ", __UI_NewID)"
                 END IF
                 IF PreviewControls(i).Interval THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))

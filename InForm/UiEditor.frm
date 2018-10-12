@@ -533,6 +533,14 @@ SUB __UI_LoadForm
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "KeyboardComboLB", 120, 23, 10, 362, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Keyboard combo"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "KeyboardComboBT", 230, 23, 129, 362, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 12, 12, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Stretch"
     Control(__UI_NewID).CanHaveFocus = True
@@ -911,4 +919,6 @@ SUB __UI_AssignIDs
     FileMenuRecent7 = __UI_GetID("FileMenuRecent7")
     FileMenuRecent8 = __UI_GetID("FileMenuRecent8")
     FileMenuRecent9 = __UI_GetID("FileMenuRecent9")
+    KeyboardComboLB = __UI_GetID("KeyboardComboLB")
+    KeyboardComboBT = __UI_GetID("KeyboardComboBT")
 END SUB

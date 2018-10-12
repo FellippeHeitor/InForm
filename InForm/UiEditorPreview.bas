@@ -1405,6 +1405,28 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 END IF
+            CASE 43 'Key combo
+                b$ = ReadSequential$(Property$, 2)
+                b$ = ReadSequential$(Property$, CVI(b$))
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        i = RegisterKeyCombo(b$, LockedControls(j))
+                        IF Control(LockedControls(j)).Type = __UI_Type_MenuItem THEN
+                            __UI_ActivateMenu Control(Control(LockedControls(j)).ParentID), False
+                            EXIT FOR
+                        END IF
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            j = RegisterKeyCombo(b$, Control(i).ID)
+                            IF Control(i).Type = __UI_Type_MenuItem THEN
+                                __UI_ActivateMenu Control(Control(i).ParentID), False
+                                EXIT FOR
+                            END IF
+                        END IF
+                    NEXT
+                END IF
             CASE 201 TO 210
                 'Alignment commands
                 b$ = ReadSequential$(Property$, 2)
@@ -1428,8 +1450,10 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
 
                 IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_" THEN
-                    IF Control(CVL(a$)).Type = __UI_Type_MenuItem OR Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
-                        __UI_ActivateMenu Control(__UI_ParentMenu(__UI_TotalActiveMenus)), False
+                    IF Control(CVL(a$)).Type = __UI_Type_MenuItem THEN
+                        __UI_ActivateMenu Control(Control(CVL(a$)).ParentID), False
+                    ELSEIF Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
+                        __UI_ActivateMenu Control(Control(CVL(b$)).ParentID), False
                     ELSE
                         __UI_CloseAllMenus
                     END IF
@@ -2564,6 +2588,12 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
                     Control(TempValue).BorderSize = CVI(b$)
                     IF LogFileLoad THEN PRINT #LogFileNum, "BORDER SIZE" + STR$(CVI(b$))
+                CASE -44
+                    DIM RegisterResult AS _BYTE, Combo AS STRING
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN Combo = ReadSequential$(Clip$, CVI(b$)) ELSE Combo = SPACE$(CVI(b$)): GET #BinaryFileNum, , ContextMenuName
+                    RegisterResult = RegisterKeyCombo(Combo, TempValue)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "KEY COMBO:"; Combo
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -3302,6 +3332,10 @@ SUB SavePreview (Destination AS _BYTE)
                 END IF
                 IF Control(i).BorderSize > 0 THEN
                     b$ = MKI$(-43) + MKI$(Control(i).BorderSize)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).KeyCombo > 0 THEN
+                    b$ = MKI$(-44) + MKI$(LEN(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo))) + RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
             END IF

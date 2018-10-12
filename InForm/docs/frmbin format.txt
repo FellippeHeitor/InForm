@@ -79,5 +79,6 @@ FOR EACH CONTROL (FORM INCLUDED):
     INTEGER -42 (AutoSize = True)
                 For Label controls
     INTEGER -43 (BorderSize) + INTEGER .BorderSize
+    INTEGER -44 (Key combo) + INTEGER LEN(Key combo) + Key combo
     -------------------
 INTEGER -1024 (End of file)
