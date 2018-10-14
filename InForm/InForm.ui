@@ -3376,6 +3376,8 @@ SUB __UI_EventDispatcher
 
     'Key combos can be associated with controls using the RegisterKeyCombo method;
     'Key combos take precedence over other keyboard events:
+    DIM DoCombo AS _BYTE
+    DoCombo = False
     IF __UI_BypassKeyCombos = False AND __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 AND __UI_TotalActiveMenus = 0 THEN
         DIM ComboKey AS STRING
         DIM tempCombo$
@@ -3401,24 +3403,40 @@ SUB __UI_EventDispatcher
                 IF VAL(MID$(ComboKey, 2)) >= 1 AND VAL(MID$(ComboKey, 2)) <= 12 THEN
                     'Function key
                     IF __UI_KeyHit = __UI_FKey(VAL(MID$(ComboKey, 2))) THEN
-                        IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN __UI_Click __UI_KeyCombo(i).ControlID
-                        EXIT SUB
+                        DoCombo = True
+                        EXIT FOR
                     END IF
                 ELSE
                     IF __UI_KeyHit = ASC("F") OR __UI_KeyHit = ASC("f") THEN
                         'Combo match
-                        IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN __UI_Click __UI_KeyCombo(i).ControlID
-                        EXIT SUB
+                        DoCombo = True
+                        EXIT FOR
                     END IF
                 END IF
             ELSE
                 IF __UI_KeyHit = ASC(ComboKey) OR __UI_KeyHit = ASC(LCASE$(ComboKey)) THEN
                     'Combo match
-                    IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN __UI_Click __UI_KeyCombo(i).ControlID
-                    EXIT SUB
+                    DoCombo = True
+                    EXIT FOR
                 END IF
             END IF
         NEXT
+
+        IF DoCombo THEN
+            IF Control(__UI_KeyCombo(i).ControlID).Disabled = False AND Control(__UI_KeyCombo(i).ControlID).Hidden = False THEN
+                IF Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_RadioButton THEN
+                    SetRadioButtonValue __UI_KeyCombo(i).ControlID
+                ELSEIF Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_CheckBox OR Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_ToggleSwitch THEN
+                    Control(__UI_KeyCombo(i).ControlID).Value = NOT Control(__UI_KeyCombo(i).ControlID).Value
+                    __UI_ValueChanged __UI_KeyCombo(i).ControlID
+                    Control(__UI_KeyCombo(i).ControlID).LastChange = TIMER
+                ELSEIF Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_MenuItem THEN
+                    IF Control(__UI_KeyCombo(i).ControlID).BulletStyle = __UI_Bullet THEN SetRadioButtonValue __UI_KeyCombo(i).ControlID
+                END IF
+                __UI_Click __UI_KeyCombo(i).ControlID
+            END IF
+            EXIT SUB
+        END IF
     END IF
 
     'Alt:
