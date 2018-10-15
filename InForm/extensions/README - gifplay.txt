@@ -27,6 +27,11 @@ the sample below:
     OpenGif is a function that takes a PictureBox control ID and a GIF
     file name and returns True if loading the animation is successful.
     
+    - FUNCTION TotalFrames(ID AS LONG)
+
+    TotalFrames returns the total number of frames in a loaded gif.
+    If not an animated GIF, returns 1.
+
     - SUB UpdateGif(ID)
     
     UpdateGif must be called from within the __UI_BeforeUpdateDisplay event.

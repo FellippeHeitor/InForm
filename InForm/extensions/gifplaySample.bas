@@ -40,7 +40,12 @@ SUB __UI_Click (id AS LONG)
             'https://en.wikipedia.org/wiki/GIF#/media/File:Rotating_earth_(large).gif
             IF OpenGif(PictureBox1, "globe.gif") THEN
                 Control(PlayBT).Disabled = False
-                Caption(PlayBT) = "Pause"
+                IF TotalFrames(PictureBox1) > 1 THEN
+                    Caption(PlayBT) = "Play"
+                ELSE
+                    Caption(PlayBT) = "Static gif"
+                    Control(PlayBT).Disabled = True
+                END IF
                 Caption(LoadBT) = "globe.gif loaded"
                 Control(LoadBT).Disabled = True
             ELSE
@@ -54,7 +59,7 @@ SUB __UI_Click (id AS LONG)
                 PlayGif PictureBox1
                 Caption(PlayBT) = "Pause"
             END IF
-         CASE PictureBox1
+        CASE PictureBox1
             HideGifOverlay PictureBox1
     END SELECT
 END SUB

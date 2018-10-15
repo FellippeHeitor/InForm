@@ -26,6 +26,7 @@ TYPE GIFDATA
     Frame AS LONG
     LoadedFrames AS LONG
     GifLoadComplete AS _BYTE
+    LastFrameServed AS LONG
     LastFrameUpdate AS SINGLE
     LastFrameDelay AS SINGLE
     HideOverlay AS _BYTE
