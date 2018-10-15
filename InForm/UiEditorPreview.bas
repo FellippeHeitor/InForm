@@ -2919,6 +2919,10 @@ SUB LoadPreviewText
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
                     Mask(TempValue) = removeQuotation$(DummyText$)
+                ELSEIF LEFT$(b$, 22) = "__UI_RegisterResult = " THEN
+                    DIM RegisterResult AS _BYTE
+                    DummyText$ = nextParameter(b$)
+                    RegisterResult = RegisterKeyCombo(DummyText$, TempValue)
                 ELSEIF INSTR(b$, "__UI_NewControl") > 0 THEN
                     'New Control
                     EXIT DO

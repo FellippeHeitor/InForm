@@ -3884,7 +3884,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF PreviewControls(PreviewFormID).CanResize THEN
         PRINT #TextFileNum, "    $RESIZE:ON"
     END IF
-    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG, __UI_Dummy AS LONG"
+    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG";
+    FOR i = 1 TO UBOUND(PreviewControls)
+        IF LEN(PreviewKeyCombos(i)) > 0 THEN
+            PRINT #TextFileNum, ", __UI_RegisterResult AS LONG"
+            EXIT FOR
+        END IF
+    NEXT
+    IF i = UBOUND(PreviewControls) + 1 THEN PRINT #TextFileNum,
     PRINT #TextFileNum,
 
     'First pass is for the main form and containers (frames and menubars).
@@ -4077,7 +4084,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     END IF
                 END IF
                 IF LEN(PreviewKeyCombos(i)) THEN
-                    PRINT #TextFileNum, "    __UI_Dummy = RegisterKeyCombo(" + CHR$(34) + PreviewKeyCombos(i) + CHR$(34) + ", __UI_NewID)"
+                    PRINT #TextFileNum, "    __UI_RegisterResult = RegisterKeyCombo(" + CHR$(34) + PreviewKeyCombos(i) + CHR$(34) + ", __UI_NewID)"
                 END IF
                 IF PreviewControls(i).Interval THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
