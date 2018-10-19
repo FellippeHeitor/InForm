@@ -2962,6 +2962,7 @@ SUB LoadPreviewText
                     IF LogFileLoad THEN PRINT #LogFileNum, "AUTOPLAY GIF"
                     'Auto-play gif
                     AutoPlayGif(TempValue) = True
+                    PlayGif TempValue
                 ELSEIF LEFT$(b$, 22) = "ToolTip(__UI_NewID) = " THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "TOOLTIP"
                     'Tooltip
