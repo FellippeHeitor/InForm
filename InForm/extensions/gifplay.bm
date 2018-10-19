@@ -7,7 +7,7 @@
 'Adapted for use with InForm's PictureBox controls by @FellippeHeitor
 
 SUB UpdateGif (ID AS LONG)
-    DIM i AS LONG
+    DIM i AS LONG, newFrame AS LONG
     STATIC GifOverlay AS LONG
 
     i = GetGifIndex(ID)
@@ -29,7 +29,8 @@ SUB UpdateGif (ID AS LONG)
     END IF
 
     BeginDraw ID
-    _PUTIMAGE , GetGifFrame&(i)
+    newFrame = GetGifFrame&(i)
+    IF newFrame THEN _PUTIMAGE , newFrame
     IF GifData(i).IsPlaying = False AND GifData(i).HideOverlay = False AND GifData(i).totalFrames > 1 THEN
         _PUTIMAGE (_WIDTH / 2 - _WIDTH(GifOverlay) / 2, _HEIGHT / 2 - _HEIGHT(GifOverlay) / 2), GifOverlay
     END IF
