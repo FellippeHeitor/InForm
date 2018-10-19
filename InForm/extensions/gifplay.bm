@@ -19,7 +19,7 @@ SUB UpdateGif (ID AS LONG)
     END IF
 
     IF GifData(i).IsPlaying OR GifData(i).LastFrameServed = 0 THEN
-        IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate <= GifData(i).LastFrameDelay THEN
+        IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate < GifData(i).LastFrameDelay THEN
             'Wait for the GIF's frame delay
         ELSE
             GifData(i).Frame = GifData(i).Frame + 1
@@ -178,7 +178,6 @@ FUNCTION OpenGif%%(ID AS LONG, filename$)
                     CASE &HFF, &HFE ' Application Extension, Comment Extension
                         SkipGIFBlocks GifData(Index).file
                     CASE &HF9
-                        TotalGIFFrames = TotalGIFFrames + 1
                         IF TotalGIFFrames > UBOUND(GifFrameData) THEN
                             REDIM _PRESERVE GifFrameData(0 TO TotalGIFFrames * 2) AS FRAMEDATA
                         END IF
@@ -279,7 +278,7 @@ FUNCTION GetGifFrame& (Index AS LONG)
         END IF
     NEXT
 
-    GifData(Index).LastFrameDelay = GifFrameData(frame).delay
+    GifData(Index).LastFrameDelay = GifFrameData(frame).delay - (GifFrameData(frame).delay / 10)
 
     IF GifFrameData(frame).addr > 0 THEN
         prevDest = _DEST
