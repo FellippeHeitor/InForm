@@ -85,7 +85,7 @@ DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
 DIM SHARED Resizable AS LONG, AutoScroll AS LONG
 DIM SHARED AutoSize AS LONG, SizeTB AS LONG
-DIM SHARED HideTicks AS LONG
+DIM SHARED HideTicks AS LONG, AutoPlayGif AS LONG
 
 'Open/Save dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -146,6 +146,7 @@ DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
 DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
+DIM SHARED AddGifExtension AS _BYTE
 
 TYPE newInputBox
     ID AS LONG
@@ -170,6 +171,8 @@ REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED PreviewContextMenu(0) AS STRING
 REDIM SHARED PreviewKeyCombos(0) AS STRING
+REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
+REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
 REDIM SHARED zOrderIDs(0) AS LONG
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED Toggles(1 TO 100) AS LONG
@@ -413,6 +416,9 @@ SUB __UI_Click (id AS LONG)
         CASE HideTicks
             b$ = MKI$(Control(id).Value)
             SendData b$, 42
+        CASE AutoPlayGif
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 44
         CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
@@ -452,6 +458,7 @@ SUB __UI_Click (id AS LONG)
             ThisFileName$ = ""
             Stream$ = ""
             FormDataReceived = False
+            AddGifExtension = False
             Edited = False
             SendSignal -5
         CASE FileMenuSave
@@ -676,6 +683,7 @@ SUB __UI_Click (id AS LONG)
                     ThisFileName$ = Text(FileNameTextBox)
 
                     'Send open command
+                    AddGifExtension = False
                     b$ = "OPENFILE>" + FileToOpen$ + "<END>"
                     Send Client, b$
 
@@ -2001,6 +2009,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
     Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
     Control(HideTicks).Value = (PreviewControls(FirstSelected).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight)
+    Control(AutoPlayGif).Value = PreviewAutoPlayGif(FirstSelected)
     IF LEN(PreviewContextMenu(FirstSelected)) THEN
         DIM ItemFound AS _BYTE
         ItemFound = SelectItem(ContextMenuControlsList, PreviewContextMenu(FirstSelected))
@@ -2099,6 +2108,9 @@ SUB __UI_BeforeUpdateDisplay
                 Control(VAlignOptions).Disabled = False
                 Control(Stretch).Disabled = False
                 Control(Transparent).Disabled = False
+                IF PreviewAnimatedGif(FirstSelected) THEN
+                    Control(AutoPlayGif).Disabled = False
+                END IF
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
                         CASE NameTB, TextTB, TopTB, LeftTB, WidthTB, HeightTB, TooltipTB, AlignOptions, VAlignOptions
@@ -2828,6 +2840,7 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = AutoScroll
     i = i + 1: Toggles(i) = AutoSize
     i = i + 1: Toggles(i) = HideTicks
+    i = i + 1: Toggles(i) = AutoPlayGif
     REDIM _PRESERVE Toggles(1 TO i) AS LONG
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
@@ -3466,6 +3479,8 @@ SUB LoadPreview
 
     FormData$ = LastFormData$
 
+    AddGifExtension = False
+
     b$ = ReadSequential$(FormData$, 4)
 
     REDIM PreviewCaptions(1 TO CVL(b$)) AS STRING
@@ -3478,6 +3493,8 @@ SUB LoadPreview
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
     REDIM PreviewKeyCombos(0 TO CVL(b$)) AS STRING
+    REDIM PreviewAnimatedGif(0 TO CVL(b$)) AS _BYTE
+    REDIM PreviewAutoPlayGif(0 TO CVL(b$)) AS _BYTE
 
     ResetList ContextMenuControlsList
     AddItem ContextMenuControlsList, "(none)"
@@ -3637,6 +3654,11 @@ SUB LoadPreview
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewKeyCombos(Dummy) = b$
+                CASE -45 'Animated Gif
+                    PreviewAnimatedGif(Dummy) = True
+                    AddGifExtension = True
+                CASE -46 'Auto-play Gif
+                    PreviewAutoPlayGif(Dummy) = True
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3835,6 +3857,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         IF Answer = MsgBox_No THEN EXIT SUB
     END IF
 
+    IF AddGifExtension THEN
+        Answer = MessageBox("Add the GIF extension?\n(choosing 'No' will load GIF images as static images)", "", MsgBox_YesNo + MsgBox_Question)
+        AddGifExtension = (Answer = MsgBox_Yes)
+    END IF
+
     AddToRecentList BaseOutputFileName + ".frm"
 
     'Backup existing files
@@ -3891,7 +3918,13 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             EXIT FOR
         END IF
     NEXT
-    IF i = UBOUND(PreviewControls) + 1 THEN PRINT #TextFileNum,
+    IF i = UBOUND(PreviewControls) + 1 THEN
+        IF AddGifExtension THEN
+            PRINT #TextFileNum, ", __UI_RegisterResult AS LONG"
+        ELSE
+            PRINT #TextFileNum,
+        END IF
+    END IF
     PRINT #TextFileNum,
 
     'First pass is for the main form and containers (frames and menubars).
@@ -3985,8 +4018,17 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                                 PRINT #TextFileNum, a$
                             LOOP
                         CASE __UI_Type_PictureBox, __UI_Type_Button, __UI_Type_MenuItem
-                            a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
+                            IF AddGifExtension AND PreviewAnimatedGif(i) THEN
+                                a$ = "    __UI_RegisterResult = OpenGif(__UI_NewID, " + CHR$(34) + PreviewTexts(i) + CHR$(34) + ")"
+                            ELSE
+                                a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
+                            END IF
                             PRINT #TextFileNum, a$
+
+                            IF AddGifExtension AND PreviewAutoPlayGif(i) THEN
+                                a$ = "    PlayGif __UI_NewID"
+                                PRINT #TextFileNum, a$
+                            END IF
                         CASE ELSE
                             a$ = "    Text(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTexts(i))
                             PRINT #TextFileNum, a$
@@ -4169,9 +4211,15 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             GOTO BackupRestored
         END IF
         PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
+        IF AddGifExtension THEN
+            PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
+        END IF
         PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
         PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
         PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
+        IF AddGifExtension THEN
+            PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
+        END IF
         PRINT #TextFileNum,
         PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
         FOR i = 0 TO 14
@@ -4204,12 +4252,26 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
                 CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
 
-                CASE 0, 2, 3, 14
+                CASE 0, 3, 14
                     PRINT #TextFileNum,
 
                 CASE 1
                     IF PreviewDefaultButtonID > 0 THEN
                         PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
+                    ELSE
+                        PRINT #TextFileNum,
+                    END IF
+
+                CASE 2
+                    IF AddGifExtension THEN
+                        PRINT #TextFileNum,
+                        PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
+                        PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
+                        FOR Dummy = 1 TO UBOUND(PreviewControls)
+                            IF PreviewAnimatedGif(Dummy) THEN
+                                PRINT #TextFileNum, "    UpdateGif " + RTRIM$(PreviewControls(Dummy).Name)
+                            END IF
+                        NEXT
                     ELSE
                         PRINT #TextFileNum,
                     END IF

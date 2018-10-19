@@ -52,7 +52,7 @@ SUB __UI_Click (id AS LONG)
                 Answer = MessageBox("File 'globe.gif' could not be found.", "", MsgBox_Exclamation + MsgBox_OkOnly)
             END IF
         CASE PlayBT
-            IF IsPlaying(PictureBox1) THEN
+            IF GifIsPlaying(PictureBox1) THEN
                 PauseGif PictureBox1
                 Caption(PlayBT) = "Play"
             ELSE

@@ -606,6 +606,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Hide ticks"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoPlayGif", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Auto-play"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))
     AddItem __UI_NewID, "ForeColor"
     AddItem __UI_NewID, "BackColor"
@@ -909,6 +913,7 @@ SUB __UI_AssignIDs
     ContextMenuLB = __UI_GetID("ContextMenuLB")
     ContextMenuControlsList = __UI_GetID("ContextMenuControlsList")
     HideTicks = __UI_GetID("HideTicks")
+    AutoPlayGif = __UI_GetID("AutoPlayGif")
     FileMenuRecent = __UI_GetID("FileMenuRecent")
     FileMenuRecent1 = __UI_GetID("FileMenuRecent1")
     FileMenuRecent2 = __UI_GetID("FileMenuRecent2")

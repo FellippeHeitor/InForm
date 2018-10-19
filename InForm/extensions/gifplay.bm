@@ -36,10 +36,22 @@ SUB UpdateGif (ID AS LONG)
     EndDraw ID
 END SUB
 
-FUNCTION IsPlaying%% (ID AS LONG)
+FUNCTION GifIsPlaying%% (ID AS LONG)
     DIM i AS LONG
     i = GetGifIndex(ID)
-    IsPlaying%% = GifData(i).IsPlaying
+    GifIsPlaying%% = GifData(i).IsPlaying
+END FUNCTION
+
+FUNCTION GifWidth%(ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    GifWidth% = GifData(i).width
+END FUNCTION
+
+FUNCTION GifHeight%(ID AS LONG)
+    DIM i AS LONG
+    i = GetGifIndex(ID)
+    GifHeight% = GifData(i).height
 END FUNCTION
 
 FUNCTION TotalFrames&(ID AS LONG)
@@ -172,14 +184,14 @@ FUNCTION OpenGif%%(ID AS LONG, filename$)
                         END IF
                         GifFrameData(TotalGIFFrames).ID = ID
 
-                        GET 1, , byte~%% ' Block Size (always 4)
-                        GET 1, , byte~%%
+                        GET GifData(Index).file, , byte~%% ' Block Size (always 4)
+                        GET GifData(Index).file, , byte~%%
                         GifFrameData(TotalGIFFrames).transparentFlag = (byte~%% AND 1) > 0
                         GifFrameData(TotalGIFFrames).userInput = (byte~%% AND 2) > 0
                         GifFrameData(TotalGIFFrames).disposalMethod = byte~%% \ 4 AND 7
-                        GET 1, , delay~%
+                        GET GifData(Index).file, , delay~%
                         IF delay~% = 0 THEN GifFrameData(TotalGIFFrames).delay = 0.1 ELSE GifFrameData(TotalGIFFrames).delay = delay~% / 100
-                        GET 1, , GifFrameData(TotalGIFFrames).transColor
+                        GET GifData(Index).file, , GifFrameData(TotalGIFFrames).transColor
                         SkipGIFBlocks GifData(Index).file
                     CASE ELSE
                         'Unsupported extension Label
@@ -350,7 +362,7 @@ SUB DecodeFrame (gifdata AS GIFDATA, GifFrameData AS FRAMEDATA)
 
     IF GifFrameData.localColorTableFlag THEN
         palette$ = SPACE$(3 * 2 ^ GifFrameData.palBPP)
-        GET 1, , palette$
+        GET file, , palette$
 
         FOR i = 0 TO gifdata.numColors - 1
             c& = _RGB32(ASC(palette$, i * 3 + 1), ASC(palette$, i * 3 + 2), ASC(palette$, i * 3 + 3))
@@ -835,7 +847,7 @@ FUNCTION LoadOverlayImage&
     NewHeight = CVI(MID$(A$, 3, 2))
     A$ = MID$(A$, 5)
 
-    BASFILE$ = Unpack$(A$)
+    BASFILE$ = gifUnpack$(A$)
 
     TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
     MemoryBlock = _MEMIMAGE(TempImage)
@@ -846,7 +858,7 @@ FUNCTION LoadOverlayImage&
     LoadOverlayImage& = TempImage
 END FUNCTION
 
-FUNCTION Unpack$ (PackedData$)
+FUNCTION gifUnpack$ (PackedData$)
     'Adapted from Dav's BIN2BAS
     'http://www.qbasicnews.com/dav/qb64.php
     DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
@@ -864,6 +876,6 @@ FUNCTION Unpack$ (PackedData$)
             X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
     NEXT: btemp$ = btemp$ + X$: NEXT
 
-    Unpack$ = btemp$
+    gifUnpack$ = btemp$
 END FUNCTION
 '############################################################################################

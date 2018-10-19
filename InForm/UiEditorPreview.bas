@@ -10,6 +10,7 @@ DIM SHARED Stream$, RestoreCrashData$
 DIM SHARED LastPreviewDataSent$
 DIM SHARED ContextMenuIcon AS LONG
 REDIM SHARED LockedControls(0) AS LONG, TotalLockedControls AS LONG
+REDIM SHARED AutoPlayGif(0) AS _BYTE
 
 REDIM SHARED QB64KEYWORDS(0) AS STRING
 READ_KEYWORDS
@@ -85,9 +86,11 @@ $END IF
 ContextMenuIcon = LoadEditorImage("contextmenu.bmp")
 __UI_ClearColor ContextMenuIcon, 0, 0
 
+'$include:'extensions/gifplay.bi'
 '$include:'InForm.ui'
 '$include:'xp.uitheme'
 '$include:'UiEditorPreview.frm'
+'$include:'extensions/gifplay.bm'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
@@ -152,6 +155,14 @@ SUB __UI_BeforeUpdateDisplay
     IF UBOUND(LockedControls) <> UBOUND(Control) THEN
         REDIM _PRESERVE LockedControls(UBOUND(Control)) AS LONG
     END IF
+
+    IF UBOUND(AutoPlayGif) <> UBOUND(Control) THEN
+        REDIM _PRESERVE AutoPlayGif(UBOUND(Control)) AS _BYTE
+    END IF
+
+    FOR i = 1 TO UBOUND(AutoPlayGif)
+        IF AutoPlayGif(i) THEN UpdateGif i
+    NEXT
 
     STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
     STATIC prevSelectionRectangle AS INTEGER, prevUndoPointer AS INTEGER
@@ -693,7 +704,7 @@ SUB __UI_BeforeUpdateDisplay
                                 IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN
                                     LoadImage Control(i), b$
                                 ELSEIF Control(i).Type = __UI_Type_PictureBox THEN
-                                    LoadImage Control(i), b$
+                                    PreviewLoadImage Control(i), b$
                                     IF LEN(Text(i)) > 0 THEN 'Load successful
                                         'Keep aspect ratio at load
                                         Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
@@ -1427,6 +1438,21 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 END IF
+            CASE 44 'Auto-play (GIF extension)
+                b$ = ReadSequential$(Property$, 2)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        AutoPlayGif(LockedControls(j)) = CVI(b$)
+                        IF AutoPlayGif(LockedControls(j)) THEN PlayGif LockedControls(j) ELSE StopGif LockedControls(j)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN
+                            AutoPlayGif(i) = CVI(b$)
+                            IF AutoPlayGif(i) THEN PlayGif i ELSE StopGif i
+                        END IF
+                    NEXT
+                END IF
             CASE 201 TO 210
                 'Alignment commands
                 b$ = ReadSequential$(Property$, 2)
@@ -2080,6 +2106,7 @@ SUB DeleteSelectedControls
             IF __UI_TotalActiveMenus > 0 AND __UI_ParentMenu(__UI_TotalActiveMenus) = Control(i).ID THEN
                 __UI_CloseAllMenus
             END IF
+            CloseGif i
             __UI_DestroyControl Control(i)
             IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
             IF MustRefreshContextMenus THEN RefreshContextMenus
@@ -2249,6 +2276,7 @@ SUB LoadPreview (Destination AS _BYTE)
     IF Disk THEN
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                CloseGif i
                 __UI_DestroyControl Control(i)
             END IF
         NEXT
@@ -2267,6 +2295,7 @@ SUB LoadPreview (Destination AS _BYTE)
     ELSEIF UndoBuffer THEN
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                CloseGif i
                 __UI_DestroyControl Control(i)
             END IF
         NEXT
@@ -2429,7 +2458,9 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, CVL(b$)) ELSE b$ = SPACE$(CVL(b$)): GET #BinaryFileNum, , b$
                     Text(TempValue) = b$
-                    IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
+                    IF Control(TempValue).Type = __UI_Type_PictureBox THEN
+                        PreviewLoadImage Control(TempValue), Text(TempValue)
+                    ELSEIF Control(TempValue).Type = __UI_Type_Button OR Control(TempValue).Type = __UI_Type_MenuItem THEN
                         LoadImage Control(TempValue), Text(TempValue)
                     ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
                         IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
@@ -2594,6 +2625,10 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF NOT Disk THEN Combo = ReadSequential$(Clip$, CVI(b$)) ELSE Combo = SPACE$(CVI(b$)): GET #BinaryFileNum, , ContextMenuName
                     RegisterResult = RegisterKeyCombo(Combo, TempValue)
                     IF LogFileLoad THEN PRINT #LogFileNum, "KEY COMBO:"; Combo
+                CASE -46
+                    IF TempValue <= UBOUND(AutoPlayGif) THEN
+                        AutoPlayGif(i) = True
+                    END IF
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2615,6 +2650,7 @@ SUB LoadPreview (Destination AS _BYTE)
         IF NOT CorruptedData THEN
             __UI_FirstSelectedID = FirstToBeSelected
         ELSE
+            CloseGif TempValue
             __UI_DestroyControl Control(TempValue)
             __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
         END IF
@@ -2652,6 +2688,7 @@ SUB LoadPreviewText
         LogFileNum = FREEFILE
         IF LogFileLoad THEN OPEN "ui_log.txt" FOR OUTPUT AS #LogFileNum
         DO
+            IF EOF(BinaryFileNum) THEN GOTO LoadError
             LINE INPUT #BinaryFileNum, b$
         LOOP UNTIL b$ = "SUB __UI_LoadForm"
         IF LogFileLoad THEN PRINT #LogFileNum, "FOUND SUB __UI_LOADFORM"
@@ -2659,6 +2696,7 @@ SUB LoadPreviewText
         __UI_AutoRefresh = False
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
+                CloseGif i
                 __UI_DestroyControl Control(i)
             END IF
         NEXT
@@ -2717,6 +2755,11 @@ SUB LoadPreviewText
             END IF
 
             TempValue = __UI_NewControl(NewType, NewName, NewWidth, NewHeight, NewLeft, NewTop, __UI_GetID(NewParentID))
+
+            IF UBOUND(AutoPlayGif) <> UBOUND(Control) THEN
+                REDIM _PRESERVE AutoPlayGif(UBOUND(Control)) AS _BYTE
+            END IF
+
             IF NewType = __UI_Type_PictureBox THEN
                 Control(TempValue).HasBorder = False
                 Control(TempValue).Stretch = False
@@ -2737,6 +2780,7 @@ SUB LoadPreviewText
                 IF LEFT$(b$, 20) = "Control(__UI_NewID)." THEN
                     'Property
                     DummyText$ = MID$(b$, INSTR(21, b$, " = ") + 3)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "PROPERTY: "; MID$(b$, 21, INSTR(21, b$, " =") - 21)
                     SELECT CASE MID$(b$, 21, INSTR(21, b$, " =") - 21)
                         CASE "Stretch"
                             Control(TempValue).Stretch = (DummyText$ = "True")
@@ -2878,36 +2922,60 @@ SUB LoadPreviewText
                             Control(TempValue).AutoSize = (DummyText$ = "True")
                     END SELECT
                 ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "DEFAULT BUTTON"
                     __UI_DefaultButtonID = TempValue
                 ELSEIF LEFT$(b$, 11) = "SetCaption " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "SETCAPTION"
                     'Caption
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
                     SetCaption TempValue, DummyText$
                 ELSEIF LEFT$(b$, 8) = "AddItem " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "ADD ITEM"
                     'Caption
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
                     AddItem TempValue, DummyText$
                 ELSEIF LEFT$(b$, 10) = "LoadImage " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "LOADIMAGE"
                     'Image
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
                     LoadImage Control(TempValue), DummyText$
+                ELSEIF LEFT$(b$, 30) = "__UI_RegisterResult = OpenGif(" THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "OPENGIF"
+                    'Gif extension
+                    DIM RegisterResult AS _BYTE
+                    DummyText$ = nextParameter(b$) 'discard first parameter
+                    DummyText$ = nextParameter(b$)
+                    RegisterResult = OpenGif(TempValue, DummyText$)
+                    IF RegisterResult THEN
+                        IF LogFileLoad THEN PRINT #LogFileNum, "LOAD SUCCESSFUL"
+                        Text(TempValue) = DummyText$ 'indicates image loaded successfully
+                        IF Control(TempValue).HelperCanvas < -1 THEN
+                            _FREEIMAGE Control(TempValue).HelperCanvas
+                        END IF
+                        Control(TempValue).HelperCanvas = _NEWIMAGE(GifWidth(TempValue), GifHeight(TempValue), 32)
+                        UpdateGif TempValue
+                    END IF
+                ELSEIF LEFT$(b$, 8) = "PlayGif " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "AUTOPLAY GIF"
+                    'Auto-play gif
+                    AutoPlayGif(TempValue) = True
                 ELSEIF LEFT$(b$, 22) = "ToolTip(__UI_NewID) = " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "TOOLTIP"
                     'Tooltip
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
                     ToolTip(TempValue) = removeQuotation$(DummyText$)
                 ELSEIF LEFT$(b$, 19) = "Text(__UI_NewID) = " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "TEXT"
                     'Text
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
                     Text(TempValue) = removeQuotation$(DummyText$)
 
-                    IF Control(TempValue).Type = __UI_Type_PictureBox OR Control(TempValue).Type = __UI_Type_Button THEN
-                        LoadImage Control(TempValue), Text(TempValue)
-                    ELSEIF Control(TempValue).Type = __UI_Type_Form THEN
+                    IF Control(TempValue).Type = __UI_Type_Form THEN
                         IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
                         ExeIcon = IconPreview&(Text(TempValue))
                         IF ExeIcon < -1 THEN
@@ -2915,18 +2983,21 @@ SUB LoadPreviewText
                         END IF
                     END IF
                 ELSEIF LEFT$(b$, 19) = "Mask(__UI_NewID) = " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "MASK"
                     'Mask
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
                     Mask(TempValue) = removeQuotation$(DummyText$)
-                ELSEIF LEFT$(b$, 22) = "__UI_RegisterResult = " THEN
-                    DIM RegisterResult AS _BYTE
+                ELSEIF LEFT$(b$, 38) = "__UI_RegisterResult = RegisterKeyCombo" THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "KEYCOMBO"
                     DummyText$ = nextParameter(b$)
                     RegisterResult = RegisterKeyCombo(DummyText$, TempValue)
                 ELSEIF INSTR(b$, "__UI_NewControl") > 0 THEN
                     'New Control
+                    IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL"
                     EXIT DO
                 ELSEIF b$ = "END SUB" THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "END OF FILE"
                     __UI_EOF = True
                     EXIT DO
                 END IF
@@ -2944,6 +3015,29 @@ SUB LoadPreviewText
         EXIT SUB
     END IF
     EXIT SUB
+END SUB
+
+SUB PreviewLoadImage (This AS __UI_ControlTYPE, fileName$)
+    IF LCASE$(RIGHT$(fileName$, 4)) = ".gif" THEN
+        DIM tryGif AS _BYTE
+        CloseGif This.ID
+        tryGif = OpenGif(This.ID, fileName$)
+        IF tryGif THEN
+            IF TotalFrames(This.ID) = 1 THEN
+                CloseGif This.ID
+            ELSE
+                Text(This.ID) = fileName$ 'indicates image loaded successfully
+                IF This.HelperCanvas < -1 THEN
+                    _FREEIMAGE This.HelperCanvas
+                END IF
+                This.HelperCanvas = _NEWIMAGE(GifWidth(This.ID), GifHeight(This.ID), 32)
+                AutoPlayGif(This.ID) = False
+                UpdateGif This.ID
+                EXIT SUB
+            END IF
+        END IF
+    END IF
+    LoadImage This, fileName$
 END SUB
 
 FUNCTION nextParameter$ (__text$)
@@ -3341,6 +3435,25 @@ SUB SavePreview (Destination AS _BYTE)
                 IF Control(i).KeyCombo > 0 THEN
                     b$ = MKI$(-44) + MKI$(LEN(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo))) + RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF GetGifIndex&(i) > 0 THEN
+                    'PictureBox has an animated GIF loaded
+                    b$ = MKI$(-45)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF i <= UBOUND(AutoPlayGif) THEN
+                    IF AutoPlayGif(i) THEN
+                        b$ = MKI$(-46)
+                        IF Disk THEN
+                            PUT #BinFileNum, , b$
+                        ELSE
+                            Clip$ = Clip$ + b$
+                        END IF
+                    END IF
                 END IF
             END IF
         NEXT
