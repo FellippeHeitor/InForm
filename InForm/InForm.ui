@@ -1723,7 +1723,7 @@ SUB __UI_EventDispatcher
                 _MOUSESHOW "topleft_bottomright"
             END IF
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_TextBox AND NOT __UI_DesignMode THEN
-            IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left +Control(__UI_HoveringID).Width - __UI_ScrollbarWidth - 1 THEN
+            IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left + Control(__UI_HoveringID).Width - __UI_ScrollbarWidth - 1 THEN
                 IF __UI_LastMouseIconSet <> 0 THEN
                     __UI_LastMouseIconSet = 0
                     _MOUSESHOW "default"
@@ -2537,20 +2537,24 @@ SUB __UI_EventDispatcher
                         IF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 1 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
                             'Mousedown on "up" button
                             Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).InputViewStart - 1
+                            __UI_MouseDownOnScrollbar = TIMER - .25
                         ELSEIF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 2 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
                             'Mousedown on "down" button
                             IF Control(__UI_MouseDownOnID).InputViewStart + Control(__UI_MouseDownOnID).LastVisibleItem <= Control(__UI_MouseDownOnID).Max THEN
                                 Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).InputViewStart + 1
                             END IF
+                            __UI_MouseDownOnScrollbar = TIMER - .25
                         ELSEIF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 4 AND TIMER - __UI_MouseDownOnScrollbar < .3 THEN
                             'Mousedown on "track" area above the thumb
                             Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).InputViewStart - (Control(__UI_MouseDownOnID).LastVisibleItem - 1)
+                            __UI_MouseDownOnScrollbar = TIMER - .25
                         ELSEIF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 5 AND TIMER - __UI_MouseDownOnScrollbar < .3 THEN
                             'Mousedown on "track" area below the thumb
                             Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).InputViewStart + (Control(__UI_MouseDownOnID).LastVisibleItem - 1)
                             IF Control(__UI_MouseDownOnID).InputViewStart > Control(__UI_MouseDownOnID).Max - Control(__UI_MouseDownOnID).LastVisibleItem - 1 THEN
                                 Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).Max - Control(__UI_MouseDownOnID).LastVisibleItem - 1
                             END IF
+                            __UI_MouseDownOnScrollbar = TIMER - .25
                         END IF
                     ELSEIF Control(__UI_MouseDownOnID).Type = __UI_Type_TextBox THEN
                         _FONT Control(__UI_MouseDownOnID).Font
