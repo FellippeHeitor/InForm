@@ -708,8 +708,8 @@ SUB __UI_BeforeUpdateDisplay
                                     IF LEN(Text(i)) > 0 THEN 'Load successful
                                         'Keep aspect ratio at load
                                         Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
+                                        IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                     END IF
-                                    IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                 ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
                                     Text(i) = Replace(b$, "\n", CHR$(13), False, TotalReplacements)
                                     IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
