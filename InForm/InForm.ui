@@ -5906,7 +5906,7 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         IF This.Max > 14 THEN MaxVisible = 14 ELSE MaxVisible = This.Max
 
         _FONT This.Font
-        Control(__UI_ActiveDropdownList).Height = (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3) * (MaxVisible + .5)
+        Control(__UI_ActiveDropdownList).Height = (uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3) * (MaxVisible + .5)
 
         IF Control(__UI_ActiveDropdownList).Top + Control(__UI_ActiveDropdownList).Height > Control(__UI_FormID).Height THEN
             Control(__UI_ActiveDropdownList).Top = Control(__UI_FormID).Height - Control(__UI_ActiveDropdownList).Height

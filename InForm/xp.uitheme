@@ -1034,7 +1034,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             DIM TempText$, FindLF&, ThisItem%, ThisItemTop%
             DIM ItemHeight AS INTEGER, LastVisibleItem AS INTEGER
 
-            ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+            ItemHeight = uspacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
             This.ItemHeight = ItemHeight
             TempText$ = __UI_TrimAt0$(Text(This.ID))
             ThisItem% = 0
