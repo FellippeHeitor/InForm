@@ -86,6 +86,7 @@ DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
 DIM SHARED Resizable AS LONG, AutoScroll AS LONG
 DIM SHARED AutoSize AS LONG, SizeTB AS LONG
 DIM SHARED HideTicks AS LONG, AutoPlayGif AS LONG
+DIM SHARED AddGifExtensionToggle AS LONG
 
 'Open/Save dialog
 DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
@@ -146,7 +147,8 @@ DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
 DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
-DIM SHARED AddGifExtension AS _BYTE
+DIM SHARED LoadedWithGifExtension AS _BYTE, AddGifExtension AS _BYTE
+DIM SHARED TotalGifLoaded AS LONG
 
 TYPE newInputBox
     ID AS LONG
@@ -419,6 +421,16 @@ SUB __UI_Click (id AS LONG)
         CASE AutoPlayGif
             b$ = MKI$(Control(id).Value)
             SendData b$, 44
+        CASE AddGifExtensionToggle
+            IF Control(AddGifExtensionToggle).Value = False AND TotalGifLoaded > 0 THEN
+                Answer = MessageBox("Removing the GIF extension will load the existing animations as static frames. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
+                IF Answer = MsgBox_No THEN
+                    Control(AddGifExtensionToggle).Value = True
+                ELSE
+                    b$ = "PAUSEALLGIF>" + "<END>"
+                    Send Client, b$
+                END IF
+            END IF
         CASE ViewMenuPreview
             $IF WIN THEN
                 SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
@@ -459,6 +471,8 @@ SUB __UI_Click (id AS LONG)
             Stream$ = ""
             FormDataReceived = False
             AddGifExtension = False
+            Control(AddGifExtensionToggle).Value = False
+            LoadedWithGifExtension = False
             Edited = False
             SendSignal -5
         CASE FileMenuSave
@@ -503,7 +517,8 @@ SUB __UI_Click (id AS LONG)
             IF OpenDialogOpen THEN
                 DIM FileToOpen$, FreeFileNum AS INTEGER
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
-                ThisFileName$ = Text(FileNameTextBox)
+                ThisFileName$ = LTRIM$(RTRIM$(Text(FileNameTextBox)))
+                IF ThisFileName$ = "" THEN EXIT SUB
                 IF UCASE$(RIGHT$(ThisFileName$, 4)) <> ".FRM" THEN
                     ThisFileName$ = ThisFileName$ + ".frm"
                 END IF
@@ -679,10 +694,28 @@ SUB __UI_Click (id AS LONG)
             IF OpenDialogOpen THEN
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
                 IF _FILEEXISTS(FileToOpen$) THEN
+                    LoadedWithGifExtension = False
+                    IF _FILEEXISTS(LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas") THEN
+                        FreeFileNum = FREEFILE
+                        OPEN LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas" FOR BINARY AS #FreeFileNum
+                        b$ = SPACE$(LOF(FreeFileNum))
+                        GET #FreeFileNum, 1, b$
+                        CLOSE #FreeFileNum
+                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                            LoadedWithGifExtension = True
+                        END IF
+                    END IF
+
                     AddToRecentList FileToOpen$
                     ThisFileName$ = Text(FileNameTextBox)
 
                     'Send open command
+                    IF LoadedWithGifExtension = False THEN
+                        LoadedWithGifExtension = 1 'Set to 1 to check whether a loaded file already had the gif extension
+                        Control(AddGifExtensionToggle).Value = False
+                    ELSE
+                        Control(AddGifExtensionToggle).Value = True
+                    END IF
                     AddGifExtension = False
                     b$ = "OPENFILE>" + FileToOpen$ + "<END>"
                     Send Client, b$
@@ -1108,6 +1141,16 @@ SUB __UI_BeforeUpdateDisplay
         Control(KeyboardComboBT).Redraw = True
     END IF
 
+    IF OpenDialogOpen THEN
+        IF LEN(RTRIM$(LTRIM$(Text(FileNameTextBox)))) = 0 THEN
+            Control(OpenBT).Disabled = True
+            Control(SaveBT).Disabled = True
+        ELSE
+            Control(OpenBT).Disabled = False
+            Control(SaveBT).Disabled = False
+        END IF
+    END IF
+
     IF RecentListBuilt = False THEN
         'Build list of recent projects
         RecentListBuilt = True
@@ -1295,9 +1338,9 @@ SUB __UI_BeforeUpdateDisplay
 
     GET #Client, , incomingData$
     Stream$ = Stream$ + incomingData$
-    STATIC bytesIn~&&, refreshes~&
-    refreshes~& = refreshes~& + 1
-    bytesIn~&& = bytesIn~&& + LEN(incomingData$)
+    'STATIC bytesIn~&&, refreshes~&
+    'refreshes~& = refreshes~& + 1
+    'bytesIn~&& = bytesIn~&& + LEN(incomingData$)
     'Caption(StatusBar) = "Received:" + STR$(bytesIn~&&) + " bytes | Sent:" + STR$(totalBytesSent) + " bytes"
 
     $IF WIN THEN
@@ -2010,6 +2053,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
     Control(HideTicks).Value = (PreviewControls(FirstSelected).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight)
     Control(AutoPlayGif).Value = PreviewAutoPlayGif(FirstSelected)
+
     IF LEN(PreviewContextMenu(FirstSelected)) THEN
         DIM ItemFound AS _BYTE
         ItemFound = SelectItem(ContextMenuControlsList, PreviewContextMenu(FirstSelected))
@@ -2261,6 +2305,7 @@ SUB __UI_BeforeUpdateDisplay
         'Properties relative to the form
         Control(CenteredWindow).Disabled = False
         Control(Resizable).Disabled = False
+        Control(AddGifExtensionToggle).Disabled = False
         Caption(TextLB) = "Icon file"
 
         FOR i = 1 TO UBOUND(InputBox)
@@ -2317,6 +2362,7 @@ SUB __UI_BeforeUpdateDisplay
     NEXT
 
     'Custom cases
+    Control(AutoPlayGif).Disabled = NOT Control(AddGifExtensionToggle).Value
     Control(AutoSize).Disabled = Control(WordWrap).Value
     IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame THEN
         Control(SizeTB).Disabled = False
@@ -2676,6 +2722,12 @@ SUB __UI_OnLoad
                 FreeFileNum = FREEFILE
                 DIM uB$
                 OPEN COMMAND$ FOR BINARY AS #FreeFileNum
+                b$ = SPACE$(LOF(FreeFileNum))
+                GET #FreeFileNum, 1, b$
+                SEEK #FreeFileNum, 1
+                IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                    LoadedWithGifExtension = True
+                END IF
                 DO
                     IF EOF(FreeFileNum) THEN EXIT DO
                     LINE INPUT #FreeFileNum, b$
@@ -2711,6 +2763,16 @@ SUB __UI_OnLoad
             CASE ELSE
                 IF LCASE$(RIGHT$(COMMAND$, 7)) = ".frmbin" OR LCASE$(RIGHT$(COMMAND$, 4)) = ".frm" THEN
                     FileToOpen$ = COMMAND$
+                    IF _FILEEXISTS(LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas") THEN
+                        FreeFileNum = FREEFILE
+                        OPEN LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas" FOR BINARY AS #FreeFileNum
+                        b$ = SPACE$(LOF(FreeFileNum))
+                        GET #FreeFileNum, 1, b$
+                        CLOSE #FreeFileNum
+                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                            LoadedWithGifExtension = True
+                        END IF
+                    END IF
                 END IF
         END SELECT
 
@@ -2735,6 +2797,13 @@ SUB __UI_OnLoad
             OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FreeFileNum
             PUT #FreeFileNum, 1, b$
             CLOSE #FreeFileNum
+            IF LoadedWithGifExtension = False THEN
+                LoadedWithGifExtension = 1 'Query whether this file contains the gif extension
+                Control(AddGifExtensionToggle).Value = False
+            ELSE
+                Control(AddGifExtensionToggle).Value = True
+            END IF
+            AddToRecentList FileToOpen$
         END IF
     END IF
 
@@ -2841,6 +2910,7 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = AutoSize
     i = i + 1: Toggles(i) = HideTicks
     i = i + 1: Toggles(i) = AutoPlayGif
+    i = i + 1: Toggles(i) = AddGifExtensionToggle
     REDIM _PRESERVE Toggles(1 TO i) AS LONG
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
@@ -3473,6 +3543,7 @@ SUB LoadPreview
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, Dummy AS LONG
     DIM FormData$
+    STATIC PrevTotalGifLoaded AS LONG
 
     TIMER(__UI_EventsTimer) OFF
     TIMER(__UI_RefreshTimer) OFF
@@ -3480,6 +3551,8 @@ SUB LoadPreview
     FormData$ = LastFormData$
 
     AddGifExtension = False
+    TotalGifLoaded = 0
+    IF LoadedWithGifExtension = 1 THEN PrevTotalGifLoaded = 0
 
     b$ = ReadSequential$(FormData$, 4)
 
@@ -3656,7 +3729,12 @@ SUB LoadPreview
                     PreviewKeyCombos(Dummy) = b$
                 CASE -45 'Animated Gif
                     PreviewAnimatedGif(Dummy) = True
+                    TotalGifLoaded = TotalGifLoaded + 1
                     AddGifExtension = True
+                    IF LoadedWithGifExtension = 1 THEN
+                        LoadedWithGifExtension = True
+                        Control(AddGifExtensionToggle).Value = True
+                    END IF
                 CASE -46 'Auto-play Gif
                     PreviewAutoPlayGif(Dummy) = True
                 CASE -1 'new control
@@ -3672,6 +3750,13 @@ SUB LoadPreview
     LoadError:
     TIMER(__UI_EventsTimer) ON
     TIMER(__UI_RefreshTimer) ON
+    IF LoadedWithGifExtension = 1 THEN LoadedWithGifExtension = False
+    IF PrevTotalGifLoaded <> TotalGifLoaded THEN
+        IF PrevTotalGifLoaded = 0 THEN
+            Control(AddGifExtensionToggle).Value = True
+        END IF
+        PrevTotalGifLoaded = TotalGifLoaded
+    END IF
 END SUB
 
 SUB SendData (b$, Property AS INTEGER)
@@ -3857,8 +3942,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         IF Answer = MsgBox_No THEN EXIT SUB
     END IF
 
-    IF AddGifExtension THEN
-        Answer = MessageBox("Add the GIF extension?\n(choosing 'No' will load GIF images as static images)", "", MsgBox_YesNo + MsgBox_Question)
+    AddGifExtension = Control(AddGifExtensionToggle).Value
+
+    IF (AddGifExtension OR Control(AddGifExtensionToggle).Value) AND LoadedWithGifExtension = False AND TotalGifLoaded = 0 THEN
+        Answer = MessageBox("Are you sure you want to include the GIF extension?\n(no animated GIFs have been added to this form)", "", MsgBox_YesNo + MsgBox_Question)
         AddGifExtension = (Answer = MsgBox_Yes)
     END IF
 
@@ -3888,8 +3975,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             CLOSE #TextFileNum
 
             IF i = 1 THEN
-                IF INSTR(b$, "': External modules: ---------------------------------------------------------------") > 0 THEN
-                    BackupCode$ = MID$(b$, INSTR(b$, "': External modules: ---------------------------------------------------------------"))
+                IF INSTR(b$, "': Event procedures: ---------------------------------------------------------------") > 0 THEN
+                    BackupCode$ = MID$(b$, INSTR(b$, "': Event procedures: ---------------------------------------------------------------"))
                     PreserveBackup = True
                 END IF
             END IF
@@ -4206,10 +4293,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             END IF
         NEXT
         PRINT #TextFileNum,
-        IF PreserveBackup THEN
-            PRINT #TextFileNum, BackupCode$
-            GOTO BackupRestored
-        END IF
         PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
         IF AddGifExtension THEN
             PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
@@ -4221,6 +4304,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
         END IF
         PRINT #TextFileNum,
+        IF PreserveBackup THEN
+            PRINT #TextFileNum, BackupCode$
+            GOTO BackupRestored
+        END IF
         PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
         FOR i = 0 TO 14
             SELECT EVERYCASE i
@@ -4263,7 +4350,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     END IF
 
                 CASE 2
-                    IF AddGifExtension THEN
+                    IF AddGifExtension = True AND TotalGifLoaded > 0 THEN
                         PRINT #TextFileNum,
                         PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
                         PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"

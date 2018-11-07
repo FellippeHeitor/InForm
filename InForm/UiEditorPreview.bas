@@ -318,6 +318,13 @@ SUB __UI_BeforeUpdateDisplay
                         LockedControls(TotalLockedControls) = i
                     END IF
                 NEXT
+            CASE "PAUSEALLGIF"
+                FOR i = 1 TO UBOUND(Control)
+                    IF AutoPlayGif(i) THEN
+                        AutoPlayGif(i) = False
+                        StopGif i
+                    END IF
+                NEXT
         END SELECT
     LOOP
 

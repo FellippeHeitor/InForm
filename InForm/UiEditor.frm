@@ -610,6 +610,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Auto-play"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AddGifExtensionToggle", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Include GIF extension"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "ColorPropertiesList", 161, 21, 10, 20, __UI_GetID("ColorMixer"))
     AddItem __UI_NewID, "ForeColor"
     AddItem __UI_NewID, "BackColor"
@@ -710,7 +714,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "SaveFrmOnlyCB", 300, 23, 25, 484, __UI_GetID("OpenFrame"))
-    SetCaption __UI_NewID, "Don't save .bas project (.frm only)"
+    SetCaption __UI_NewID, "Don't save .bas project (Save .frm only)"
     Control(__UI_NewID).Value = False
     Control(__UI_NewID).CanHaveFocus = True
 
@@ -914,6 +918,7 @@ SUB __UI_AssignIDs
     ContextMenuControlsList = __UI_GetID("ContextMenuControlsList")
     HideTicks = __UI_GetID("HideTicks")
     AutoPlayGif = __UI_GetID("AutoPlayGif")
+    AddGifExtensionToggle = __UI_GetID("AddGifExtensionToggle")
     FileMenuRecent = __UI_GetID("FileMenuRecent")
     FileMenuRecent1 = __UI_GetID("FileMenuRecent1")
     FileMenuRecent2 = __UI_GetID("FileMenuRecent2")
