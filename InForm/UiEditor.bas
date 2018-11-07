@@ -3753,7 +3753,14 @@ SUB LoadPreview
     IF LoadedWithGifExtension = 1 THEN LoadedWithGifExtension = False
     IF PrevTotalGifLoaded <> TotalGifLoaded THEN
         IF PrevTotalGifLoaded = 0 THEN
-            Control(AddGifExtensionToggle).Value = True
+            Answer = MessageBox("You loaded an animated GIF file.\nDo you want to include the GIF extension?", "", MsgBox_YesNo + MsgBox_Question)
+            IF Answer = MsgBox_Yes THEN
+                Control(AddGifExtensionToggle).Value = True
+            ELSE
+                b$ = "PAUSEALLGIF>" + "<END>"
+                Send Client, b$
+                Control(AddGifExtensionToggle).Value = False
+            END IF
         END IF
         PrevTotalGifLoaded = TotalGifLoaded
     END IF
