@@ -3045,6 +3045,7 @@ SUB PreviewLoadImage (This AS __UI_ControlTYPE, fileName$)
             END IF
         END IF
     END IF
+    CloseGif This.ID
     LoadImage This, fileName$
 END SUB
 
