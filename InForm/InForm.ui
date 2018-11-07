@@ -172,7 +172,7 @@ REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
 REDIM SHARED __UI_WordWrapHistoryTexts(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistoryResults(1 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistory(1 TO 100) AS __UI_WordWrapHistoryType
-REDIM SHARED __UI_ThisLineChars(0) AS LONG
+REDIM SHARED __UI_ThisLineChars(0) AS LONG, __UI_FocusedTextBoxChars(0) AS LONG
 REDIM SHARED __UI_ActiveMenu(0 TO 100) AS LONG, __UI_ParentMenu(0 TO 100) AS LONG
 REDIM SHARED __UI_KeyCombo(0 TO 100) AS __UI_KeyCombos
 
@@ -5351,9 +5351,9 @@ SUB __UI_CursorAdjustments(This AS LONG)
     DIM i AS LONG, ThisLineStart AS LONG, ThisLineLen AS LONG
     IF NOT Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
         IF Control(This).VisibleCursor >= (Control(This).Width - ((Control(This).BorderSize + __UI_DefaultCaptionIndent) * ABS(Control(This).HasBorder))) THEN
-            Control(This).InputViewStart = Control(This).InputViewStart + Control(This).Width / 4
+            Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart + Control(This).Width / 4
         ELSEIF Control(This).VisibleCursor <= 0 THEN
-            Control(This).InputViewStart = Control(This).InputViewStart - Control(This).Width / 4
+            Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart - Control(This).Width / 4
         END IF
         IF Control(This).InputViewStart < 0 THEN Control(This).InputViewStart = 0
     ELSEIF Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN

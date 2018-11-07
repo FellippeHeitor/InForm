@@ -837,6 +837,18 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                 IF This.Cursor > UBOUND(__UI_ThisLineChars) THEN This.Cursor = UBOUND(__UI_ThisLineChars)
                 This.VisibleCursor = CaptionIndent + __UI_ThisLineChars(This.Cursor) - This.InputViewStart
 
+                STATIC PrevFocusedText$
+                IF PrevFocusedText$ <> ThisTempText$ THEN
+                    PrevFocusedText$ = ThisTempText$
+                    REDIM __UI_FocusedTextBoxChars(UBOUND(__UI_ThisLineChars)) AS LONG
+                    DIM M1 AS _MEM, M2 AS _MEM
+                    M1 = _MEM(__UI_ThisLineChars())
+                    M2 = _MEM(__UI_FocusedTextBoxChars())
+                    _MEMCOPY M1, M1.OFFSET, M1.SIZE TO M2, M2.OFFSET
+                    _MEMFREE M1
+                    _MEMFREE M2
+                END IF
+
                 SELECT CASE MID$(Mask(This.ID), This.Cursor + 1, 1)
                     CASE "0", "9", "#" 'Digit placeholders
                         LINE (This.VisibleCursor, ((This.Height \ 2) - uspacing& \ 2))-STEP(__UI_ThisLineChars(This.Cursor + 1) - __UI_ThisLineChars(This.Cursor), uspacing&), c, BF
