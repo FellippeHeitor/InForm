@@ -5977,7 +5977,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
         IF __UI_GetID(RTRIM$(This.Name) + CHR$(254) + "Panel") > 0 THEN
             __UI_ActiveMenu(__UI_TotalActiveMenus) = __UI_GetID(RTRIM$(This.Name) + CHR$(254) + "Panel")
-            EXIT SUB
+            IF NOT __UI_DesignMode THEN EXIT SUB
         ELSE
             IF __UI_TotalActiveMenus + 1 > UBOUND(__UI_ActiveMenu) THEN
                 EXIT SUB
