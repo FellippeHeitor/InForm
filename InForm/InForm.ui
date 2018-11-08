@@ -5493,8 +5493,8 @@ SUB AddItem (WhichListBox AS LONG, TempItem$)
         BorderOffset = ABS(Control(ThisID).HasBorder) * 5
 
         _FONT Control(ThisID).Font
-        IF Control(ThisID).Max > FIX((Control(ThisID).Height - BorderOffset) \ Control(ThisID).ItemHeight) THEN
-            Control(ThisID).InputViewStart = Control(ThisID).Max - FIX((Control(ThisID).Height - BorderOffset) \ Control(ThisID).ItemHeight) + 1
+        IF Control(ThisID).Max > FIX((Control(ThisID).Height - BorderOffset) / Control(ThisID).ItemHeight) THEN
+            Control(ThisID).InputViewStart = Control(ThisID).Max - FIX((Control(ThisID).Height - BorderOffset) / Control(ThisID).ItemHeight) + 1
         END IF
         _FONT prevFont
     END IF
