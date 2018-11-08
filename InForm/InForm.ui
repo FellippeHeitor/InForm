@@ -955,7 +955,7 @@ SUB __UI_ProcessInput
 
             __UI_HasResized = 2 'Indicate this process is in the middle
 
-            OldScreen& = _DEST
+            OldScreen& = _DISPLAY
             SCREEN _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
             _FREEIMAGE OldScreen&
             'Recreate the main form's canvas
