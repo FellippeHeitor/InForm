@@ -3752,7 +3752,7 @@ SUB LoadPreview
     TIMER(__UI_RefreshTimer) ON
     IF LoadedWithGifExtension = 1 THEN LoadedWithGifExtension = False
     IF PrevTotalGifLoaded <> TotalGifLoaded THEN
-        IF PrevTotalGifLoaded = 0 THEN
+        IF PrevTotalGifLoaded = 0 AND LoadedWithGifExtension = False THEN
             Answer = MessageBox("You loaded an animated GIF file.\nDo you want to include the GIF extension?", "", MsgBox_YesNo + MsgBox_Question)
             IF Answer = MsgBox_Yes THEN
                 Control(AddGifExtensionToggle).Value = True
