@@ -1288,8 +1288,8 @@ SUB __UI_BeforeUpdateDisplay
                     STATIC serverVersion$, isBeta$, serverBeta%%
                     STATIC updateDescription$
 
-                    localVersionNumber! = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionNumber"))
-                    localVersionIsBeta%% = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionIsBeta") = "True"
+                    localVersionNumber! = __UI_VersionNumber
+                    localVersionIsBeta%% = __UI_VersionIsBeta
 
                     serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
                     isBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")

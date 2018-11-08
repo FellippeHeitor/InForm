@@ -67,9 +67,9 @@ SUB __UI_BeforeUpdateDisplay STATIC
             END SELECT
         CASE 2 'compare with current version
             IF NextEvent THEN NextEvent = False: Report "Parsing update script..."
-            localVersion$ = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_Version")
-            localVersionNumber! = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionNumber"))
-            localVersionisBeta%% = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionIsBeta") = "True"
+            localVersion$ = __UI_Version
+            localVersionNumber! = __UI_VersionNumber
+            localVersionisBeta%% = __UI_VersionIsBeta
             IF localVersionisBeta%% THEN localBeta$ = " Beta version " ELSE localBeta$ = " "
             Report "Local version:" + localBeta$ + LTRIM$(STR$(localVersionNumber!))
 
