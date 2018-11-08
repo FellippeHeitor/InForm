@@ -2691,7 +2691,7 @@ SUB __UI_EventDispatcher
                                 END IF
                             ELSE
                                 _FONT Control(__UI_HoveringID).Font
-                                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
+                                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top) - (ABS(Control(__UI_HoveringID).HasBorder) * __UI_DefaultCaptionIndent)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
                                 IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
                                     Control(__UI_HoveringID).Value = ThisItem%
                                 ELSE
