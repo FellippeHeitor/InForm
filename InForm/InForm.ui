@@ -1058,12 +1058,19 @@ SUB __UI_UpdateDisplay
     DIM iCount AS LONG, ctxMenuCount AS LONG
     FOR iCount = 1 TO UBOUND(ControlDrawOrder)
         i = ControlDrawOrder(iCount)
-        IF Control(i).ID > 0 AND NOT Control(i).Hidden THEN
+        IF Control(i).ID > 0 THEN
             'Direct the drawing to the appropriate canvas (main or container)
             IF Control(i).ParentID > 0 AND Control(i).Type <> __UI_Type_MenuItem THEN
                 _DEST Control(Control(i).ParentID).Canvas
             ELSE
                 _DEST 0
+            END IF
+
+            IF Control(i).Hidden = True AND __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
+                LINE (Control(i).Left, Control(i).Top)-STEP(Control(i).Width - 1, Control(i).Height - 1), _RGB32(127, 127, 127, 80), BF
+                GOTO BypassDisplay
+            ELSEIF Control(i).Hidden = True THEN
+                GOTO BypassDisplay
             END IF
 
             IF ((__UI_MouseIsDown AND i = __UI_MouseDownOnID) OR (__UI_KeyIsDown AND i = __UI_KeyDownOnID AND __UI_KeyDownOnID = __UI_Focus)) AND NOT Control(i).Disabled THEN
@@ -1150,6 +1157,7 @@ SUB __UI_UpdateDisplay
             END SELECT
         END IF
 
+        BypassDisplay:
         IF __UI_Snapped THEN
             IF OverlayReset = False THEN
                 'Reset the helper canvas of the main form
