@@ -717,8 +717,10 @@ SUB __UI_ProcessInput
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuItem AND ((Control(i).Hidden = False AND __UI_DesignMode = False) OR (__UI_DesignMode = True)) THEN
                 IF Control(i).Type = __UI_Type_ContextMenu AND __UI_DesignMode AND __UI_ShowInvisibleControls = False THEN _CONTINUE
+                IF Control(i).Hidden = True AND __UI_ShowInvisibleControls = False THEN _CONTINUE
                 Control(i).HoveringVScrollbarButton = 0
                 IF Control(i).ParentID > 0 THEN
+                    IF Control(Control(i).ParentID).Hidden = True THEN _CONTINUE
                     ContainerOffsetTop = Control(Control(i).ParentID).Top
                     ContainerOffsetLeft = Control(Control(i).ParentID).Left
                     'First make sure the mouse is inside the container:
