@@ -1071,6 +1071,11 @@ SUB __UI_UpdateDisplay
 
             IF Control(i).Hidden = True AND __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
                 LINE (Control(i).Left, Control(i).Top)-STEP(Control(i).Width - 1, Control(i).Height - 1), _RGB32(127, 127, 127, 80), BF
+                _FONT 8
+                _PRINTMODE _KEEPBACKGROUND
+                COLOR _RGBA32(0, 0, 0, 150)
+                _PRINTSTRING (Control(i).Left + 1, Control(i).Top + 1), RTRIM$(Control(i).Name)
+                _PRINTSTRING (Control(i).Left + 1, Control(i).Top + 1 + falcon_uspacing&), "(hidden)"
                 GOTO BypassDisplay
             ELSEIF Control(i).Hidden = True THEN
                 GOTO BypassDisplay
