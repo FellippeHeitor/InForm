@@ -98,6 +98,7 @@ TYPE __UI_ControlTYPE
     FieldArea AS LONG
     PreviousFieldArea AS LONG
     TextIsSelected AS _BYTE
+    BypassSelectOnFocus AS _BYTE
     Multiline AS _BYTE
     NumericOnly AS _BYTE
     FirstVisibleLine AS LONG
@@ -560,12 +561,14 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB SetFocus(id AS LONG)
     IF __UI_Focus = id THEN EXIT SUB
-    IF Control(id).CanHaveFocus = False OR Control(id).Hidden = True OR Control(id).Disabled = TRUE THEN EXIT SUB
+    IF Control(id).CanHaveFocus = False OR Control(id).Hidden = True OR Control(id).Disabled = True THEN EXIT SUB
     __UI_Focus = id
     IF Control(id).Type = __UI_Type_TextBox THEN
-        Control(id).TextIsSelected = True
-        Control(id).SelectionStart = 0
-        Control(id).Cursor = LEN(Text(id))
+        IF Control(id).BypassSelectOnFocus = False THEN
+            Control(id).TextIsSelected = True
+            Control(id).SelectionStart = 0
+            Control(id).Cursor = LEN(Text(id))
+        END IF
     END IF
 END SUB
 
@@ -1817,9 +1820,11 @@ SUB __UI_EventDispatcher
                         __UI_Focus = __UI_FocusSearch
                         IF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline = False THEN
                             'Single-line textbox contents are selected when first focused.
-                            Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                            Control(__UI_Focus).SelectionStart = 0
-                            Control(__UI_Focus).TextIsSelected = True
+                            IF Control(__UI_Focus).BypassSelectOnFocus = False THEN
+                                Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                Control(__UI_Focus).SelectionStart = 0
+                                Control(__UI_Focus).TextIsSelected = True
+                            END IF
                         END IF
                         __UI_FocusIn __UI_Focus
                     END IF
@@ -2269,9 +2274,11 @@ SUB __UI_EventDispatcher
                                 GOTO PositionCursorMultilineTB
                             ELSE
                                 'Single-line textbox contents are selected when first focused.
-                                Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                Control(__UI_Focus).SelectionStart = 0
-                                Control(__UI_Focus).TextIsSelected = True
+                                IF Control(__UI_Focus).BypassSelectOnFocus = False THEN
+                                    Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                    Control(__UI_Focus).SelectionStart = 0
+                                    Control(__UI_Focus).TextIsSelected = True
+                                END IF
                             END IF
                         ELSE
                             STATIC WholeWordSelection AS _BYTE, WholeWordCursor AS LONG, WholeWordSelStart AS LONG
