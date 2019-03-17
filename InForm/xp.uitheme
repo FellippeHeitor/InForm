@@ -833,6 +833,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
                     SetCursor# = TIMER
                     cursorBlink%% = NOT cursorBlink%%
                 END IF
+                IF _WINDOWHASFOCUS = False THEN cursorBlink%% = False
 
                 IF This.Cursor > UBOUND(__UI_ThisLineChars) THEN This.Cursor = UBOUND(__UI_ThisLineChars)
                 This.VisibleCursor = CaptionIndent + __UI_ThisLineChars(This.Cursor) - This.InputViewStart
