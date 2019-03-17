@@ -162,6 +162,7 @@ FUNCTION IniGetSection$ (__section$)
 
     DIM section$, foundSection AS _UNSIGNED LONG, endSection AS _UNSIGNED LONG
     DIM i AS _UNSIGNED LONG, Bracket1 AS _UNSIGNED LONG, sectionStart AS _UNSIGNED LONG
+    DIM inQuote AS _BYTE
 
     section$ = IniFormatSection$(__section$)
     IF IniCODE THEN EXIT FUNCTION
@@ -196,10 +197,21 @@ FUNCTION IniGetSection$ (__section$)
             IF foundSection > 0 THEN
                 'we found it; time to identify where this section ends
                 '(either another [section] or the end of the file
-                Bracket1 = INSTR(sectionStart + 1, IniWholeFile$, "[")
+                Bracket1 = sectionStart
+                checkAgain:
+                Bracket1 = INSTR(Bracket1 + 1, IniWholeFile$, "[")
+
                 IF Bracket1 > 0 THEN
+                    'found a bracket; check if it's inside quotes
+                    inQuote = 0
+                    FOR i = 1 TO Bracket1 - 1
+                        IF ASC(IniWholeFile$, i) = 34 THEN inQuote = NOT inQuote
+                    NEXT
+                    IF inQuote THEN GOTO checkAgain
+
                     FOR i = Bracket1 - 1 TO 1 STEP -1
                         IF ASC(IniWholeFile$, i) = 10 THEN endSection = i + 1 - LEN(IniLF$): EXIT FOR
+                        IF ASC(IniWholeFile$, i) = 61 THEN GOTO checkAgain 'bracket is inside a key's value
                         IF i <= foundSection THEN EXIT FOR
                     NEXT
                     IniGetSection$ = MID$(IniWholeFile$, foundSection, endSection - foundSection)
@@ -540,6 +552,15 @@ SUB IniSetForceReload (state AS _BYTE)
     END IF
 END SUB
 
+SUB IniClose
+    SHARED IniDisableAutoCommit, currentIniFileName$
+
+    IniDisableAutoCommit = 0
+    IniCommit
+
+    currentIniFileName$ = ""
+END SUB
+
 SUB IniLoad (file$)
     SHARED IniCODE, currentIniFileName$, IniLF$, IniWholeFile$
     SHARED currentIniFileLOF AS _UNSIGNED LONG
@@ -548,7 +569,7 @@ SUB IniLoad (file$)
     DIM fileNum AS INTEGER
 
     'Error messages are returned with IniCODE
-    'Error descriptions can be fetched with function IniINFO$(IniCODE)
+    'Error descriptions can be fetched with function IniINFO$
     IniCODE = 0
 
     IF file$ <> "" AND currentIniFileName$ <> file$ THEN currentIniFileName$ = ""
@@ -616,6 +637,8 @@ FUNCTION IniNextKey$
     IF Equal = 0 THEN position = 0: EXIT FUNCTION
 
     tempKey$ = LTRIM$(RTRIM$(MID$(IniSectionData$ + tempLF$, position + 1, Equal - position - 1)))
+
+    IF INSTR(tempKey$, CHR$(10)) > 0 THEN tempKey$ = MID$(tempKey$, INSTR(tempKey$, CHR$(10)) + 1)
 
     DO WHILE LEFT$(tempKey$, LEN(IniLF$)) = IniLF$
         tempKey$ = MID$(tempKey$, LEN(IniLF$) + 1)
