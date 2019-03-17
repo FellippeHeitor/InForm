@@ -1,5 +1,5 @@
 'INI Manager
-'Fellippe Heitor, 2017 - fellippe@qb64.org - @fellippeheitor
+'Fellippe Heitor, 2017-2019 - fellippe@qb64.org - @fellippeheitor
 
 'This file isn't required to be at the top of your programs,
 'unless you intend to use OPTION _EXPLICIT
