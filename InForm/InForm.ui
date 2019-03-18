@@ -1133,14 +1133,26 @@ SUB __UI_UpdateDisplay
                     'Text boxes
                     'IF Control(i).InputViewStart = 0 THEN Control(i).InputViewStart = 1
 
+                    IF __UI_EditorMode = False AND Control(i).NumericOnly = __UI_NumericWithBounds AND __UI_Focus <> i THEN
+                        IF VAL(Text(i)) < Control(i).Min THEN
+                            Text(i) = LTRIM$(STR$(Control(i).Min))
+                        END IF
+
+                        IF VAL(Text(i)) > Control(i).Max THEN
+                            Text(i) = LTRIM$(STR$(Control(i).Max))
+                        END IF
+                    END IF
+
                     DIM ss1 AS LONG, ss2 AS LONG
                     __UI_FillSelectedText ss1, ss2
                     __UI_StateHasChanged = False
                     __UI_DrawTextBox Control(i), ControlState, ss1, ss2
                     IF __UI_StateHasChanged THEN
                         __UI_TextChanged i
-                        IF Control(i).NumericOnly THEN
-                            Control(i).Value = VAL(Text(i))
+                        IF Control(__UI_Focus).NumericOnly THEN
+                            Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                            __UI_ValidateBounds __UI_Focus
                         END IF
                     END IF
                 CASE __UI_Type_ListBox
@@ -3922,6 +3934,8 @@ SUB __UI_EventDispatcher
                                                 __UI_TextChanged __UI_Focus
                                                 IF Control(__UI_Focus).NumericOnly THEN
                                                     Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                                    __UI_ValidateBounds __UI_Focus
                                                 END IF
                                             END IF
                                             IF ContextMenuPaste THEN
@@ -3991,6 +4005,8 @@ SUB __UI_EventDispatcher
                                                 __UI_TextChanged __UI_Focus
                                                 IF Control(__UI_Focus).NumericOnly THEN
                                                     Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                                    __UI_ValidateBounds __UI_Focus
                                                 END IF
                                             END IF
                                             IF ContextMenuPaste THEN
@@ -4013,9 +4029,11 @@ SUB __UI_EventDispatcher
                                             _CLIPBOARD$ = __UI_SelectedText
                                             __UI_DeleteSelection
                                             __UI_TextChanged __UI_Focus
-                                            IF Control(__UI_Focus).NumericOnly THEN
-                                                Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
-                                            END IF
+                                                IF Control(__UI_Focus).NumericOnly THEN
+                                                    Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                                    __UI_ValidateBounds __UI_Focus
+                                                END IF
                                         END IF
                                         __UI_KeyHit = 0
                                     END IF
@@ -4102,21 +4120,12 @@ SUB __UI_EventDispatcher
                                         END IF
                                     END IF
 
-                                    IF Control(__UI_Focus).NumericOnly = __UI_NumericWithBounds THEN
-                                        'Max and Min properties can be used for NumericOnly textboxes
-                                        'set as .NumericOnly = __UI_NumericWithBounds
-                                        IF VAL(Text(__UI_Focus)) < Control(__UI_Focus).Min THEN
-                                            Text(__UI_Focus) = LTRIM$(STR$(Control(__UI_Focus).Min))
-                                        END IF
-
-                                        IF VAL(Text(__UI_Focus)) > Control(__UI_Focus).Max THEN
-                                            Text(__UI_Focus) = LTRIM$(STR$(Control(__UI_Focus).Max))
-                                        END IF
-                                    END IF
-
                                     __UI_TextChanged __UI_Focus
+
                                     IF Control(__UI_Focus).NumericOnly THEN
                                         Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                        __UI_ValidateBounds __UI_Focus
                                     END IF
                                 END IF
                             CASE 8 'Backspace
@@ -4142,6 +4151,8 @@ SUB __UI_EventDispatcher
                                         __UI_TextChanged __UI_Focus
                                         IF Control(__UI_Focus).NumericOnly THEN
                                             Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                            __UI_ValidateBounds __UI_Focus
                                         END IF
                                     END IF
                                 ELSE
@@ -4165,6 +4176,8 @@ SUB __UI_EventDispatcher
                                     __UI_TextChanged __UI_Focus
                                     IF Control(__UI_Focus).NumericOnly THEN
                                         Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                        __UI_ValidateBounds __UI_Focus
                                     END IF
                                 END IF
                             CASE 21248 'Delete
@@ -4179,6 +4192,8 @@ SUB __UI_EventDispatcher
                                             __UI_TextChanged __UI_Focus
                                             IF Control(__UI_Focus).NumericOnly THEN
                                                 Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                                __UI_ValidateBounds __UI_Focus
                                             END IF
                                         END IF
                                     ELSE
@@ -4186,6 +4201,8 @@ SUB __UI_EventDispatcher
                                         __UI_TextChanged __UI_Focus
                                         IF Control(__UI_Focus).NumericOnly THEN
                                             Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                            __UI_ValidateBounds __UI_Focus
                                         END IF
                                     END IF
                                 ELSE
@@ -4197,6 +4214,8 @@ SUB __UI_EventDispatcher
                                                 __UI_TextChanged __UI_Focus
                                                 IF Control(__UI_Focus).NumericOnly THEN
                                                     Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                                    __UI_ValidateBounds __UI_Focus
                                                 END IF
                                             END IF
                                         END IF
@@ -4205,6 +4224,8 @@ SUB __UI_EventDispatcher
                                         __UI_TextChanged __UI_Focus
                                         IF Control(__UI_Focus).NumericOnly THEN
                                             Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
+
+                                            __UI_ValidateBounds __UI_Focus
                                         END IF
                                     END IF
                                 END IF
@@ -4406,6 +4427,20 @@ SUB __UI_EventDispatcher
     END IF
 
     __UI_LastHoveringID = __UI_HoveringID
+END SUB
+
+SUB __UI_ValidateBounds(this AS LONG)
+    IF Control(this).NumericOnly = __UI_NumericWithBounds THEN
+        'Max and Min properties can be used for NumericOnly textboxes
+        'set as .NumericOnly = __UI_NumericWithBounds
+        IF Control(this).Value < Control(this).Min THEN
+            Control(this).Value = Control(this).Min
+        END IF
+
+        IF Control(this).Value > Control(this).Max THEN
+            Control(this).Value = Control(this).Max
+        END IF
+    END IF
 END SUB
 
 '---------------------------------------------------------------------------------
