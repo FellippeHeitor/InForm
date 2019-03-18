@@ -4186,7 +4186,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
                 END IF
                 IF PreviewControls(i).Value <> 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
+                    IF PreviewControls(i).NumericOnly = 0 THEN
+                        PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
+                    END IF
                 END IF
                 IF PreviewControls(i).Min <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))

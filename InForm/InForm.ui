@@ -1134,12 +1134,9 @@ SUB __UI_UpdateDisplay
                     'IF Control(i).InputViewStart = 0 THEN Control(i).InputViewStart = 1
 
                     IF __UI_EditorMode = False AND Control(i).NumericOnly = __UI_NumericWithBounds AND __UI_Focus <> i THEN
-                        IF VAL(Text(i)) < Control(i).Min THEN
-                            Text(i) = LTRIM$(STR$(Control(i).Min))
-                        END IF
-
-                        IF VAL(Text(i)) > Control(i).Max THEN
-                            Text(i) = LTRIM$(STR$(Control(i).Max))
+                        __UI_ValidateBounds i
+                        IF Text(i) <> LTRIM$(STR$(Control(i).Value)) THEN
+                            Text(i) = LTRIM$(STR$(Control(i).Value))
                         END IF
                     END IF
 
