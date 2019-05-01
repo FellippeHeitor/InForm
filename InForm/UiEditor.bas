@@ -4069,6 +4069,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     a$ = a$ + " 0)"
                 END IF
                 PRINT #TextFileNum, a$
+                PRINT #TextFileNum, "    __UI_RegisterResult = 0"
 
                 IF PreviewControls(i).Type = __UI_Type_ContextMenu THEN
                     PRINT #TextFileNum,
@@ -4130,7 +4131,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             PRINT #TextFileNum, a$
 
                             IF AddGifExtension AND PreviewAutoPlayGif(i) THEN
-                                a$ = "    PlayGif __UI_NewID"
+                                a$ = "    IF __UI_RegisterResult THEN PlayGif __UI_NewID"
                                 PRINT #TextFileNum, a$
                             END IF
                         CASE ELSE
