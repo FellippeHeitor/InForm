@@ -1223,6 +1223,7 @@ SUB __UI_BeforeUpdateDisplay
                 InstanceStream$ = MID$(InstanceStream$, 13)
                 InstanceStream$ = LEFT$(InstanceStream$, INSTR(InstanceStream$, "<END>") - 1)
                 IF _FILEEXISTS(InstanceStream$) THEN
+                    LoadNewInstanceForm:
                     IF INSTR(InstanceStream$, "/") > 0 OR INSTR(InstanceStream$, "\") > 0 THEN
                         FOR i = LEN(InstanceStream$) TO 1 STEP -1
                             IF ASC(InstanceStream$, i) = 92 OR ASC(InstanceStream$, i) = 47 THEN
@@ -1261,6 +1262,15 @@ SUB __UI_BeforeUpdateDisplay
         BringToFront = False
         InstanceStream$ = ""
     END IF
+
+    'Check if a form file was dropped onto the Editor for loading
+    FOR i = 1 TO _TOTALDROPPEDFILES
+        IF _FILEEXISTS(_DROPPEDFILE(i)) THEN
+            InstanceStream$ = _DROPPEDFILE(i)
+            _FINISHDROP
+            GOTO LoadNewInstanceForm
+        END IF
+    NEXT
 
     IF CheckUpdates THEN
         IF CheckUpdateDone = False THEN
@@ -3017,7 +3027,7 @@ SUB __UI_OnLoad
     __UI_ForceRedraw = True
     _FREEIMAGE tempIcon
 
-    'TIMER(CheckPreviewTimer) ON
+    _ACCEPTFILEDROP
 
     EXIT SUB
     UiEditorPreviewNotFound:
