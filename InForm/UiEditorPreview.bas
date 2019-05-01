@@ -328,6 +328,33 @@ SUB __UI_BeforeUpdateDisplay
         END SELECT
     LOOP
 
+    FOR i = 1 TO _TOTALDROPPEDFILES
+        DIM tempImage&
+        tempImage& = _LOADIMAGE(_DROPPEDFILE(i), 32)
+        IF tempImage& < -1 THEN
+            defW = _WIDTH(tempImage&)
+            defH = _HEIGHT(tempImage&)
+            _FREEIMAGE tempImage&
+            tempType = __UI_Type_PictureBox
+
+            SaveUndoImage
+
+            TempValue = __UI_NewControl(tempType, "", defW, defH, _MOUSEX - defW \ 2, _MOUSEY - defH \ 2, ThisContainer)
+            IF ThisContainer > 0 THEN
+                Control(TempValue).Left = 0
+                Control(TempValue).Top = 0
+            END IF
+
+            IF __UI_TotalActiveMenus > 0 THEN
+                __UI_CloseAllMenus
+            END IF
+            SelectNewControl TempValue
+
+            PreviewLoadImage Control(TempValue), _DROPPEDFILE(i)
+        END IF
+        IF i = _TOTALDROPPEDFILES THEN _FINISHDROP
+    NEXT
+
     $IF WIN THEN
         IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
             _SCREENMOVE NewWindowLeft + 612, NewWindowTop
@@ -1660,6 +1687,8 @@ SUB __UI_OnLoad
 
     b$ = "PREVIEWPID>" + MKL$(__UI_GetPID) + "<END>"
     PUT #Host, , b$
+
+    _ACCEPTFILEDROP
 
     EXIT SUB
     ShowMessage:
