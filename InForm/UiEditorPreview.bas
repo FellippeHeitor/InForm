@@ -76,10 +76,14 @@ $IF WIN THEN
         FUNCTION CloseHandle& (BYVAL hObject AS LONG)
         FUNCTION GetExitCodeProcess& (BYVAL hProcess AS LONG, lpExitCode AS LONG)
     END DECLARE
+
+    CONST PathSep$ = "\"
 $ELSE
     DECLARE LIBRARY
     FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
     END DECLARE
+
+    CONST PathSep$ = "/"
 $END IF
 
 'Load context menu icon image:
@@ -351,6 +355,11 @@ SUB __UI_BeforeUpdateDisplay
             SelectNewControl TempValue
 
             PreviewLoadImage Control(TempValue), _DROPPEDFILE(i)
+
+            b$ = MID$(_DROPPEDFILE(i), _INSTRREV(_DROPPEDFILE(i), PathSep$) + 1)
+            SWAP i, TempValue
+            GOSUB AutoName
+            SWAP i, TempValue
         END IF
         IF i = _TOTALDROPPEDFILES THEN _FINISHDROP
     NEXT
