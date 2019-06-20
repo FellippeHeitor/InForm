@@ -87,7 +87,7 @@ SUB StopGif (ID AS LONG)
 END SUB
 
 FUNCTION OpenGif%%(ID AS LONG, filename$)
-    DIM file AS INTEGER, i AS LONG, Index AS LONG
+    DIM i AS LONG, Index AS LONG
     DIM byte~%%, palette$, delay~%
 
     IF Control(ID).Type <> __UI_Type_PictureBox THEN ERROR 5: EXIT FUNCTION
@@ -837,7 +837,7 @@ FUNCTION gifOverlayImage$
 END FUNCTION
 
 FUNCTION LoadOverlayImage&
-    DIM MemoryBlock AS _MEM, TempImage AS LONG, NextSlot AS LONG
+    DIM MemoryBlock AS _MEM, TempImage AS LONG
     DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
 
     A$ = gifOverlayImage$
@@ -861,7 +861,7 @@ END FUNCTION
 FUNCTION gifUnpack$ (PackedData$)
     'Adapted from Dav's BIN2BAS
     'http://www.qbasicnews.com/dav/qb64.php
-    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
+    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$
 
     A$ = PackedData$
 

@@ -219,7 +219,7 @@ DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_MenuBarOffset AS INTEGER, __UI_MenuItemOffset AS INTEGER
 DIM SHARED __UI_NewMenuBarTextLeft AS INTEGER, __UI_DefaultCaptionIndent AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
-DIM SHARED __UI_CurrentTitle AS STRING, __UI_WindowHandle AS LONG
+DIM SHARED __UI_CurrentTitle AS STRING
 DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG
 DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
 DIM SHARED __UI_WaitMessageHandle AS LONG, __UI_EditorMode AS _BYTE
@@ -661,6 +661,7 @@ FUNCTION __UI_GetProperMouseButton%%(Which%%)
                 __UI_GetProperMouseButton%% = _MOUSEBUTTON(1)
             END IF
         END IF
+        __UI_MouseButtonsSwap = False
         $ELSE
             IF __UI_MouseButtonsSwap THEN
                 IF Which%% = 1 THEN
@@ -1001,8 +1002,8 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_UpdateDisplay
     STATIC ActiveTipPanel AS LONG
-    DIM i AS LONG, TempCaption$, TempColor~&, PrevDest AS LONG, TempParentID AS LONG
-    DIM CaptionIndent AS INTEGER, OverlayisVisible AS _BYTE, OverlayReset AS _BYTE
+    DIM i AS LONG, TempCaption$, PrevDest AS LONG, TempParentID AS LONG
+    DIM OverlayisVisible AS _BYTE, OverlayReset AS _BYTE
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
     DIM ControlState AS _BYTE '1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled;
 
@@ -1060,7 +1061,7 @@ SUB __UI_UpdateDisplay
     END IF
 
     'Control drawing
-    DIM iCount AS LONG, ctxMenuCount AS LONG
+    DIM iCount AS LONG
     FOR iCount = 1 TO UBOUND(ControlDrawOrder)
         i = ControlDrawOrder(iCount)
         IF Control(i).ID > 0 THEN
@@ -1143,7 +1144,7 @@ SUB __UI_UpdateDisplay
                     DIM ss1 AS LONG, ss2 AS LONG
                     __UI_FillSelectedText ss1, ss2
                     __UI_StateHasChanged = False
-                    __UI_DrawTextBox Control(i), ControlState, ss1, ss2
+                    __UI_DrawTextBox Control(i), ControlState
                     IF __UI_StateHasChanged THEN
                         __UI_TextChanged i
                         IF Control(__UI_Focus).NumericOnly THEN
@@ -1500,7 +1501,7 @@ SUB __UI_UpdateDisplay
             ToolTip(__UI_ActiveTipID) = RestoreCHR$(ToolTip(__UI_ActiveTipID))
             __UI_TempTips(__UI_ActiveTipID) = ToolTip(__UI_ActiveTipID)
 
-            DIM ThisLine%, TextTop%, Temp&
+            DIM ThisLine%, TextTop%
             DIM FindLF AS LONG, TotalLines AS INTEGER, LongestLine AS INTEGER, TempLine$
             _FONT Control(__UI_FormID).Font
 
@@ -1672,7 +1673,6 @@ SUB __UI_EventDispatcher
     STATIC __UI_LastMouseDownEvent AS SINGLE
     STATIC __UI_MouseDownTop AS INTEGER, __UI_MouseDownLeft AS INTEGER
     STATIC __UI_JustOpenedMenu AS _BYTE
-    STATIC ControlClipboard$
     STATIC OriginalDragX AS INTEGER, OriginalDragY AS INTEGER
     DIM i AS LONG, j AS LONG, ThisItem%, TempParent AS LONG
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
@@ -2669,8 +2669,8 @@ SUB __UI_EventDispatcher
                             __UI_ValueChanged __UI_HoveringID
                             Control(__UI_HoveringID).LastChange = TIMER
                         CASE __UI_Type_TextBox
-                            DIM TempNewCursor AS LONG
-                            STATIC LastTextBoxClick AS SINGLE, LastTextBoxClickID AS LONG
+                            'DIM TempNewCursor AS LONG
+                            'STATIC LastTextBoxClick AS SINGLE, LastTextBoxClickID AS LONG
 
                             IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(__UI_HoveringID).Width - 25 + ContainerOffsetLeft THEN
                                 'Control has a vertical scrollbar and it's been clicked
@@ -3816,7 +3816,6 @@ SUB __UI_EventDispatcher
                             END IF
                     END SELECT
                 CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                    DIM CaptionIndent AS INTEGER
                     IF NOT Control(__UI_Focus).Disabled AND Control(__UI_Focus).Max > 0 THEN
                         _FONT (Control(__UI_Focus).Font)
                         SELECT EVERYCASE __UI_KeyHit
@@ -4706,7 +4705,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER)
-    DIM NextSlot AS LONG, i AS LONG, Temp$
+    DIM NextSlot AS LONG, i AS LONG
     DIM NewFontFile AS STRING, PassedFontFile AS STRING, FindSep AS LONG
     DIM TotalPassedFonts AS LONG
     REDIM PassedFonts(10) AS STRING
@@ -4846,7 +4845,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidth AS INTEGER, NewHeight AS INTEGER, NewLeft AS INTEGER, NewTop AS INTEGER, ParentID AS LONG)
-    DIM NextSlot AS LONG, i AS LONG, Temp$, PrevDest AS LONG, TempCanvas AS LONG
+    DIM NextSlot AS LONG, i AS LONG
     STATIC InternalMenus AS LONG, FirstControl AS _BYTE
 
     IF ControlType = 0 THEN EXIT SUB
@@ -5072,7 +5071,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB SetCaption (ThisID AS LONG, TempCaption$)
-    DIM i AS LONG, FindSep%, NewCaption$, FindEscape%
+    DIM FindSep%, NewCaption$, FindEscape%
     DIM PrevFont AS LONG, TempCanvas AS LONG, PrevDest AS LONG
 
     IF ThisID = 0 THEN EXIT SUB
@@ -5402,7 +5401,6 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_CursorAdjustments(This AS LONG)
-    DIM i AS LONG, ThisLineStart AS LONG, ThisLineLen AS LONG
     IF NOT Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
         IF Control(This).VisibleCursor >= (Control(This).Width - ((Control(This).BorderSize + __UI_DefaultCaptionIndent) * ABS(Control(This).HasBorder))) THEN
             Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart + Control(This).Width / 4
@@ -5411,6 +5409,7 @@ SUB __UI_CursorAdjustments(This AS LONG)
         END IF
         IF Control(This).InputViewStart < 0 THEN Control(This).InputViewStart = 0
     ELSEIF Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
+        'DIM ThisLineStart AS LONG, ThisLineLen AS LONG
         'ThisLineLen = LEN(__UI_GetTextBoxLine(This, Control(This).CurrentLine, ThisLineStart))
         'IF Control(This).VisibleCursor > ThisLineLen THEN Control(This).VisibleCursor = ThisLineLen
         'IF Control(This).VisibleCursor > Control(This).PrevVisibleCursor THEN
@@ -6680,7 +6679,7 @@ FUNCTION IconPreview& (IconFile$)
 END FUNCTION
 
 FUNCTION RestoreCHR$ (__Text$)
-    DIM Text$, i AS LONG, BackSlash AS LONG, SemiColon AS LONG
+    DIM Text$, BackSlash AS LONG, SemiColon AS LONG
     DIM j AS LONG, tempNum$
 
     Text$ = __Text$

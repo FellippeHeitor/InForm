@@ -53,7 +53,7 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     'ControlState: 1 = Normal; 2 = Hover/focus; 3 = Mouse down; 4 = Disabled
-    DIM TempCaption$, HasShadow AS _BYTE, Temp&
+    DIM TempCaption$
     DIM PrevDest AS LONG, TempControlState AS _BYTE
 
     STATIC ControlImage AS LONG
@@ -96,7 +96,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         _PUTIMAGE (0, 3)-(This.Width - 1, This.Height - 4), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 3)-STEP(11, ButtonHeight - 7)
 
         'Does this button have a helper canvas (icon)?
-        DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
+        DIM IconWidth AS INTEGER, IconHeight AS INTEGER
         IF This.HelperCanvas < -1 THEN
             IF LEN(TempCaption$) THEN
                 'Icon will be to the left of caption
@@ -157,7 +157,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG, Temp&, i AS LONG
+    DIM PrevDest AS LONG, i AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$, TempLine$
 
     IF This.Redraw OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw _
@@ -301,8 +301,8 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG, Temp&
-    DIM CaptionIndent AS INTEGER, TempCaption$
+    DIM PrevDest AS LONG
+    DIM CaptionIndent AS INTEGER
 
     'STATIC ControlImage AS LONG
     CONST ImageHeight = 15
@@ -342,8 +342,6 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
         END IF
-
-        DIM i AS SINGLE
 
         CaptionIndent = 0
 
@@ -386,7 +384,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG, Temp&
+    DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -423,8 +421,6 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         ELSE
             CLS , _RGBA32(0, 0, 0, 0)
         END IF
-
-        DIM i AS SINGLE
 
         CaptionIndent = 0
         IF This.HasBorder THEN
@@ -467,7 +463,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG, Temp&
+    DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -509,8 +505,6 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             CLS , _RGBA32(0, 0, 0, 0)
         END IF
 
-        DIM i AS SINGLE
-
         CaptionIndent = 0
 
         IF This.Value THEN ControlState = ControlState + 4
@@ -548,7 +542,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
     DIM PrevDest AS LONG, Temp&
-    DIM CaptionIndent AS INTEGER, TempCaption$
+    DIM TempCaption$
 
     STATIC ControlImage_Track AS LONG, ControlImage_Chunk AS LONG
 
@@ -724,7 +718,7 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
 END SUB
 
 '---------------------------------------------------------------------------------
-SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 AS LONG)
+SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState)
     DIM PrevDest AS LONG
     DIM CaptionIndent AS INTEGER, i AS LONG, TempCaption$
     STATIC SetCursor#, cursorBlink%%
@@ -871,8 +865,9 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState, ss1 AS LONG, ss2 A
             END IF
         ELSE
             'Multi line textbox
-            DIM ThisLine AS LONG, ThisTop AS INTEGER, TempLine AS STRING
-            DIM TotalLines AS INTEGER, ThisLineStart AS LONG
+            DIM ThisTop AS INTEGER, TempLine AS STRING
+            DIM TotalLines AS INTEGER
+            'DIM ThisLine AS LONG, ThisLineStart AS LONG
             DIM s1 AS LONG, s2 AS LONG
             STATIC PrevTotalLines AS LONG
 
@@ -994,7 +989,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG, Temp&, i AS LONG
+    DIM PrevDest AS LONG, i AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.PreviousValue <> This.Value OR Text(This.ID) <> __UI_TempTexts(This.ID) OR This.PreviousInputViewStart <> This.InputViewStart OR This.PreviousParentID <> This.ParentID _
@@ -1228,7 +1223,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
-    DIM PrevDest AS LONG, Temp&, i AS LONG
+    DIM PrevDest AS LONG, i AS LONG
     DIM CaptionIndent AS INTEGER, TempCaption$
 
     STATIC ControlImage AS LONG
@@ -1385,7 +1380,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
     DIM TempCaption$, CaptionIndent AS INTEGER, Temp&
-    DIM TempCanvas AS LONG, HWTempCanvas AS LONG
+    DIM TempCanvas AS LONG
 
     STATIC ControlImage AS LONG
 
@@ -1486,7 +1481,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
-    DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
+    DIM PrevDest AS LONG, TempCaption$
     DIM Temp&
 
     IF This.Redraw OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) _
@@ -1517,7 +1512,6 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         '---
         CLS , This.BackColor
 
-        DIM i AS INTEGER
         TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
 
         IF __UI_Focus = This.ID OR _
@@ -1561,7 +1555,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
-    DIM PrevDest AS LONG, CaptionIndent AS INTEGER, TempCaption$
+    DIM PrevDest AS LONG, TempCaption$
     DIM Temp&
 
     DIM CheckMarkIndex AS _BYTE
@@ -1659,7 +1653,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
                     END IF
                 ELSE
                     'Does this menu item have a helper canvas (icon)?
-                    DIM IconRatio AS INTEGER, IconWidth AS INTEGER, IconHeight AS INTEGER
+                    DIM IconWidth AS INTEGER, IconHeight AS INTEGER
                     IF Control(i).HelperCanvas < -1 THEN
                         IF _HEIGHT(Control(i).HelperCanvas) = 16 AND _WIDTH(Control(i).HelperCanvas) MOD 16 = 0 THEN
                             'If the HelperCanvas is 16px in height and either 16, 32 or 48px in width,
@@ -1759,7 +1753,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_DrawPictureBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM PrevDest AS LONG, TheX AS INTEGER, TheY AS INTEGER
-    DIM CaptionIndent AS INTEGER, TempCaption$, i AS LONG
+    DIM i AS LONG
 
     IF This.Redraw OR This.Stretch <> This.PreviousStretch OR This.PreviousValue <> This.HelperCanvas OR This.ControlState <> ControlState OR This.PreviousParentID <> This.ParentID _
        OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
