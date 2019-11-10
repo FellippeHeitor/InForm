@@ -2696,14 +2696,30 @@ SUB __UI_OnLoad
         ShowFontList = True
     END IF
 
+    DIM TriggerUpdaterRecompile AS _BYTE
+    TriggerUpdaterRecompile = False
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
     IF value$ = "True" THEN
+        TriggerUpdaterRecompile = True
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
+    ELSE
+        $IF WIN THEN
+            IF _FILEEXISTS("InForm/updater/InFormUpdater.exe") = False THEN
+                TriggerUpdaterRecompile = True
+            END IF
+        $ELSE
+            IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
+                TriggerUpdaterRecompile = True
+            END IF
+        $END IF
+    END IF
+
+    IF TriggerUpdaterRecompile THEN
         $IF WIN THEN
             SHELL _HIDE _DONTWAIT "qb64.exe -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater.exe"
         $ELSE
             SHELL _HIDE _DONTWAIT "./qb64 -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater"
         $END IF
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
     END IF
 
     $IF WIN THEN
