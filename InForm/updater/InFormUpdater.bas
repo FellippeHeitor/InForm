@@ -71,22 +71,13 @@ SUB __UI_BeforeUpdateDisplay STATIC
             localVersionNumber! = __UI_VersionNumber
             localVersionisBeta%% = __UI_VersionIsBeta
             IF localVersionisBeta%% THEN localBeta$ = " Beta version " ELSE localBeta$ = " "
-            Report "Local version:" + localBeta$ + LTRIM$(STR$(localVersionNumber!))
+            Report "Local build:" + localBeta$ + LTRIM$(STR$(localVersionNumber!))
 
             serverVersion$ = ReadSetting("InFormUpdate.ini", "", "version")
-            isBeta$ = ReadSetting("InFormUpdate.ini", "", "beta")
-            serverBeta%% = False
-            IF isBeta$ = "true" THEN serverBeta%% = True: isBeta$ = " Beta version " ELSE isBeta$ = " "
-            Report "Remote version:" + isBeta$ + serverVersion$
+            Report "Remote build:" + isBeta$ + serverVersion$
 
-            IF localVersionisBeta%% THEN
-                IF serverBeta%% AND VAL(serverVersion$) <= localVersionNumber! THEN
-                    NextEvent = True: ThisStep = 7: EXIT SUB
-                END IF
-            ELSE
-                IF VAL(serverVersion$) <= localVersionNumber! THEN
-                    NextEvent = True: ThisStep = 7: EXIT SUB
-                END IF
+            IF VAL(serverVersion$) <= localVersionNumber! THEN
+                NextEvent = True: ThisStep = 7: EXIT SUB
             END IF
 
             thisFile% = 0

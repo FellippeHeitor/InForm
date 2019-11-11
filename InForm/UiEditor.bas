@@ -1299,22 +1299,12 @@ SUB __UI_BeforeUpdateDisplay
                     STATIC updateDescription$
 
                     localVersionNumber! = __UI_VersionNumber
-                    localVersionIsBeta%% = __UI_VersionIsBeta
 
                     serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
-                    isBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")
                     updateDescription$ = ReadSetting("InForm/InFormUpdate.ini", "", "description")
-                    IF isBeta$ = "true" THEN isBeta$ = "Beta version " ELSE isBeta$ = ""
-                    serverBeta%% = True
 
-                    IF localVersionIsBeta%% THEN
-                        IF serverBeta%% AND VAL(serverVersion$) <= localVersionNumber! THEN
-                            CheckUpdateDone = True
-                        END IF
-                    ELSE
-                        IF VAL(serverVersion$) <= localVersionNumber! THEN
-                            CheckUpdateDone = True
-                        END IF
+                    IF VAL(serverVersion$) <= localVersionNumber! THEN
+                        CheckUpdateDone = True
                     END IF
 
                     ThisStep = 3
@@ -2709,7 +2699,7 @@ SUB __UI_OnLoad
             END IF
         $ELSE
             IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
-                TriggerUpdaterRecompile = True
+            TriggerUpdaterRecompile = True
             END IF
         $END IF
     END IF
