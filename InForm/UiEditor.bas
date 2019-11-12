@@ -62,7 +62,7 @@ DIM SHARED AlignMenuDistributeV AS LONG
 DIM SHARED AlignMenuDistributeH AS LONG
 
 DIM SHARED OptionsMenuAutoName AS LONG, OptionsMenuSwapButtons AS LONG
-DIM SHARED OptionsMenuCheckUpdates AS LONG
+DIM SHARED OptionsMenuCheckUpdates AS LONG, OptionsMenuCheckUpdatesNow AS LONG
 
 DIM SHARED HelpMenuHelp AS LONG, HelpMenuAbout AS LONG
 
@@ -135,7 +135,8 @@ DIM SHARED KeyboardComboLB AS LONG, KeyboardComboBT AS LONG
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
-DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE
+DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE, CheckUpdatesNow AS _BYTE
+DIM SHARED CheckUpdateDone AS _BYTE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED PropertySent AS _BYTE, RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
@@ -319,6 +320,9 @@ SUB __UI_Click (id AS LONG)
             CheckUpdates = NOT CheckUpdates
             Control(id).Value = CheckUpdates
             SaveSettings
+        CASE OptionsMenuCheckUpdatesNow
+            CheckUpdatesNow = True
+            CheckUpdateDone = False
         CASE EditMenuConvertType
             b$ = MKI$(0)
             SendData b$, 225
@@ -1107,7 +1111,7 @@ SUB __UI_BeforeUpdateDisplay
     DIM thisData$, thisCommand$
     STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
     STATIC PrevFirstSelected AS LONG, PreviewHasMenuActive AS INTEGER
-    STATIC CheckUpdateDone AS _BYTE, ThisControlTurnsInto AS INTEGER
+    STATIC ThisControlTurnsInto AS INTEGER
     STATIC LastChange AS SINGLE
 
     IF TIMER - BlinkStatusBar < 1 THEN
@@ -1272,11 +1276,23 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     NEXT
 
-    IF CheckUpdates THEN
+    IF CheckUpdates OR CheckUpdatesNow THEN
         IF CheckUpdateDone = False THEN
             STATIC ThisStep AS INTEGER
+            STATIC serverVersion$, isBeta$, serverBeta%%
+            STATIC updateDescription$, serverVersionString$
             DIM Result$, start!
-            IF ThisStep = 0 THEN ThisStep = 1
+            IF ThisStep = 0 THEN
+                ThisStep = 1
+                updateDescription$ = ""
+                serverVersion$ = ""
+                isBeta$ = ""
+                serverVersionString$ = ""
+                serverBeta%% = False
+                Result$ = Download$("", "", 10)
+            END IF
+
+            Caption(StatusBar) = "Contacting update server..."
 
             SELECT EVERYCASE ThisStep
                 CASE 1 'check availability
@@ -1286,25 +1302,39 @@ SUB __UI_BeforeUpdateDisplay
                         CASE 1 'Success
                             ThisStep = 2
                         CASE 2, 3 'Can't reach server / Timeout
+                            ThisStep = 0
                             IF TIMER - start! > 5 THEN
-                                CheckUpdates = False
+                                CheckUpdates = False 'disable auto-check if it times out
                                 Control(OptionsMenuCheckUpdates).Value = CheckUpdates
                                 SaveSettings
                             END IF
+                            IF CheckUpdatesNow THEN
+                                b$ = "An error occurred. Make sure your computer is online."
+                                Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Exclamation)
+                                CheckUpdatesNow = False
+                            END IF
                             CheckUpdateDone = True
+                            Caption(StatusBar) = "Ready."
                     END SELECT
                 CASE 2 'compare with current version
                     DIM localVersionNumber!, localVersionIsBeta%%
-                    STATIC serverVersion$, isBeta$, serverBeta%%
-                    STATIC updateDescription$
 
                     localVersionNumber! = __UI_VersionNumber
 
                     serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
+                    serverVersionString$ = ReadSetting("InForm/InFormUpdate.ini", "", "versionstring")
                     updateDescription$ = ReadSetting("InForm/InFormUpdate.ini", "", "description")
 
                     IF VAL(serverVersion$) <= localVersionNumber! THEN
                         CheckUpdateDone = True
+                        IF CheckUpdatesNow THEN
+                            b$ = "You already have the latest version of InForm."
+                            Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
+                            CheckUpdatesNow = False
+                        END IF
+                        ThisStep = 0
+                        Caption(StatusBar) = "Ready."
+                        EXIT SUB
                     END IF
 
                     ThisStep = 3
@@ -1323,12 +1353,14 @@ SUB __UI_BeforeUpdateDisplay
                         IF LEN(updateDescription$) THEN
                             updateDescription$ = "\n" + CHR$(34) + updateDescription$ + CHR$(34) + "\n"
                         END IF
-                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + "\n" + "New version: " + isBeta$ + serverVersion$ + "\n" + updateDescription$ + "\n" + "Update now?"
+                        Caption(StatusBar) = "New version available: " + serverVersionString$ + " (build " + serverVersion$ + ")"
+                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + ")\n" + "New version: " + isBeta$ + serverVersionString$ + " (build " + serverVersion$ + ")\n" + updateDescription$ + "\n" + "Update now?"
                         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
                         IF Answer = MsgBox_Yes THEN
                             SHELL _DONTWAIT updaterPath$
                             SYSTEM
                         END IF
+                        ThisStep = 0
                     END IF
             END SELECT
         END IF
@@ -4957,7 +4989,7 @@ FUNCTION Download$ (url$, file$, timelimit) STATIC
     DIM e$, url3$, x$, t!, a2$, a$, i AS LONG
     DIM i2 AS LONG, i3 AS LONG, d$, fh AS LONG
 
-    IF url$ <> prevUrl$ THEN
+    IF url$ <> prevUrl$ OR url$ = "" THEN
         prevUrl$ = url$
         IF url$ = "" THEN
             IF theClient THEN CLOSE theClient: theClient = 0

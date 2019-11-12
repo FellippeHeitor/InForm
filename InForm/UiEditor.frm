@@ -224,12 +224,15 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Value = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdates", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
-    $IF WIN THEN
-        SetCaption __UI_NewID, "&Check for updates online at start-up"
-    $ELSE
-        SetCaption __UI_NewID, "&Check for updates online at start-up-"
-    $END IF
+    SetCaption __UI_NewID, "&Check for updates online at start-up"
     Control(__UI_NewID).Value = True
+    
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdatesNow", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
+    $IF WIN THEN
+        SetCaption __UI_NewID, "&Check for updates now"
+    $ELSE
+        SetCaption __UI_NewID, "&Check for updates now-"
+    $END IF
 
     $IF WIN THEN
     $ELSE
@@ -902,6 +905,7 @@ SUB __UI_AssignIDs
     BulletOptions = __UI_GetID("BulletOptions")
     BulletOptionsLB = __UI_GetID("BulletOptionsLB")
     OptionsMenuCheckUpdates = __UI_GetID("OptionsMenuCheckUpdates")
+    OptionsMenuCheckUpdatesNow = __UI_GetID("OptionsMenuCheckUpdatesNow")
     BooleanOptions = __UI_GetID("BooleanOptions")
     BooleanLB = __UI_GetID("BooleanLB")
     FontList = __UI_GetID("FontList")
