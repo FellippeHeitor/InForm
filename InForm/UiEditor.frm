@@ -229,9 +229,9 @@ SUB __UI_LoadForm
     
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdatesNow", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
     $IF WIN THEN
-        SetCaption __UI_NewID, "&Check for updates now"
+        SetCaption __UI_NewID, "Check for updates &now"
     $ELSE
-        SetCaption __UI_NewID, "&Check for updates now-"
+        SetCaption __UI_NewID, "Check for updates &now-"
     $END IF
 
     $IF WIN THEN
