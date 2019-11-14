@@ -4132,20 +4132,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF PreviewControls(PreviewFormID).CanResize THEN
         PRINT #TextFileNum, "    $RESIZE:ON"
     END IF
-    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG";
-    FOR i = 1 TO UBOUND(PreviewControls)
-        IF LEN(PreviewKeyCombos(i)) > 0 THEN
-            PRINT #TextFileNum, ", __UI_RegisterResult AS LONG"
-            EXIT FOR
-        END IF
-    NEXT
-    IF i = UBOUND(PreviewControls) + 1 THEN
-        IF AddGifExtension THEN
-            PRINT #TextFileNum, ", __UI_RegisterResult AS LONG"
-        ELSE
-            PRINT #TextFileNum,
-        END IF
-    END IF
+    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG, __UI_RegisterResult AS LONG"
     PRINT #TextFileNum,
 
     'First pass is for the main form and containers (frames and menubars).
