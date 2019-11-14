@@ -916,6 +916,12 @@ SUB __UI_MouseEnter (id AS LONG)
             Caption(StatusBar) = "Automatically sets control names based on caption and type"
         CASE OptionsMenuSwapButtons
             Caption(StatusBar) = "Toggles left/right mouse buttons."
+        CASE OptionsMenuCheckUpdates
+            Caption(StatusBar) = "Allows InForm to automatically check for updates at start-up."
+        CASE OptionsMenuDevChannel
+            Caption(StatusBar) = "Receive updates from the development channel, for beta testing new features (experimental)."
+        CASE OptionsMenuCheckUpdatesNow
+            Caption(StatusBar) = "Connects to server and check for new updates."
         CASE FontLB, FontListLB
             Control(FontLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
             Control(FontListLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
