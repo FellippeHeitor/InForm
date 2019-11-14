@@ -16,6 +16,7 @@ DIM SHARED CancelBT AS LONG
 DIM SHARED ActivityIndicator AS LONG
 
 DIM SHARED binaryExtension$, pathAppend$
+DIM SHARED CheckDevUpdates AS _BYTE
 
 $IF WIN THEN
     binaryExtension$ = ".exe"
@@ -40,17 +41,31 @@ SUB __UI_OnLoad
     Report "Contacting server..."
     CHDIR "../.."
     IF _FILEEXISTS("InFormUpdate.ini") THEN KILL "InFormUpdate.ini"
+
+    DIM value$
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Receive development updates")
+    IF LEN(value$) THEN
+        CheckDevUpdates = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", "False"
+        CheckDevUpdates = False
+    END IF
 END SUB
 
 SUB __UI_BeforeUpdateDisplay STATIC
-    DIM NextEvent AS LONG
+    DIM NextEvent AS LONG, remoteFile$
     SHARED ThisStep AS INTEGER
 
     IF ThisStep = 0 THEN ThisStep = 1
 
     SELECT EVERYCASE ThisStep
         CASE 1 'check availability
-            Result$ = Download$("www.qb64.org/inform/update/latest.ini", "InFormUpdate.ini", 30)
+            IF CheckDevUpdates THEN
+                remoteFile$ = "www.qb64.org/inform/update/latestdev.ini"
+            ELSE
+                remoteFile$ = "www.qb64.org/inform/update/latest.ini"
+            END IF
+            Result$ = Download$(remoteFile$, "InFormUpdate.ini", 30)
             SELECT CASE CVI(LEFT$(Result$, 2))
                 CASE 1 'Success
                     Report "Script downloaded:" + STR$(CVL(MID$(Result$, 3))) + " bytes."
@@ -70,11 +85,14 @@ SUB __UI_BeforeUpdateDisplay STATIC
             localVersion$ = ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_Version")
             localVersionNumber! = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionNumber"))
             localVersionisBeta%% = VAL(ReadSetting("InForm/InFormVersion.bas", "", "CONST __UI_VersionIsBeta"))
-            IF localVersionisBeta%% THEN localBeta$ = " Beta version " ELSE localBeta$ = " "
-            Report "Local build:" + localBeta$ + LTRIM$(STR$(localVersionNumber!))
+            IF localVersionisBeta%% THEN localBeta$ = " Beta Version" ELSE localBeta$ = ""
+            Report "Local build:" + STR$(localVersionNumber!) + localBeta$
 
             serverVersion$ = ReadSetting("InFormUpdate.ini", "", "version")
-            Report "Remote build:" + isBeta$ + serverVersion$
+            serverBeta$ = ReadSetting("InFormUpdate.ini", "", "beta")
+            serverBeta%% = (serverBeta$ = "true")
+            IF serverBeta%% THEN serverBeta$ = " Beta Version" ELSE serverBeta$ = ""
+            Report "Remote build: " + serverVersion$ + serverBeta$
 
             IF VAL(serverVersion$) <= localVersionNumber! THEN
                 NextEvent = True: ThisStep = 7: EXIT SUB
@@ -178,7 +196,10 @@ SUB __UI_BeforeUpdateDisplay STATIC
             ThisStep = 8
             NextEvent = True
         CASE 7 'already up-to-date
-            Answer = MessageBox("You already have the latest version.", "", MsgBox_OkOnly + MsgBox_Information)
+            DIM b$
+            b$ = ""
+            IF CheckDevUpdates THEN b$ = "\n(You are currently in the development channel; you can\nchange that in InForm Designer, Options menu -> Auto-update)"
+            Answer = MessageBox("You already have the latest version." + b$, "", MsgBox_OkOnly + MsgBox_Information)
             KILL "InFormUpdate.ini"
             SYSTEM
         CASE 8 'done

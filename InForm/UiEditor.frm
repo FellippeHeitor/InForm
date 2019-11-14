@@ -223,16 +223,22 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "&Auto-name controls"
     Control(__UI_NewID).Value = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdates", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
-    SetCaption __UI_NewID, "&Check for updates online at start-up"
-    Control(__UI_NewID).Value = True
-    
-    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdatesNow", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuAutoUpdate", 155, 18, 0, 4, __UI_GetID("OptionsMenu"))
     $IF WIN THEN
-        SetCaption __UI_NewID, "Check for updates &now"
+        SetCaption __UI_NewID, "Auto-&Update"
     $ELSE
-        SetCaption __UI_NewID, "Check for updates &now-"
+        SetCaption __UI_NewID, "Auto-&Update-"
     $END IF
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdates", 155, 18, 0, 4, __UI_GetID("OptionsMenuAutoUpdate"))
+    SetCaption __UI_NewID, "&Check for updates at start-up"
+    Control(__UI_NewID).Value = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuDevChannel", 155, 18, 0, 4, __UI_GetID("OptionsMenuAutoUpdate"))
+    SetCaption __UI_NewID, "Receive &development updates-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuCheckUpdatesNow", 155, 18, 0, 4, __UI_GetID("OptionsMenuAutoUpdate"))
+    SetCaption __UI_NewID, "Check for updates &now"
 
     $IF WIN THEN
     $ELSE
@@ -906,6 +912,7 @@ SUB __UI_AssignIDs
     BulletOptionsLB = __UI_GetID("BulletOptionsLB")
     OptionsMenuCheckUpdates = __UI_GetID("OptionsMenuCheckUpdates")
     OptionsMenuCheckUpdatesNow = __UI_GetID("OptionsMenuCheckUpdatesNow")
+    OptionsMenuDevChannel = __UI_GetID("OptionsMenuDevChannel")
     BooleanOptions = __UI_GetID("BooleanOptions")
     BooleanLB = __UI_GetID("BooleanLB")
     FontList = __UI_GetID("FontList")

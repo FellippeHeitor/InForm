@@ -63,6 +63,7 @@ DIM SHARED AlignMenuDistributeH AS LONG
 
 DIM SHARED OptionsMenuAutoName AS LONG, OptionsMenuSwapButtons AS LONG
 DIM SHARED OptionsMenuCheckUpdates AS LONG, OptionsMenuCheckUpdatesNow AS LONG
+DIM SHARED OptionsMenuDevChannel AS LONG
 
 DIM SHARED HelpMenuHelp AS LONG, HelpMenuAbout AS LONG
 
@@ -136,7 +137,7 @@ DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
 DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE, CheckUpdatesNow AS _BYTE
-DIM SHARED CheckUpdateDone AS _BYTE
+DIM SHARED CheckDevUpdates AS _BYTE, CheckUpdateDone AS _BYTE, CheckUpdateStartUpTrigger AS _BYTE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
 DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
 DIM SHARED PropertySent AS _BYTE, RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
@@ -320,9 +321,14 @@ SUB __UI_Click (id AS LONG)
             CheckUpdates = NOT CheckUpdates
             Control(id).Value = CheckUpdates
             SaveSettings
+        CASE OptionsMenuDevChannel
+            CheckDevUpdates = NOT CheckDevUpdates
+            Control(id).Value = CheckDevUpdates
+            SaveSettings
         CASE OptionsMenuCheckUpdatesNow
             CheckUpdatesNow = True
             CheckUpdateDone = False
+            CheckUpdateStartUpTrigger = False
         CASE EditMenuConvertType
             b$ = MKI$(0)
             SendData b$, 225
@@ -542,7 +548,9 @@ SUB __UI_Click (id AS LONG)
                 SaveForm True, Control(SaveFrmOnlyCB).Value
             END IF
         CASE HelpMenuAbout
-            Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + CHR$(10) + "by Fellippe Heitor" + CHR$(10) + CHR$(10) + "Twitter: @fellippeheitor" + CHR$(10) + "e-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
+            DIM isBeta$
+            IF __UI_VersionIsBeta THEN isBeta$ = " Beta Version" ELSE isBeta$ = ""
+            Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")\nby Fellippe Heitor\n\nTwitter: @fellippeheitor\ne-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
         CASE HelpMenuHelp
             Answer = MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", MsgBox_OkOnly + MsgBox_Information)
         CASE FileMenuExit
@@ -1276,13 +1284,16 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     NEXT
 
-    IF CheckUpdates OR CheckUpdatesNow THEN
+    '$CONSOLE
+    IF CheckUpdatesNow THEN
         IF CheckUpdateDone = False THEN
             STATIC ThisStep AS INTEGER
-            STATIC serverVersion$, isBeta$, serverBeta%%
+            STATIC serverVersion$, isBeta$, serverBeta$, serverBeta%%
             STATIC updateDescription$, serverVersionString$
-            DIM Result$, start!
+            STATIC OverallDownloadStart!
+            DIM Result$, remoteFile$, start!
             IF ThisStep = 0 THEN
+                '_ECHO "Beginning update process"
                 ThisStep = 1
                 updateDescription$ = ""
                 serverVersion$ = ""
@@ -1290,14 +1301,25 @@ SUB __UI_BeforeUpdateDisplay
                 serverVersionString$ = ""
                 serverBeta%% = False
                 Result$ = Download$("", "", 10)
+                IF _FILEEXISTS("InForm/InFormUpdate.ini") THEN KILL "InForm/InFormUpdate.ini"
+                OverallDownloadStart! = TIMER
             END IF
 
-            Caption(StatusBar) = "Contacting update server..."
+            Caption(StatusBar) = "Contacting update server" + STRING$(INT(TIMER - OverallDownloadStart!), ".")
 
             SELECT EVERYCASE ThisStep
                 CASE 1 'check availability
+                    '_ECHO "Checking availability"
                     start! = TIMER
-                    Result$ = Download$("www.qb64.org/inform/update/latest.ini", "InForm/InFormUpdate.ini", 30)
+
+                    IF CheckDevUpdates THEN
+                        remoteFile$ = "www.qb64.org/inform/update/latestdev.ini"
+                    ELSE
+                        remoteFile$ = "www.qb64.org/inform/update/latest.ini"
+                    END IF
+
+                    '_ECHO "Fetching " + remoteFile$
+                    Result$ = Download$(remoteFile$, "InForm/InFormUpdate.ini", 30)
                     SELECT CASE CVI(LEFT$(Result$, 2))
                         CASE 1 'Success
                             ThisStep = 2
@@ -1305,32 +1327,66 @@ SUB __UI_BeforeUpdateDisplay
                             ThisStep = 0
                             IF TIMER - start! > 5 THEN
                                 CheckUpdates = False 'disable auto-check if it times out
-                                Control(OptionsMenuCheckUpdates).Value = CheckUpdates
                                 SaveSettings
                             END IF
-                            IF CheckUpdatesNow THEN
+                            IF NOT CheckUpdateStartUpTrigger THEN
                                 b$ = "An error occurred. Make sure your computer is online."
                                 Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Exclamation)
                                 CheckUpdatesNow = False
+                                CheckUpdateStartUpTrigger = False
                             END IF
                             CheckUpdateDone = True
                             Caption(StatusBar) = "Ready."
                     END SELECT
                 CASE 2 'compare with current version
-                    DIM localVersionNumber!, localVersionIsBeta%%
+                    DIM localVersionNumber!
 
                     localVersionNumber! = __UI_VersionNumber
 
+                    '_ECHO "Comparing versions"
+                    IF __UI_VersionIsBeta THEN isBeta$ = " Beta Version" ELSE isBeta$ = ""
+                    serverBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")
+                    serverBeta%% = (serverBeta$ = "true")
+                    IF serverBeta%% THEN serverBeta$ = " Beta Version" ELSE serverBeta$ = ""
                     serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
                     serverVersionString$ = ReadSetting("InForm/InFormUpdate.ini", "", "versionstring")
                     updateDescription$ = ReadSetting("InForm/InFormUpdate.ini", "", "description")
 
-                    IF VAL(serverVersion$) <= localVersionNumber! THEN
+                    '_ECHO STR$(serverBeta%%) + "," + serverVersion$ + "," + serverVersionString$ + "," + updateDescription$
+
+                    IF serverBeta%% AND CheckDevUpdates = False THEN
                         CheckUpdateDone = True
-                        IF CheckUpdatesNow THEN
-                            b$ = "You already have the latest version of InForm."
+                        IF NOT CheckUpdateStartUpTrigger THEN
+                            IF __UI_VersionIsBeta THEN
+                                b$ = "You already have the latest version of InForm."
+                                IF VAL(serverVersion$) > localVersionNumber! THEN
+                                    b$ = b$ + "\nThere is a new development build available. Reenable 'Receive development updates' in the Options menu and\ntry updating again if you wish to keep helping beta test the new experimental features."
+                                END IF
+                            ELSE
+                                b$ = "You already have the latest stable version of InForm."
+                                IF VAL(serverVersion$) > localVersionNumber! THEN
+                                    b$ = b$ + "\nThere is a development build available. Check 'Receive development updates' in the Options menu and\ntry updating again if you wish to help beta test the new experimental features."
+                                END IF
+                            END IF
                             Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
                             CheckUpdatesNow = False
+                            CheckUpdateStartUpTrigger = False
+                        END IF
+                        ThisStep = 0
+                        Caption(StatusBar) = "Ready."
+                        EXIT SUB
+                    END IF
+
+                    IF VAL(serverVersion$) <= localVersionNumber! THEN
+                        CheckUpdateDone = True
+                        IF NOT CheckUpdateStartUpTrigger THEN
+                            b$ = "You already have the latest version of InForm."
+                            IF __UI_VersionIsBeta THEN
+                                b$ = b$ + "\nThis is a development build."
+                            END IF
+                            Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
+                            CheckUpdatesNow = False
+                            CheckUpdateStartUpTrigger = False
                         END IF
                         ThisStep = 0
                         Caption(StatusBar) = "Ready."
@@ -1353,14 +1409,17 @@ SUB __UI_BeforeUpdateDisplay
                         IF LEN(updateDescription$) THEN
                             updateDescription$ = "\n" + CHR$(34) + updateDescription$ + CHR$(34) + "\n"
                         END IF
-                        Caption(StatusBar) = "New version available: " + serverVersionString$ + " (build " + serverVersion$ + ")"
-                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + ")\n" + "New version: " + isBeta$ + serverVersionString$ + " (build " + serverVersion$ + ")\n" + updateDescription$ + "\n" + "Update now?"
+                        Caption(StatusBar) = "New version available: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")"
+                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")\n" + "New version: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")\n" + updateDescription$ + "\n" + "Update now?"
                         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
                         IF Answer = MsgBox_Yes THEN
                             SHELL _DONTWAIT updaterPath$
                             SYSTEM
                         END IF
                         ThisStep = 0
+                    ELSE
+                        b$ = "A new version of InForm is available, but the updater is\ncurrently being recompiled.\nPlease check again in a few moments."
+                        Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
                     END IF
             END SELECT
         END IF
@@ -2532,6 +2591,9 @@ SUB SaveSettings
     IF CheckUpdates THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
 
+    IF CheckDevUpdates THEN value$ = "True" ELSE value$ = "False"
+    WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", value$
+
     IF ShowFontList THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", value$
 
@@ -2709,6 +2771,16 @@ SUB __UI_OnLoad
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", "True"
         CheckUpdates = True
     END IF
+    CheckUpdatesNow = CheckUpdates
+    IF CheckUpdatesNow THEN CheckUpdateStartUpTrigger = True
+
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Receive development updates")
+    IF LEN(value$) THEN
+        CheckDevUpdates = (value$ = "True")
+    ELSE
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", "False"
+        CheckDevUpdates = False
+    END IF
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show font list")
     IF LEN(value$) THEN
@@ -2754,6 +2826,7 @@ SUB __UI_OnLoad
     Control(ViewMenuPreviewDetach).Value = PreviewAttached
     Control(OptionsMenuAutoName).Value = AutoNameControls
     Control(OptionsMenuCheckUpdates).Value = CheckUpdates
+    Control(OptionsMenuDevChannel).Value = CheckDevUpdates
     Control(OptionsMenuSnapLines).Value = __UI_SnapLines
     Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
     Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
