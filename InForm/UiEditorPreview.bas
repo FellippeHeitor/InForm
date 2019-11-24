@@ -3003,7 +3003,7 @@ SUB LoadPreviewText
                         Control(TempValue).HelperCanvas = _NEWIMAGE(GifWidth(TempValue), GifHeight(TempValue), 32)
                         UpdateGif TempValue
                     END IF
-                ELSEIF LEFT$(b$, 8) = "PlayGif " THEN
+                ELSEIF b$ = "IF __UI_RegisterResult THEN PlayGif __UI_NewID" OR LEFT$(b$, 8) = "PlayGif " THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "AUTOPLAY GIF"
                     'Auto-play gif
                     AutoPlayGif(TempValue) = True
