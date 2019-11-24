@@ -137,7 +137,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
                 checksum$ = ReadSetting("InFormSetup.ini", LTRIM$(STR$(thisFile%)), "checksum")
 
                 IF _FILEEXISTS(outputFileName$) THEN
-                    IF ADLER32$(outputFileName$) = checksum$ THEN
+                    IF getChecksum$(outputFileName$) = checksum$ THEN
                         url$ = ""
                     END IF
                 END IF
@@ -156,7 +156,7 @@ SUB __UI_BeforeUpdateDisplay STATIC
             SELECT CASE CVI(LEFT$(Result$, 2))
                 CASE 1 'Success
                     'Checksum:
-                    IF ADLER32(outputFileName$) <> checksum$ THEN
+                    IF getChecksum(outputFileName$) <> checksum$ THEN
                         Report "Failed."
                         ThisStep = -1
                         NextEvent = True
@@ -271,14 +271,8 @@ SUB Report (__text$)
     RETURN
 END SUB
 
-FUNCTION ADLER32$ (File$)
-    'This function comes from Videogamer555. Read the original topic below:
-    'http://www.qb64.net/forum/index.php?topic=2804.msg24245#msg24245
-    DIM A32$, fileHandle AS LONG
-    DIM Astr AS STRING * 4
-    DIM Bstr AS STRING * 4
-    A = 1
-    B = 0
+FUNCTION getChecksum$ (File$)
+    DIM fileHandle AS LONG
 
     IF _FILEEXISTS(File$) = 0 THEN EXIT SUB
 
@@ -288,19 +282,39 @@ FUNCTION ADLER32$ (File$)
     GET #fileHandle, 1, DataArray$
     CLOSE #fileHandle
 
-    FOR i = 1 TO LEN(DataArray$)
-        A = (A + ASC(MID$(DataArray$, i, 1))) MOD 65521
-        B = (B + A) MOD 65521
-    NEXT i
-    RSET Astr = HEX$(A)
-    RSET Bstr = HEX$(B)
+    getChecksum$ = HEX$(crc32~&(DataArray$))
+END FUNCTION
 
-    A32$ = Bstr + Astr
-    FOR i = 1 TO 8
-        IF MID$(A32$, i, 1) = " " THEN MID$(A32$, i, 1) = "0"
-    NEXT i
+FUNCTION crc32~& (buf AS STRING)
+    'adapted from https://rosettacode.org/wiki/CRC-32
+    STATIC table(255) AS _UNSIGNED LONG
+    STATIC have_table AS _BYTE
+    DIM crc AS _UNSIGNED LONG, k AS _UNSIGNED LONG
+    DIM i AS LONG, j AS LONG
 
-    ADLER32$ = A32$
+    IF have_table = 0 THEN
+        FOR i = 0 TO 255
+            k = i
+            FOR j = 0 TO 7
+                IF (k AND 1) THEN
+                    k = _SHR(k, 1)
+                    k = k XOR &HEDB88320
+                ELSE
+                    k = _SHR(k, 1)
+                END IF
+                table(i) = k
+            NEXT
+        NEXT
+        have_table = -1
+    END IF
+
+    crc = NOT crc ' crc = &Hffffffff
+
+    FOR i = 1 TO LEN(buf)
+        crc = (_SHR(crc, 8)) XOR table((crc AND &HFF) XOR ASC(buf, i))
+    NEXT
+
+    crc32~& = NOT crc
 END FUNCTION
 
 FUNCTION Download$ (url$, file$, timelimit) STATIC
