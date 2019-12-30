@@ -1703,14 +1703,16 @@ SUB __UI_EventDispatcher
         IF NOT __UI_DraggingThumb AND __UI_HoveringID = __UI_ActiveDropdownList AND Control(__UI_HoveringID).HoveringVScrollbarButton = 0 AND LastMouseTop <> __UI_MouseTop THEN
             'Dropdown list items are preselected when hovered
             LastMouseTop = __UI_MouseTop
-            IF Control(__UI_HoveringID).Font > 0 THEN _FONT Control(__UI_HoveringID).Font
-            ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top) - (ABS(Control(__UI_HoveringID).HasBorder) * __UI_DefaultCaptionIndent)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
-            IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
-                Control(__UI_HoveringID).Value = ThisItem%
-                IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN
-                    __UI_ValueChanged __UI_HoveringID
-                    Control(__UI_HoveringID).PreviousValue = Control(__UI_HoveringID).Value
-                    Control(__UI_HoveringID).Redraw = True
+            IF Control(__UI_HoveringID).Max > 0 THEN
+                IF Control(__UI_HoveringID).Font > 0 THEN _FONT Control(__UI_HoveringID).Font
+                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top) - (ABS(Control(__UI_HoveringID).HasBorder) * __UI_DefaultCaptionIndent)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
+                IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
+                    Control(__UI_HoveringID).Value = ThisItem%
+                    IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN
+                        __UI_ValueChanged __UI_HoveringID
+                        Control(__UI_HoveringID).PreviousValue = Control(__UI_HoveringID).Value
+                        Control(__UI_HoveringID).Redraw = True
+                    END IF
                 END IF
             END IF
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_MenuBar AND LastMouseLeft <> __UI_MouseLeft THEN
@@ -2721,12 +2723,14 @@ SUB __UI_EventDispatcher
                                     END IF
                                 END IF
                             ELSE
-                                _FONT Control(__UI_HoveringID).Font
-                                ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top) - (ABS(Control(__UI_HoveringID).HasBorder) * __UI_DefaultCaptionIndent)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
-                                IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
-                                    Control(__UI_HoveringID).Value = ThisItem%
-                                ELSE
-                                    Control(__UI_HoveringID).Value = 0
+                                IF Control(__UI_HoveringID).Max > 0 THEN
+                                    _FONT Control(__UI_HoveringID).Font
+                                    ThisItem% = ((__UI_MouseTop - (ContainerOffsetTop + Control(__UI_HoveringID).Top) - (ABS(Control(__UI_HoveringID).HasBorder) * __UI_DefaultCaptionIndent)) \ Control(__UI_HoveringID).ItemHeight) + Control(__UI_HoveringID).InputViewStart
+                                    IF ThisItem% >= Control(__UI_HoveringID).Min AND ThisItem% <= Control(__UI_HoveringID).Max THEN
+                                        Control(__UI_HoveringID).Value = ThisItem%
+                                    ELSE
+                                        Control(__UI_HoveringID).Value = 0
+                                    END IF
                                 END IF
 
                                 IF __UI_HoveringID = __UI_ActiveDropdownList THEN
