@@ -68,6 +68,7 @@ TYPE __UI_ControlTYPE
     Padding AS INTEGER
     Encoding AS LONG
     Align AS _BYTE
+    PrevAlign AS _BYTE
     VAlign AS _BYTE
     BorderColor AS _UNSIGNED LONG
     Value AS _FLOAT
@@ -6720,6 +6721,35 @@ FUNCTION RestoreCHR$ (__Text$)
     RestoreCHR$ = Text$
 END FUNCTION
 
+FUNCTION __UI_StrUsing$ (format$, value##)
+    DIM prevDest AS LONG, prevSource AS LONG
+    DIM tempScreen AS LONG
+    DIM i AS LONG, temp$
+    DIM length AS LONG
+
+    prevDest = _DEST
+    prevSource = _SOURCE
+
+    tempScreen = _NEWIMAGE(LEN(format$) * 2, 2, 0)
+    _DEST tempScreen
+    _SOURCE tempScreen
+
+    PRINT USING format$; value##;
+
+    length = POS(0) - 1
+    temp$ = SPACE$(length)
+    FOR i = 1 TO length
+        ASC(temp$, i) = SCREEN(1, i)
+    NEXT
+
+    _DEST prevDest
+    _SOURCE prevSource
+    _FREEIMAGE tempScreen
+
+    __UI_StrUsing$ = temp$
+END FUNCTION
+
+
 'Control drawing: -------------------------------------------------------------
 '---------------------------------------------------------------------------------
 SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
@@ -6832,12 +6862,18 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM CaptionIndent AS INTEGER, TempCaption$, TempLine$
 
     IF This.Redraw OR This.ControlState <> ControlState OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.PreviousParentID <> This.ParentID OR __UI_ForceRedraw _
-       OR This.PreviousFont <> This.Font THEN
+       OR This.PreviousFont <> This.Font _
+       OR Mask(This.ID) <> __UI_TempMask(This.ID) _
+       OR This.Value <> This.PreviousValue _
+       OR This.PrevAlign <> This.Align THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.Redraw = False
         This.ControlState = ControlState
         This.PreviousFont = This.Font
         __UI_TempCaptions(This.ID) = Caption(This.ID)
+        __UI_TempMask(This.ID) = Mask(This.ID)
+        This.PrevAlign = This.Align
+        This.PreviousValue = This.Value
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
@@ -6930,7 +6966,11 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 LINE (CaptionLeftFirstLine + This.HotKeyOffset, CaptionTopFirstLine + uspacing&)-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
             END IF
         ELSE
-            TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
+            IF LEN(Mask(This.ID)) THEN
+                TempCaption$ = __UI_StrUsing$(Mask(This.ID), This.Value)
+            ELSE
+                TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
+            END IF
             SELECT CASE This.Align
                 CASE __UI_Left
                     CaptionLeft = CaptionIndent + This.Padding
