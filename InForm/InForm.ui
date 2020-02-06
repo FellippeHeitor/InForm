@@ -70,6 +70,7 @@ TYPE __UI_ControlTYPE
     Align AS _BYTE
     PrevAlign AS _BYTE
     VAlign AS _BYTE
+    PrevVAlign AS _BYTE
     BorderColor AS _UNSIGNED LONG
     Value AS _FLOAT
     PreviousValue AS _FLOAT
@@ -128,6 +129,7 @@ TYPE __UI_ControlTYPE
     BulletStyle AS _BYTE
     MenuItemGroup AS INTEGER
     KeyCombo AS LONG
+    BoundTo AS LONG
 END TYPE
 
 TYPE __UI_Types
@@ -342,6 +344,87 @@ LOOP
 SYSTEM
 __UI_ErrorHandler:
 RESUME NEXT
+
+'------------------------------------------------------------------------------
+'Control types:
+FUNCTION __UI_Type_Form%%:__UI_Type_Form%% = 1: END FUNCTION
+FUNCTION __UI_Type_Frame%%: __UI_Type_Frame%% = 2: END FUNCTION
+FUNCTION __UI_Type_Button%%: __UI_Type_Button%% = 3: END FUNCTION
+FUNCTION __UI_Type_Label%%: __UI_Type_Label%% = 4: END FUNCTION
+FUNCTION __UI_Type_CheckBox%%: __UI_Type_CheckBox%% = 5: END FUNCTION
+FUNCTION __UI_Type_RadioButton%%: __UI_Type_RadioButton%% = 6: END FUNCTION
+FUNCTION __UI_Type_TextBox%%: __UI_Type_TextBox%% = 7: END FUNCTION
+FUNCTION __UI_Type_ProgressBar%%: __UI_Type_ProgressBar%% = 8: END FUNCTION
+FUNCTION __UI_Type_ListBox%%: __UI_Type_ListBox%% = 9: END FUNCTION
+FUNCTION __UI_Type_DropdownList%%: __UI_Type_DropdownList%% = 10: END FUNCTION
+FUNCTION __UI_Type_MenuBar%%: __UI_Type_MenuBar%% = 11: END FUNCTION
+FUNCTION __UI_Type_MenuItem%%: __UI_Type_MenuItem%% = 12: END FUNCTION
+FUNCTION __UI_Type_MenuPanel%%: __UI_Type_MenuPanel%% = 13: END FUNCTION
+FUNCTION __UI_Type_PictureBox%%: __UI_Type_PictureBox%% = 14: END FUNCTION
+FUNCTION __UI_Type_TrackBar%%: __UI_Type_TrackBar%% = 15: END FUNCTION
+FUNCTION __UI_Type_ContextMenu%%: __UI_Type_ContextMenu%% = 16: END FUNCTION
+FUNCTION __UI_Type_Font%%: __UI_Type_Font%% = 17: END FUNCTION
+FUNCTION __UI_Type_ToggleSwitch%%: __UI_Type_ToggleSwitch%% = 18: END FUNCTION
+
+'Back styles:
+FUNCTION __UI_Opaque%%: __UI_Opaque%% = 0: END FUNCTION
+FUNCTION __UI_Transparent%%: __UI_Transparent%% = -1: END FUNCTION
+
+'Text alignment
+FUNCTION __UI_Left%%: __UI_Left%% = 0: END FUNCTION
+FUNCTION __UI_Center%%: __UI_Center%% = 1: END FUNCTION
+FUNCTION __UI_Right%%: __UI_Right%% = 2: END FUNCTION
+FUNCTION __UI_Top%%: __UI_Top%% = 0: END FUNCTION
+FUNCTION __UI_Middle%%: __UI_Middle%% = 1: END FUNCTION
+FUNCTION __UI_Bottom%%: __UI_Bottom%% = 2: END FUNCTION
+
+'Textbox controls
+FUNCTION __UI_NumericWithoutBounds%%: __UI_NumericWithoutBounds%% = True: END FUNCTION
+FUNCTION __UI_NumericWithBounds%%: __UI_NumericWithBounds%% = 2: END FUNCTION
+
+'BulletStyle
+FUNCTION __UI_CheckMark%%: __UI_CheckMark%% = 0: END FUNCTION
+FUNCTION __UI_Bullet%%: __UI_Bullet%% = 1: END FUNCTION
+
+
+'Messagebox constants
+FUNCTION MsgBox_OkOnly%%: MsgBox_OkOnly%% = 0: END FUNCTION
+FUNCTION MsgBox_OkCancel%%: MsgBox_OkCancel%% = 1: END FUNCTION
+FUNCTION MsgBox_AbortRetryIgnore%%: MsgBox_AbortRetryIgnore%% = 2: END FUNCTION
+FUNCTION MsgBox_YesNoCancel%%: MsgBox_YesNoCancel%% = 3: END FUNCTION
+FUNCTION MsgBox_YesNo%%: MsgBox_YesNo%% = 4: END FUNCTION
+FUNCTION MsgBox_RetryCancel%%: MsgBox_RetryCancel%% = 5: END FUNCTION
+FUNCTION MsgBox_CancelTryagainContinue%%: MsgBox_CancelTryagainContinue%% = 6: END FUNCTION
+
+FUNCTION MsgBox_Critical%: MsgBox_Critical% = 16: END FUNCTION
+FUNCTION MsgBox_Question%: MsgBox_Question% = 32: END FUNCTION
+FUNCTION MsgBox_Exclamation%: MsgBox_Exclamation% = 48: END FUNCTION
+FUNCTION MsgBox_Information%: MsgBox_Information% = 64: END FUNCTION
+
+FUNCTION MsgBox_DefaultButton1%: MsgBox_DefaultButton1% = 0: END FUNCTION
+FUNCTION MsgBox_DefaultButton2%: MsgBox_DefaultButton2% = 256: END FUNCTION
+FUNCTION MsgBox_DefaultButton3%: MsgBox_DefaultButton3% = 512: END FUNCTION
+FUNCTION MsgBox_Defaultbutton4%: MsgBox_Defaultbutton4% = 768: END FUNCTION
+
+FUNCTION MsgBox_AppModal%%: MsgBox_AppModal%% = 0: END FUNCTION
+FUNCTION MsgBox_SystemModal%: MsgBox_SystemModal% = 4096: END FUNCTION
+FUNCTION MsgBox_SetForeground&: MsgBox_SetForeground& = 65536: END FUNCTION
+
+FUNCTION MsgBox_Ok%%: MsgBox_Ok%% = 1: END FUNCTION
+FUNCTION MsgBox_Cancel%%: MsgBox_Cancel%% = 2: END FUNCTION
+FUNCTION MsgBox_Abort%%: MsgBox_Abort%% = 3: END FUNCTION
+FUNCTION MsgBox_Retry%%: MsgBox_Retry%% = 4: END FUNCTION
+FUNCTION MsgBox_Ignore%%: MsgBox_Ignore%% = 5: END FUNCTION
+FUNCTION MsgBox_Yes%%: MsgBox_Yes%% = 6: END FUNCTION
+FUNCTION MsgBox_No%%: MsgBox_No%% = 7: END FUNCTION
+FUNCTION MsgBox_Tryagain%%: MsgBox_Tryagain%% = 10: END FUNCTION
+FUNCTION MsgBox_Continue%%: MsgBox_Continue%% = 11: END FUNCTION
+
+'General constants
+FUNCTION __UI_ToolTipTimeOut!: __UI_ToolTipTimeOut! = .8: END FUNCTION
+FUNCTION __UI_CantResizeV%%: __UI_CantResizeV%% = 1: END FUNCTION
+FUNCTION __UI_CantResizeH%%: __UI_CantResizeH%% = 2: END FUNCTION
+FUNCTION __UI_CantResize%%: __UI_CantResize%% = 3: END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION uspacing&
@@ -1130,7 +1213,12 @@ SUB __UI_UpdateDisplay
                     Control(i).MinInterval = _ROUND(Control(i).MinInterval)
                     __UI_StateHasChanged = False
                     __UI_DrawTrackBar Control(i), ControlState
-                    IF __UI_StateHasChanged THEN __UI_ValueChanged i
+                    IF __UI_StateHasChanged THEN
+                        __UI_ValueChanged i
+                        IF Control(i).BoundTo > 0 THEN
+                            Control(Control(i).BoundTo).Value = Control(i).Value
+                        END IF
+                    END IF
                 CASE __UI_Type_TextBox
                     'Text boxes
                     'IF Control(i).InputViewStart = 0 THEN Control(i).InputViewStart = 1
@@ -2621,7 +2709,6 @@ SUB __UI_EventDispatcher
                         IF Control(__UI_HoveringID).Value > Control(__UI_HoveringID).Max THEN
                             Control(__UI_HoveringID).Value = Control(__UI_HoveringID).Max
                         END IF
-                        'IF Control(__UI_HoveringID).PreviousValue <> Control(__UI_HoveringID).Value THEN __UI_ValueChanged __UI_MouseDownOnID
                     END IF
                 END IF
             END IF
@@ -6749,6 +6836,10 @@ FUNCTION __UI_StrUsing$ (format$, value##)
     __UI_StrUsing$ = temp$
 END FUNCTION
 
+SUB __UI_Bind(id AS LONG, targetID AS LONG)
+    Control(id).BoundTo = targetID
+END SUB
+
 
 'Control drawing: -------------------------------------------------------------
 '---------------------------------------------------------------------------------
@@ -6865,7 +6956,8 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
        OR This.PreviousFont <> This.Font _
        OR Mask(This.ID) <> __UI_TempMask(This.ID) _
        OR This.Value <> This.PreviousValue _
-       OR This.PrevAlign <> This.Align THEN
+       OR This.PrevAlign <> This.Align _
+       OR This.PrevVAlign <> This.VAlign THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.Redraw = False
         This.ControlState = ControlState
@@ -6873,6 +6965,7 @@ SUB __UI_DrawLabel (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         __UI_TempCaptions(This.ID) = Caption(This.ID)
         __UI_TempMask(This.ID) = Mask(This.ID)
         This.PrevAlign = This.Align
+        This.PrevVAlign = This.VAlign
         This.PreviousValue = This.Value
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
@@ -8538,86 +8631,5 @@ SUB __UI_ShadowBox (bX AS INTEGER, bY AS INTEGER, bW AS INTEGER, bH AS INTEGER, 
 
     LINE (bX, bY)-STEP(bW, bH), C, BF
 END SUB
-
-'------------------------------------------------------------------------------
-'Control types:
-FUNCTION __UI_Type_Form%%:__UI_Type_Form%% = 1: END FUNCTION
-FUNCTION __UI_Type_Frame%%: __UI_Type_Frame%% = 2: END FUNCTION
-FUNCTION __UI_Type_Button%%: __UI_Type_Button%% = 3: END FUNCTION
-FUNCTION __UI_Type_Label%%: __UI_Type_Label%% = 4: END FUNCTION
-FUNCTION __UI_Type_CheckBox%%: __UI_Type_CheckBox%% = 5: END FUNCTION
-FUNCTION __UI_Type_RadioButton%%: __UI_Type_RadioButton%% = 6: END FUNCTION
-FUNCTION __UI_Type_TextBox%%: __UI_Type_TextBox%% = 7: END FUNCTION
-FUNCTION __UI_Type_ProgressBar%%: __UI_Type_ProgressBar%% = 8: END FUNCTION
-FUNCTION __UI_Type_ListBox%%: __UI_Type_ListBox%% = 9: END FUNCTION
-FUNCTION __UI_Type_DropdownList%%: __UI_Type_DropdownList%% = 10: END FUNCTION
-FUNCTION __UI_Type_MenuBar%%: __UI_Type_MenuBar%% = 11: END FUNCTION
-FUNCTION __UI_Type_MenuItem%%: __UI_Type_MenuItem%% = 12: END FUNCTION
-FUNCTION __UI_Type_MenuPanel%%: __UI_Type_MenuPanel%% = 13: END FUNCTION
-FUNCTION __UI_Type_PictureBox%%: __UI_Type_PictureBox%% = 14: END FUNCTION
-FUNCTION __UI_Type_TrackBar%%: __UI_Type_TrackBar%% = 15: END FUNCTION
-FUNCTION __UI_Type_ContextMenu%%: __UI_Type_ContextMenu%% = 16: END FUNCTION
-FUNCTION __UI_Type_Font%%: __UI_Type_Font%% = 17: END FUNCTION
-FUNCTION __UI_Type_ToggleSwitch%%: __UI_Type_ToggleSwitch%% = 18: END FUNCTION
-
-'Back styles:
-FUNCTION __UI_Opaque%%: __UI_Opaque%% = 0: END FUNCTION
-FUNCTION __UI_Transparent%%: __UI_Transparent%% = -1: END FUNCTION
-
-'Text alignment
-FUNCTION __UI_Left%%: __UI_Left%% = 0: END FUNCTION
-FUNCTION __UI_Center%%: __UI_Center%% = 1: END FUNCTION
-FUNCTION __UI_Right%%: __UI_Right%% = 2: END FUNCTION
-FUNCTION __UI_Top%%: __UI_Top%% = 0: END FUNCTION
-FUNCTION __UI_Middle%%: __UI_Middle%% = 1: END FUNCTION
-FUNCTION __UI_Bottom%%: __UI_Bottom%% = 2: END FUNCTION
-
-'Textbox controls
-FUNCTION __UI_NumericWithoutBounds%%: __UI_NumericWithoutBounds%% = True: END FUNCTION
-FUNCTION __UI_NumericWithBounds%%: __UI_NumericWithBounds%% = 2: END FUNCTION
-
-'BulletStyle
-FUNCTION __UI_CheckMark%%: __UI_CheckMark%% = 0: END FUNCTION
-FUNCTION __UI_Bullet%%: __UI_Bullet%% = 1: END FUNCTION
-
-
-'Messagebox constants
-FUNCTION MsgBox_OkOnly%%: MsgBox_OkOnly%% = 0: END FUNCTION
-FUNCTION MsgBox_OkCancel%%: MsgBox_OkCancel%% = 1: END FUNCTION
-FUNCTION MsgBox_AbortRetryIgnore%%: MsgBox_AbortRetryIgnore%% = 2: END FUNCTION
-FUNCTION MsgBox_YesNoCancel%%: MsgBox_YesNoCancel%% = 3: END FUNCTION
-FUNCTION MsgBox_YesNo%%: MsgBox_YesNo%% = 4: END FUNCTION
-FUNCTION MsgBox_RetryCancel%%: MsgBox_RetryCancel%% = 5: END FUNCTION
-FUNCTION MsgBox_CancelTryagainContinue%%: MsgBox_CancelTryagainContinue%% = 6: END FUNCTION
-
-FUNCTION MsgBox_Critical%: MsgBox_Critical% = 16: END FUNCTION
-FUNCTION MsgBox_Question%: MsgBox_Question% = 32: END FUNCTION
-FUNCTION MsgBox_Exclamation%: MsgBox_Exclamation% = 48: END FUNCTION
-FUNCTION MsgBox_Information%: MsgBox_Information% = 64: END FUNCTION
-
-FUNCTION MsgBox_DefaultButton1%: MsgBox_DefaultButton1% = 0: END FUNCTION
-FUNCTION MsgBox_DefaultButton2%: MsgBox_DefaultButton2% = 256: END FUNCTION
-FUNCTION MsgBox_DefaultButton3%: MsgBox_DefaultButton3% = 512: END FUNCTION
-FUNCTION MsgBox_Defaultbutton4%: MsgBox_Defaultbutton4% = 768: END FUNCTION
-
-FUNCTION MsgBox_AppModal%%: MsgBox_AppModal%% = 0: END FUNCTION
-FUNCTION MsgBox_SystemModal%: MsgBox_SystemModal% = 4096: END FUNCTION
-FUNCTION MsgBox_SetForeground&: MsgBox_SetForeground& = 65536: END FUNCTION
-
-FUNCTION MsgBox_Ok%%: MsgBox_Ok%% = 1: END FUNCTION
-FUNCTION MsgBox_Cancel%%: MsgBox_Cancel%% = 2: END FUNCTION
-FUNCTION MsgBox_Abort%%: MsgBox_Abort%% = 3: END FUNCTION
-FUNCTION MsgBox_Retry%%: MsgBox_Retry%% = 4: END FUNCTION
-FUNCTION MsgBox_Ignore%%: MsgBox_Ignore%% = 5: END FUNCTION
-FUNCTION MsgBox_Yes%%: MsgBox_Yes%% = 6: END FUNCTION
-FUNCTION MsgBox_No%%: MsgBox_No%% = 7: END FUNCTION
-FUNCTION MsgBox_Tryagain%%: MsgBox_Tryagain%% = 10: END FUNCTION
-FUNCTION MsgBox_Continue%%: MsgBox_Continue%% = 11: END FUNCTION
-
-'General constants
-FUNCTION __UI_ToolTipTimeOut!: __UI_ToolTipTimeOut! = .8: END FUNCTION
-FUNCTION __UI_CantResizeV%%: __UI_CantResizeV%% = 1: END FUNCTION
-FUNCTION __UI_CantResizeH%%: __UI_CantResizeH%% = 2: END FUNCTION
-FUNCTION __UI_CantResize%%: __UI_CantResize%% = 3: END FUNCTION
 
 'VWATCH64:ON
