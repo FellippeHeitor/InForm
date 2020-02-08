@@ -130,6 +130,7 @@ TYPE __UI_ControlTYPE
     MenuItemGroup AS INTEGER
     KeyCombo AS LONG
     BoundTo AS LONG
+    BoundProperty AS LONG
 END TYPE
 
 TYPE __UI_Types
@@ -1215,9 +1216,6 @@ SUB __UI_UpdateDisplay
                     __UI_DrawTrackBar Control(i), ControlState
                     IF __UI_StateHasChanged THEN
                         __UI_ValueChanged i
-                        IF Control(i).BoundTo > 0 THEN
-                            Control(Control(i).BoundTo).Value = Control(i).Value
-                        END IF
                     END IF
                 CASE __UI_Type_TextBox
                     'Text boxes
@@ -1236,10 +1234,9 @@ SUB __UI_UpdateDisplay
                     __UI_DrawTextBox Control(i), ControlState
                     IF __UI_StateHasChanged THEN
                         __UI_TextChanged i
-                        IF Control(__UI_Focus).NumericOnly THEN
-                            Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
-
-                            __UI_ValidateBounds __UI_Focus
+                        IF Control(i).NumericOnly THEN
+                            Control(i).Value = VAL(Text(i))
+                            __UI_ValidateBounds i
                         END IF
                     END IF
                 CASE __UI_Type_ListBox
@@ -1462,6 +1459,8 @@ SUB __UI_UpdateDisplay
                 __UI_DrawFrame Control(ThisParent)
             END IF
         END IF
+
+        IF i = __UI_Focus THEN __UI_CheckBinding i
     NEXT
 
     FOR i = 1 TO UBOUND(Control)
@@ -6836,10 +6835,152 @@ FUNCTION __UI_StrUsing$ (format$, value##)
     __UI_StrUsing$ = temp$
 END FUNCTION
 
-SUB __UI_Bind(id AS LONG, targetID AS LONG)
+SUB __UI_Bind(id AS LONG, targetID AS LONG, __PropertyID$, __PropertyTargetID$)
+    DIM PropertyID$, PropertyTargetID$
+
+    PropertyID$ = UCASE$(__PropertyID$)
+    PropertyTargetID$ = UCASE$(__PropertyTargetID$)
+
     Control(id).BoundTo = targetID
+    Control(id).BoundProperty = __UI_PropertyEnum(PropertyID$)
+    IF Control(id).BoundProperty = 0 THEN Control(id).BoundTo = 0: EXIT SUB
+    Control(targetID).BoundTo = id
+    Control(targetID).BoundProperty = __UI_PropertyEnum(PropertyTargetID$)
+    IF Control(targetID).BoundProperty = 0 THEN
+        Control(id).BoundTo = 0
+        Control(targetID).BoundTo = 0
+    END IF
+    __UI_CheckBinding targetID 'acquire current value of targetID
 END SUB
 
+FUNCTION __UI_PropertyEnum& (__property$)
+    DIM property$
+    STATIC EnumInitialized AS _BYTE, Enum$
+
+    IF LEN(_TRIM$(__property$)) = 0 THEN EXIT FUNCTION
+
+    IF NOT EnumInitialized THEN
+        RESTORE EnumNames
+        DO
+            READ property$
+            IF property$ = "*" THEN EXIT DO
+            Enum$ = Enum$ + "@" + UCASE$(property$)
+        LOOP
+        Enum$ = Enum$ + "@"
+        EnumInitialized = True
+    END IF
+
+    property$ = "@" + _TRIM$(UCASE$(__property$)) + "@"
+    __UI_PropertyEnum& = INSTR(Enum$, property$)
+    EXIT FUNCTION
+
+    EnumNames:
+    DATA Top, Left, Width, Height, Bordersize, Padding, Value
+    DATA Min, Max, Interval, MinInterval, Stretch, HasBorder, ShowPercentage
+    DATA AutoScroll, AutoSize, PasswordField, Disabled, Hidden
+    DATA *
+END FUNCTION
+
+SUB __UI_UnBind(id AS LONG, targetID AS LONG)
+    Control(id).BoundTo = 0
+    Control(targetID).BoundTo = 0
+END SUB
+
+SUB __UI_CheckBinding(id AS LONG)
+    DIM BoundOperative AS LONG, Temp AS _FLOAT
+
+    BoundOperative = Control(id).BoundTo
+    IF BoundOperative = 0 THEN EXIT SUB
+
+    IF Control(id).BoundProperty = Control(BoundOperative).BoundProperty AND _
+       Control(id).BoundProperty = __UI_PropertyEnum&("Value") THEN
+        Control(id).Min = Control(BoundOperative).Min
+        Control(id).Max = Control(BoundOperative).Max
+    END IF
+
+    SELECT CASE Control(id).BoundProperty
+        CASE __UI_PropertyEnum&("Top")
+            Temp = Control(id).Top
+        CASE __UI_PropertyEnum&("Left")
+            Temp = Control(id).Left
+        CASE __UI_PropertyEnum&("Width")
+            Temp = Control(id).Width
+        CASE __UI_PropertyEnum&("Height")
+            Temp = Control(id).Height
+        CASE __UI_PropertyEnum&("BorderSize")
+            Temp = Control(id).BorderSize
+        CASE __UI_PropertyEnum&("Padding")
+            Temp = Control(id).Padding
+        CASE __UI_PropertyEnum&("Value")
+            Temp = Control(id).Value
+        CASE __UI_PropertyEnum&("Min")
+            Temp = Control(id).Min
+        CASE __UI_PropertyEnum&("Max")
+            Temp = Control(id).Max
+        CASE __UI_PropertyEnum&("Interval")
+            Temp = Control(id).Interval
+        CASE __UI_PropertyEnum&("Mininterval")
+            Temp = Control(id).Mininterval
+        CASE __UI_PropertyEnum&("Stretch")
+            Temp = Control(id).Stretch
+        CASE __UI_PropertyEnum&("HasBorder")
+            Temp = Control(id).HasBorder
+        CASE __UI_PropertyEnum&("ShowPercentage")
+            Temp = Control(id).ShowPercentage
+        CASE __UI_PropertyEnum&("AutoScroll")
+            Temp = Control(id).AutoScroll
+        CASE __UI_PropertyEnum&("AutoSize")
+            Temp = Control(id).AutoSize
+        CASE __UI_PropertyEnum&("PasswordField")
+            Temp = Control(id).PasswordField
+        CASE __UI_PropertyEnum&("Disabled")
+            Temp = Control(id).Disabled
+        CASE __UI_PropertyEnum&("Hidden")
+            Temp = Control(id).Hidden
+    END SELECT
+
+    SELECT CASE Control(BoundOperative).BoundProperty
+        CASE __UI_PropertyEnum&("Top")
+            Control(BoundOperative).Top = Temp
+        CASE __UI_PropertyEnum&("Left")
+            Control(BoundOperative).Left = Temp
+        CASE __UI_PropertyEnum&("Width")
+            Control(BoundOperative).Width = Temp
+        CASE __UI_PropertyEnum&("Height")
+            Control(BoundOperative).Height = Temp
+        CASE __UI_PropertyEnum&("BorderSize")
+            Control(BoundOperative).BorderSize = Temp
+        CASE __UI_PropertyEnum&("Padding")
+            Control(BoundOperative).Padding = Temp
+        CASE __UI_PropertyEnum&("Value")
+            Control(BoundOperative).Value = Temp
+        CASE __UI_PropertyEnum&("Min")
+            Control(BoundOperative).Min = Temp
+        CASE __UI_PropertyEnum&("Max")
+            Control(BoundOperative).Max = Temp
+        CASE __UI_PropertyEnum&("Interval")
+            Control(BoundOperative).Interval = Temp
+        CASE __UI_PropertyEnum&("MinInterval")
+            Control(BoundOperative).MinInterval = Temp
+        CASE __UI_PropertyEnum&("Stretch")
+            Control(BoundOperative).Stretch = Temp
+        CASE __UI_PropertyEnum&("HasBorder")
+            Control(BoundOperative).HasBorder = Temp
+        CASE __UI_PropertyEnum&("ShowPercentage")
+            Control(BoundOperative).ShowPercentage = Temp
+        CASE __UI_PropertyEnum&("AutoScroll")
+            Control(BoundOperative).AutoScroll = Temp
+        CASE __UI_PropertyEnum&("AutoSize")
+            Control(BoundOperative).AutoSize = Temp
+        CASE __UI_PropertyEnum&("PasswordField")
+            Control(BoundOperative).PasswordField = Temp
+        CASE __UI_PropertyEnum&("Disabled")
+            Control(BoundOperative).Disabled = Temp
+        CASE __UI_PropertyEnum&("Hidden")
+            Control(BoundOperative).Hidden = Temp
+    END SELECT
+    Control(BoundOperative).Redraw = True
+END SUB
 
 'Control drawing: -------------------------------------------------------------
 '---------------------------------------------------------------------------------
