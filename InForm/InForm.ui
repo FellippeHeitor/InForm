@@ -439,8 +439,8 @@ SUB __UI_InternalMenus
     __UI_NewID = __UI_NewControl(__UI_Type_ContextMenu, "__UI_PreviewMenu", 0, 0, 0, 0, 0)
     Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
 
-    'Hotkeys used:
-    'A, B, C, D, E, G, H, I, L, M, N, O, P, R, S, T, U, V, W, X, Y, Z
+    'Hotkeys available:
+    'F, J, K, Q
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuNewMenuBar", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuNewMenuBar"), "New &MenuBar control"
 
@@ -453,6 +453,10 @@ SUB __UI_InternalMenus
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuSetDefaultButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuSetDefaultButton"), "&Set as default button-"
+    ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuBindControls", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Bind selected controls-"
     ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuConvertType", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))

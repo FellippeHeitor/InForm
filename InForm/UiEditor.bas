@@ -16,6 +16,7 @@ DIM SHARED HelpMenu AS LONG, FontSwitchMenu AS LONG
 DIM SHARED Toolbox AS LONG, ColorMixer AS LONG
 DIM SHARED OpenFrame AS LONG, ZOrdering AS LONG
 DIM SHARED ControlProperties AS LONG, ControlToggles AS LONG
+DIM SHARED SetControlBinding AS LONG
 
 'Menu items
 DIM SHARED FileMenuNew AS LONG, FileMenuOpen AS LONG
@@ -38,7 +39,7 @@ DIM SHARED EditMenuCopy AS LONG, EditMenuPaste AS LONG
 DIM SHARED EditMenuDelete AS LONG, EditMenuSelectAll AS LONG
 DIM SHARED EditMenuCP437 AS LONG, EditMenuCP1252 AS LONG
 DIM SHARED EditMenuConvertType AS LONG, EditMenuSetDefaultButton AS LONG
-DIM SHARED EditMenuRestoreDimensions AS LONG
+DIM SHARED EditMenuRestoreDimensions AS LONG, EditMenuBindControls AS LONG
 DIM SHARED EditMenuAllowMinMax AS LONG, EditMenuZOrdering AS LONG
 
 DIM SHARED ViewMenuPreviewDetach AS LONG
@@ -101,6 +102,19 @@ DIM SHARED ShowOnlyFrmbinFilesCB AS LONG, SaveFrmOnlyCB AS LONG
 DIM SHARED ControlList AS LONG, UpBT AS LONG
 DIM SHARED DownBT AS LONG, CloseZOrderingBT AS LONG
 
+'Set binding dialog
+DIM SHARED SourceControlLB AS LONG
+DIM SHARED SourceControlNameLB AS LONG
+DIM SHARED TargetControlLB AS LONG
+DIM SHARED TargetControlNameLB AS LONG
+DIM SHARED SwapBT AS LONG
+DIM SHARED SourcePropertyLB AS LONG
+DIM SHARED SourcePropertyList AS LONG
+DIM SHARED TargetPropertyLB AS LONG
+DIM SHARED TargetPropertyList AS LONG
+DIM SHARED BindBT AS LONG
+DIM SHARED CancelBindBT AS LONG
+
 'Properties
 DIM SHARED TextAlignLB AS LONG, AlignOptions AS LONG
 DIM SHARED VerticalAlignLB AS LONG, VAlignOptions AS LONG
@@ -150,7 +164,7 @@ DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
 DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
 DIM SHARED LoadedWithGifExtension AS _BYTE, AddGifExtension AS _BYTE
-DIM SHARED TotalGifLoaded AS LONG
+DIM SHARED TotalGifLoaded AS LONG, SetBindingDialogOpen AS _BYTE
 
 TYPE newInputBox
     ID AS LONG
@@ -588,6 +602,18 @@ SUB __UI_Click (id AS LONG)
             Control(ZOrdering).Left = 18: Control(ZOrdering).Top = 40
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
+        CASE EditMenuBindControls
+            Caption(StatusBar) = "Setting control bindings..."
+            Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
+            Control(SetControlBinding).Left = 83: Control(SetControlBinding).Top = 192
+            __UI_Focus = SourcePropertyList
+            SetBindingDialogOpen = True
+        CASE SwapBT
+            SWAP Caption(SourceControlNameLB), Caption(TargetControlNameLB)
+        CASE BindBT, CancelBindBT
+            Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
+            Control(SetControlBinding).Left = -600: Control(SetControlBinding).Top = -600
+            SetBindingDialogOpen = False
         CASE CloseZOrderingBT
             Caption(StatusBar) = "Ready."
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
