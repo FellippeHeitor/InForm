@@ -6841,6 +6841,16 @@ SUB __UI_Bind(id AS LONG, targetID AS LONG, __PropertyID$, __PropertyTargetID$)
     PropertyID$ = UCASE$(__PropertyID$)
     PropertyTargetID$ = UCASE$(__PropertyTargetID$)
 
+    'Clear eventual previous bindings
+    IF Control(id).BoundTo > 0 THEN
+        Control(Control(id).BoundTo).BoundTo = 0
+    END IF
+
+    IF Control(targetID).BoundTo > 0 THEN
+        Control(Control(targetID).BoundTo).BoundTo = 0
+    END IF
+
+
     Control(id).BoundTo = targetID
     Control(id).BoundProperty = __UI_PropertyEnum(PropertyID$)
     IF Control(id).BoundProperty = 0 THEN Control(id).BoundTo = 0: EXIT SUB
@@ -6887,15 +6897,15 @@ SUB __UI_UnBind(id AS LONG, targetID AS LONG)
 END SUB
 
 SUB __UI_CheckBinding(id AS LONG)
-    DIM BoundOperative AS LONG, Temp AS _FLOAT
+    DIM BindTarget AS LONG, Temp AS _FLOAT
 
-    BoundOperative = Control(id).BoundTo
-    IF BoundOperative = 0 THEN EXIT SUB
+    BindTarget = Control(id).BoundTo
+    IF BindTarget = 0 THEN EXIT SUB
 
-    IF Control(id).BoundProperty = Control(BoundOperative).BoundProperty AND _
+    IF Control(id).BoundProperty = Control(BindTarget).BoundProperty AND _
        Control(id).BoundProperty = __UI_PropertyEnum&("Value") THEN
-        Control(id).Min = Control(BoundOperative).Min
-        Control(id).Max = Control(BoundOperative).Max
+        Control(id).Min = Control(BindTarget).Min
+        Control(id).Max = Control(BindTarget).Max
     END IF
 
     SELECT CASE Control(id).BoundProperty
@@ -6939,47 +6949,49 @@ SUB __UI_CheckBinding(id AS LONG)
             Temp = Control(id).Hidden
     END SELECT
 
-    SELECT CASE Control(BoundOperative).BoundProperty
+    SELECT CASE Control(BindTarget).BoundProperty
         CASE __UI_PropertyEnum&("Top")
-            Control(BoundOperative).Top = Temp
+            Control(BindTarget).Top = Temp
         CASE __UI_PropertyEnum&("Left")
-            Control(BoundOperative).Left = Temp
+            Control(BindTarget).Left = Temp
         CASE __UI_PropertyEnum&("Width")
-            Control(BoundOperative).Width = Temp
+            Control(BindTarget).Width = Temp
         CASE __UI_PropertyEnum&("Height")
-            Control(BoundOperative).Height = Temp
+            Control(BindTarget).Height = Temp
         CASE __UI_PropertyEnum&("BorderSize")
-            Control(BoundOperative).BorderSize = Temp
+            Control(BindTarget).BorderSize = Temp
         CASE __UI_PropertyEnum&("Padding")
-            Control(BoundOperative).Padding = Temp
+            Control(BindTarget).Padding = Temp
         CASE __UI_PropertyEnum&("Value")
-            Control(BoundOperative).Value = Temp
+            Control(BindTarget).Value = Temp
         CASE __UI_PropertyEnum&("Min")
-            Control(BoundOperative).Min = Temp
+            Control(BindTarget).Min = Temp
         CASE __UI_PropertyEnum&("Max")
-            Control(BoundOperative).Max = Temp
+            Control(BindTarget).Max = Temp
         CASE __UI_PropertyEnum&("Interval")
-            Control(BoundOperative).Interval = Temp
+            Control(BindTarget).Interval = Temp
         CASE __UI_PropertyEnum&("MinInterval")
-            Control(BoundOperative).MinInterval = Temp
+            Control(BindTarget).MinInterval = Temp
         CASE __UI_PropertyEnum&("Stretch")
-            Control(BoundOperative).Stretch = Temp
+            Control(BindTarget).Stretch = Temp
         CASE __UI_PropertyEnum&("HasBorder")
-            Control(BoundOperative).HasBorder = Temp
+            Control(BindTarget).HasBorder = Temp
         CASE __UI_PropertyEnum&("ShowPercentage")
-            Control(BoundOperative).ShowPercentage = Temp
+            Control(BindTarget).ShowPercentage = Temp
         CASE __UI_PropertyEnum&("AutoScroll")
-            Control(BoundOperative).AutoScroll = Temp
+            Control(BindTarget).AutoScroll = Temp
         CASE __UI_PropertyEnum&("AutoSize")
-            Control(BoundOperative).AutoSize = Temp
+            Control(BindTarget).AutoSize = Temp
         CASE __UI_PropertyEnum&("PasswordField")
-            Control(BoundOperative).PasswordField = Temp
+            Control(BindTarget).PasswordField = Temp
         CASE __UI_PropertyEnum&("Disabled")
-            Control(BoundOperative).Disabled = Temp
+            Control(BindTarget).Disabled = Temp
         CASE __UI_PropertyEnum&("Hidden")
-            Control(BoundOperative).Hidden = Temp
+            Control(BindTarget).Hidden = Temp
     END SELECT
-    Control(BoundOperative).Redraw = True
+
+    Control(id).Redraw = True
+    Control(BindTarget).Redraw = True
 END SUB
 
 'Control drawing: -------------------------------------------------------------
