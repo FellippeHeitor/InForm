@@ -152,7 +152,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuBindControls", 103, 18, 0, 88, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "&Bind controls..."
-    'Control(__UI_NewID).Disabled = True
+    Control(__UI_NewID).Disabled = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "EditMenuAllowMinMax", 103, 18, 0, 88, __UI_GetID("EditMenu"))
     SetCaption __UI_NewID, "Validate .Min/.Ma&x bounds-"
@@ -170,7 +170,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Value = -1
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuShowInvisibleControls", 253, 18, 0, 22, __UI_GetID("ViewMenu"))
-    SetCaption __UI_NewID, "&Show invisible controls on the preview"
+    SetCaption __UI_NewID, "&Show invisible elements on the preview"
     Control(__UI_NewID).Value = -1
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuPreview", 168, 18, 0, 40, __UI_GetID("ViewMenu"))
@@ -768,37 +768,33 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Close"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "SetControlBinding", 434, 216, -600, -600, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "SetControlBinding", 434, 263, -600, -600, 0)
     SetCaption __UI_NewID, "Set control binding"
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf?arial.ttf?/Library/Fonts/Arial.ttf?/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf?/usr/share/fonts/TTF/arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf", 12)
     Control(__UI_NewID).HasBorder = True
-    Control(__UI_NewID).Value = 11
     Control(__UI_NewID).BorderSize = 1
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "SourceControlLB", 100, 23, 19, 18, __UI_GetID("SetControlBinding"))
-    SetCaption __UI_NewID, "Source control:"
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "SourceControlLB", 81, 23, 19, 18, __UI_GetID("SetControlBinding"))
+    SetCaption __UI_NewID, "Bind:"
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "SourceControlNameLB", 311, 23, 110, 18, __UI_GetID("SetControlBinding"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "SourceControlNameLB", 380, 23, 35, 43, __UI_GetID("SetControlBinding"))
     SetCaption __UI_NewID, "SourceControlName"
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TargetControlLB", 100, 23, 19, 46, __UI_GetID("SetControlBinding"))
-    SetCaption __UI_NewID, "Target control:"
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TargetControlLB", 81, 23, 19, 114, __UI_GetID("SetControlBinding"))
+    SetCaption __UI_NewID, "To:"
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TargetControlNameLB", 311, 23, 110, 46, __UI_GetID("SetControlBinding"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TargetControlNameLB", 380, 23, 35, 133, __UI_GetID("SetControlBinding"))
     SetCaption __UI_NewID, "TargetControlName"
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "SwapBT", 62, 23, 359, 32, __UI_GetID("SetControlBinding"))
-    SetCaption __UI_NewID, "Swap"
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "SwapBT", 160, 23, 19, 220, __UI_GetID("SetControlBinding"))
+    SetCaption __UI_NewID, "Swap source and target"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "SourcePropertyLB", 112, 23, 19, 99, __UI_GetID("SetControlBinding"))
-    SetCaption __UI_NewID, "Source property:"
-    Control(__UI_NewID).VAlign = __UI_Middle
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "SourcePropertyList", 295, 23, 124, 99, __UI_GetID("SetControlBinding"))
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "SourcePropertyList", 380, 23, 35, 71, __UI_GetID("SetControlBinding"))
     AddItem __UI_NewID, "Top"
     AddItem __UI_NewID, "Left"
     AddItem __UI_NewID, "Width"
@@ -815,7 +811,7 @@ SUB __UI_LoadForm
     AddItem __UI_NewID, "ShowPercentage"
     AddItem __UI_NewID, "AutoScroll"
     AddItem __UI_NewID, "AutoSize"
-    AddItem __UI_NewID, "PasswordField"
+    AddItem __UI_NewID, "PasswordMask"
     AddItem __UI_NewID, "Disabled"
     AddItem __UI_NewID, "Hidden"
     Control(__UI_NewID).HasBorder = True
@@ -823,40 +819,19 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).BorderSize = 1
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Label, "TargetPropertyLB", 112, 23, 19, 127, __UI_GetID("SetControlBinding"))
-    SetCaption __UI_NewID, "Target property:"
-    Control(__UI_NewID).VAlign = __UI_Middle
-
-    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "TargetPropertyList", 295, 23, 124, 127, __UI_GetID("SetControlBinding"))
-    AddItem __UI_NewID, "Top"
-    AddItem __UI_NewID, "Left"
-    AddItem __UI_NewID, "Width"
-    AddItem __UI_NewID, "Height"
-    AddItem __UI_NewID, "Bordersize"
-    AddItem __UI_NewID, "Padding"
-    AddItem __UI_NewID, "Value"
-    AddItem __UI_NewID, "Min"
-    AddItem __UI_NewID, "Max"
-    AddItem __UI_NewID, "Interval"
-    AddItem __UI_NewID, "MinInterval"
-    AddItem __UI_NewID, "Stretch"
-    AddItem __UI_NewID, "HasBorder"
-    AddItem __UI_NewID, "ShowPercentage"
-    AddItem __UI_NewID, "AutoScroll"
-    AddItem __UI_NewID, "AutoSize"
-    AddItem __UI_NewID, "PasswordField"
-    AddItem __UI_NewID, "Disabled"
-    AddItem __UI_NewID, "Hidden"
+    __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "TargetPropertyList", 380, 23, 35, 161, __UI_GetID("SetControlBinding"))
+    Text(__UI_NewID) = Text(__UI_GetID("SourcePropertyList"))
+    Control(__UI_NewID).Max = Control(__UI_GetID("SourcePropertyList")).Max
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 7
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).BorderSize = 1
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "BindBT", 80, 23, 131, 173, __UI_GetID("SetControlBinding"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "BindBT", 80, 23, 248, 220, __UI_GetID("SetControlBinding"))
     SetCaption __UI_NewID, "Bind"
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBindBT", 80, 23, 224, 173, __UI_GetID("SetControlBinding"))
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBindBT", 80, 23, 341, 220, __UI_GetID("SetControlBinding"))
     SetCaption __UI_NewID, "Cancel"
     Control(__UI_NewID).CanHaveFocus = True
 END SUB

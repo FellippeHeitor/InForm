@@ -188,6 +188,7 @@ REDIM SHARED PreviewActualFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED PreviewContextMenu(0) AS STRING
+REDIM SHARED PreviewBoundTo(0) AS STRING
 REDIM SHARED PreviewKeyCombos(0) AS STRING
 REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
 REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
@@ -583,7 +584,7 @@ SUB __UI_Click (id AS LONG)
             SYSTEM
         CASE EditMenuZOrdering
             'Fill the list:
-            Caption(StatusBar) = "Editing z-ordering/tab ordering..."
+            Caption(StatusBar) = "Editing z-ordering/tab ordering"
             DIM j AS LONG, i AS LONG
             STATIC Moving AS _BYTE
             REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
@@ -603,17 +604,60 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
         CASE EditMenuBindControls
-            Caption(StatusBar) = "Setting control bindings..."
+            'Get controls' names
+            DIM CurrentSource$
+            j = 0
+            FOR i = 1 TO UBOUND(PreviewControls)
+                IF PreviewControls(i).ControlIsSelected THEN
+                    j = j + 1
+                    IF j = 1 THEN
+                        Caption(SourceControlNameLB) = RTRIM$(PreviewControls(i).Name)
+                        CurrentSource$ = PreviewBoundTo(i)
+                    END IF
+                    IF j = 2 THEN
+                        Caption(TargetControlNameLB) = RTRIM$(PreviewControls(i).Name)
+                        EXIT FOR
+                    END IF
+                END IF
+            NEXT
+
+            IF CurrentSource$ = Caption(TargetControlNameLB) THEN
+                Caption(CancelBindBT) = "Unbind"
+            ELSE
+                Caption(CancelBindBT) = "Cancel"
+            END IF
+
+            Caption(StatusBar) = "Defining control bindings"
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
-            Control(SetControlBinding).Left = 83: Control(SetControlBinding).Top = 192
+            Control(SetControlBinding).Left = 83: Control(SetControlBinding).Top = 169
             __UI_Focus = SourcePropertyList
             SetBindingDialogOpen = True
         CASE SwapBT
             SWAP Caption(SourceControlNameLB), Caption(TargetControlNameLB)
-        CASE BindBT, CancelBindBT
+            SWAP Control(SourcePropertyList).Value, Control(TargetPropertyList).Value
+        CASE BindBT
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(SetControlBinding).Left = -600: Control(SetControlBinding).Top = -600
             SetBindingDialogOpen = False
+            b$ = "BINDCONTROLS>"
+            b$ = b$ + MKL$(LEN(Caption(SourceControlNameLB))) + Caption(SourceControlNameLB)
+            b$ = b$ + MKL$(LEN(Caption(TargetControlNameLB))) + Caption(TargetControlNameLB)
+            b$ = b$ + MKL$(LEN(GetItem(SourcePropertyList, Control(SourcePropertyList).Value)))
+            b$ = b$ + GetItem(SourcePropertyList, Control(SourcePropertyList).Value)
+            b$ = b$ + MKL$(LEN(GetItem(TargetPropertyList, Control(TargetPropertyList).Value)))
+            b$ = b$ + GetItem(TargetPropertyList, Control(TargetPropertyList).Value)
+            b$ = b$ + "<END>"
+            Send Client, b$
+        CASE CancelBindBT
+            Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
+            Control(SetControlBinding).Left = -600: Control(SetControlBinding).Top = -600
+            SetBindingDialogOpen = False
+            IF Caption(CancelBindBT) = "Unbind" THEN
+                b$ = "UNBINDCONTROLS>"
+                b$ = b$ + Caption(SourceControlNameLB)
+                b$ = b$ + "<END>"
+                Send Client, b$
+            END IF
         CASE CloseZOrderingBT
             Caption(StatusBar) = "Ready."
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
@@ -927,7 +971,7 @@ SUB __UI_MouseEnter (id AS LONG)
         CASE ViewMenuShowPositionAndSize
             Caption(StatusBar) = "Toggles whether size and position indicators will be shown in the preview."
         CASE ViewMenuShowInvisibleControls
-            Caption(StatusBar) = "Toggles whether invisible controls (e.g. ContextMenus) will be shown in the preview."
+            Caption(StatusBar) = "Show or hide invisible controls and binding indicators in the preview dialog."
         CASE ViewMenuPreview
             Caption(StatusBar) = "Launches the preview window in case it's been closed accidentaly."
         CASE ViewMenuLoadedFonts
@@ -1543,6 +1587,20 @@ SUB __UI_BeforeUpdateDisplay
             CASE "SHOWINVISIBLECONTROLS"
                 __UI_ShowInvisibleControls = CVI(thisData$)
                 Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
+            CASE "SHOWBINDCONTROLDIALOG"
+                b$ = ReadSequential(thisData$, 4)
+                IF CVL(b$) = 0 THEN
+                    j = SelectItem(SourcePropertyList, "Value")
+                ELSE
+                    j = SelectItem(SourcePropertyList, ReadSequential(thisData$, CVL(b$)))
+                END IF
+                b$ = ReadSequential(thisData$, 4)
+                IF CVL(b$) = 0 THEN
+                    j = SelectItem(TargetPropertyList, "Value")
+                ELSE
+                    j = SelectItem(TargetPropertyList, ReadSequential(thisData$, CVL(b$)))
+                END IF
+                __UI_Click EditMenuBindControls
             CASE "ORIGINALIMAGEWIDTH"
                 OriginalImageWidth = CVI(thisData$)
             CASE "ORIGINALIMAGEHEIGHT"
@@ -1705,6 +1763,7 @@ SUB __UI_BeforeUpdateDisplay
 
     Control(EditMenuSetDefaultButton).Disabled = True
     Control(EditMenuSetDefaultButton).Value = False
+    Control(EditMenuBindControls).Disabled = True
     Control(EditMenuAllowMinMax).Disabled = True
     Control(EditMenuAllowMinMax).Value = False
     IF INSTR(LCASE$(PreviewControls(PreviewFormID).Name), "form") = 0 THEN
@@ -1787,6 +1846,8 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         END IF
     ELSEIF TotalSelected = 2 THEN
+        Control(EditMenuBindControls).Disabled = False
+
         Caption(ControlProperties) = "Control properties: (multiple selection)"
 
         Control(EditMenuCut).Disabled = False
@@ -3718,6 +3779,7 @@ SUB LoadPreview
     REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
+    REDIM PreviewBoundTo(0 TO CVL(b$)) AS STRING
     REDIM PreviewKeyCombos(0 TO CVL(b$)) AS STRING
     REDIM PreviewAnimatedGif(0 TO CVL(b$)) AS _BYTE
     REDIM PreviewAutoPlayGif(0 TO CVL(b$)) AS _BYTE
@@ -3890,6 +3952,12 @@ SUB LoadPreview
                     END IF
                 CASE -46 'Auto-play Gif
                     PreviewAutoPlayGif(Dummy) = True
+                CASE -47 'ControlIsSelected
+                    PreviewControls(Dummy).ControlIsSelected = True
+                CASE -48 'BoundTo
+                    b$ = ReadSequential$(FormData$, 2)
+                    b$ = ReadSequential$(FormData$, CVI(b$))
+                    PreviewBoundTo(Dummy) = b$
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024

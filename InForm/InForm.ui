@@ -456,8 +456,8 @@ SUB __UI_InternalMenus
     ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuBindControls", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
-    SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Bind selected controls-"
-    ToolTip(__UI_NewID) = "The default button can be triggered with Enter even if it doesn't have focus at run time."
+    SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Bind selected controls...-"
+    ToolTip(__UI_NewID) = "Binds a control's property to another control's property."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuConvertType", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to type-"
@@ -1159,6 +1159,18 @@ SUB __UI_UpdateDisplay
                 _DEST Control(Control(i).ParentID).Canvas
             ELSE
                 _DEST 0
+            END IF
+
+            IF i = __UI_FirstSelectedID AND Control(i).BoundTo > 0 AND __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
+                LINE (Control(i).Left - 5 + Control(Control(i).ParentID).Left, _
+                      Control(i).Top - 5 + Control(Control(i).ParentID).Top)- _
+                      STEP(Control(i).Width + 10, Control(i).Height + 10), _
+                      _RGB32(127, 105, 183, 50), BF
+
+                LINE (Control(Control(i).BoundTo).Left - 5 + Control(Control(Control(i).BoundTo).ParentID).Left, _
+                      Control(Control(i).BoundTo).Top - 5 + Control(Control(Control(i).BoundTo).ParentID).Top)- _
+                      STEP(Control(Control(i).BoundTo).Width + 10, Control(Control(i).BoundTo).Height + 10), _
+                      _RGB32(127, 105, 183, 50), BF
             END IF
 
             IF Control(i).Hidden = True AND __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
@@ -2032,6 +2044,7 @@ SUB __UI_EventDispatcher
                     Control(__UI_GetID("__UI_PreviewMenuImageOriginalSize")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNumericOnly")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuSetDefaultButton")).Hidden = True
+                    Control(__UI_GetID("__UI_PreviewMenuBindControls")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = False
                     Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = False
@@ -2113,7 +2126,19 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     END IF
+
+                    IF Control(__UI_FirstSelectedID).BoundTo > 0 THEN
+                        Control(__UI_GetID("__UI_PreviewMenuBindControls")).Hidden = False
+                        SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Edit binding...-"
+                    END IF
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
+                    Control(__UI_GetID("__UI_PreviewMenuBindControls")).Hidden = False
+                    IF Control(__UI_FirstSelectedID).BoundTo > 0 THEN
+                        SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Edit binding...-"
+                    ELSE
+                        SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Bind selected controls...-"
+                    END IF
+
                     Control(__UI_GetID("__UI_PreviewMenuNewMenuBar")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuNewContextMenu")).Hidden = True
                     Control(__UI_GetID("__UI_PreviewMenuShowInvisibleControls")).Hidden = True
@@ -2931,12 +2956,14 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE UCASE$("__UI_PreviewMenuNewMenuBar")
                                 __UI_KeyPress 224
-                            CASE UCASE$("__UI_PreviewMenuShowInvisibleControls")
-                                __UI_KeyPress 227
                             CASE UCASE$("__UI_PreviewMenuConvertType")
                                 __UI_KeyPress 225
                             CASE UCASE$("__UI_PreviewMenuNewContextMenu")
                                 __UI_KeyPress 226
+                            CASE UCASE$("__UI_PreviewMenuShowInvisibleControls")
+                                __UI_KeyPress 227
+                            CASE UCASE$("__UI_PreviewMenuBindControls")
+                                __UI_KeyPress 228
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
@@ -6856,10 +6883,10 @@ SUB __UI_Bind(id AS LONG, targetID AS LONG, __PropertyID$, __PropertyTargetID$)
 
 
     Control(id).BoundTo = targetID
-    Control(id).BoundProperty = __UI_PropertyEnum(PropertyID$)
+    Control(id).BoundProperty = __UI_PropertyEnum(PropertyID$, 0)
     IF Control(id).BoundProperty = 0 THEN Control(id).BoundTo = 0: EXIT SUB
     Control(targetID).BoundTo = id
-    Control(targetID).BoundProperty = __UI_PropertyEnum(PropertyTargetID$)
+    Control(targetID).BoundProperty = __UI_PropertyEnum(PropertyTargetID$, 0)
     IF Control(targetID).BoundProperty = 0 THEN
         Control(id).BoundTo = 0
         Control(targetID).BoundTo = 0
@@ -6867,37 +6894,57 @@ SUB __UI_Bind(id AS LONG, targetID AS LONG, __PropertyID$, __PropertyTargetID$)
     __UI_CheckBinding targetID 'acquire current value of targetID
 END SUB
 
-FUNCTION __UI_PropertyEnum& (__property$)
-    DIM property$
+FUNCTION __UI_PropertyEnum& (__property$, index AS LONG)
+    'If __property$ is passed:
+    '    - __UI_PropertyEnum& returns the index/hash value;
+    'If index is passed:
+    '    - __property$ returns the property name found and
+    '    - __UI_PropertyEnum& returns True (-1)
+
+    DIM property$, NextAt AS LONG
     STATIC EnumInitialized AS _BYTE, Enum$
 
-    IF LEN(_TRIM$(__property$)) = 0 THEN EXIT FUNCTION
+    IF LEN(_TRIM$(__property$)) = 0 AND index = 0 THEN EXIT FUNCTION
 
     IF NOT EnumInitialized THEN
         RESTORE EnumNames
         DO
             READ property$
             IF property$ = "*" THEN EXIT DO
-            Enum$ = Enum$ + "@" + UCASE$(property$)
+            Enum$ = Enum$ + "@" + property$
         LOOP
         Enum$ = Enum$ + "@"
         EnumInitialized = True
     END IF
 
-    property$ = "@" + _TRIM$(UCASE$(__property$)) + "@"
-    __UI_PropertyEnum& = INSTR(Enum$, property$)
+    IF index > 0 THEN
+        'return property name
+        IF index > LEN(Enum$) THEN EXIT FUNCTION
+        IF ASC(Enum$, index) <> 64 THEN EXIT FUNCTION
+        NextAt = INSTR(index + 1, Enum$, "@")
+        __property$ = MID$(Enum$, index + 1, NextAt - index - 1)
+        __UI_PropertyEnum& = -1
+    ELSE
+        'return index
+        property$ = "@" + _TRIM$(UCASE$(__property$)) + "@"
+        __UI_PropertyEnum& = INSTR(UCASE$(Enum$), property$)
+    END IF
     EXIT FUNCTION
 
     EnumNames:
-    DATA Top, Left, Width, Height, Bordersize, Padding, Value
-    DATA Min, Max, Interval, MinInterval, Stretch, HasBorder, ShowPercentage
-    DATA AutoScroll, AutoSize, PasswordField, Disabled, Hidden
+    DATA Top,Left,Width,Height,Bordersize,Padding,Value
+    DATA Min,Max,Interval,MinInterval,Stretch,HasBorder,ShowPercentage
+    DATA AutoScroll,AutoSize,PasswordMask,Disabled,Hidden
     DATA *
 END FUNCTION
 
-SUB __UI_UnBind(id AS LONG, targetID AS LONG)
-    Control(id).BoundTo = 0
-    Control(targetID).BoundTo = 0
+SUB __UI_UnBind(id AS LONG)
+    IF Control(id).BoundTo > 0 THEN
+        Control(Control(id).BoundTo).Redraw = True
+        Control(Control(id).BoundTo).BoundTo = 0
+        Control(id).BoundTo = 0
+        Control(id).Redraw = True
+    END IF
 END SUB
 
 SUB __UI_CheckBinding(id AS LONG)
@@ -6907,90 +6954,90 @@ SUB __UI_CheckBinding(id AS LONG)
     IF BindTarget = 0 THEN EXIT SUB
 
     IF Control(id).BoundProperty = Control(BindTarget).BoundProperty AND _
-       Control(id).BoundProperty = __UI_PropertyEnum&("Value") THEN
+       Control(id).BoundProperty = __UI_PropertyEnum&("Value", 0) THEN
         Control(id).Min = Control(BindTarget).Min
         Control(id).Max = Control(BindTarget).Max
     END IF
 
     SELECT CASE Control(id).BoundProperty
-        CASE __UI_PropertyEnum&("Top")
+        CASE __UI_PropertyEnum&("Top", 0)
             Temp = Control(id).Top
-        CASE __UI_PropertyEnum&("Left")
+        CASE __UI_PropertyEnum&("Left", 0)
             Temp = Control(id).Left
-        CASE __UI_PropertyEnum&("Width")
+        CASE __UI_PropertyEnum&("Width", 0)
             Temp = Control(id).Width
-        CASE __UI_PropertyEnum&("Height")
+        CASE __UI_PropertyEnum&("Height", 0)
             Temp = Control(id).Height
-        CASE __UI_PropertyEnum&("BorderSize")
+        CASE __UI_PropertyEnum&("BorderSize", 0)
             Temp = Control(id).BorderSize
-        CASE __UI_PropertyEnum&("Padding")
+        CASE __UI_PropertyEnum&("Padding", 0)
             Temp = Control(id).Padding
-        CASE __UI_PropertyEnum&("Value")
+        CASE __UI_PropertyEnum&("Value", 0)
             Temp = Control(id).Value
-        CASE __UI_PropertyEnum&("Min")
+        CASE __UI_PropertyEnum&("Min", 0)
             Temp = Control(id).Min
-        CASE __UI_PropertyEnum&("Max")
+        CASE __UI_PropertyEnum&("Max", 0)
             Temp = Control(id).Max
-        CASE __UI_PropertyEnum&("Interval")
+        CASE __UI_PropertyEnum&("Interval", 0)
             Temp = Control(id).Interval
-        CASE __UI_PropertyEnum&("Mininterval")
+        CASE __UI_PropertyEnum&("Mininterval", 0)
             Temp = Control(id).Mininterval
-        CASE __UI_PropertyEnum&("Stretch")
+        CASE __UI_PropertyEnum&("Stretch", 0)
             Temp = Control(id).Stretch
-        CASE __UI_PropertyEnum&("HasBorder")
+        CASE __UI_PropertyEnum&("HasBorder", 0)
             Temp = Control(id).HasBorder
-        CASE __UI_PropertyEnum&("ShowPercentage")
+        CASE __UI_PropertyEnum&("ShowPercentage", 0)
             Temp = Control(id).ShowPercentage
-        CASE __UI_PropertyEnum&("AutoScroll")
+        CASE __UI_PropertyEnum&("AutoScroll", 0)
             Temp = Control(id).AutoScroll
-        CASE __UI_PropertyEnum&("AutoSize")
+        CASE __UI_PropertyEnum&("AutoSize", 0)
             Temp = Control(id).AutoSize
-        CASE __UI_PropertyEnum&("PasswordField")
+        CASE __UI_PropertyEnum&("PasswordField", 0)
             Temp = Control(id).PasswordField
-        CASE __UI_PropertyEnum&("Disabled")
+        CASE __UI_PropertyEnum&("Disabled", 0)
             Temp = Control(id).Disabled
-        CASE __UI_PropertyEnum&("Hidden")
+        CASE __UI_PropertyEnum&("Hidden", 0)
             Temp = Control(id).Hidden
     END SELECT
 
     SELECT CASE Control(BindTarget).BoundProperty
-        CASE __UI_PropertyEnum&("Top")
+        CASE __UI_PropertyEnum&("Top", 0)
             Control(BindTarget).Top = Temp
-        CASE __UI_PropertyEnum&("Left")
+        CASE __UI_PropertyEnum&("Left", 0)
             Control(BindTarget).Left = Temp
-        CASE __UI_PropertyEnum&("Width")
+        CASE __UI_PropertyEnum&("Width", 0)
             Control(BindTarget).Width = Temp
-        CASE __UI_PropertyEnum&("Height")
+        CASE __UI_PropertyEnum&("Height", 0)
             Control(BindTarget).Height = Temp
-        CASE __UI_PropertyEnum&("BorderSize")
+        CASE __UI_PropertyEnum&("BorderSize", 0)
             Control(BindTarget).BorderSize = Temp
-        CASE __UI_PropertyEnum&("Padding")
+        CASE __UI_PropertyEnum&("Padding", 0)
             Control(BindTarget).Padding = Temp
-        CASE __UI_PropertyEnum&("Value")
+        CASE __UI_PropertyEnum&("Value", 0)
             Control(BindTarget).Value = Temp
-        CASE __UI_PropertyEnum&("Min")
+        CASE __UI_PropertyEnum&("Min", 0)
             Control(BindTarget).Min = Temp
-        CASE __UI_PropertyEnum&("Max")
+        CASE __UI_PropertyEnum&("Max", 0)
             Control(BindTarget).Max = Temp
-        CASE __UI_PropertyEnum&("Interval")
+        CASE __UI_PropertyEnum&("Interval", 0)
             Control(BindTarget).Interval = Temp
-        CASE __UI_PropertyEnum&("MinInterval")
+        CASE __UI_PropertyEnum&("MinInterval", 0)
             Control(BindTarget).MinInterval = Temp
-        CASE __UI_PropertyEnum&("Stretch")
+        CASE __UI_PropertyEnum&("Stretch", 0)
             Control(BindTarget).Stretch = Temp
-        CASE __UI_PropertyEnum&("HasBorder")
+        CASE __UI_PropertyEnum&("HasBorder", 0)
             Control(BindTarget).HasBorder = Temp
-        CASE __UI_PropertyEnum&("ShowPercentage")
+        CASE __UI_PropertyEnum&("ShowPercentage", 0)
             Control(BindTarget).ShowPercentage = Temp
-        CASE __UI_PropertyEnum&("AutoScroll")
+        CASE __UI_PropertyEnum&("AutoScroll", 0)
             Control(BindTarget).AutoScroll = Temp
-        CASE __UI_PropertyEnum&("AutoSize")
+        CASE __UI_PropertyEnum&("AutoSize", 0)
             Control(BindTarget).AutoSize = Temp
-        CASE __UI_PropertyEnum&("PasswordField")
+        CASE __UI_PropertyEnum&("PasswordField", 0)
             Control(BindTarget).PasswordField = Temp
-        CASE __UI_PropertyEnum&("Disabled")
+        CASE __UI_PropertyEnum&("Disabled", 0)
             Control(BindTarget).Disabled = Temp
-        CASE __UI_PropertyEnum&("Hidden")
+        CASE __UI_PropertyEnum&("Hidden", 0)
             Control(BindTarget).Hidden = Temp
     END SELECT
 

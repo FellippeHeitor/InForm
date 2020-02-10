@@ -47,6 +47,7 @@ CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL
 '   225 = Convert control type to alternative type
 '   226 = Add new ContextMenu control
 '   227 = Toggle __UI_ShowInvisibleControls
+'   228 = Bind/Unbind selected controls
 
 'SavePreview parameters:
 CONST InDisk = 1
@@ -329,6 +330,19 @@ SUB __UI_BeforeUpdateDisplay
                         StopGif i
                     END IF
                 NEXT
+            CASE "BINDCONTROLS"
+                DIM BindInfo$(1 TO 4)
+
+                FOR i = 1 TO 4
+                    TempValue = CVL(LEFT$(thisData$, 4))
+                    thisData$ = MID$(thisData$, 5)
+                    BindInfo$(i) = LEFT$(thisData$, TempValue)
+                    thisData$ = MID$(thisData$, TempValue + 1)
+                NEXT
+
+                __UI_Bind __UI_GetID(BindInfo$(1)), __UI_GetID(BindInfo$(2)), BindInfo$(3), BindInfo$(4)
+            CASE "UNBINDCONTROLS"
+                __UI_UnBind __UI_GetID(thisData$)
         END SELECT
     LOOP
 
@@ -1750,6 +1764,23 @@ SUB __UI_KeyPress (id AS LONG)
             SelectNewControl TempValue
         CASE 227 'Toggle __UI_ShowInvisibleControls
             __UI_ShowInvisibleControls = NOT __UI_ShowInvisibleControls
+        CASE 228 'Bind/unbind controls
+            DIM a$, b$, c$, found AS _BYTE
+            DIM i AS LONG, j AS LONG
+            FOR i = 1 TO UBOUND(Control)
+                IF Control(i).ControlIsSelected THEN
+                    j = j + 1
+                    IF j = 1 THEN
+                        found = __UI_PropertyEnum(a$, Control(i).BoundProperty)
+                        IF __UI_TotalSelectedControls = 1 THEN EXIT FOR
+                    ELSEIF j = 2 THEN
+                        found = __UI_PropertyEnum(b$, Control(i).BoundProperty)
+                        EXIT FOR
+                    END IF
+                END IF
+            NEXT
+            c$ = MKL$(LEN(a$)) + a$ + MKL$(LEN(b$)) + b$
+            SendData c$, "SHOWBINDCONTROLDIALOG"
     END SELECT
 END SUB
 
@@ -2674,6 +2705,8 @@ SUB LoadPreview (Destination AS _BYTE)
                     IF TempValue <= UBOUND(AutoPlayGif) THEN
                         AutoPlayGif(i) = True
                     END IF
+                CASE -47
+                    Control(TempValue).ControlIsSelected = True
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -3502,6 +3535,18 @@ SUB SavePreview (Destination AS _BYTE)
                         END IF
                     END IF
                 END IF
+                IF Control(i).ControlIsSelected THEN
+                    b$ = MKI$(-47)
+                    IF Disk THEN
+                        PUT #BinFileNum, , b$
+                    ELSE
+                        Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).BoundTo > 0 THEN
+                    b$ = MKI$(-48) + MKI$(LEN(RTRIM$(Control(Control(i).BoundTo).Name))) + RTRIM$(Control(Control(i).BoundTo).Name)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
             END IF
         NEXT
     NEXT
@@ -3558,10 +3603,6 @@ SUB SavePreview (Destination AS _BYTE)
 END SUB
 
 SUB SendData (b$, thisCommand$)
-    'DIM FileNum AS INTEGER
-    'FileNum = FREEFILE
-    'OPEN "InForm/UiEditor.dat" FOR BINARY AS #FileNum
-
     b$ = UCASE$(thisCommand$) + ">" + b$ + "<END>"
     PUT #Host, , b$
 END SUB
