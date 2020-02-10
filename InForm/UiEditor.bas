@@ -1578,10 +1578,18 @@ SUB __UI_BeforeUpdateDisplay
         SELECT CASE UCASE$(thisCommand$)
             CASE "TOTALSELECTEDCONTROLS"
                 TotalSelected = CVL(thisData$)
+                IF SetBindingDialogOpen THEN
+                    Caption(CancelBindBT) = "Cancel"
+                    __UI_Click CancelBindBT
+                END IF
             CASE "FORMID"
                 PreviewFormID = CVL(thisData$)
             CASE "FIRSTSELECTED"
                 FirstSelected = CVL(thisData$)
+                IF SetBindingDialogOpen THEN
+                    Caption(CancelBindBT) = "Cancel"
+                    __UI_Click CancelBindBT
+                END IF
             CASE "DEFAULTBUTTONID"
                 PreviewDefaultButtonID = CVL(thisData$)
             CASE "SHOWINVISIBLECONTROLS"
