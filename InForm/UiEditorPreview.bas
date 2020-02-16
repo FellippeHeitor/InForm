@@ -1765,22 +1765,22 @@ SUB __UI_KeyPress (id AS LONG)
         CASE 227 'Toggle __UI_ShowInvisibleControls
             __UI_ShowInvisibleControls = NOT __UI_ShowInvisibleControls
         CASE 228 'Bind/unbind controls
-            DIM a$, b$, c$, found AS _BYTE
-            DIM i AS LONG, j AS LONG
-            FOR i = 1 TO UBOUND(Control)
-                IF Control(i).ControlIsSelected THEN
-                    j = j + 1
-                    IF j = 1 THEN
-                        found = __UI_PropertyEnum(a$, Control(i).BoundProperty)
-                        IF __UI_TotalSelectedControls = 1 THEN EXIT FOR
-                    ELSEIF j = 2 THEN
-                        found = __UI_PropertyEnum(b$, Control(i).BoundProperty)
-                        EXIT FOR
-                    END IF
-                END IF
-            NEXT
-            c$ = MKL$(LEN(a$)) + a$ + MKL$(LEN(b$)) + b$
-            SendData c$, "SHOWBINDCONTROLDIALOG"
+            'DIM a$, b$, c$, found AS _BYTE
+            'DIM i AS LONG, j AS LONG
+            'FOR i = 1 TO UBOUND(Control)
+            '    IF Control(i).ControlIsSelected THEN
+            '        j = j + 1
+            '        IF j = 1 THEN
+            '            found = __UI_PropertyEnum(a$, Control(i).BoundProperty)
+            '            IF __UI_TotalSelectedControls = 1 THEN EXIT FOR
+            '        ELSEIF j = 2 THEN
+            '            found = __UI_PropertyEnum(b$, Control(i).BoundProperty)
+            '            EXIT FOR
+            '        END IF
+            '    END IF
+            'NEXT
+            'c$ = MKL$(LEN(a$)) + a$ + MKL$(LEN(b$)) + b$
+            SendData "", "SHOWBINDCONTROLDIALOG"
     END SELECT
 END SUB
 
@@ -3075,6 +3075,30 @@ SUB LoadPreviewText
                     'New Control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL"
                     EXIT DO
+                ELSEIF LEFT$(b$, 10) = "__UI_Bind " THEN
+                    ASC(b$, 10) = 40 'Changes first space into "(" for parsing
+                    DIM SourceControl$, TargetControl$
+                    DIM SourceProperty$, TargetProperty$
+                    DIM SourceSet AS _BYTE, TargetSet AS _BYTE
+
+                    SourceControl$ = nextParameter$(b$)
+                    TargetControl$ = nextParameter$(b$)
+                    SourceProperty$ = nextParameter$(b$)
+                    TargetProperty$ = nextParameter$(b$)
+
+                    SourceSet = False: TargetSet = False
+                    FOR i = 1 TO UBOUND(Control)
+                        IF RTRIM$(Control(i).Name) = SourceControl$ THEN
+                            Control(i).BoundTo = __UI_GetID(TargetControl$)
+                            Control(i).BoundProperty = __UI_PropertyEnum(SourceProperty$, 0)
+                            SourceSet = True
+                        ELSEIF RTRIM$(Control(i).Name) = TargetControl$ THEN
+                            Control(i).BoundTo = __UI_GetID(SourceControl$)
+                            Control(i).BoundProperty = __UI_PropertyEnum(TargetProperty$, 0)
+                            TargetSet = True
+                        END IF
+                        IF SourceSet AND TargetSet THEN EXIT FOR
+                    NEXT
                 ELSEIF b$ = "END SUB" THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "END OF FILE"
                     __UI_EOF = True
@@ -3165,18 +3189,23 @@ FUNCTION nextParameter$ (__text$)
 END FUNCTION
 
 FUNCTION removeQuotation$ (__text$)
-    DIM text$
+    DIM text$, firstQ AS LONG, nextQ AS LONG
     text$ = __text$
-    IF LEFT$(text$, 1) = CHR$(34) THEN text$ = MID$(text$, 2)
-    IF RIGHT$(text$, 1) = CHR$(34) THEN text$ = LEFT$(text$, LEN(text$) - 1)
-    removeQuotation$ = text$
+
+    firstQ = INSTR(text$, CHR$(34))
+    IF firstQ = 0 THEN removeQuotation$ = text$: EXIT FUNCTION
+
+    nextQ = INSTR(firstQ + 1, text$, CHR$(34))
+    IF nextQ = 0 THEN removeQuotation$ = MID$(text$, firstQ + 1): EXIT FUNCTION
+
+    removeQuotation$ = MID$(text$, firstQ + 1, nextQ - firstQ - 1)
 END FUNCTION
 
 SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$, TempValue AS LONG
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
     DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, UndoBuffer AS _BYTE
-    DIM PreviewData$
+    DIM PreviewData$, Dummy AS LONG
 
     CONST Debug = False
 
@@ -3545,6 +3574,8 @@ SUB SavePreview (Destination AS _BYTE)
                 END IF
                 IF Control(i).BoundTo > 0 THEN
                     b$ = MKI$(-48) + MKI$(LEN(RTRIM$(Control(Control(i).BoundTo).Name))) + RTRIM$(Control(Control(i).BoundTo).Name)
+                    Dummy = __UI_PropertyEnum&(a$, Control(i).BoundProperty)
+                    b$ = b$ + MKI$(LEN(a$)) + a$
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
             END IF

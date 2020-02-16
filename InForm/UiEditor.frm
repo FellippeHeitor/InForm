@@ -790,9 +790,9 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "TargetControlName"
     Control(__UI_NewID).VAlign = __UI_Middle
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "SwapBT", 160, 23, 19, 220, __UI_GetID("SetControlBinding"))
-    SetCaption __UI_NewID, "Swap source and target"
-    Control(__UI_NewID).CanHaveFocus = True
+    '__UI_NewID = __UI_NewControl(__UI_Type_Button, "SwapBT", 160, 23, 19, 220, __UI_GetID("SetControlBinding"))
+    'SetCaption __UI_NewID, "Swap source and target"
+    'Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "SourcePropertyList", 380, 23, 35, 71, __UI_GetID("SetControlBinding"))
     AddItem __UI_NewID, "Top"
@@ -1018,7 +1018,7 @@ SUB __UI_AssignIDs
     SourceControlNameLB = __UI_GetID("SourceControlNameLB")
     TargetControlLB = __UI_GetID("TargetControlLB")
     TargetControlNameLB = __UI_GetID("TargetControlNameLB")
-    SwapBT = __UI_GetID("SwapBT")
+    'SwapBT = __UI_GetID("SwapBT")
     SourcePropertyLB = __UI_GetID("SourcePropertyLB")
     SourcePropertyList = __UI_GetID("SourcePropertyList")
     TargetPropertyLB = __UI_GetID("TargetPropertyLB")

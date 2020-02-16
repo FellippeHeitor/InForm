@@ -6953,11 +6953,11 @@ SUB __UI_CheckBinding(id AS LONG)
     BindTarget = Control(id).BoundTo
     IF BindTarget = 0 THEN EXIT SUB
 
-    IF Control(id).BoundProperty = Control(BindTarget).BoundProperty AND _
-       Control(id).BoundProperty = __UI_PropertyEnum&("Value", 0) THEN
-        Control(id).Min = Control(BindTarget).Min
-        Control(id).Max = Control(BindTarget).Max
-    END IF
+    'IF Control(id).BoundProperty = Control(BindTarget).BoundProperty AND _
+    '   Control(id).BoundProperty = __UI_PropertyEnum&("Value", 0) THEN
+    '    Control(id).Min = Control(BindTarget).Min
+    '    Control(id).Max = Control(BindTarget).Max
+    'END IF
 
     SELECT CASE Control(id).BoundProperty
         CASE __UI_PropertyEnum&("Top", 0)

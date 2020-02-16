@@ -107,7 +107,7 @@ DIM SHARED SourceControlLB AS LONG
 DIM SHARED SourceControlNameLB AS LONG
 DIM SHARED TargetControlLB AS LONG
 DIM SHARED TargetControlNameLB AS LONG
-DIM SHARED SwapBT AS LONG
+'DIM SHARED SwapBT AS LONG
 DIM SHARED SourcePropertyLB AS LONG
 DIM SHARED SourcePropertyList AS LONG
 DIM SHARED TargetPropertyLB AS LONG
@@ -189,6 +189,7 @@ REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED PreviewContextMenu(0) AS STRING
 REDIM SHARED PreviewBoundTo(0) AS STRING
+REDIM SHARED PreviewBoundProperty(0) AS STRING
 REDIM SHARED PreviewKeyCombos(0) AS STRING
 REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
 REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
@@ -604,7 +605,7 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
         CASE EditMenuBindControls
-            'Get controls' names
+            'Get controls' names and bound properties
             DIM CurrentSource$
             j = 0
             FOR i = 1 TO UBOUND(PreviewControls)
@@ -613,17 +614,29 @@ SUB __UI_Click (id AS LONG)
                     IF j = 1 THEN
                         Caption(SourceControlNameLB) = RTRIM$(PreviewControls(i).Name)
                         CurrentSource$ = PreviewBoundTo(i)
+                        IF LEN(PreviewBoundProperty(i)) = 0 THEN
+                            Dummy = SelectItem(SourcePropertyList, "Value")
+                        ELSE
+                            Dummy = SelectItem(SourcePropertyList, PreviewBoundProperty(i))
+                        END IF
                     END IF
                     IF j = 2 THEN
                         Caption(TargetControlNameLB) = RTRIM$(PreviewControls(i).Name)
+                        IF LEN(PreviewBoundProperty(i)) = 0 THEN
+                            Dummy = SelectItem(TargetPropertyList, "Value")
+                        ELSE
+                            Dummy = SelectItem(TargetPropertyList, PreviewBoundProperty(i))
+                        END IF
                         EXIT FOR
                     END IF
                 END IF
             NEXT
 
             IF CurrentSource$ = Caption(TargetControlNameLB) THEN
+                Caption(BindBT) = "Rebind"
                 Caption(CancelBindBT) = "Unbind"
             ELSE
+                Caption(BindBT) = "Bind"
                 Caption(CancelBindBT) = "Cancel"
             END IF
 
@@ -632,9 +645,9 @@ SUB __UI_Click (id AS LONG)
             Control(SetControlBinding).Left = 83: Control(SetControlBinding).Top = 169
             __UI_Focus = SourcePropertyList
             SetBindingDialogOpen = True
-        CASE SwapBT
-            SWAP Caption(SourceControlNameLB), Caption(TargetControlNameLB)
-            SWAP Control(SourcePropertyList).Value, Control(TargetPropertyList).Value
+            'CASE SwapBT
+            '    SWAP Caption(SourceControlNameLB), Caption(TargetControlNameLB)
+            '    SWAP Control(SourcePropertyList).Value, Control(TargetPropertyList).Value
         CASE BindBT
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(SetControlBinding).Left = -600: Control(SetControlBinding).Top = -600
@@ -1596,18 +1609,6 @@ SUB __UI_BeforeUpdateDisplay
                 __UI_ShowInvisibleControls = CVI(thisData$)
                 Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
             CASE "SHOWBINDCONTROLDIALOG"
-                b$ = ReadSequential(thisData$, 4)
-                IF CVL(b$) = 0 THEN
-                    j = SelectItem(SourcePropertyList, "Value")
-                ELSE
-                    j = SelectItem(SourcePropertyList, ReadSequential(thisData$, CVL(b$)))
-                END IF
-                b$ = ReadSequential(thisData$, 4)
-                IF CVL(b$) = 0 THEN
-                    j = SelectItem(TargetPropertyList, "Value")
-                ELSE
-                    j = SelectItem(TargetPropertyList, ReadSequential(thisData$, CVL(b$)))
-                END IF
                 __UI_Click EditMenuBindControls
             CASE "ORIGINALIMAGEWIDTH"
                 OriginalImageWidth = CVI(thisData$)
@@ -3778,16 +3779,17 @@ SUB LoadPreview
 
     b$ = ReadSequential$(FormData$, 4)
 
-    REDIM PreviewCaptions(1 TO CVL(b$)) AS STRING
-    REDIM PreviewTexts(1 TO CVL(b$)) AS STRING
-    REDIM PreviewMasks(1 TO CVL(b$)) AS STRING
-    REDIM PreviewTips(1 TO CVL(b$)) AS STRING
-    REDIM PreviewFonts(1 TO CVL(b$)) AS STRING
-    REDIM PreviewActualFonts(1 TO CVL(b$)) AS STRING
+    REDIM PreviewCaptions(0 TO CVL(b$)) AS STRING
+    REDIM PreviewTexts(0 TO CVL(b$)) AS STRING
+    REDIM PreviewMasks(0 TO CVL(b$)) AS STRING
+    REDIM PreviewTips(0 TO CVL(b$)) AS STRING
+    REDIM PreviewFonts(0 TO CVL(b$)) AS STRING
+    REDIM PreviewActualFonts(0 TO CVL(b$)) AS STRING
     REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
     REDIM PreviewBoundTo(0 TO CVL(b$)) AS STRING
+    REDIM PreviewBoundProperty(0 TO CVL(b$)) AS STRING
     REDIM PreviewKeyCombos(0 TO CVL(b$)) AS STRING
     REDIM PreviewAnimatedGif(0 TO CVL(b$)) AS _BYTE
     REDIM PreviewAutoPlayGif(0 TO CVL(b$)) AS _BYTE
@@ -3966,6 +3968,9 @@ SUB LoadPreview
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewBoundTo(Dummy) = b$
+                    b$ = ReadSequential$(FormData$, 2)
+                    b$ = ReadSequential$(FormData$, CVI(b$))
+                    PreviewBoundProperty(Dummy) = b$
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -4146,7 +4151,7 @@ SUB CheckPreview
 END SUB
 
 SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
-    DIM BaseOutputFileName AS STRING
+    DIM BaseOutputFileName AS STRING, j AS LONG
     DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
     DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
@@ -4484,6 +4489,31 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             EndOfThisPass:
         NEXT
     NEXT ThisPass
+
+    'Save control bindings
+    DIM BindingsSection AS _BYTE
+    DIM BindingDone(0 TO UBOUND(PreviewControls)) AS _BYTE
+    FOR i = 1 TO UBOUND(PreviewControls)
+        IF LEN(PreviewBoundTo(i)) > 0 AND BindingDone(i) = False THEN
+            IF BindingsSection = False THEN
+                PRINT #TextFileNum, "    'Control bindings:"
+                BindingsSection = True
+            END IF
+            BindingDone(i) = True
+            PRINT #TextFileNum, "    __UI_Bind __UI_GetID(" + CHR$(34);
+            PRINT #TextFileNum, RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + "), ";
+            PRINT #TextFileNum, "__UI_GetID(" + CHR$(34);
+            PRINT #TextFileNum, PreviewBoundTo(i) + CHR$(34) + "), ";
+            PRINT #TextFileNum, CHR$(34) + PreviewBoundProperty(i) + CHR$(34) + ", ";
+            FOR j = 1 TO UBOUND(PreviewControls)
+                IF PreviewBoundTo(j) = RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) THEN
+                    BindingDone(j) = True
+                    PRINT #TextFileNum, CHR$(34) + PreviewBoundProperty(j) + CHR$(34)
+                    EXIT FOR
+                END IF
+            NEXT
+        END IF
+    NEXT
 
     PRINT #TextFileNum, "END SUB"
     PRINT #TextFileNum,
