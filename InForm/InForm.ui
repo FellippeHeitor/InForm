@@ -317,6 +317,7 @@ __UI_Type(__UI_Type_ToggleSwitch).Name = "ToggleSwitch"
 __UI_Type(__UI_Type_ToggleSwitch).DefaultWidth = 40
 __UI_Type(__UI_Type_ToggleSwitch).DefaultHeight = 17
 __UI_Type(__UI_Type_ToggleSwitch).TurnsInto = __UI_Type_CheckBox
+__UI_Type(__UI_Type_ContextMenu).RestrictResize = __UI_CantResize
 '--------------------------------------------------------------
 
 __UI_RestoreFKeys
@@ -5658,9 +5659,11 @@ SUB AddItem (WhichListBox AS LONG, TempItem$)
     ThisID = WhichListBox
     IF Control(ThisID).Type <> __UI_Type_ListBox AND Control(ThisID).Type <> __UI_Type_DropdownList THEN EXIT SUB
 
-    Item$ = Replace$(RestoreCHR$(TempItem$), CHR$(13), CHR$(10), False, 0)
+    Item$ = Replace$(RestoreCHR$(TempItem$), CHR$(10), CHR$(13), False, 0)
 
-    Text(ThisID) = Text(ThisID) + Item$ + CHR$(13)
+    IF LEN(Text(ThisID)) > 0 AND RIGHT$(Text(ThisID), 1) <> CHR$(10) THEN Text(ThisID) = Text(ThisID) + CHR$(10)
+
+    Text(ThisID) = Text(ThisID) + Item$ + CHR$(10)
     Control(ThisID).Max = Control(ThisID).Max + 1
 
     IF Control(ThisID).AutoScroll THEN
@@ -5692,7 +5695,7 @@ SUB RemoveItem (WhichListBox AS LONG, ItemToRemove AS INTEGER)
     ThisItem% = 0
     DO WHILE LEN(TempText$)
         ThisItem% = ThisItem% + 1
-        FindLF& = INSTR(TempText$, CHR$(13))
+        FindLF& = INSTR(TempText$, CHR$(10))
         IF FindLF& THEN
             TempCaption$ = LEFT$(TempText$, FindLF& - 1)
             TempText$ = MID$(TempText$, FindLF& + 1)
@@ -5749,7 +5752,7 @@ SUB ReplaceItem (WhichListBox AS LONG, ItemToReplace AS INTEGER, NewText$)
     ThisItem% = 0
     DO WHILE LEN(TempText$)
         ThisItem% = ThisItem% + 1
-        FindLF& = INSTR(TempText$, CHR$(13))
+        FindLF& = INSTR(TempText$, CHR$(10))
         IF FindLF& THEN
             TempCaption$ = LEFT$(TempText$, FindLF& - 1)
             TempText$ = MID$(TempText$, FindLF& + 1)
@@ -5759,9 +5762,9 @@ SUB ReplaceItem (WhichListBox AS LONG, ItemToReplace AS INTEGER, NewText$)
         END IF
 
         IF ThisItem% <> ItemToReplace THEN
-            Text(This.ID) = Text(This.ID) + TempCaption$ + CHR$(13)
+            Text(This.ID) = Text(This.ID) + TempCaption$ + CHR$(10)
         ELSE
-            Text(This.ID) = Text(This.ID) + NewText$ + CHR$(13)
+            Text(This.ID) = Text(This.ID) + NewText$ + CHR$(10)
         END IF
     LOOP
     Control(This.ID).Redraw = True
@@ -5797,7 +5800,7 @@ FUNCTION GetItem$ (id AS LONG, Item AS LONG)
 
     This = Control(id)
 
-    FindLF = INSTR(Text(id), CHR$(13))
+    FindLF = INSTR(Text(id), CHR$(10))
     IF Item = 1 THEN
         IF FindLF = 0 THEN
             GetItem$ = Text(id)
@@ -5813,7 +5816,7 @@ FUNCTION GetItem$ (id AS LONG, Item AS LONG)
     ThisItem = 2
     DO
         LastLF = FindLF
-        FindLF = INSTR(LastLF + 1, Text(id), CHR$(13))
+        FindLF = INSTR(LastLF + 1, Text(id), CHR$(10))
         IF FindLF > 0 THEN
             IF ThisItem = Item THEN
                 GetItem$ = MID$(Text(id), LastLF + 1, FindLF - LastLF - 1)
@@ -5839,7 +5842,7 @@ SUB __UI_ListBoxSearchItem (This AS __UI_ControlTYPE)
     TempText$ = Text(This.ID)
     DO WHILE LEN(TempText$)
         ThisItem% = ThisItem% + 1
-        FindLF& = INSTR(TempText$, CHR$(13))
+        FindLF& = INSTR(TempText$, CHR$(10))
         IF FindLF& THEN
             TempCaption$ = LEFT$(TempText$, FindLF& - 1)
             TempText$ = MID$(TempText$, FindLF& + 1)
@@ -8012,6 +8015,10 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             This.PreviousValue = This.Value
         END IF
         This.PreviousInputViewStart = This.InputViewStart
+        IF INSTR(Text(This.ID), CHR$(13) + CHR$(10)) > 0 THEN
+            Text(This.ID) = Replace(Text(This.ID), CHR$(13) + CHR$(10), CHR$(10), 0, 0)
+        END IF
+
         __UI_TempTexts(This.ID) = Text(This.ID)
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
@@ -8056,7 +8063,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             ThisItem% = 0
             DO WHILE LEN(TempText$)
                 ThisItem% = ThisItem% + 1
-                FindLF& = INSTR(TempText$, CHR$(13))
+                FindLF& = INSTR(TempText$, CHR$(10))
                 IF FindLF& THEN
                     TempCaption$ = LEFT$(TempText$, FindLF& - 1)
                     TempText$ = MID$(TempText$, FindLF& + 1)
@@ -8096,6 +8103,9 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                     END SELECT
                 END IF
             LOOP
+
+            This.Max = ThisItem%
+
             IF This.LastVisibleItem < LastVisibleItem THEN This.LastVisibleItem = LastVisibleItem
 
             IF This.Max > This.LastVisibleItem THEN
