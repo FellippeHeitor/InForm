@@ -5000,7 +5000,7 @@ END SUB
 'adapted from ide_methods.bas (QB64):
 FUNCTION idezfilelist$ (path$, method, depth%, TotalFound AS INTEGER) 'method0=*.frm and *.frmbin, method1=*.*
     DIM sep AS STRING * 1, filelist$, a$
-    sep = CHR$(13)
+    sep = CHR$(10)
 
     TotalFound = 0
     $IF WIN THEN
@@ -5059,7 +5059,7 @@ END FUNCTION
 FUNCTION idezpathlist$ (path$, TotalFound%)
     DIM sep AS STRING * 1, a$, pathlist$, c AS INTEGER, x AS INTEGER, b$
     DIM i AS INTEGER
-    sep = CHR$(13)
+    sep = CHR$(10)
 
     TotalFound% = 0
     $IF WIN THEN

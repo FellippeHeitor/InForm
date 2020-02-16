@@ -75,9 +75,13 @@ TYPE __UI_ControlTYPE
     Value AS _FLOAT
     PreviousValue AS _FLOAT
     Min AS _FLOAT
+    PrevMin AS _FLOAT
     Max AS _FLOAT
+    PrevMax AS _FLOAT
     Interval AS _FLOAT
+    PrevInterval AS _FLOAT
     MinInterval AS _FLOAT
+    PrevMinInterval AS _FLOAT
     HotKey AS INTEGER
     HotKeyOffset AS INTEGER
     HotKeyPosition AS INTEGER
@@ -7659,7 +7663,9 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
     IF This.Disabled THEN TempControlState = 5
 
     IF This.Redraw OR This.ControlState <> TempControlState OR This.FocusState <> (__UI_Focus = This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID _
-       OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
+       OR __UI_ForceRedraw OR This.PreviousFont <> This.Font OR _
+       This.PrevMin <> This.Min OR This.PrevMax <> This.Max OR _
+       This.PrevInterval <> This.Interval OR This.PrevMinInterval <> This.MinInterval THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.Redraw = False
         This.ControlState = TempControlState
@@ -7669,6 +7675,10 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
             __UI_StateHasChanged = True
             This.PreviousValue = This.Value
         END IF
+        This.PrevMin = This.Min
+        This.PrevMax = This.Max
+        This.PrevInterval = This.Interval
+        This.PrevMinInterval = This.MinInterval
         IF This.ParentID THEN Control(This.ParentID).ChildrenRedrawn = True
         This.PreviousParentID = This.ParentID
 
@@ -8073,7 +8083,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                 END IF
                 IF ThisItem% >= This.InputViewStart THEN
                     ThisItemTop% = ((ThisItem% - This.InputViewStart + 1) * ItemHeight - ItemHeight) + CaptionIndent
-                    IF ThisItemTop% + ItemHeight > This.Height THEN EXIT DO
+                    IF ThisItemTop% + ItemHeight > This.Height THEN _CONTINUE
                     LastVisibleItem = LastVisibleItem + 1
 
                     IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
@@ -8107,6 +8117,8 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
             This.Max = ThisItem%
 
             IF This.LastVisibleItem < LastVisibleItem THEN This.LastVisibleItem = LastVisibleItem
+            IF This.InputViewStart > This.Max THEN This.InputViewStart = 0
+            IF This.Value > This.Max THEN This.Value = 0
 
             IF This.Max > This.LastVisibleItem THEN
                 This.HasVScrollbar = True
@@ -8317,7 +8329,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
                 ThisItem% = 0
                 DO WHILE LEN(TempText$)
                     ThisItem% = ThisItem% + 1
-                    FindLF& = INSTR(TempText$, CHR$(13))
+                    FindLF& = INSTR(TempText$, CHR$(10))
                     IF FindLF& THEN
                         TempCaption$ = LEFT$(TempText$, FindLF& - 1)
                         TempText$ = MID$(TempText$, FindLF& + 1)
