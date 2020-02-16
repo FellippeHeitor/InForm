@@ -231,7 +231,7 @@ $IF WIN THEN
         FUNCTION SetForegroundWindow& (BYVAL hWnd AS LONG)
     END DECLARE
 
-    ''Registry routines taken from the Wiki: http://www.qb64.net/wiki/index.php/Windows_Libraries#Registered_Fonts
+    ''Registry routines taken from the Wiki: http://www.qb64.org/wiki/Windows_Libraries#Registered_Fonts
     ''Code courtesy of Michael Calkins
     ''winreg.h
     CONST HKEY_CLASSES_ROOT = &H80000000~&
@@ -1185,6 +1185,12 @@ SUB SelectFontInList (FontSetup$)
                 EXIT SUB
             END IF
         NEXT
+    ELSE
+        IF thisSize% = 8 OR thisSize% = 16 THEN
+            i = SelectItem(FontList, "Built-in _FONT" + STR$(thisSize%))
+            BypassShowFontList = False
+            EXIT SUB
+        END IF
     END IF
 
     'If this line is reached, the currently open form
@@ -3480,6 +3486,9 @@ SUB __UI_ValueChanged (id AS LONG)
             END IF
             SendData b$, 41
         CASE FontList, FontSizeList
+            IF id = FontList AND Control(FontList).Value < 3 THEN
+                Control(FontSizeList).Value = (Control(FontList).Value * 8) - 7
+            END IF
             b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
             b$ = MKL$(LEN(b$)) + b$
             SendData b$, 8
@@ -4720,9 +4729,13 @@ $IF WIN THEN
         bData = SPACE$(&H7FFF) 'arbitrary
 
         HasFontList = True
+        AddItem FontList, "Built-in _FONT 8"
+        AddItem FontList, "Built-in _FONT 16"
+        TotalFontsFound = 2
+
         l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
         IF l THEN
-            HasFontList = False
+            'HasFontList = False
             EXIT SUB
         ELSE
             dwIndex = 0
@@ -4732,7 +4745,7 @@ $IF WIN THEN
                 l = RegEnumValueA(hKey, dwIndex, _OFFSET(Value), _OFFSET(numTchars), 0, _OFFSET(dwType), _OFFSET(bData), _OFFSET(numBytes))
                 IF l THEN
                     IF l <> ERROR_NO_MORE_ITEMS THEN
-                        HasFontList = False
+                        'HasFontList = False
                         EXIT SUB
                     END IF
                     EXIT DO
@@ -4845,9 +4858,13 @@ $ELSE
     END IF
     NEXT
 
+    TotalFontsFound = TotalFontsFound + 2
+    Text(FontList) = "Built-in _FONT 8" + CHR$(10) + "Built-in _FONT 16" + CHR$(10) + Text(FontList)
+    Control(FontList).Max = TotalFontsFound
+
     REDIM FontFile(TotalFontsFound) AS STRING
     IF INSTR(_OS$, "MAC") = 0 THEN FontPath$ = "" ELSE FontPath$ = FontPath$ + "/"
-    FOR i = 1 TO TotalFontsFound
+    FOR i = 3 TO TotalFontsFound
     ThisFont$ = GetItem(FontList, i)
     FontFile(i) = FontPath$ + GetItem(FontList, i)
     ThisFont$ = LEFT$(ThisFont$, LEN(ThisFont$) - 4) 'Remove extension from list
