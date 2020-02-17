@@ -7667,10 +7667,8 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
                     IF ThisLine% = 1 THEN CaptionLeftFirstLine = CaptionLeft: CaptionTopFirstLine = TextTop%
                 LOOP
             ELSE
-                TextTop% = __UI_DefaultCaptionIndent
-                CaptionLeft = (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2)
-                CaptionLeftFirstLine = CaptionLeft
-                __UI_PrintString CaptionLeft, TextTop%, TempCaption$
+                Temp& = __UI_PrintWidth(TempCaption$)
+                __UI_PrintString This.Width \ 2 - Temp& \ 2, This.Height \ 2 - uspacing& \ 2 + 1, TempCaption$
             END IF
         END IF
         '------
