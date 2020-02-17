@@ -200,7 +200,7 @@ REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
 DIM SHARED HasFontList AS _BYTE, ShowFontList AS _BYTE
-DIM SHARED BypassShowFontList AS _BYTE
+DIM SHARED AttemptToShowFontList AS _BYTE, BypassShowFontList AS _BYTE
 DIM SHARED TotalFontsFound AS LONG
 REDIM SHARED FontFile(0) AS STRING
 
@@ -908,6 +908,7 @@ SUB __UI_Click (id AS LONG)
             Control(id).Value = __UI_ShowInvisibleControls
             SaveSettings
         CASE FontSwitchMenuSwitch, FontLB, FontListLB
+            AttemptToShowFontList = (ShowFontList = False OR BypassShowFontList = True)
             ShowFontList = NOT ShowFontList
             IF id <> FontSwitchMenuSwitch THEN __UI_MouseEnter FontLB
             SaveSettings
@@ -1182,6 +1183,7 @@ SUB SelectFontInList (FontSetup$)
             IF UCASE$(RIGHT$(FontFile(i), LEN(thisFile$))) = thisFile$ THEN
                 Control(FontList).Value = i
                 BypassShowFontList = False
+                AttemptToShowFontList = False
                 EXIT SUB
             END IF
         NEXT
@@ -1189,6 +1191,7 @@ SUB SelectFontInList (FontSetup$)
         IF thisSize% = 8 OR thisSize% = 16 THEN
             i = SelectItem(FontList, "Built-in _FONT" + STR$(thisSize%))
             BypassShowFontList = False
+            AttemptToShowFontList = False
             EXIT SUB
         END IF
     END IF
@@ -1197,6 +1200,17 @@ SUB SelectFontInList (FontSetup$)
     'uses a non-system font. In that case we must
     'disable the list.
     BypassShowFontList = True
+    IF AttemptToShowFontList THEN
+        AttemptToShowFontList = False
+        i = MessageBox("The current font isn't a system font.\nReset this control to the built-in font?", "", MsgBox_YesNo + MsgBox_Question)
+        IF i = MsgBox_Yes THEN
+            thisFile$ = ",16"
+            thisFile$ = MKL$(LEN(thisFile$)) + thisFile$
+            SendData thisFile$, 8
+            BypassShowFontList = False
+            ShowFontList = True
+        END IF
+    END IF
 END SUB
 
 SUB LoseFocus
@@ -3487,6 +3501,7 @@ SUB __UI_ValueChanged (id AS LONG)
             SendData b$, 41
         CASE FontList, FontSizeList
             IF id = FontList AND Control(FontList).Value < 3 THEN
+                'First item is _FONT 8, second item is _FONT 16
                 Control(FontSizeList).Value = (Control(FontList).Value * 8) - 7
             END IF
             b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
