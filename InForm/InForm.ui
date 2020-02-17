@@ -7557,7 +7557,7 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
     DIM PrevDest AS LONG, Temp&
-    DIM TempCaption$
+    DIM TempCaption$, TempLine$
 
     STATIC ControlImage_Track AS LONG, ControlImage_Chunk AS LONG
 
@@ -7613,15 +7613,11 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
             _PUTIMAGE (4, 3)-STEP(((This.Width - 9) / This.Max) * This.Value, This.Height - 7), ControlImage_Chunk
         END IF
 
-        IF This.ShowPercentage AND LEN(Caption(This.ID)) > 0 THEN
+        IF This.ShowPercentage THEN
             DIM ProgressString$, ReplaceCode%
             ProgressString$ = LTRIM$(STR$(FIX((This.Value / This.Max) * 100))) + "%"
             IF LEN(Caption(This.ID)) THEN
-                TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
-                ReplaceCode% = INSTR(TempCaption$, "\#")
-                IF ReplaceCode% THEN
-                    TempCaption$ = LEFT$(TempCaption$, ReplaceCode% - 1) + ProgressString$ + MID$(TempCaption$, ReplaceCode% + 2)
-                END IF
+                TempCaption$ = Replace$(Caption(This.ID), "\#", ProgressString$, 0, 0)
             ELSE
                 TempCaption$ = ProgressString$
             END IF
@@ -7632,8 +7628,50 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
                 COLOR Darken(Control(__UI_FormID).BackColor, 70)
             END IF
 
-            Temp& = __UI_PrintWidth(TempCaption$)
-            __UI_PrintString This.Width \ 2 - Temp& \ 2, This.Height \ 2 - uspacing& \ 2 + 1, TempCaption$
+            'Caption:
+            DIM CaptionLeft AS INTEGER, FindLF&, FindSep&, ThisLine%
+            DIM CaptionLeftFirstLine AS INTEGER, CaptionTopFirstLine AS INTEGER, TextTop%
+            DIM TotalLines AS INTEGER
+            IF INSTR(TempCaption$, CHR$(10)) > 0 THEN
+                TempCaption$ = __UI_TrimAt0$(__UI_WordWrap(TempCaption$, This.Width - ((__UI_DefaultCaptionIndent) * 2), 0, TotalLines))
+                DO WHILE LEN(TempCaption$)
+                    ThisLine% = ThisLine% + 1
+
+                    IF TotalLines < This.Height \ uspacing& THEN
+                        'Center vertically if less lines than fits the box
+                        TextTop% = (This.Height \ 2) - ((TotalLines * uspacing& - uspacing&) \ 2) - uspacing& \ 2 + (((ThisLine%) * uspacing& - uspacing&))
+                    ELSE
+                        'Snap to top of the label's boundaries
+                        'if there are more lines than meet the eye
+                        TextTop% = __UI_DefaultCaptionIndent + ThisLine% * uspacing& - uspacing&
+                    END IF
+
+                    FindSep& = INSTR(TempCaption$, CHR$(1)) 'Search for soft breaks
+                    FindLF& = INSTR(TempCaption$, CHR$(10)) 'Search for hard breaks
+                    IF (FindSep& > 0 AND FindLF& > 0 AND FindSep& < FindLF&) OR (FindSep& > 0 AND FindLF& = 0) THEN
+                        TempLine$ = LEFT$(TempCaption$, FindSep& - 1)
+                        TempCaption$ = MID$(TempCaption$, FindSep& + 1)
+                    ELSEIF FindSep& = 0 THEN
+                        IF FindLF& > 0 THEN
+                            TempLine$ = LEFT$(TempCaption$, FindLF& - 1)
+                            TempCaption$ = MID$(TempCaption$, FindLF& + 1)
+                        ELSE
+                            TempLine$ = TempCaption$
+                            TempCaption$ = ""
+                        END IF
+                    END IF
+
+                    CaptionLeft = (This.Width \ 2 - __UI_PrintWidth&(TempLine$) \ 2)
+                    __UI_PrintString CaptionLeft, TextTop%, TempLine$
+
+                    IF ThisLine% = 1 THEN CaptionLeftFirstLine = CaptionLeft: CaptionTopFirstLine = TextTop%
+                LOOP
+            ELSE
+                TextTop% = __UI_DefaultCaptionIndent
+                CaptionLeft = (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2)
+                CaptionLeftFirstLine = CaptionLeft
+                __UI_PrintString CaptionLeft, TextTop%, TempCaption$
+            END IF
         END IF
         '------
 
