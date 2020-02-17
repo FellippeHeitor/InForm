@@ -167,26 +167,26 @@ TYPE __UI_KeyCombos
     ControlID AS LONG
 END TYPE
 
-REDIM SHARED Caption(1 TO 100) AS STRING
-REDIM SHARED __UI_TempCaptions(1 TO 100) AS STRING
-REDIM SHARED Text(1 TO 100) AS STRING
-REDIM SHARED __UI_TempTexts(1 TO 100) AS STRING
-REDIM SHARED Mask(1 TO 100) AS STRING
-REDIM SHARED __UI_TempMask(1 TO 100) AS STRING
+REDIM SHARED Caption(0 TO 100) AS STRING
+REDIM SHARED __UI_TempCaptions(0 TO 100) AS STRING
+REDIM SHARED Text(0 TO 100) AS STRING
+REDIM SHARED __UI_TempTexts(0 TO 100) AS STRING
+REDIM SHARED Mask(0 TO 100) AS STRING
+REDIM SHARED __UI_TempMask(0 TO 100) AS STRING
 REDIM SHARED ToolTip(0 TO 100) AS STRING
-REDIM SHARED __UI_TempTips(1 TO 100) AS STRING
+REDIM SHARED __UI_TempTips(0 TO 100) AS STRING
 REDIM SHARED Control(0 TO 100) AS __UI_ControlTYPE
 REDIM SHARED ControlDrawOrder(0) AS LONG
 REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
-REDIM SHARED __UI_WordWrapHistoryTexts(1 TO 100) AS STRING
-REDIM SHARED __UI_WordWrapHistoryResults(1 TO 100) AS STRING
-REDIM SHARED __UI_WordWrapHistory(1 TO 100) AS __UI_WordWrapHistoryType
+REDIM SHARED __UI_WordWrapHistoryTexts(0 TO 100) AS STRING
+REDIM SHARED __UI_WordWrapHistoryResults(0 TO 100) AS STRING
+REDIM SHARED __UI_WordWrapHistory(0 TO 100) AS __UI_WordWrapHistoryType
 REDIM SHARED __UI_ThisLineChars(0) AS LONG, __UI_FocusedTextBoxChars(0) AS LONG
 REDIM SHARED __UI_ActiveMenu(0 TO 100) AS LONG, __UI_ParentMenu(0 TO 100) AS LONG
 REDIM SHARED __UI_KeyCombo(0 TO 100) AS __UI_KeyCombos
 
 DIM SHARED __UI_TotalKeyCombos AS LONG, __UI_BypassKeyCombos AS _BYTE
-DIM SHARED table1252$(255), table437$(255)
+DIM SHARED table1252$(0 TO 255), table437$(0 TO 255)
 DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
 DIM SHARED __UI_MouseWheel AS INTEGER, __UI_MouseButtonsSwap AS _BYTE
 DIM SHARED __UI_PrevMouseLeft AS INTEGER, __UI_PrevMouseTop AS INTEGER
@@ -4835,7 +4835,7 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER)
     DIM NextSlot AS LONG, i AS LONG
     DIM NewFontFile AS STRING, PassedFontFile AS STRING, FindSep AS LONG
     DIM TotalPassedFonts AS LONG
-    REDIM PassedFonts(10) AS STRING
+    REDIM PassedFonts(0 TO 10) AS STRING
 
     'common sense is not to use question marks for file names, so
     'we'll use it as a separator for multiple font assignments.
@@ -4851,7 +4851,7 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER)
         END IF
 
         TotalPassedFonts = TotalPassedFonts + 1
-        IF TotalPassedFonts > UBOUND(PassedFonts) THEN REDIM _PRESERVE PassedFonts(UBOUND(PassedFonts) + 9) AS STRING
+        IF TotalPassedFonts > UBOUND(PassedFonts) THEN REDIM _PRESERVE PassedFonts(0 TO UBOUND(PassedFonts) + 9) AS STRING
         PassedFonts(TotalPassedFonts) = NewFontFile
 
         'If the passed font is already loaded, we'll just return its handle
@@ -4884,12 +4884,12 @@ FUNCTION SetFont& (__NewFontFile AS STRING, NewFontSize AS INTEGER)
     IF NextSlot = UBOUND(Control) + 1 THEN
         'No empty slots. We must increase Control() and its helper arrays
         REDIM _PRESERVE Control(0 TO NextSlot + 99) AS __UI_ControlTYPE
-        REDIM _PRESERVE Caption(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE __UI_TempCaptions(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE Text(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE __UI_TempTexts(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE Mask(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE __UI_TempMask(1 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Caption(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempCaptions(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Text(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempTexts(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Mask(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempMask(0 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE ToolTip(0 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempTips(0 TO NextSlot + 99) AS STRING
     END IF
@@ -5024,12 +5024,12 @@ FUNCTION __UI_NewControl (ControlType AS INTEGER, ControlName AS STRING, NewWidt
     IF NextSlot = UBOUND(Control) + 1 THEN
         'No empty slots. We must increase Control() and its helper arrays
         REDIM _PRESERVE Control(0 TO NextSlot + 99) AS __UI_ControlTYPE
-        REDIM _PRESERVE Caption(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE __UI_TempCaptions(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE Text(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE __UI_TempTexts(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE Mask(1 TO NextSlot + 99) AS STRING
-        REDIM _PRESERVE __UI_TempMask(1 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Caption(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempCaptions(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Text(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempTexts(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE Mask(0 TO NextSlot + 99) AS STRING
+        REDIM _PRESERVE __UI_TempMask(0 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE ToolTip(0 TO NextSlot + 99) AS STRING
         REDIM _PRESERVE __UI_TempTips(0 TO NextSlot + 99) AS STRING
     END IF
@@ -5406,7 +5406,7 @@ FUNCTION __UI_LoadThemeImage& (FileName$)
 
     IF NextSlot > UBOUND(__UI_ThemeImages) THEN
         'No empty slots. We must increase __UI_ThemeImages()
-        REDIM _PRESERVE __UI_ThemeImages(1 TO NextSlot + 99) AS __UI_ThemeImagesType
+        REDIM _PRESERVE __UI_ThemeImages(0 TO NextSlot + 99) AS __UI_ThemeImagesType
     END IF
     __UI_ThemeImages(NextSlot).FileName = FileName$
     __UI_ThemeImages(NextSlot).Handle = TempImage
@@ -5895,7 +5895,7 @@ SUB __UI_PrintString(Left AS INTEGER, Top AS INTEGER, Text$)
         END IF
     END IF
 
-    REDIM __UI_ThisLineChars(LEN(Utf$)) AS LONG
+    REDIM __UI_ThisLineChars(0 TO LEN(Utf$)) AS LONG
     uprint_extra Left, Top, _OFFSET(Utf$), LEN(Utf$), True, True, __UI_LastRenderedLineWidth, _OFFSET(__UI_ThisLineChars()), __UI_LastRenderedCharCount, _DEFAULTCOLOR, 0
     REDIM _PRESERVE __UI_ThisLineChars(__UI_LastRenderedCharCount) AS LONG
 END SUB
@@ -6708,7 +6708,7 @@ FUNCTION GetControlDrawOrder&(ctrlRef AS LONG)
 END FUNCTION
 
 SUB __UI_ExpandControlDrawOrder (size&)
-    REDIM _PRESERVE ControlDrawOrder(UBOUND(ControlDrawOrder) + size&) AS LONG
+    REDIM _PRESERVE ControlDrawOrder(0 TO UBOUND(ControlDrawOrder) + size&) AS LONG
 END SUB
 
 FUNCTION IconPreview& (IconFile$)
@@ -7856,7 +7856,7 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState)
                 STATIC PrevFocusedText$
                 IF PrevFocusedText$ <> ThisTempText$ THEN
                     PrevFocusedText$ = ThisTempText$
-                    REDIM __UI_FocusedTextBoxChars(UBOUND(__UI_ThisLineChars)) AS LONG
+                    REDIM __UI_FocusedTextBoxChars(0 TO UBOUND(__UI_ThisLineChars)) AS LONG
                     DIM M1 AS _MEM, M2 AS _MEM
                     M1 = _MEM(__UI_ThisLineChars())
                     M2 = _MEM(__UI_FocusedTextBoxChars())
