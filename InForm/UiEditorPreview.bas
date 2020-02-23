@@ -905,11 +905,20 @@ SUB __UI_BeforeUpdateDisplay
                                     _FONT Control(i).Font
                                     SELECT CASE Control(i).Type
                                         CASE __UI_Type_Label
-                                            IF Control(i).WordWrap = False THEN Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize): AutoSizeLabel Control(i)
+                                            IF Control(i).WordWrap = False THEN
+                                                Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
+                                                AutoSizeLabel Control(i)
+                                            END IF
                                         CASE __UI_Type_TextBox
-                                            IF Control(i).Multiline = False THEN Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
-                                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_ProgressBar
+                                            IF Control(i).Multiline = False THEN
+                                                Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
+                                            END IF
+                                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton
                                             Control(i).Height = uspacing + 6
+                                        CASE __UI_Type_ProgressBar
+                                            IF INSTR(Caption(i), CHR$(10)) = 0 THEN
+                                                Control(i).Height = uspacing + 6
+                                            END IF
                                     END SELECT
                                     IF Control(i).HotKey > 0 THEN
                                         IF Control(i).HotKeyPosition = 1 THEN
