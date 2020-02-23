@@ -1177,7 +1177,12 @@ SUB SelectFontInList (FontSetup$)
     thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
     thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
 
-    Control(FontSizeList).Value = thisSize% - 7
+    ResetList FontSizeList
+    FOR i = 8 TO 120
+        AddItem FontSizeList, LTRIM$(STR$(i))
+    NEXT
+    i = SelectItem(FontSizeList, LTRIM$(STR$(thisSize%)))
+
     IF LEN(thisFile$) > 0 THEN
         FOR i = 1 TO UBOUND(FontFile)
             IF UCASE$(RIGHT$(FontFile(i), LEN(thisFile$))) = thisFile$ THEN
@@ -1188,12 +1193,15 @@ SUB SelectFontInList (FontSetup$)
             END IF
         NEXT
     ELSE
-        IF thisSize% = 8 OR thisSize% = 16 THEN
-            i = SelectItem(FontList, "Built-in _FONT" + STR$(thisSize%))
-            BypassShowFontList = False
-            AttemptToShowFontList = False
-            EXIT SUB
-        END IF
+        IF thisSize% > 8 THEN thisSize% = 16 ELSE thisSize% = 8
+        ResetList FontSizeList
+        AddItem FontSizeList, "8"
+        AddItem FontSizeList, "16"
+        i = SelectItem(FontSizeList, LTRIM$(STR$(thisSize%)))
+        Control(FontList).Value = 1 'Built-in VGA font
+        BypassShowFontList = False
+        AttemptToShowFontList = False
+        EXIT SUB
     END IF
 
     'If this line is reached, the currently open form
@@ -3500,11 +3508,7 @@ SUB __UI_ValueChanged (id AS LONG)
             END IF
             SendData b$, 41
         CASE FontList, FontSizeList
-            IF id = FontList AND Control(FontList).Value < 3 THEN
-                'First item is _FONT 8, second item is _FONT 16
-                Control(FontSizeList).Value = (Control(FontList).Value * 8) - 7
-            END IF
-            b$ = FontFile(Control(FontList).Value) + "," + LTRIM$(STR$(Control(FontSizeList).Value + 7))
+            b$ = FontFile(Control(FontList).Value) + "," + GetItem$(FontSizeList, Control(FontSizeList).Value)
             b$ = MKL$(LEN(b$)) + b$
             SendData b$, 8
             PropertySent = True
@@ -4744,9 +4748,8 @@ $IF WIN THEN
         bData = SPACE$(&H7FFF) 'arbitrary
 
         HasFontList = True
-        AddItem FontList, "Built-in _FONT 8"
-        AddItem FontList, "Built-in _FONT 16"
-        TotalFontsFound = 2
+        AddItem FontList, "Built-in VGA font"
+        TotalFontsFound = 1
 
         l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
         IF l THEN
@@ -4873,8 +4876,8 @@ $ELSE
     END IF
     NEXT
 
-    TotalFontsFound = TotalFontsFound + 2
-    Text(FontList) = "Built-in _FONT 8" + CHR$(10) + "Built-in _FONT 16" + CHR$(10) + Text(FontList)
+    TotalFontsFound = TotalFontsFound + 1
+    Text(FontList) = "Built-in VGA font" + CHR$(10) + Text(FontList)
     Control(FontList).Max = TotalFontsFound
 
     REDIM FontFile(TotalFontsFound) AS STRING
