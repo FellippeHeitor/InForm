@@ -2467,7 +2467,7 @@ SUB __UI_BeforeUpdateDisplay
                 Control(Transparent).Disabled = True
                 FOR i = 1 TO UBOUND(InputBox)
                     SELECT CASE InputBox(i).ID
-                        CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
+                        CASE WidthTB, HeightTB, TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
                             Control(InputBox(i).ID).Disabled = True
                         CASE ELSE
                             Control(InputBox(i).ID).Disabled = False
