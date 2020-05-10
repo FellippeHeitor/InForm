@@ -2752,6 +2752,12 @@ SUB Handshake
     b$ = "EDITORPID>" + MKL$(__UI_GetPID) + "<END>"
     Send Client, b$
 
+    $IF WIN THEN
+        CONST TIMEOUT = 10
+    $ELSE
+        CONST TIMEOUT = 120
+    $END IF
+
     DIM start!, incomingData$, thisData$
     start! = TIMER
     DO
@@ -2766,7 +2772,7 @@ SUB Handshake
             END IF
             EXIT DO
         END IF
-    LOOP UNTIL TIMER - start! > 10
+    LOOP UNTIL TIMER - start! > TIMEOUT
 
     IF UiPreviewPID = 0 THEN
         i = MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", MsgBox_OkOnly + MsgBox_Critical)

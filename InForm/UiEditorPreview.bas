@@ -1691,11 +1691,17 @@ SUB __UI_OnLoad
         SYSTEM
     END IF
 
+    $IF WIN THEN
+        CONST TIMEOUT = 10
+    $ELSE
+        CONST TIMEOUT = 120
+    $END IF
+
     start! = TIMER
     DO
         Host = _OPENCLIENT("TCP/IP:" + HostPort + ":localhost")
         _DISPLAY
-    LOOP UNTIL Host < 0 OR TIMER - start! > 10
+    LOOP UNTIL Host < 0 OR TIMER - start! > TIMEOUT
 
     IF Host = 0 THEN GOTO ForceQuit
 
@@ -1717,7 +1723,7 @@ SUB __UI_OnLoad
             END IF
             EXIT DO
         END IF
-    LOOP UNTIL TIMER - start! > 10
+    LOOP UNTIL TIMER - start! > TIMEOUT
 
     IF UiEditorPID = 0 THEN GOTO ForceQuit
 
