@@ -768,7 +768,7 @@ SUB __UI_BeforeUpdateDisplay
                                         IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                     END IF
                                 ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
-                                    Text(i) = Replace(b$, "\n", CHR$(13), False, TotalReplacements)
+                                    Text(i) = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                                     IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
                                     Control(i).LastVisibleItem = 0 'Reset it so it's recalculated
                                 END IF

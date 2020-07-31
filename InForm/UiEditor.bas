@@ -4356,7 +4356,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             ThisItem% = 0
                             DO WHILE LEN(TempText$)
                                 ThisItem% = ThisItem% + 1
-                                FindLF& = INSTR(TempText$, CHR$(13))
+                                FindLF& = INSTR(TempText$, CHR$(10))
                                 IF FindLF& THEN
                                     TempCaption$ = LEFT$(TempText$, FindLF& - 1)
                                     TempText$ = MID$(TempText$, FindLF& + 1)
