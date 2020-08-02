@@ -191,8 +191,8 @@ SUB __UI_BeforeUpdateDisplay
         SendData b$, "MENUPANELACTIVE"
     END IF
 
-    IF prevSelectionRectangle <> (__UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown) THEN
-        prevSelectionRectangle = (__UI_SelectionRectangle OR __UI_CtrlIsDown OR __UI_ShiftIsDown)
+    IF prevSelectionRectangle <> (__UI_SelectionRectangle) THEN
+        prevSelectionRectangle = (__UI_SelectionRectangle)
         b$ = MKI$(prevSelectionRectangle)
         SendData b$, "SELECTIONRECTANGLE"
     END IF
