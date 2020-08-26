@@ -2847,7 +2847,7 @@ SUB LoadPreviewText
                 NewParentID = ""
                 IF LogFileLoad THEN PRINT #LogFileNum, "PARENT: ORPHAN/CONTAINER"
             ELSE
-                NewParentID = MID$(DummyText$, 13)
+                NewParentID = DummyText$
                 IF LogFileLoad THEN PRINT #LogFileNum, "PARENT:" + NewParentID
             END IF
 
