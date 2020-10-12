@@ -1987,7 +1987,7 @@ SUB __UI_BeforeUpdateDisplay
         END IF
         IF __UI_Focus <> TextTB OR (__UI_Focus = TextTB AND RevertEdit = True) THEN
             IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)
+                Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0)
             ELSE
                 Text(TextTB) = PreviewTexts(FirstSelected)
                 IF LEN(PreviewMasks(FirstSelected)) > 0 AND PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
