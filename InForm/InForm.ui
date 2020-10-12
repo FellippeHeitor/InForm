@@ -7614,7 +7614,7 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         IF This.ShowPercentage THEN
-            DIM ProgressString$, ReplaceCode%
+            DIM ProgressString$
             ProgressString$ = LTRIM$(STR$(FIX((This.Value / This.Max) * 100))) + "%"
             IF LEN(Caption(This.ID)) THEN
                 TempCaption$ = Replace$(Caption(This.ID), "\#", ProgressString$, 0, 0)
