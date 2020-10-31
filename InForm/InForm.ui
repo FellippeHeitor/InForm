@@ -5532,7 +5532,9 @@ SUB __UI_CursorAdjustments(This AS LONG)
         IF Control(This).VisibleCursor >= (Control(This).Width - ((Control(This).BorderSize + __UI_DefaultCaptionIndent) * ABS(Control(This).HasBorder))) THEN
             Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart + Control(This).Width / 4
         ELSEIF Control(This).VisibleCursor <= 0 THEN
-            Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart - Control(This).Width / 4
+            IF Control(This).Cursor >= LBOUND(__UI_FocusedTextBoxChars) AND Control(This).Cursor <= UBOUND(__UI_FocusedTextBoxChars) THEN
+                Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart - Control(This).Width / 4
+            END IF
         END IF
         IF Control(This).InputViewStart < 0 THEN Control(This).InputViewStart = 0
     ELSEIF Control(This).Multiline AND Control(This).Type = __UI_Type_TextBox THEN
