@@ -4561,19 +4561,24 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF NOT SaveOnlyFrm THEN
         IF PreserveBackup THEN
             DIM insertionPoint AS LONG, endPoint AS LONG, firstCASE AS LONG
-            DIM temp$, thisBlock$, addedCASES$, indenting AS LONG
+            DIM temp$, thisBlock$, addedItems$, indenting AS LONG
+            DIM checkConditionResult AS _BYTE
 
             'Find insertion points in BackupCode$ for eventual new controls
             '1- Controls' IDs
             insertionPoint = INSTR(BackupCode$, "DIM SHARED ")
+            addedItems$ = ""
             FOR i = 1 TO UBOUND(PreviewControls)
                 IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
                     temp$ = "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
                     IF INSTR(BackupCode$, temp$) = 0 THEN
-                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + temp$ + CHR$(10) + MID$(BackupCode$, insertionPoint)
+                        addedItems$ = addedItems$ + temp$ + CHR$(10)
                     END IF
                 END IF
             NEXT
+            IF LEN(addedItems$) THEN
+                BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + addedItems$ + MID$(BackupCode$, insertionPoint)
+            END IF
 
             '2- Even procedures
             FOR i = 4 TO 13
@@ -4593,78 +4598,22 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         insertionPoint = INSTR(BackupCode$, temp$)
                         endPoint = INSTR(insertionPoint, BackupCode$, "END SUB" + CHR$(10)) + 8
                         thisBlock$ = MID$(BackupCode$, insertionPoint, endPoint - insertionPoint)
-                    CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
-                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
-                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
-                            addedCASES$ = ""
-                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
-                            FOR Dummy = 1 TO UBOUND(PreviewControls)
-                                IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
-                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
-                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
-                                    END IF
-                                END IF
-                            NEXT
-                            IF LEN(addedCASES$) THEN
-                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
-                            END IF
-                        END IF
-                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
 
-                    CASE 7, 8, 11 'Controls that can have focus only
                         IF INSTR(thisBlock$, "SELECT CASE id") THEN
                             firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
                             indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
-                            addedCASES$ = ""
+                            addedItems$ = ""
                             IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
                             FOR Dummy = 1 TO UBOUND(PreviewControls)
-                                IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
+                                GOSUB checkCondition
+                                IF checkConditionResult THEN
                                     IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
-                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                        addedItems$ = addedItems$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
                                     END IF
                                 END IF
                             NEXT
-                            IF LEN(addedCASES$) THEN
-                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
-                            END IF
-                        END IF
-                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
-
-                    CASE 12 'Text boxes
-                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
-                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
-                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
-                            addedCASES$ = ""
-                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
-                            FOR Dummy = 1 TO UBOUND(PreviewControls)
-                                IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
-                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
-                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
-                                    END IF
-                                END IF
-                            NEXT
-                            IF LEN(addedCASES$) THEN
-                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
-                            END IF
-                        END IF
-                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
-
-                    CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
-                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
-                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
-                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
-                            addedCASES$ = ""
-                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
-                            FOR Dummy = 1 TO UBOUND(PreviewControls)
-                                IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
-                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
-                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
-                                    END IF
-                                END IF
-                            NEXT
-                            IF LEN(addedCASES$) THEN
-                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
+                            IF LEN(addedItems$) THEN
+                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedItems$ + MID$(thisBlock$, firstCASE + 1)
                             END IF
                         END IF
                         BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
@@ -4833,6 +4782,34 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
         Edited = False
     END IF
+
+    EXIT SUB
+
+    checkCondition:
+    checkConditionResult = False
+    SELECT CASE i
+        CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
+            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
+                checkConditionResult = True
+            END IF
+
+        CASE 7, 8, 11 'Controls that can have focus only
+            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
+                checkConditionResult = True
+            END IF
+
+        CASE 12 'Text boxes
+            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
+                checkConditionResult = True
+            END IF
+
+        CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
+            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
+                checkConditionResult = True
+            END IF
+    END SELECT
+    RETURN
+
 END SUB
 
 $IF WIN THEN
