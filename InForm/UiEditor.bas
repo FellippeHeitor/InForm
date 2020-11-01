@@ -149,11 +149,11 @@ DIM SHARED KeyboardComboLB AS LONG, KeyboardComboBT AS LONG
 'Other shared variables:
 DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
 DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
-DIM SHARED CheckPreviewTimer AS INTEGER, PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
+DIM SHARED PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE, CheckUpdatesNow AS _BYTE
 DIM SHARED CheckDevUpdates AS _BYTE, CheckUpdateDone AS _BYTE, CheckUpdateStartUpTrigger AS _BYTE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
-DIM SHARED OpenDialogOpen AS _BYTE, OverwriteOldFiles AS _BYTE
+DIM SHARED OpenDialogOpen AS _BYTE
 DIM SHARED PropertySent AS _BYTE, RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED InstanceHost AS LONG, InstanceClient AS LONG
@@ -213,7 +213,6 @@ $END IF
 IF _FILEEXISTS("falcon.h") = 0 THEN RestoreFalcon
 
 DIM SHARED CurrentPath$, ThisFileName$
-DIM SHARED OpenDialog AS LONG
 
 'CheckPreviewTimer = _FREETIMER
 'ON TIMER(CheckPreviewTimer, .003) CheckPreview
@@ -1030,7 +1029,6 @@ SUB __UI_MouseLeave (id AS LONG)
 END SUB
 
 SUB __UI_FocusIn (id AS LONG)
-    DIM i AS LONG, b$
     SELECT CASE id
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             DIM ThisInputBox AS LONG
@@ -1071,7 +1069,6 @@ SUB __UI_MouseDown (id AS LONG)
     SELECT CASE id
         CASE Red, Green, Blue
             Caption(StatusBar) = "Color picker active. Release to apply the new values..."
-            DIM TempID AS LONG
             SELECT CASE Control(ColorPropertiesList).Value
                 CASE 1
                     OldColor = PreviewControls(FirstSelected).ForeColor
@@ -1231,7 +1228,7 @@ SUB LoseFocus
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    DIM b$, c$
+    DIM b$
     DIM i AS LONG, j AS LONG, Answer AS _BYTE
     DIM incomingData$, Signal$
     DIM thisData$, thisCommand$
@@ -3748,7 +3745,7 @@ END FUNCTION
 
 '---------------------------------------------------------------------------------
 FUNCTION LoadEditorImage& (FileName$)
-    DIM MemoryBlock AS _MEM, TempImage AS LONG, NextSlot AS LONG
+    DIM MemoryBlock AS _MEM, TempImage AS LONG
     DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
 
     A$ = EditorImageData$(FileName$)
@@ -3772,7 +3769,7 @@ END FUNCTION
 FUNCTION Unpack$ (PackedData$)
     'Adapted from Dav's BIN2BAS
     'http://www.qbasicnews.com/dav/qb64.php
-    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
+    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$
 
     A$ = PackedData$
 
@@ -3796,7 +3793,7 @@ FUNCTION ReadSequential$ (Txt$, Bytes%)
 END FUNCTION
 
 SUB LoadPreview
-    DIM a$, b$, i AS LONG, __UI_EOF AS _BYTE, Answer AS _BYTE
+    DIM b$, __UI_EOF AS _BYTE, Answer AS _BYTE
     DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
     DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
     DIM NewParentID AS STRING, FloatValue AS _FLOAT, Dummy AS LONG
@@ -3885,7 +3882,7 @@ SUB LoadPreview
                 CASE -4 'Stretch
                     PreviewControls(Dummy).Stretch = True
                 CASE -5 'Font
-                    DIM FontSetup$, FindSep AS INTEGER
+                    DIM FontSetup$
                     DIM NewFontSize$
                     b$ = ReadSequential$(FormData$, 2)
                     FontSetup$ = ReadSequential$(FormData$, CVI(b$))
@@ -4189,7 +4186,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     DIM BaseOutputFileName AS STRING, j AS LONG
     DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
     DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
-    DIM NewFontSize AS INTEGER, Dummy AS LONG, BackupFile$
+    DIM Dummy AS LONG, BackupFile$
     DIM PreserveBackup AS _BYTE, BackupCode$
     DIM tempThisFileName$
 
@@ -4348,8 +4345,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF LEN(PreviewTexts(i)) > 0 THEN
                     SELECT CASE PreviewControls(i).Type
                         CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                            DIM TempCaption$, TempText$, ThisItem%, ThisItemTop%
-                            DIM LastVisibleItem AS INTEGER, findLF&
+                            DIM TempCaption$, TempText$, ThisItem%
+                            DIM findLF&
 
                             TempText$ = PreviewTexts(i)
                             ThisItem% = 0
@@ -4819,13 +4816,13 @@ $IF WIN THEN
         DIM SubKey AS STRING
         DIM Value AS STRING
         DIM bData AS STRING
-        DIM t AS STRING
         DIM dwType AS _UNSIGNED LONG
         DIM numBytes AS _UNSIGNED LONG
         DIM numTchars AS _UNSIGNED LONG
         DIM l AS LONG
         DIM dwIndex AS _UNSIGNED LONG
 
+        hKey = hKey 'no warnings on my watch
         Ky = HKEY_LOCAL_MACHINE
         SubKey = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" + CHR$(0)
         Value = SPACE$(261) 'ANSI Value name limit 260 chars + 1 null
@@ -4894,6 +4891,7 @@ $IF WIN THEN
     END FUNCTION
 
     FUNCTION whatKey$ (hKey AS _OFFSET)
+        hKey = hKey 'the lengths I'll go not to have warnings....
         SELECT CASE hKey
             CASE HKEY_CLASSES_ROOT: whatKey = "HKEY_CLASSES_ROOT"
             CASE HKEY_CURRENT_USER: whatKey = "HKEY_CURRENT_USER"
@@ -5118,10 +5116,11 @@ END SUB
 'FUNCTION idezfilelist$ and idezpathlist$ (and helper functions) were
 'adapted from ide_methods.bas (QB64):
 FUNCTION idezfilelist$ (path$, method, depth%, TotalFound AS INTEGER) 'method0=*.frm and *.frmbin, method1=*.*
-    DIM sep AS STRING * 1, filelist$, a$
+    DIM sep AS STRING * 1, filelist$, a$, dummy%
     sep = CHR$(10)
 
     TotalFound = 0
+    dummy% = depth%
     $IF WIN THEN
         OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
         IF method = 0 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.frm >opendlgfiles.dat"
