@@ -4251,10 +4251,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             CLOSE #TextFileNum
 
             IF i = 1 THEN
-                IF INSTR(b$, "': Event procedures: ---------------------------------------------------------------") > 0 THEN
-                    BackupCode$ = MID$(b$, INSTR(b$, "': Event procedures: ---------------------------------------------------------------"))
-                    PreserveBackup = True
-                END IF
+                BackupCode$ = Replace$(b$, CHR$(13) + CHR$(10), CHR$(10), 0, 0)
+                PreserveBackup = True
             END IF
         END IF
     NEXT
@@ -4350,17 +4348,17 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF LEN(PreviewTexts(i)) > 0 THEN
                     SELECT CASE PreviewControls(i).Type
                         CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                            DIM TempCaption$, TempText$, FindLF&, ThisItem%, ThisItemTop%
-                            DIM LastVisibleItem AS INTEGER
+                            DIM TempCaption$, TempText$, ThisItem%, ThisItemTop%
+                            DIM LastVisibleItem AS INTEGER, findLF&
 
                             TempText$ = PreviewTexts(i)
                             ThisItem% = 0
                             DO WHILE LEN(TempText$)
                                 ThisItem% = ThisItem% + 1
-                                FindLF& = INSTR(TempText$, CHR$(10))
-                                IF FindLF& THEN
-                                    TempCaption$ = LEFT$(TempText$, FindLF& - 1)
-                                    TempText$ = MID$(TempText$, FindLF& + 1)
+                                findLF& = INSTR(TempText$, CHR$(10))
+                                IF findLF& THEN
+                                    TempCaption$ = LEFT$(TempText$, findLF& - 1)
+                                    TempText$ = MID$(TempText$, findLF& + 1)
                                 ELSE
                                     TempCaption$ = TempText$
                                     TempText$ = ""
@@ -4561,143 +4559,245 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     PRINT #TextFileNum, "END SUB"
     CLOSE #TextFileNum
     IF NOT SaveOnlyFrm THEN
-        OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
-        PRINT #TextFileNum, "': This program uses"
-        PRINT #TextFileNum, "': InForm - GUI library for QB64 - "; __UI_Version
-        PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
-        PRINT #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
-        PRINT #TextFileNum, "'-----------------------------------------------------------"
-        PRINT #TextFileNum,
-        PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
         IF PreserveBackup THEN
-            PRINT #TextFileNum, "REM NOTICE: THIS FORM HAS BEEN RECENTLY EDITED"
-            PRINT #TextFileNum, "'>> The controls in the list below may have been added or renamed,"
-            PRINT #TextFileNum, "'>> and previously existing controls may have been deleted since"
-            PRINT #TextFileNum, "'>> this program's structure was first generated."
-            PRINT #TextFileNum, "'>> Make sure to check your code in the events SUBs so that"
-            PRINT #TextFileNum, "'>> you can take your recent edits into consideration."
-            PRINT #TextFileNum, "': ---------------------------------------------------------------------------------"
-        END IF
-        FOR i = 1 TO UBOUND(PreviewControls)
-            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-                PRINT #TextFileNum, "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
-            END IF
-        NEXT
-        PRINT #TextFileNum,
-        PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
-        IF AddGifExtension THEN
-            PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
-        END IF
-        PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
-        PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
-        PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
-        IF AddGifExtension THEN
-            PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
-        END IF
-        PRINT #TextFileNum,
-        IF PreserveBackup THEN
-            PRINT #TextFileNum, BackupCode$
-            GOTO BackupRestored
-        END IF
-        PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
-        FOR i = 0 TO 14
-            SELECT EVERYCASE i
-                CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
-                CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
-                CASE 2
-                    PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
-                    PRINT #TextFileNum, "    'This event occurs at approximately 30 frames per second."
-                    PRINT #TextFileNum, "    'You can change the update frequency by calling SetFrameRate DesiredRate%"
-                CASE 3
-                    PRINT #TextFileNum, "SUB __UI_BeforeUnload"
-                    PRINT #TextFileNum, "    'If you set __UI_UnloadSignal = False here you can"
-                    PRINT #TextFileNum, "    'cancel the user's request to close."
-                CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
-                CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
-                CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
-                CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
-                CASE 8
-                    PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
-                    PRINT #TextFileNum, "    'This event occurs right before a control loses focus."
-                    PRINT #TextFileNum, "    'To prevent a control from losing focus, set __UI_KeepFocus = True below."
-                CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
-                CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
-                CASE 11
-                    PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
-                    PRINT #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit."
-                    PRINT #TextFileNum, "    'You can change it and even cancel it by making it = 0"
-                CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
-                CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
-                CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
+            DIM insertionPoint AS LONG, endPoint AS LONG, firstCASE AS LONG
+            DIM temp$, thisBlock$, addedCASES$, indenting AS LONG
 
-                CASE 0, 3, 14
-                    PRINT #TextFileNum,
-
-                CASE 1
-                    IF PreviewDefaultButtonID > 0 THEN
-                        PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
-                    ELSE
-                        PRINT #TextFileNum,
+            'Find insertion points in BackupCode$ for eventual new controls
+            '1- Controls' IDs
+            insertionPoint = INSTR(BackupCode$, "DIM SHARED ")
+            FOR i = 1 TO UBOUND(PreviewControls)
+                IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
+                    temp$ = "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
+                    IF INSTR(BackupCode$, temp$) = 0 THEN
+                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + temp$ + CHR$(10) + MID$(BackupCode$, insertionPoint)
                     END IF
+                END IF
+            NEXT
 
-                CASE 2
-                    IF AddGifExtension = True AND TotalGifLoaded > 0 THEN
+            '2- Even procedures
+            FOR i = 4 TO 13
+                SELECT EVERYCASE i
+                    CASE 4: temp$ = "SUB __UI_Click (id AS LONG)"
+                    CASE 5: temp$ = "SUB __UI_MouseEnter (id AS LONG)"
+                    CASE 6: temp$ = "SUB __UI_MouseLeave (id AS LONG)"
+                    CASE 7: temp$ = "SUB __UI_FocusIn (id AS LONG)"
+                    CASE 8: temp$ = "SUB __UI_FocusOut (id AS LONG)"
+                    CASE 9: temp$ = "SUB __UI_MouseDown (id AS LONG)"
+                    CASE 10: temp$ = "SUB __UI_MouseUp (id AS LONG)"
+                    CASE 11: temp$ = "SUB __UI_KeyPress (id AS LONG)"
+                    CASE 12: temp$ = "SUB __UI_TextChanged (id AS LONG)"
+                    CASE 13: temp$ = "SUB __UI_ValueChanged (id AS LONG)"
+
+                    CASE 4 TO 13
+                        insertionPoint = INSTR(BackupCode$, temp$)
+                        endPoint = INSTR(insertionPoint, BackupCode$, "END SUB" + CHR$(10)) + 8
+                        thisBlock$ = MID$(BackupCode$, insertionPoint, endPoint - insertionPoint)
+                    CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
+                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
+                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
+                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
+                            addedCASES$ = ""
+                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
+                            FOR Dummy = 1 TO UBOUND(PreviewControls)
+                                IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
+                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
+                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                    END IF
+                                END IF
+                            NEXT
+                            IF LEN(addedCASES$) THEN
+                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
+                            END IF
+                        END IF
+                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
+
+                    CASE 7, 8, 11 'Controls that can have focus only
+                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
+                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
+                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
+                            addedCASES$ = ""
+                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
+                            FOR Dummy = 1 TO UBOUND(PreviewControls)
+                                IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
+                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
+                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                    END IF
+                                END IF
+                            NEXT
+                            IF LEN(addedCASES$) THEN
+                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
+                            END IF
+                        END IF
+                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
+
+                    CASE 12 'Text boxes
+                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
+                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
+                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
+                            addedCASES$ = ""
+                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
+                            FOR Dummy = 1 TO UBOUND(PreviewControls)
+                                IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
+                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
+                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                    END IF
+                                END IF
+                            NEXT
+                            IF LEN(addedCASES$) THEN
+                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
+                            END IF
+                        END IF
+                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
+
+                    CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
+                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
+                            firstCASE = _INSTRREV(INSTR(thisBlock$, "    CASE "), thisBlock$, CHR$(10))
+                            indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
+                            addedCASES$ = ""
+                            IF firstCASE = 0 THEN firstCASE = INSTR(thisBlock$, "    SELECT CASE id") + 2
+                            FOR Dummy = 1 TO UBOUND(PreviewControls)
+                                IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
+                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
+                                        addedCASES$ = addedCASES$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                    END IF
+                                END IF
+                            NEXT
+                            IF LEN(addedCASES$) THEN
+                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedCASES$ + MID$(thisBlock$, firstCASE + 1)
+                            END IF
+                        END IF
+                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
+                END SELECT
+            NEXT
+
+            OPEN BaseOutputFileName + ".bas" FOR BINARY AS #TextFileNum
+            PUT #TextFileNum, , BackupCode$
+        ELSE
+            OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
+            PRINT #TextFileNum, "': This program uses"
+            PRINT #TextFileNum, "': InForm - GUI library for QB64 - "; __UI_Version
+            PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
+            PRINT #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
+            PRINT #TextFileNum, "'-----------------------------------------------------------"
+            PRINT #TextFileNum,
+            PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
+            FOR i = 1 TO UBOUND(PreviewControls)
+                IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
+                    PRINT #TextFileNum, "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
+                END IF
+            NEXT
+            PRINT #TextFileNum,
+            PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
+            IF AddGifExtension THEN
+                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
+            END IF
+            PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
+            PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
+            PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
+            IF AddGifExtension THEN
+                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
+            END IF
+            PRINT #TextFileNum,
+            PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
+            FOR i = 0 TO 14
+                SELECT EVERYCASE i
+                    CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
+                    CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
+                    CASE 2
+                        PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
+                        PRINT #TextFileNum, "    'This event occurs at approximately 30 frames per second."
+                        PRINT #TextFileNum, "    'You can change the update frequency by calling SetFrameRate DesiredRate%"
+                    CASE 3
+                        PRINT #TextFileNum, "SUB __UI_BeforeUnload"
+                        PRINT #TextFileNum, "    'If you set __UI_UnloadSignal = False here you can"
+                        PRINT #TextFileNum, "    'cancel the user's request to close."
+                    CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
+                    CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
+                    CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
+                    CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
+                    CASE 8
+                        PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
+                        PRINT #TextFileNum, "    'This event occurs right before a control loses focus."
+                        PRINT #TextFileNum, "    'To prevent a control from losing focus, set __UI_KeepFocus = True below."
+                    CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
+                    CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
+                    CASE 11
+                        PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
+                        PRINT #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit."
+                        PRINT #TextFileNum, "    'You can change it and even cancel it by making it = 0"
+                    CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
+                    CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
+                    CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
+
+                    CASE 0, 3, 14
                         PRINT #TextFileNum,
-                        PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
-                        PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
+
+                    CASE 1
+                        IF PreviewDefaultButtonID > 0 THEN
+                            PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
+                        ELSE
+                            PRINT #TextFileNum,
+                        END IF
+
+                    CASE 2
+                        IF AddGifExtension = True AND TotalGifLoaded > 0 THEN
+                            PRINT #TextFileNum,
+                            PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
+                            PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
+                            FOR Dummy = 1 TO UBOUND(PreviewControls)
+                                IF PreviewAnimatedGif(Dummy) THEN
+                                    PRINT #TextFileNum, "    UpdateGif " + RTRIM$(PreviewControls(Dummy).Name)
+                                END IF
+                            NEXT
+                        ELSE
+                            PRINT #TextFileNum,
+                        END IF
+
+                    CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
+                        PRINT #TextFileNum, "    SELECT CASE id"
                         FOR Dummy = 1 TO UBOUND(PreviewControls)
-                            IF PreviewAnimatedGif(Dummy) THEN
-                                PRINT #TextFileNum, "    UpdateGif " + RTRIM$(PreviewControls(Dummy).Name)
+                            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
+                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                                PRINT #TextFileNum,
                             END IF
                         NEXT
-                    ELSE
-                        PRINT #TextFileNum,
-                    END IF
+                        PRINT #TextFileNum, "    END SELECT"
 
-                CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-                    PRINT #TextFileNum, "    SELECT CASE id"
-                    FOR Dummy = 1 TO UBOUND(PreviewControls)
-                        IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
-                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                            PRINT #TextFileNum,
-                        END IF
-                    NEXT
-                    PRINT #TextFileNum, "    END SELECT"
+                    CASE 7, 8, 11 'Controls that can have focus only
+                        PRINT #TextFileNum, "    SELECT CASE id"
+                        FOR Dummy = 1 TO UBOUND(PreviewControls)
+                            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
+                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                                PRINT #TextFileNum,
+                            END IF
+                        NEXT
+                        PRINT #TextFileNum, "    END SELECT"
 
-                CASE 7, 8, 11 'Controls that can have focus only
-                    PRINT #TextFileNum, "    SELECT CASE id"
-                    FOR Dummy = 1 TO UBOUND(PreviewControls)
-                        IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
-                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                            PRINT #TextFileNum,
-                        END IF
-                    NEXT
-                    PRINT #TextFileNum, "    END SELECT"
+                    CASE 12 'Text boxes
+                        PRINT #TextFileNum, "    SELECT CASE id"
+                        FOR Dummy = 1 TO UBOUND(PreviewControls)
+                            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
+                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                                PRINT #TextFileNum,
+                            END IF
+                        NEXT
+                        PRINT #TextFileNum, "    END SELECT"
 
-                CASE 12 'Text boxes
-                    PRINT #TextFileNum, "    SELECT CASE id"
-                    FOR Dummy = 1 TO UBOUND(PreviewControls)
-                        IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
-                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                            PRINT #TextFileNum,
-                        END IF
-                    NEXT
-                    PRINT #TextFileNum, "    END SELECT"
-
-                CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
-                    PRINT #TextFileNum, "    SELECT CASE id"
-                    FOR Dummy = 1 TO UBOUND(PreviewControls)
-                        IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
-                            PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                            PRINT #TextFileNum,
-                        END IF
-                    NEXT
-                    PRINT #TextFileNum, "    END SELECT"
-            END SELECT
-            PRINT #TextFileNum, "END SUB"
-            PRINT #TextFileNum,
-        NEXT
-        BackupRestored:
+                    CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
+                        PRINT #TextFileNum, "    SELECT CASE id"
+                        FOR Dummy = 1 TO UBOUND(PreviewControls)
+                            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
+                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                                PRINT #TextFileNum,
+                            END IF
+                        NEXT
+                        PRINT #TextFileNum, "    END SELECT"
+                END SELECT
+                PRINT #TextFileNum, "END SUB"
+                PRINT #TextFileNum,
+            NEXT
+        END IF
         CLOSE #TextFileNum
     END IF
 
