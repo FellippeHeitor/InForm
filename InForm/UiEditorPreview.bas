@@ -658,7 +658,7 @@ SUB __UI_BeforeUpdateDisplay
     PropertyApplied = False
     IF TotalLockedControls THEN LockedControlsGOSUB = True ELSE LockedControlsGOSUB = False
     DO WHILE LEN(Property$)
-        DIM FloatValue AS _FLOAT
+        DIM FloatValue AS _FLOAT, temp$, temp2$
         'Editor sent property value
         b$ = ReadSequential$(Property$, 2)
         TempValue = CVI(b$)
@@ -669,12 +669,21 @@ SUB __UI_BeforeUpdateDisplay
                 b$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, CVL(b$))
                 IF TotalLockedControls = 1 THEN
-                    Control(LockedControls(1)).Name = AdaptName$(b$, LockedControls(1))
+                    temp$ = AdaptName$(b$, LockedControls(1))
+                    temp2$ = RTRIM$(Control(LockedControls(1)).Name) + CHR$(10) + temp$
+                    SendData temp2$, "CONTROLRENAMED"
+                    Control(LockedControls(1)).Name = temp$
                 ELSE
                     IF __UI_TotalSelectedControls = 1 THEN
-                        Control(__UI_FirstSelectedID).Name = AdaptName$(b$, __UI_FirstSelectedID)
+                        temp$ = AdaptName$(b$, __UI_FirstSelectedID)
+                        temp2$ = RTRIM$(Control(__UI_FirstSelectedID).Name) + CHR$(10) + temp$
+                        SendData temp2$, "CONTROLRENAMED"
+                        Control(__UI_FirstSelectedID).Name = temp$
                     ELSEIF __UI_TotalSelectedControls = 0 THEN
-                        Control(__UI_FormID).Name = AdaptName$(b$, __UI_FormID)
+                        temp$ = AdaptName$(b$, __UI_FormID)
+                        temp2$ = RTRIM$(Control(__UI_FormID).Name) + CHR$(10) + temp$
+                        SendData temp2$, "CONTROLRENAMED"
+                        Control(__UI_FormID).Name = temp$
                     END IF
                 END IF
             CASE 2 'Caption
@@ -736,7 +745,10 @@ SUB __UI_BeforeUpdateDisplay
                         CASE __UI_Type_PictureBox: NewName$ = NewName$ + "PX"
                     END SELECT
 
-                    Control(i).Name = AdaptName$(NewName$, i)
+                    temp$ = AdaptName$(NewName$, i)
+                    temp2$ = RTRIM$(Control(i).Name) + CHR$(10) + temp$
+                    SendData temp2$, "CONTROLRENAMED"
+                    Control(i).Name = temp$
                 END IF
                 RETURN
 

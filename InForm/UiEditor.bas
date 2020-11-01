@@ -165,6 +165,7 @@ DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
 DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
 DIM SHARED LoadedWithGifExtension AS _BYTE, AddGifExtension AS _BYTE
 DIM SHARED TotalGifLoaded AS LONG, SetBindingDialogOpen AS _BYTE
+DIM SHARED InitialControlSet AS STRING
 
 TYPE newInputBox
     ID AS LONG
@@ -834,6 +835,7 @@ SUB __UI_Click (id AS LONG)
                     LastFormData$ = ""
                     Stream$ = ""
                     FormDataReceived = False
+                    InitialControlSet = ""
                 ELSE
                     Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
                     Control(FileList).Value = 0
@@ -1634,6 +1636,23 @@ SUB __UI_BeforeUpdateDisplay
             CASE "SHOWINVISIBLECONTROLS"
                 __UI_ShowInvisibleControls = CVI(thisData$)
                 Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
+            CASE "CONTROLRENAMED"
+                IF LEN(InitialControlSet) THEN
+                    DIM insertionPoint AS LONG, endPoint
+                    insertionPoint = INSTR(InitialControlSet, CHR$(10) + LEFT$(thisData$, INSTR(thisData$, CHR$(10))))
+                    IF insertionPoint THEN
+                        endPoint = INSTR(insertionPoint + 1, InitialControlSet, CHR$(10))
+                        InitialControlSet = LEFT$(InitialControlSet, endPoint - 1) + CHR$(11) + MID$(thisData$, INSTR(thisData$, CHR$(10)) + 1) + MID$(InitialControlSet, endPoint)
+                    ELSE
+                        'not found... maybe renamed previously in this session?
+                        insertionPoint = INSTR(InitialControlSet, CHR$(11) + LEFT$(thisData$, INSTR(thisData$, CHR$(10)) - 1) + CHR$(10))
+                        IF insertionPoint THEN
+                            insertionPoint = INSTR(insertionPoint, InitialControlSet, CHR$(11))
+                            endPoint = INSTR(insertionPoint + 1, InitialControlSet, CHR$(10))
+                            InitialControlSet = LEFT$(InitialControlSet, insertionPoint) + MID$(thisData$, INSTR(thisData$, CHR$(10)) + 1) + MID$(InitialControlSet, endPoint)
+                        END IF
+                    END IF
+                END IF
             CASE "SHOWBINDCONTROLDIALOG"
                 __UI_Click EditMenuBindControls
             CASE "ORIGINALIMAGEWIDTH"
@@ -1668,6 +1687,15 @@ SUB __UI_BeforeUpdateDisplay
     LOOP
 
     IF NOT FormDataReceived THEN EXIT SUB
+
+    IF InitialControlSet = "" THEN
+        InitialControlSet = CHR$(1)
+        FOR i = 1 TO UBOUND(PreviewControls)
+            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
+                InitialControlSet = InitialControlSet + CHR$(10) + RTRIM$(PreviewControls(i).Name) + CHR$(10)
+            END IF
+        NEXT
+    END IF
 
     Control(EditMenuRestoreDimensions).Disabled = True
     SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
@@ -4559,7 +4587,83 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         IF PreserveBackup THEN
             DIM insertionPoint AS LONG, endPoint AS LONG, firstCASE AS LONG
             DIM temp$, thisBlock$, addedItems$, indenting AS LONG
-            DIM checkConditionResult AS _BYTE
+            DIM checkConditionResult AS _BYTE, controlToRemove$, found AS _BYTE
+            DIM charSep$
+
+            charSep$ = " =<>+-/\^:;,*()'" + CHR$(10)
+
+            'Check which controls got removed/renamed since this form was loaded
+            IF LEN(InitialControlSet) THEN
+                insertionPoint = INSTR(InitialControlSet, CHR$(10))
+                DO
+                    endPoint = INSTR(insertionPoint + 1, InitialControlSet, CHR$(10))
+                    thisBlock$ = MID$(InitialControlSet, insertionPoint + 1, endPoint - insertionPoint - 1)
+                    temp$ = thisBlock$
+                    controlToRemove$ = ""
+
+                    IF INSTR(temp$, CHR$(11)) THEN
+                        'control was in the initial state but got renamed
+                        controlToRemove$ = LEFT$(temp$, INSTR(temp$, CHR$(11)) - 1)
+                        temp$ = MID$(temp$, INSTR(temp$, CHR$(11)) + 1)
+                    ELSE
+                        controlToRemove$ = temp$
+                    END IF
+
+                    found = False
+                    FOR i = 1 TO UBOUND(PreviewControls)
+                        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
+                            IF LCASE$(RTRIM$(PreviewControls(i).Name)) = LCASE$(temp$) THEN
+                                found = True
+                                EXIT FOR
+                            END IF
+                        END IF
+                    NEXT
+
+                    IF found THEN
+                        IF INSTR(thisBlock$, CHR$(11)) THEN
+                            'controlToRemove$ was in the initial state but got renamed to temp$
+                            insertionPoint = INSTR(BackupCode$, controlToRemove$)
+                            DO WHILE insertionPoint > 0
+                                found = True
+                                IF OutsideQuotes(BackupCode$, insertionPoint) THEN
+                                    a$ = MID$(BackupCode$, insertionPoint - 1, 1)
+                                    b$ = MID$(BackupCode$, insertionPoint + LEN(controlToRemove$), 1)
+                                    IF LEN(a$) > 0 AND INSTR(charSep$, a$) = 0 THEN found = False
+                                    IF LEN(b$) > 0 AND INSTR(charSep$, b$) = 0 THEN found = False
+                                    IF found THEN
+                                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + temp$ + MID$(BackupCode$, insertionPoint + LEN(controlToRemove$))
+                                    END IF
+                                END IF
+                                insertionPoint = INSTR(insertionPoint + 1, BackupCode$, controlToRemove$)
+                            LOOP
+                        END IF
+                    ELSE
+                        'comment next controlToRemove$ occurrences, since the control no longer exists
+                        insertionPoint = INSTR(BackupCode$, controlToRemove$)
+                        DO WHILE insertionPoint > 0
+                            found = True
+                            COLOR 8: PRINT insertionPoint, MID$(BackupCode$, insertionPoint, 30)
+                            IF OutsideQuotes(BackupCode$, insertionPoint) THEN
+                                a$ = MID$(BackupCode$, insertionPoint - 1, 1)
+                                b$ = MID$(BackupCode$, insertionPoint + LEN(controlToRemove$), 1)
+                                IF LEN(a$) > 0 AND INSTR(charSep$, a$) = 0 THEN found = False
+                                IF LEN(b$) > 0 AND INSTR(charSep$, b$) = 0 THEN found = False
+                                IF found THEN
+                                    endPoint = INSTR(insertionPoint, BackupCode$, CHR$(10))
+                                    IF endPoint = 0 THEN endPoint = LEN(BackupCode$)
+                                    temp$ = " '<-- " + CHR$(34) + controlToRemove$ + CHR$(34) + " was deleted from your form on " + DATE$
+                                    BackupCode$ = LEFT$(BackupCode$, endPoint - 1) + temp$ + MID$(BackupCode$, endPoint)
+                                    COLOR 14: PRINT insertionPoint, MID$(BackupCode$, insertionPoint, 30)
+                                END IF
+                            END IF
+                            SLEEP
+                            insertionPoint = INSTR(insertionPoint + 1, BackupCode$, controlToRemove$)
+                        LOOP
+                    END IF
+
+                    insertionPoint = endPoint + 1
+                LOOP WHILE insertionPoint < LEN(InitialControlSet)
+            END IF
 
             'Find insertion points in BackupCode$ for eventual new controls
             '1- Controls' IDs
@@ -5310,3 +5414,19 @@ FUNCTION SpecialCharsToEscapeCode$ (Text$)
     NEXT
     SpecialCharsToEscapeCode$ = Temp$ + CHR$(34)
 END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION OutsideQuotes%% (text$, position AS LONG)
+    DIM quote%%
+    DIM start AS LONG
+    DIM i AS LONG
+
+    start = _INSTRREV(position, text$, CHR$(10)) + 1
+    quote%% = False
+    FOR i = start TO position
+        IF ASC(text$, i) = 34 THEN quote%% = NOT quote%%
+        IF ASC(text$, i) = 10 THEN EXIT FOR
+    NEXT
+    OutsideQuotes%% = NOT quote%%
+END FUNCTION
+
