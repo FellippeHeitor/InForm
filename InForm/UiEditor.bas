@@ -2718,6 +2718,9 @@ SUB __UI_BeforeUnload
         IF Answer = MsgBox_Cancel THEN
             __UI_UnloadSignal = False
         ELSEIF Answer = MsgBox_Yes THEN
+            IF ThisFileName$ = "" THEN
+                ThisFileName$ = "untitled"
+            END IF
             SaveForm False, False
         END IF
     END IF
