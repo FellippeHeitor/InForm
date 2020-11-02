@@ -4271,6 +4271,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             CLOSE #TextFileNum
 
             TextFileNum = FREEFILE
+            OPEN BackupFile$ + "-backup" FOR OUTPUT AS #TextFileNum: CLOSE #TextFileNum
             OPEN BackupFile$ + "-backup" FOR BINARY AS #TextFileNum
             PUT #TextFileNum, 1, b$
             CLOSE #TextFileNum
@@ -4586,6 +4587,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF NOT SaveOnlyFrm THEN
         IF PreserveBackup THEN
             DIM insertionPoint AS LONG, endPoint AS LONG, firstCASE AS LONG
+            DIM insertionPoint2 AS LONG, endPoint2 AS LONG
             DIM temp$, thisBlock$, addedItems$, indenting AS LONG
             DIM checkConditionResult AS _BYTE, controlToRemove$, found AS _BYTE
             DIM charSep$
@@ -4594,10 +4596,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
 
             'Check which controls got removed/renamed since this form was loaded
             IF LEN(InitialControlSet) THEN
-                insertionPoint = INSTR(InitialControlSet, CHR$(10))
+                insertionPoint2 = INSTR(InitialControlSet, CHR$(10))
                 DO
-                    endPoint = INSTR(insertionPoint + 1, InitialControlSet, CHR$(10))
-                    thisBlock$ = MID$(InitialControlSet, insertionPoint + 1, endPoint - insertionPoint - 1)
+                    endPoint2 = INSTR(insertionPoint2 + 1, InitialControlSet, CHR$(10))
+                    thisBlock$ = MID$(InitialControlSet, insertionPoint2 + 1, endPoint2 - insertionPoint2 - 1)
                     temp$ = thisBlock$
                     controlToRemove$ = ""
 
@@ -4651,7 +4653,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                                 IF found THEN
                                     endPoint = INSTR(insertionPoint, BackupCode$, CHR$(10))
                                     IF endPoint = 0 THEN endPoint = LEN(BackupCode$)
-                                    temp$ = " '<-- " + CHR$(34) + controlToRemove$ + CHR$(34) + " was deleted from your form on " + DATE$
+                                    temp$ = " '<-- " + CHR$(34) + controlToRemove$ + CHR$(34) + " deleted from Form on " + DATE$
                                     BackupCode$ = LEFT$(BackupCode$, endPoint - 1) + temp$ + MID$(BackupCode$, endPoint)
                                     COLOR 14: PRINT insertionPoint, MID$(BackupCode$, insertionPoint, 30)
                                 END IF
@@ -4661,13 +4663,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         LOOP
                     END IF
 
-                    insertionPoint = endPoint + 1
-                LOOP WHILE insertionPoint < LEN(InitialControlSet)
+                    insertionPoint2 = endPoint2 + 1
+                LOOP WHILE insertionPoint2 < LEN(InitialControlSet)
             END IF
 
             'Find insertion points in BackupCode$ for eventual new controls
             '1- Controls' IDs
-            insertionPoint = INSTR(BackupCode$, "DIM SHARED ")
             addedItems$ = ""
             FOR i = 1 TO UBOUND(PreviewControls)
                 IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
@@ -4677,11 +4678,26 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     END IF
                 END IF
             NEXT
+
+            insertionPoint = INSTR(BackupCode$, "DIM SHARED ")
             IF LEN(addedItems$) THEN
                 BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + addedItems$ + MID$(BackupCode$, insertionPoint)
             END IF
 
-            '2- Even procedures
+            '2- Remove "control deleted" comments, if any has been readded.
+            FOR i = 1 TO UBOUND(PreviewControls)
+                IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
+                    temp$ = " '<-- " + CHR$(34) + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + " deleted from Form on"
+                    insertionPoint = INSTR(BackupCode$, temp$)
+                    DO WHILE insertionPoint > 0
+                        endPoint = INSTR(insertionPoint, BackupCode$, CHR$(10))
+                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + MID$(BackupCode$, endPoint)
+                        insertionPoint = INSTR(BackupCode$, temp$)
+                    LOOP
+                END IF
+            NEXT
+
+            '3- Even procedures
             FOR i = 4 TO 13
                 SELECT EVERYCASE i
                     CASE 4: temp$ = "SUB __UI_Click (id AS LONG)"
@@ -4708,8 +4724,11 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             FOR Dummy = 1 TO UBOUND(PreviewControls)
                                 GOSUB checkCondition
                                 IF checkConditionResult THEN
-                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 THEN
+                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND _
+                                       INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
                                         addedItems$ = addedItems$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                    ELSEIF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") > 0 THEN
+                                        thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on "), thisBlock$, CHR$(10)))
                                     END IF
                                 END IF
                             NEXT
@@ -4721,6 +4740,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END SELECT
             NEXT
 
+            OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum: CLOSE #TextFileNum
             OPEN BaseOutputFileName + ".bas" FOR BINARY AS #TextFileNum
             PUT #TextFileNum, , BackupCode$
         ELSE
