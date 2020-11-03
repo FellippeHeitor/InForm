@@ -80,5 +80,10 @@ FOR EACH CONTROL (FORM INCLUDED):
                 For Label controls
     INTEGER -43 (BorderSize) + INTEGER .BorderSize
     INTEGER -44 (Key combo) + INTEGER LEN(Key combo) + Key combo
+    INTEGER -45 (Animated Gif)
+    INTEGER -46 (Auto-play Gif)
+    INTEGER -47 (ControlIsSelected)
+    INTEGER -48 (BoundTo) + INTEGER Which control + INTEGER Which 
+                Property
     -------------------
 INTEGER -1024 (End of file)
