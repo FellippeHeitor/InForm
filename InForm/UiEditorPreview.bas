@@ -767,7 +767,10 @@ SUB __UI_BeforeUpdateDisplay
                             IF Control(i).ControlIsSelected THEN
                                 ChangeText:
                                 Text(i) = b$
-                                IF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
+                                IF Control(i).Type = __UI_Type_TextBox AND Control(i).NumericOnly THEN
+                                    Text(i) = b$
+                                    Control(i).Value = VAL(b$)
+                                ELSEIF Control(i).Type = __UI_Type_TextBox AND Control(i).Max > 0 THEN
                                     Text(i) = LEFT$(b$, Control(i).Max)
                                 END IF
                                 IF Control(i).Type = __UI_Type_Button OR Control(i).Type = __UI_Type_MenuItem THEN

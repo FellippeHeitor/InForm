@@ -4408,8 +4408,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                                 PRINT #TextFileNum, a$
                             END IF
                         CASE ELSE
-                            a$ = "    Text(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTexts(i))
-                            PRINT #TextFileNum, a$
+                            IF PreviewControls(i).Type = __UI_Type_TextBox AND PreviewControls(i).NumericOnly <> 0 THEN
+                                'skip saving Text() for NumericTextBox controls
+                            ELSE
+                                a$ = "    Text(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTexts(i))
+                                PRINT #TextFileNum, a$
+                            END IF
                     END SELECT
                 END IF
                 IF LEN(PreviewMasks(i)) > 0 THEN
@@ -4470,9 +4474,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
                 END IF
                 IF PreviewControls(i).Value <> 0 THEN
-                    IF PreviewControls(i).NumericOnly = 0 THEN
-                        PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
-                    END IF
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
                 END IF
                 IF PreviewControls(i).Min <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
