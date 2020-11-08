@@ -1285,6 +1285,9 @@ SUB __UI_UpdateDisplay
         END IF
 
         BypassDisplay:
+        DIM __UI_RelevantID AS LONG
+        __UI_RelevantID = __UI_DraggingID
+        IF __UI_IsResizing THEN __UI_RelevantID = __UI_ResizingID
         IF __UI_Snapped THEN
             IF OverlayReset = False THEN
                 'Reset the helper canvas of the main form
@@ -1298,94 +1301,92 @@ SUB __UI_UpdateDisplay
             END IF
             OverlayisVisible = True
 
-            IF __UI_Snapped THEN
-                DIM X1 AS INTEGER, X2 AS INTEGER
-                DIM Y1 AS INTEGER, Y2 AS INTEGER
+            DIM X1 AS INTEGER, X2 AS INTEGER
+            DIM Y1 AS INTEGER, Y2 AS INTEGER
 
-                ContainerOffsetLeft = Control(Control(__UI_DraggingID).ParentID).Left
-                ContainerOffsetTop = Control(Control(__UI_DraggingID).ParentID).Top
+            ContainerOffsetLeft = Control(Control(__UI_RelevantID).ParentID).Left
+            ContainerOffsetTop = Control(Control(__UI_RelevantID).ParentID).Top
 
-                IF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY = 0 THEN
-                    X1 = 0
-                    X2 = _WIDTH
-                    LINE (X1, __UI_SnappedY)-STEP(X2, 0), Control(__UI_FormID).SelectedBackColor
-                ELSEIF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY > 0 THEN
-                    SELECT CASE __UI_SnappedByProximityY
-                        CASE 1 'bottom of dragged control to top of snapped control
-                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
-                            IF X1 < Control(__UI_SnappedXID).Left + 1 THEN X1 = Control(__UI_SnappedXID).Left + 1
-                            IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
-                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height
-                            FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, __UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                        CASE 2 'top of dragged control to bottom of snapped control
-                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
-                            IF X1 < Control(__UI_SnappedXID).Left + 1 THEN X1 = Control(__UI_SnappedXID).Left + 1
-                            IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
-                            Y1 = Control(__UI_DraggingID).Top
-                            FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, -__UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                        CASE 3 'snapped to top of form
-                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
-                            IF X1 < 1 THEN X1 = 1
-                            IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
-                            Y1 = Control(__UI_DraggingID).Top
-                            FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, -__UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                        CASE 4 'snapped to bottom of form
-                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width / 2
-                            IF X1 < 1 THEN X1 = 1
-                            IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
-                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height
-                            FOR X1 = X1 - 1 TO X1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, __UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                    END SELECT
-                END IF
+            IF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY = 0 THEN
+                X1 = 0
+                X2 = _WIDTH
+                LINE (X1, __UI_SnappedY)-STEP(X2, 0), Control(__UI_FormID).SelectedBackColor
+            ELSEIF __UI_SnappedY >= 0 AND __UI_SnappedByProximityY > 0 THEN
+                SELECT CASE __UI_SnappedByProximityY
+                    CASE 1 'bottom of dragged control to top of snapped control
+                        X1 = Control(__UI_RelevantID).Left + Control(__UI_RelevantID).Width / 2
+                        IF X1 < Control(__UI_SnappedXID).Left + 1 THEN X1 = Control(__UI_SnappedXID).Left + 1
+                        IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
+                        Y1 = Control(__UI_RelevantID).Top + Control(__UI_RelevantID).Height
+                        FOR X1 = X1 - 1 TO X1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, __UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                    CASE 2 'top of dragged control to bottom of snapped control
+                        X1 = Control(__UI_RelevantID).Left + Control(__UI_RelevantID).Width / 2
+                        IF X1 < Control(__UI_SnappedXID).Left + 1 THEN X1 = Control(__UI_SnappedXID).Left + 1
+                        IF X1 > Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1 THEN X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width - 1
+                        Y1 = Control(__UI_RelevantID).Top
+                        FOR X1 = X1 - 1 TO X1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, -__UI_SnapDistance), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                    CASE 3 'snapped to top of form
+                        X1 = Control(__UI_RelevantID).Left + Control(__UI_RelevantID).Width / 2
+                        IF X1 < 1 THEN X1 = 1
+                        IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
+                        Y1 = Control(__UI_RelevantID).Top
+                        FOR X1 = X1 - 1 TO X1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, -__UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                    CASE 4 'snapped to bottom of form
+                        X1 = Control(__UI_RelevantID).Left + Control(__UI_RelevantID).Width / 2
+                        IF X1 < 1 THEN X1 = 1
+                        IF X1 > Control(__UI_FormID).Width - 2 THEN X1 = Control(__UI_FormID).Width - 2
+                        Y1 = Control(__UI_RelevantID).Top + Control(__UI_RelevantID).Height
+                        FOR X1 = X1 - 1 TO X1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(0, __UI_SnapDistanceFromForm), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                END SELECT
+            END IF
 
-                IF __UI_SnappedX >= 0 AND __UI_SnappedByProximityX = 0 THEN
-                    Y1 = 0
-                    Y2 = _HEIGHT
-                    LINE (__UI_SnappedX, Y1)-STEP(0, Y2), Control(__UI_FormID).SelectedBackColor
-                ELSEIF __UI_SnappedX >= 0 AND __UI_SnappedByProximityX > 0 THEN
-                    SELECT CASE __UI_SnappedByProximityX
-                        CASE 1 'left of dragged control to right of snapped control
-                            X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width
-                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
-                            IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
-                            IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
-                            FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                        CASE 2 'right of dragged control to left of snapped control
-                            X1 = Control(__UI_SnappedXID).Left
-                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
-                            IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
-                            IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
-                            FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(-__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                        CASE 3 'snapped to left side of form
-                            X1 = Control(__UI_DraggingID).Left
-                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
-                            IF Y1 < 1 THEN Y1 = 1
-                            IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
-                            FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(-__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                        CASE 4 'snapped to right side of form
-                            X1 = Control(__UI_DraggingID).Left + Control(__UI_DraggingID).Width
-                            Y1 = Control(__UI_DraggingID).Top + Control(__UI_DraggingID).Height / 2
-                            IF Y1 < 1 THEN Y1 = 1
-                            IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
-                            FOR Y1 = Y1 - 1 TO Y1 + 1
-                                LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
-                            NEXT
-                    END SELECT
-                END IF
+            IF __UI_SnappedX >= 0 AND __UI_SnappedByProximityX = 0 THEN
+                Y1 = 0
+                Y2 = _HEIGHT
+                LINE (__UI_SnappedX, Y1)-STEP(0, Y2), Control(__UI_FormID).SelectedBackColor
+            ELSEIF __UI_SnappedX >= 0 AND __UI_SnappedByProximityX > 0 THEN
+                SELECT CASE __UI_SnappedByProximityX
+                    CASE 1 'left of dragged control to right of snapped control
+                        X1 = Control(__UI_SnappedXID).Left + Control(__UI_SnappedXID).Width
+                        Y1 = Control(__UI_RelevantID).Top + Control(__UI_RelevantID).Height / 2
+                        IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
+                        IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
+                        FOR Y1 = Y1 - 1 TO Y1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                    CASE 2 'right of dragged control to left of snapped control
+                        X1 = Control(__UI_SnappedXID).Left
+                        Y1 = Control(__UI_RelevantID).Top + Control(__UI_RelevantID).Height / 2
+                        IF Y1 < Control(__UI_SnappedXID).Top + 1 THEN Y1 = Control(__UI_SnappedXID).Top + 1
+                        IF Y1 > Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1 THEN Y1 = Control(__UI_SnappedXID).Top + Control(__UI_SnappedXID).Height - 1
+                        FOR Y1 = Y1 - 1 TO Y1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(-__UI_SnapDistance, 0), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                    CASE 3 'snapped to left side of form
+                        X1 = Control(__UI_RelevantID).Left
+                        Y1 = Control(__UI_RelevantID).Top + Control(__UI_RelevantID).Height / 2
+                        IF Y1 < 1 THEN Y1 = 1
+                        IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
+                        FOR Y1 = Y1 - 1 TO Y1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(-__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                    CASE 4 'snapped to right side of form
+                        X1 = Control(__UI_RelevantID).Left + Control(__UI_RelevantID).Width
+                        Y1 = Control(__UI_RelevantID).Top + Control(__UI_RelevantID).Height / 2
+                        IF Y1 < 1 THEN Y1 = 1
+                        IF Y1 > Control(__UI_FormID).Height - 2 THEN Y1 = Control(__UI_FormID).Height - 2
+                        FOR Y1 = Y1 - 1 TO Y1 + 1
+                            LINE (X1 + ContainerOffsetLeft, Y1 + ContainerOffsetTop)-STEP(__UI_SnapDistanceFromForm, 0), Control(__UI_FormID).SelectedBackColor
+                        NEXT
+                END SELECT
             END IF
             _DEST 0
         END IF
@@ -1667,7 +1668,7 @@ SUB __UI_UpdateDisplay
         _PUTIMAGE (__UI_ActiveTipLeft, __UI_ActiveTipTop), ActiveTipPanel
     END IF
 
-    IF __UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF ((__UI_IsResizing AND Control(__UI_ResizingID).AutoSize = False) OR (__UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID)) AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
         STATIC DragTip AS LONG, TipPanelWidth AS INTEGER
 
         IF DragTip = 0 THEN
@@ -1690,10 +1691,13 @@ SUB __UI_UpdateDisplay
         END IF
         _DEST 0
 
+
+        __UI_RelevantID = __UI_DraggingID
+        IF __UI_IsResizing THEN __UI_RelevantID = __UI_ResizingID
         IF __UI_Snapped THEN
             X1 = _WIDTH \ 2 - TipPanelWidth \ 2
             Y1 = 0
-            IF Control(__UI_DraggingID).Top <= _HEIGHT(DragTip) THEN
+            IF Control(__UI_RelevantID).Top <= _HEIGHT(DragTip) THEN
                 _PUTIMAGE (X1, Control(__UI_FormID).Height - _HEIGHT(DragTip)), DragTip
             ELSE
                 _PUTIMAGE (X1, 0), DragTip
@@ -1783,6 +1787,7 @@ SUB __UI_EventDispatcher
     STATIC __UI_MouseDownTop AS INTEGER, __UI_MouseDownLeft AS INTEGER
     STATIC __UI_JustOpenedMenu AS _BYTE
     STATIC OriginalDragX AS INTEGER, OriginalDragY AS INTEGER
+    STATIC OriginalResizeRightSide AS INTEGER, OriginalResizeBottom AS INTEGER
     DIM i AS LONG, j AS LONG, ThisItem%, TempParent AS LONG
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
 
@@ -2588,6 +2593,8 @@ SUB __UI_EventDispatcher
                     IF __UI_IsResizing = False AND __UI_SelectionRectangle = False AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuBar AND Control(__UI_FirstSelectedID).Type <> __UI_Type_MenuItem THEN
                         __UI_IsResizing = True
                         __UI_ResizingID = __UI_HoveringID
+                        OriginalResizeRightSide = Control(__UI_ResizingID).Left + Control(__UI_ResizingID).Width
+                        OriginalResizeBottom = Control(__UI_ResizingID).Top + Control(__UI_ResizingID).Height
                         __UI_MouseDownOnID = 0
                         __UI_DragY = __UI_MouseTop
                         __UI_DragX = __UI_MouseLeft
@@ -3005,7 +3012,7 @@ SUB __UI_EventDispatcher
     __UI_SnappedY = -1
 
     DIM SetNewParent AS _BYTE, LeftOffset AS INTEGER, TopOffset AS INTEGER
-    IF __UI_IsDragging AND __UI_DraggingID > 0 THEN
+    IF (__UI_IsDragging AND __UI_DraggingID > 0) THEN
         IF Control(__UI_DraggingID).Type <> __UI_Type_Frame THEN
             IF Control(__UI_BelowHoveringID).Type = __UI_Type_Frame OR Control(__UI_HoveringID).Type = __UI_Type_Frame THEN
                 IF Control(__UI_HoveringID).Type = __UI_Type_Frame THEN __UI_BelowHoveringID = __UI_HoveringID
@@ -3043,18 +3050,19 @@ SUB __UI_EventDispatcher
             END IF
         NEXT
 
+        'Snapping (dragging): -----------------------------------------------------------------
+        'Last snap coordinates, for priority comparison:
+        DIM PrevXSnapOffset AS INTEGER, PrevYSnapOffset AS INTEGER
+        PrevXSnapOffset = 10
+        PrevYSnapOffset = 10
+
         IF (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
             'How far the mouse is from the currently being dragged control:
             DIM MouseXOffset AS INTEGER, MouseYOffset AS INTEGER
             'How distant from the neighboring snapped control's edge we are:
             DIM XSnapOffset AS INTEGER, YSnapOffset AS INTEGER
-            'Last snap coordinates, for priority comparison:
-            DIM PrevXSnapOffset AS INTEGER, PrevYSnapOffset AS INTEGER
 
             'Look for a control nearby to which this one may be aligned automatically
-            PrevXSnapOffset = 10
-            PrevYSnapOffset = 10
-
             MouseYOffset = ABS(__UI_MouseTop - (Control(__UI_DraggingID).Top + Control(Control(__UI_DraggingID).ParentID).Top + OriginalDragY))
             MouseXOffset = ABS(__UI_MouseLeft - (Control(__UI_DraggingID).Left + Control(Control(__UI_DraggingID).ParentID).Left + OriginalDragX))
 
@@ -3269,6 +3277,8 @@ SUB __UI_EventDispatcher
     END IF
 
     IF __UI_IsResizing AND __UI_ResizingID > 0 THEN
+        DIM __UI_RelevantID AS LONG
+
         __UI_ForceRedraw = True
         FOR i = 1 TO UBOUND(Control)
             IF Control(i).ControlIsSelected THEN
@@ -3281,6 +3291,18 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
                     END IF
+
+                    'Snap
+                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+                        IF (Control(i).Left + Control(i).Width) > Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm OR _
+                           ((Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm) - (Control(i).Left + Control(i).Width)) <= __UI_SnapDistanceFromForm / 2 THEN
+                            Control(i).Width = Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm - Control(i).Left
+                            __UI_Snapped = True
+                            __UI_SnappedX = __UI_SnapDistanceFromForm
+                            __UI_SnappedByProximityX = 4
+                        END IF
+                    END IF
                 END IF
                 'Bottom
                 IF __UI_ResizeHandleHover = 2 THEN
@@ -3291,6 +3313,18 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
                     END IF
+
+                    'Snap
+                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+                        IF (Control(i).Top + Control(i).Height) > Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm OR _
+                           ((Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm) - (Control(i).Top + Control(i).Height)) <= __UI_SnapDistanceFromForm / 2 THEN
+                            Control(i).Height = Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm - Control(i).Top
+                            __UI_Snapped = True
+                            __UI_SnappedY = Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm
+                            __UI_SnappedByProximityY = 4
+                        END IF
+                    END IF
                 END IF
                 'Left
                 IF __UI_ResizeHandleHover = 3 THEN
@@ -3299,7 +3333,25 @@ SUB __UI_EventDispatcher
                         Control(i).Width = Control(i).Width - (2 * (__UI_MouseLeft - __UI_DragX)): IF Control(i).Width < 4 THEN Control(i).Width = 4
                         IF Control(i).Width > 4 THEN Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
                     ELSE
-                        Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4 ELSE Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
+                        Control(i).Width = Control(i).Width - (__UI_MouseLeft - __UI_DragX)
+                        IF Control(i).Width < 4 THEN
+                            Control(i).Width = 4
+                        ELSE
+                            Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
+                        END IF
+                    END IF
+
+                    'Snap
+                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+                        IF (Control(i).Left) < __UI_SnapDistanceFromForm OR _
+                           (Control(i).Left) <= __UI_SnapDistanceFromForm * 1.5 THEN
+                            Control(i).Left = __UI_SnapDistanceFromForm
+                            Control(i).Width = OriginalResizeRightSide - __UI_SnapDistanceFromForm
+                            __UI_Snapped = True
+                            __UI_SnappedX = __UI_SnapDistanceFromForm
+                            __UI_SnappedByProximityX = 3
+                        END IF
                     END IF
                 END IF
                 'Top
@@ -3310,6 +3362,19 @@ SUB __UI_EventDispatcher
                         IF Control(i).Height > 4 THEN Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                     ELSE
                         Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
+                    END IF
+
+                    'Snap
+                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+                        IF (Control(i).Top) < __UI_SnapDistanceFromForm OR _
+                           (Control(i).Top) <= __UI_SnapDistanceFromForm * 1.5 THEN
+                            Control(i).Top = __UI_SnapDistanceFromForm
+                            Control(i).Height = OriginalResizeBottom - __UI_SnapDistanceFromForm
+                            __UI_Snapped = True
+                            __UI_SnappedY = __UI_SnapDistanceFromForm
+                            __UI_SnappedByProximityY = 3
+                        END IF
                     END IF
                 END IF
                 DIM OldAlignmentY AS INTEGER
@@ -3443,6 +3508,7 @@ SUB __UI_EventDispatcher
         __UI_DragY = __UI_MouseTop
         __UI_DragX = __UI_MouseLeft
     END IF
+
     IF __UI_DraggingThumb = True THEN
         IF Control(__UI_DraggingThumbOnID).Type = __UI_Type_ListBox THEN
             IF __UI_MouseTop >= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight AND __UI_MouseTop <= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
