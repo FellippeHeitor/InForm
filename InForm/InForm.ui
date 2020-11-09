@@ -3291,18 +3291,7 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(i).Width = Control(i).Width + (__UI_MouseLeft - __UI_DragX): IF Control(i).Width < 4 THEN Control(i).Width = 4
                     END IF
-
-                    'Snap
-                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
-                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
-                        IF (Control(i).Left + Control(i).Width) > Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm OR _
-                           ((Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm) - (Control(i).Left + Control(i).Width)) <= __UI_SnapDistanceFromForm / 2 THEN
-                            Control(i).Width = Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm - Control(i).Left
-                            __UI_Snapped = True
-                            __UI_SnappedX = __UI_SnapDistanceFromForm
-                            __UI_SnappedByProximityX = 4
-                        END IF
-                    END IF
+                    GOSUB CheckResizeSnapRight
                 END IF
                 'Bottom
                 IF __UI_ResizeHandleHover = 2 THEN
@@ -3313,18 +3302,7 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(i).Height = Control(i).Height + (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4
                     END IF
-
-                    'Snap
-                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
-                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
-                        IF (Control(i).Top + Control(i).Height) > Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm OR _
-                           ((Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm) - (Control(i).Top + Control(i).Height)) <= __UI_SnapDistanceFromForm / 2 THEN
-                            Control(i).Height = Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm - Control(i).Top
-                            __UI_Snapped = True
-                            __UI_SnappedY = Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm
-                            __UI_SnappedByProximityY = 4
-                        END IF
-                    END IF
+                    GOSUB CheckResizeSnapBottom
                 END IF
                 'Left
                 IF __UI_ResizeHandleHover = 3 THEN
@@ -3340,19 +3318,7 @@ SUB __UI_EventDispatcher
                             Control(i).Left = Control(i).Left + (__UI_MouseLeft - __UI_DragX)
                         END IF
                     END IF
-
-                    'Snap
-                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
-                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
-                        IF (Control(i).Left) < __UI_SnapDistanceFromForm OR _
-                           (Control(i).Left) <= __UI_SnapDistanceFromForm * 1.5 THEN
-                            Control(i).Left = __UI_SnapDistanceFromForm
-                            Control(i).Width = OriginalResizeRightSide - __UI_SnapDistanceFromForm
-                            __UI_Snapped = True
-                            __UI_SnappedX = __UI_SnapDistanceFromForm
-                            __UI_SnappedByProximityX = 3
-                        END IF
-                    END IF
+                    GOSUB CheckResizeSnapLeft
                 END IF
                 'Top
                 IF __UI_ResizeHandleHover = 4 THEN
@@ -3363,19 +3329,7 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(i).Height = Control(i).Height - (__UI_MouseTop - __UI_DragY): IF Control(i).Height < 4 THEN Control(i).Height = 4 ELSE Control(i).Top = Control(i).Top + (__UI_MouseTop - __UI_DragY)
                     END IF
-
-                    'Snap
-                    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
-                        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
-                        IF (Control(i).Top) < __UI_SnapDistanceFromForm OR _
-                           (Control(i).Top) <= __UI_SnapDistanceFromForm * 1.5 THEN
-                            Control(i).Top = __UI_SnapDistanceFromForm
-                            Control(i).Height = OriginalResizeBottom - __UI_SnapDistanceFromForm
-                            __UI_Snapped = True
-                            __UI_SnappedY = __UI_SnapDistanceFromForm
-                            __UI_SnappedByProximityY = 3
-                        END IF
-                    END IF
+                    GOSUB CheckResizeSnapTop
                 END IF
                 DIM OldAlignmentY AS INTEGER
                 'Resizing by corners keeps original aspect ratio for PictureBox controls
@@ -3409,6 +3363,8 @@ SUB __UI_EventDispatcher
                             Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                             Control(i).Top = OldAlignmentY - Control(i).Height
                         END IF
+                        GOSUB CheckResizeSnapRight
+                        GOSUB CheckResizeSnapTop
                     END IF
                 END IF
                 'Top-left
@@ -3441,6 +3397,8 @@ SUB __UI_EventDispatcher
                             Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                             Control(i).Top = OldAlignmentY - Control(i).Height
                         END IF
+                        GOSUB CheckResizeSnapLeft
+                        GOSUB CheckResizeSnapTop
                     END IF
                 END IF
                 'Bottom-right
@@ -3471,6 +3429,8 @@ SUB __UI_EventDispatcher
                         IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
                             Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                         END IF
+                        GOSUB CheckResizeSnapRight
+                        GOSUB CheckResizeSnapBottom
                     END IF
                 END IF
                 'Bottom-left
@@ -3501,6 +3461,8 @@ SUB __UI_EventDispatcher
                         IF Control(i).Type = __UI_Type_PictureBox AND LEN(Text(i)) > 0 THEN
                             Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                         END IF
+                        GOSUB CheckResizeSnapLeft
+                        GOSUB CheckResizeSnapBottom
                     END IF
                 END IF
             END IF
@@ -4616,6 +4578,65 @@ SUB __UI_EventDispatcher
     END IF
 
     __UI_LastHoveringID = __UI_HoveringID
+    EXIT SUB
+
+    CheckResizeSnapRight:
+    'Snap right
+    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+        IF (Control(i).Left + Control(i).Width) > Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm OR _
+           ((Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm) - (Control(i).Left + Control(i).Width)) <= __UI_SnapDistanceFromForm / 2 THEN
+            Control(i).Width = Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm - Control(i).Left
+            __UI_Snapped = True
+            __UI_SnappedX = __UI_SnapDistanceFromForm
+            __UI_SnappedByProximityX = 4
+        END IF
+    END IF
+    RETURN
+
+    CheckResizeSnapLeft:
+    'Snap left
+    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+        IF (Control(i).Left) < __UI_SnapDistanceFromForm OR _
+           (Control(i).Left) <= __UI_SnapDistanceFromForm * 1.5 THEN
+            Control(i).Left = __UI_SnapDistanceFromForm
+            Control(i).Width = OriginalResizeRightSide - __UI_SnapDistanceFromForm
+            __UI_Snapped = True
+            __UI_SnappedX = __UI_SnapDistanceFromForm
+            __UI_SnappedByProximityX = 3
+        END IF
+    END IF
+    RETURN
+
+    CheckResizeSnapTop:
+    'Snap top
+    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+        IF (Control(i).Top) < __UI_SnapDistanceFromForm OR _
+           (Control(i).Top) <= __UI_SnapDistanceFromForm * 1.5 THEN
+            Control(i).Top = __UI_SnapDistanceFromForm
+            Control(i).Height = OriginalResizeBottom - __UI_SnapDistanceFromForm
+            __UI_Snapped = True
+            __UI_SnappedY = __UI_SnapDistanceFromForm
+            __UI_SnappedByProximityY = 3
+        END IF
+    END IF
+    RETURN
+
+    CheckResizeSnapBottom:
+    'Snap bottom
+    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+        IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
+        IF (Control(i).Top + Control(i).Height) > Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm OR _
+           ((Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm) - (Control(i).Top + Control(i).Height)) <= __UI_SnapDistanceFromForm / 2 THEN
+            Control(i).Height = Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm - Control(i).Top
+            __UI_Snapped = True
+            __UI_SnappedY = Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm
+            __UI_SnappedByProximityY = 4
+        END IF
+    END IF
+    RETURN
 END SUB
 
 SUB __UI_ValidateBounds(this AS LONG)
