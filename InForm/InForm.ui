@@ -5875,7 +5875,7 @@ SUB RemoveItem (WhichListBox AS LONG, ItemToRemove AS INTEGER)
             TempText$ = ""
         END IF
 
-        IF ThisItem% <> ItemToRemove THEN Text(This.ID) = Text(This.ID) + TempCaption$ + CHR$(13)
+        IF ThisItem% <> ItemToRemove THEN Text(This.ID) = Text(This.ID) + TempCaption$ + CHR$(10)
     LOOP
 
     This.Max = This.Max - 1
