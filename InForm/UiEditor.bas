@@ -4459,6 +4459,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 IF PreviewControls(i).HasBorder THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = True"
+                ELSE
+                    PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = False"
                 END IF
                 IF PreviewControls(i).Align = __UI_Center THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Center"
