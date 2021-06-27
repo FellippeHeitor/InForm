@@ -148,6 +148,11 @@ TYPE __UI_Types
     RestrictResize AS _BYTE
 END TYPE
 
+TYPE __UI_ThemeImagesType
+    FileName AS STRING * 32
+    Handle AS LONG
+END TYPE
+
 TYPE __UI_WordWrapHistoryType
     StringSlot AS LONG
     Width AS INTEGER
@@ -172,6 +177,7 @@ REDIM SHARED ToolTip(0 TO 100) AS STRING
 REDIM SHARED __UI_TempTips(0 TO 100) AS STRING
 REDIM SHARED Control(0 TO 100) AS __UI_ControlTYPE
 REDIM SHARED ControlDrawOrder(0) AS LONG
+REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
 REDIM SHARED __UI_WordWrapHistoryTexts(0 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistoryResults(0 TO 100) AS STRING
 REDIM SHARED __UI_WordWrapHistory(0 TO 100) AS __UI_WordWrapHistoryType
@@ -330,11 +336,7 @@ __UI_Font8Offset = 5
 __UI_Font16Offset = 3
 __UI_ClipboardCheck$ = "InForm" + STRING$(2, 10) + "BEGIN CONTROL DATA" + CHR$(10) + STRING$(60, 45) + CHR$(10)
 
-__UI_ScrollbarWidth = __UI_ThemeSetup("scrollbar.width")
-__UI_ScrollbarButtonHeight = __UI_ThemeSetup("scrollbar.height")
-__UI_MenuBarOffset = __UI_ThemeSetup("menubar.offset")
-__UI_MenuItemOffset = __UI_ThemeSetup("menuitem.offset")
-__UI_DefaultCaptionIndent = __UI_ThemeSetup("caption.indent")
+__UI_ThemeSetup
 __UI_InternalMenus
 __UI_LoadForm
 
@@ -5463,7 +5465,7 @@ SUB LoadImage (This AS __UI_ControlTYPE, File$)
     END IF
 
     IF LEN(ErrorMessage$) THEN
-        IF NotFoundImage = 0 THEN NotFoundImage = __UI_LoadThemeImage("notfound")
+        IF NotFoundImage = 0 THEN NotFoundImage = __UI_LoadThemeImage("notfound.png")
 
         PrevDest = _DEST
         This.HelperCanvas = _NEWIMAGE(This.Width, This.Height, 32)
@@ -5509,6 +5511,73 @@ SUB __UI_ClearColor (Image&, Left AS _UNSIGNED LONG, Top AS INTEGER)
         _SOURCE PrevSource
     END IF
 END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_ClearHelperCanvasColor (This AS __UI_ControlTYPE, Left AS INTEGER, Top AS INTEGER)
+    DIM PrevSource AS LONG
+
+    IF NOT This.HelperCanvas < -1 THEN EXIT SUB
+
+    PrevSource = _SOURCE
+    _SOURCE This.HelperCanvas
+    This.TransparentColor = POINT(Left, Top)
+    _CLEARCOLOR This.TransparentColor, This.HelperCanvas
+    _SOURCE PrevSource
+END SUB
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_LoadThemeImage& (FileName$)
+    'Contains portions of Dav's BIN2BAS
+    'http://www.qbasicnews.com/dav/qb64.php
+
+    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$, BASFILE$
+    DIM MemoryBlock AS _MEM, TempImage AS LONG, NextSlot AS LONG
+    DIM NewWidth AS INTEGER, NewHeight AS INTEGER
+
+    'Check if this FileName$ has already been loaded
+    FOR NextSlot = 1 TO UBOUND(__UI_ThemeImages)
+        IF UCASE$(RTRIM$(__UI_ThemeImages(NextSlot).FileName)) = UCASE$(FileName$) THEN
+            __UI_LoadThemeImage& = __UI_ThemeImages(NextSlot).Handle
+            EXIT FUNCTION
+        ELSEIF RTRIM$(__UI_ThemeImages(NextSlot).FileName) = "" THEN
+            'Found an empty slot
+        END IF
+    NEXT
+
+    A$ = __UI_ImageData$(FileName$)
+    IF LEN(A$) = 0 THEN EXIT FUNCTION
+
+    NewWidth = CVI(LEFT$(A$, 2))
+    NewHeight = CVI(MID$(A$, 3, 2))
+    A$ = MID$(A$, 5)
+
+    FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
+        IF INSTR(1, B$, "%") THEN
+            FOR C% = 1 TO LEN(B$): F$ = MID$(B$, C%, 1)
+                IF F$ <> "%" THEN C$ = C$ + F$
+            NEXT: B$ = C$
+            END IF: FOR t% = LEN(B$) TO 1 STEP -1
+            B& = B& * 64 + ASC(MID$(B$, t%)) - 48
+            NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
+            X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
+    NEXT: btemp$ = btemp$ + X$: NEXT
+    BASFILE$ = btemp$
+
+    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
+    MemoryBlock = _MEMIMAGE(TempImage)
+
+    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
+    _MEMFREE MemoryBlock
+
+    IF NextSlot > UBOUND(__UI_ThemeImages) THEN
+        'No empty slots. We must increase __UI_ThemeImages()
+        REDIM _PRESERVE __UI_ThemeImages(0 TO NextSlot + 99) AS __UI_ThemeImagesType
+    END IF
+    __UI_ThemeImages(NextSlot).FileName = FileName$
+    __UI_ThemeImages(NextSlot).Handle = TempImage
+
+    __UI_LoadThemeImage& = TempImage
+END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB SetRadioButtonValue (id AS LONG)
@@ -7157,17 +7226,11 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     DIM TempCaption$
     DIM PrevDest AS LONG, TempControlState AS _BYTE
 
-    STATIC ControlSetup AS _BYTE, ControlImage AS  LONG
-    STATIC ButtonHeight AS LONG, ButtonWidth AS LONG
-    STATIC TopMargin AS LONG, LeftMargin AS LONG
-    IF ControlSetup = False THEN
-        ButtonWidth = __UI_ThemeSetup("button.width")
-        ButtonHeight = __UI_ThemeSetup("button.height")
-        TopMargin = __UI_ThemeSetup("button.topmargin")
-        LeftMargin = __UI_ThemeSetup("button.leftmargin")
-        ControlImage = __UI_LoadThemeImage("button")
-        ControlSetup = True
-    END IF
+    STATIC ControlImage AS LONG
+    CONST ButtonHeight = 21
+    CONST ButtonWidth = 18
+
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("button.png")
 
     TempControlState = ControlState
     IF TempControlState = 1 THEN
@@ -7200,7 +7263,7 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         TempCaption$ = __UI_TrimAt0$(Caption(This.ID))
 
         'Back surface
-        _PUTIMAGE (0, TopMargin - 1)-(This.Width - (LeftMargin + 1), This.Height - (TopMargin + 1)), ControlImage, , (LeftMargin - 1, TempControlState * ButtonHeight - ButtonHeight + TopMargin)-STEP(ButtonWidth - (LeftMargin * 2), ButtonHeight - (TopMargin * 2))
+        _PUTIMAGE (0, 3)-(This.Width - 1, This.Height - 4), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 3)-STEP(11, ButtonHeight - 7)
 
         'Does this button have a helper canvas (icon)?
         DIM IconWidth AS INTEGER, IconHeight AS INTEGER
@@ -7223,16 +7286,16 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             END IF
         END IF
 
-        'Top and bottom borders
-        _PUTIMAGE (LeftMargin - 1, 0)-(This.Width - (LeftMargin + 1), TopMargin - 1), ControlImage, , (LeftMargin - 1, TempControlState * ButtonHeight - ButtonHeight)-STEP(_WIDTH(ControlImage) - (LeftMargin * 2), TopMargin - 1)
-        _PUTIMAGE (LeftMargin - 1, This.Height - (TopMargin + 1))-(This.Width - (LeftMargin + 1), This.Height - 1), ControlImage, , (LeftMargin - 1, TempControlState * ButtonHeight - (TopMargin + 1))-STEP(_WIDTH(ControlImage) - (LeftMargin * 2), TopMargin - 1)
+        'Top and bottom edges
+        _PUTIMAGE (3, 0)-STEP(This.Width - 6, 3), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight)-STEP(11, 3)
+        _PUTIMAGE (3, This.Height - 3)-STEP(This.Width - 6, 3), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 18)-STEP(11, 3)
 
-        'Left border and corners:
+        'Left edges and corners:
         _PUTIMAGE (0, 2)-STEP(2, This.Height - 4), ControlImage, , (0, TempControlState * ButtonHeight - ButtonHeight + 2)-STEP(2, ButtonHeight - 6)
         _PUTIMAGE (0, 0), ControlImage, , (0, TempControlState * ButtonHeight - ButtonHeight)-STEP(2, 2)
         _PUTIMAGE (0, This.Height - 3), ControlImage, , (0, TempControlState * ButtonHeight - 3)-STEP(2, 2)
 
-        'Right border and corners:
+        'Right edges and corners:
         _PUTIMAGE (This.Width - 3, 2)-STEP(2, This.Height - 4), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - ButtonHeight + 2)-STEP(2, ButtonHeight - 6)
         _PUTIMAGE (This.Width - 2, 0), ControlImage, , (ButtonWidth - 2, TempControlState * ButtonHeight - ButtonHeight)-STEP(2, 2)
         _PUTIMAGE (This.Width - 3, This.Height - 3), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - 3)-STEP(2, 2)
@@ -7510,7 +7573,7 @@ SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     CONST ImageHeight = 13
     CONST ImageWidth = 13
 
-    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("radiobutton")
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("radiobutton.png")
 
     IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID _
        OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
@@ -7589,7 +7652,7 @@ SUB __UI_DrawCheckBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
     CONST ImageHeight = 13
     CONST ImageWidth = 13
 
-    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("checkbox")
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("checkbox.png")
 
     IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID _
        OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
@@ -7665,8 +7728,8 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState)
 
     STATIC ControlImage_Track AS LONG, ControlImage_Chunk AS LONG
 
-    IF ControlImage_Chunk = 0 THEN ControlImage_Chunk = __UI_LoadThemeImage("progresschunk")
-    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("progresstrack")
+    IF ControlImage_Chunk = 0 THEN ControlImage_Chunk = __UI_LoadThemeImage("progresschunk.png")
+    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("progresstrack.png")
 
     IF This.Redraw OR This.ControlState <> ControlState OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID _
        OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
@@ -7793,8 +7856,11 @@ SUB __UI_DrawTrackBar (This AS __UI_ControlTYPE, ControlState)
     CONST SliderHeight = 21
     CONST SliderWidth = 11
 
-    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("slidertrack")
-    IF ControlImage_Slider = 0 THEN ControlImage_Slider = __UI_LoadThemeImage("sliderdown")
+    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("slidertrack.png")
+    IF ControlImage_Slider = 0 THEN
+        ControlImage_Slider = __UI_LoadThemeImage("sliderdown.png")
+        __UI_ClearColor ControlImage_Slider, 0, 0
+    END IF
 
     TempControlState = ControlState
     IF This.Disabled THEN TempControlState = 5
@@ -8292,9 +8358,9 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
     CONST ImageHeight_Thumb = 22
     CONST ImageWidth_Thumb = 15
 
-    IF ControlImage_Button = 0 THEN ControlImage_Button = __UI_LoadThemeImage("scrollbuttons")
-    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("scrolltrack")
-    IF ControlImage_Thumb = 0 THEN ControlImage_Thumb = __UI_LoadThemeImage("scrollthumb")
+    IF ControlImage_Button = 0 THEN ControlImage_Button = __UI_LoadThemeImage("scrollbuttons.png")
+    IF ControlImage_Track = 0 THEN ControlImage_Track = __UI_LoadThemeImage("scrolltrack.png")
+    IF ControlImage_Thumb = 0 THEN ControlImage_Thumb = __UI_LoadThemeImage("scrollthumb.png")
 
     This = TempThis
 
@@ -8400,8 +8466,11 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState)
     CONST ArrowWidth = 9
     CONST ArrowHeight = 9
 
-    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("button")
-    IF ControlImage_Arrow = 0 THEN ControlImage_Arrow = __UI_LoadThemeImage("arrows")
+    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("button.png")
+    IF ControlImage_Arrow = 0 THEN
+        ControlImage_Arrow = __UI_LoadThemeImage("arrows.png")
+        __UI_ClearColor ControlImage_Arrow, 0, 0
+    END IF
 
     IF This.Redraw OR This.ControlState <> ControlState OR _
         This.FocusState <> (__UI_Focus = This.ID) OR _
@@ -8548,7 +8617,10 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
 
     STATIC ControlImage AS LONG
 
-    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("frame")
+    IF ControlImage = 0 THEN
+        ControlImage = __UI_LoadThemeImage("frame.png")
+        __UI_ClearColor ControlImage, 0, 0
+    END IF
 
     IF This.Redraw OR This.PreviouslyHidden <> This.Hidden OR This.ChildrenRedrawn OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.HelperCanvas = 0 OR (__UI_IsDragging AND Control(__UI_DraggingID).ParentID = This.ID) OR This.Value <> This.PreviousValue OR __UI_ForceRedraw _
        OR __UI_DesignMode OR This.PreviousFont <> This.Font THEN
@@ -8723,7 +8795,10 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
     STATIC ControlImage AS LONG, SubMenuArrow AS LONG
     CONST CheckMarkWidth = 7
     CONST CheckMarkHeight = 7
-    IF ControlImage = 0 THEN ControlImage = __UI_LoadThemeImage("menucheckmark")
+    IF ControlImage = 0 THEN
+        ControlImage = __UI_LoadThemeImage("menucheckmark.bmp")
+        __UI_ClearColor ControlImage, 0, 0
+    END IF
     IF SubMenuArrow = 0 THEN
         SubMenuArrow = _NEWIMAGE(4, 7, 32)
         PrevDest = _DEST
