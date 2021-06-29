@@ -10,11 +10,11 @@ if [ -e "./qb64" ]; then
       ./UiEditor &
   else
       echo "Compilation failed."
-      echo "Make sure you unpacked all files in QB64's folder, preserving the directory structure and also that you have version 1.2 of QB64 to use InForm."
+      echo "Make sure you unpacked all files in QB64's folder, preserving the directory structure and also that you have the latest version of QB64 to use InForm."
   fi  
 else
       echo "Compilation failed."
-      echo "Make sure you have version 1.2 of QB64 to use InForm."
+      echo "Make sure you unpacked all files in QB64's folder, preserving the directory structure and also that you have the latest version of QB64 to use InForm."
 fi
 echo
 echo "Thank you for choosing InForm for QB64."
