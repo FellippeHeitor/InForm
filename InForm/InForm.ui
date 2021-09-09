@@ -670,7 +670,7 @@ END SUB
 SUB __UI_Init
     DIM i AS LONG, b$
 
-    SetFrameRate 30
+    SetFrameRate 60
 
     __UI_BeforeInit
 
@@ -726,7 +726,7 @@ SUB __UI_Init
     __UI_OnLoad
 
     __UI_EventsTimer = _FREETIMER
-    ON TIMER(__UI_EventsTimer, .008) __UI_DoEvents
+    ON TIMER(__UI_EventsTimer, .016) __UI_DoEvents
     TIMER(__UI_EventsTimer) ON
     TIMER(__UI_RefreshTimer) ON
 

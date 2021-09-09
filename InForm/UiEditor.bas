@@ -4796,7 +4796,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
                     CASE 2
                         PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
-                        PRINT #TextFileNum, "    'This event occurs at approximately 30 frames per second."
+                        PRINT #TextFileNum, "    'This event occurs at approximately 60 frames per second."
                         PRINT #TextFileNum, "    'You can change the update frequency by calling SetFrameRate DesiredRate%"
                     CASE 3
                         PRINT #TextFileNum, "SUB __UI_BeforeUnload"
