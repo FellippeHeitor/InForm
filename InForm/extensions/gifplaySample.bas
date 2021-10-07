@@ -12,7 +12,7 @@ DIM SHARED PlayBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'gifplay.bi'
-'$INCLUDE:'..\InForm.ui'
+'$INCLUDE:'..\InForm.bi'
 '$INCLUDE:'..\xp.uitheme'
 '$INCLUDE:'gifplaySample.frm'
 '$INCLUDE:'gifplay.bm'
@@ -94,3 +94,4 @@ END SUB
 SUB __UI_FormResized
 END SUB
 
+'$INCLUDE:'..\InForm.ui'

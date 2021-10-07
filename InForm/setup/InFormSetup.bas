@@ -39,7 +39,7 @@ $ELSE
 $END IF
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../InForm.ui'
+'$INCLUDE:'../InForm.bi'
 '$INCLUDE:'../xp.uitheme'
 '$INCLUDE:'InFormSetup.frm'
 '$INCLUDE:'../ini.bm'
@@ -1939,3 +1939,5 @@ FUNCTION IconData$
     A$ = A$ + "00000000000000000000%%00"
     IconData$ = A$
 END FUNCTION
+
+'$INCLUDE:'../InForm.ui'

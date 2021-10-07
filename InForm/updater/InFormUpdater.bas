@@ -27,7 +27,7 @@ $ELSE
 $END IF
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../InForm.ui'
+'$INCLUDE:'../InForm.bi'
 '$INCLUDE:'../xp.uitheme'
 '$INCLUDE:'InFormUpdater.frm'
 '$INCLUDE:'../ini.bm'
@@ -416,3 +416,5 @@ END SUB
 SUB __UI_FormResized
 
 END SUB
+
+'$INCLUDE:'../InForm.ui'

@@ -300,7 +300,7 @@ $ELSE
 $END IF
 
 '$include:'ini.bi'
-'$include:'InForm.ui'
+'$include:'InForm.bi'
 '$include:'xp.uitheme'
 '$include:'UiEditor.frm'
 '$include:'ini.bm'
@@ -4782,7 +4782,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             IF AddGifExtension THEN
                 PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
             END IF
-            PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
+            PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.bi'"
             PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
             PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
             IF AddGifExtension THEN
@@ -4888,6 +4888,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 PRINT #TextFileNum,
             NEXT
         END IF
+        PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
         CLOSE #TextFileNum
     END IF
 
@@ -5470,3 +5471,4 @@ FUNCTION OutsideQuotes%% (text$, position AS LONG)
     OutsideQuotes%% = NOT quote%%
 END FUNCTION
 
+'$include:'InForm.ui'

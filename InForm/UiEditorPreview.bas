@@ -92,7 +92,7 @@ ContextMenuIcon = LoadEditorImage("contextmenu.bmp")
 __UI_ClearColor ContextMenuIcon, 0, 0
 
 '$include:'extensions/gifplay.bi'
-'$include:'InForm.ui'
+'$include:'InForm.bi'
 '$include:'xp.uitheme'
 '$include:'UiEditorPreview.frm'
 '$include:'extensions/gifplay.bm'
@@ -3989,3 +3989,4 @@ FUNCTION LoadEditorImage& (FileName$)
     LoadEditorImage& = TempImage
 END FUNCTION
 
+'$include:'InForm.ui'
