@@ -760,7 +760,7 @@ SUB __UI_UpdateDisplay
         EXIT SUB
     END IF
 
-    'ON ERROR GOTO __UI_ErrorHandler
+    ON ERROR GOTO __UI_ErrorHandler
 
     'Clear frames canvases and count its children;
     FOR i = 1 TO UBOUND(Control)
