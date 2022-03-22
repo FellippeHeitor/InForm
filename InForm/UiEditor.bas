@@ -2954,32 +2954,6 @@ SUB __UI_OnLoad
         ShowFontList = True
     END IF
 
-    DIM TriggerUpdaterRecompile AS _BYTE
-    TriggerUpdaterRecompile = False
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
-    IF value$ = "True" THEN
-        TriggerUpdaterRecompile = True
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
-    ELSE
-        $IF WIN THEN
-            IF _FILEEXISTS("InForm/updater/InFormUpdater.exe") = False THEN
-                TriggerUpdaterRecompile = True
-            END IF
-        $ELSE
-            IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
-            TriggerUpdaterRecompile = True
-            END IF
-        $END IF
-    END IF
-
-    IF TriggerUpdaterRecompile THEN
-        $IF WIN THEN
-            SHELL _HIDE _DONTWAIT "qb64.exe -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater.exe"
-        $ELSE
-            SHELL _HIDE _DONTWAIT "./qb64 -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater"
-        $END IF
-    END IF
-
     $IF WIN THEN
     $ELSE
         value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Swap mouse buttons")
@@ -3102,13 +3076,11 @@ SUB __UI_OnLoad
             ELSE
                 b$ = "Compiling Preview component..."
                 GOSUB ShowMessage
-                SHELL _HIDE "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
+                SHELL _HIDE "qb64.exe -s:exewithsource=true -x .\InForm\UiEditorPreview.bas"
                 IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
             END IF
         END IF
-        b$ = "Launching Preview component..."
-        GOSUB ShowMessage
-        SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
+
     $ELSE
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
         IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
@@ -3116,13 +3088,10 @@ SUB __UI_OnLoad
         ELSE
         b$ = "Compiling Preview component..."
         GOSUB ShowMessage
-        SHELL _HIDE "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
+        SHELL _HIDE "./qb64 -s:exewithsource=true -x ./InForm/UiEditorPreview.bas"
         IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
         END IF
         END IF
-        b$ = "Launching Preview component..."
-        GOSUB ShowMessage
-        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
     $END IF
 
     b$ = "Reading directory..."
@@ -3281,6 +3250,14 @@ SUB __UI_OnLoad
 
     _FREEIMAGE CommControls
 
+    b$ = "Launching Preview component..."
+    GOSUB ShowMessage
+    $IF WIN THEN
+        SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
+    $ELSE    
+        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+    $END IF
+
     b$ = "Connecting to preview component..."
     GOSUB ShowMessage
     DO
@@ -3294,6 +3271,32 @@ SUB __UI_OnLoad
     b$ = "Connected! Handshaking..."
     GOSUB ShowMessage
     Handshake
+
+    DIM TriggerUpdaterRecompile AS _BYTE
+    TriggerUpdaterRecompile = False
+    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
+    IF value$ = "True" THEN
+        TriggerUpdaterRecompile = True
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
+    ELSE
+        $IF WIN THEN
+            IF _FILEEXISTS("InForm/updater/InFormUpdater.exe") = False THEN
+                TriggerUpdaterRecompile = True
+            END IF
+        $ELSE
+                IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
+                TriggerUpdaterRecompile = True
+                END IF
+        $END IF
+    END IF
+
+    IF TriggerUpdaterRecompile THEN
+        $IF WIN THEN
+            SHELL _HIDE _DONTWAIT "qb64.exe -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+        $ELSE
+                SHELL _HIDE _DONTWAIT "./qb64 -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+        $END IF
+    END IF
 
     IF CheckUpdates THEN b$ = "Checking for updates..." ELSE b$ = "InForm Designer"
     GOSUB ShowMessage
@@ -4906,18 +4909,18 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
             END IF
         $ELSE
-            IF _FILEEXISTS("qb64") THEN
-            b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
-            ELSE
-            b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
-            END IF
+                IF _FILEEXISTS("qb64") THEN
+                b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
+                ELSE
+                b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
+                END IF
         $END IF
         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
         IF Answer = MsgBox_No THEN Edited = False: EXIT SUB
         $IF WIN THEN
             IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + QuotedFilename$(BaseOutputFileName + ".bas")
         $ELSE
-            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
+                IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
         $END IF
         SYSTEM
     ELSE
@@ -5079,57 +5082,57 @@ $IF WIN THEN
         END SELECT
     END FUNCTION
 $ELSE
-    SUB LoadFontList
-    DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$, depth%, x AS INTEGER
+        SUB LoadFontList
+        DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$, depth%, x AS INTEGER
 
-    FontPath$ = "/usr/share/fonts"
-    depth% = 4
-    IF INSTR(_OS$, "MAC") > 0 THEN
-    FontPath$ = "/Library/Fonts"
-    depth% = 1
-    END IF
-    Text(FontList) = idezfilelist$(FontPath$, 1, depth%, TotalFiles%)
-    Control(FontList).Max = TotalFiles%
-    Control(FontList).LastVisibleItem = 0 'Reset it so it's recalculated
+        FontPath$ = "/usr/share/fonts"
+        depth% = 2
+        IF INSTR(_OS$, "MAC") > 0 THEN
+        FontPath$ = "/Library/Fonts"
+        depth% = 1
+        END IF
+        Text(FontList) = idezfilelist$(FontPath$, 1, depth%, TotalFiles%)
+        Control(FontList).Max = TotalFiles%
+        Control(FontList).LastVisibleItem = 0 'Reset it so it's recalculated
 
-    TotalFontsFound = TotalFiles%
-    FOR i = TotalFiles% TO 1 STEP -1
-    ThisFont$ = GetItem(FontList, i)
-    IF UCASE$(RIGHT$(ThisFont$, 4)) = ".TTF" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".TTC" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".OTF" THEN
-    'Valid font
-    ELSE
-    RemoveItem FontList, i
-    TotalFontsFound = TotalFontsFound - 1
-    END IF
-    NEXT
+        TotalFontsFound = TotalFiles%
+        FOR i = TotalFiles% TO 1 STEP -1
+        ThisFont$ = GetItem(FontList, i)
+        IF UCASE$(RIGHT$(ThisFont$, 4)) = ".TTF" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".TTC" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".OTF" THEN
+        'Valid font
+        ELSE
+        RemoveItem FontList, i
+        TotalFontsFound = TotalFontsFound - 1
+        END IF
+        NEXT
 
-    TotalFontsFound = TotalFontsFound + 1
-    Text(FontList) = "Built-in VGA font" + CHR$(10) + Text(FontList)
-    Control(FontList).Max = TotalFontsFound
+        TotalFontsFound = TotalFontsFound + 1
+        Text(FontList) = "Built-in VGA font" + CHR$(10) + Text(FontList)
+        Control(FontList).Max = TotalFontsFound
 
-    REDIM FontFile(TotalFontsFound) AS STRING
-    IF INSTR(_OS$, "MAC") = 0 THEN FontPath$ = "" ELSE FontPath$ = FontPath$ + "/"
-    FOR i = 3 TO TotalFontsFound
-    ThisFont$ = GetItem(FontList, i)
-    FontFile(i) = FontPath$ + GetItem(FontList, i)
-    ThisFont$ = LEFT$(ThisFont$, LEN(ThisFont$) - 4) 'Remove extension from list
+        REDIM FontFile(TotalFontsFound) AS STRING
+        IF INSTR(_OS$, "MAC") = 0 THEN FontPath$ = "" ELSE FontPath$ = FontPath$ + "/"
+        FOR i = 3 TO TotalFontsFound
+        ThisFont$ = GetItem(FontList, i)
+        FontFile(i) = FontPath$ + GetItem(FontList, i)
+        ThisFont$ = LEFT$(ThisFont$, LEN(ThisFont$) - 4) 'Remove extension from list
 
-    FOR x = LEN(ThisFont$) TO 1 STEP -1
-    IF ASC(ThisFont$, x) = 47 THEN '"/"
-    ThisFont$ = MID$(ThisFont$, x + 1)
-    EXIT FOR
-    END IF
-    NEXT
+        FOR x = LEN(ThisFont$) TO 1 STEP -1
+        IF ASC(ThisFont$, x) = 47 THEN '"/"
+        ThisFont$ = MID$(ThisFont$, x + 1)
+        EXIT FOR
+        END IF
+        NEXT
 
-    ReplaceItem FontList, i, ThisFont$
-    NEXT
+        ReplaceItem FontList, i, ThisFont$
+        NEXT
 
-    FOR i = 8 TO 120
-    AddItem FontSizeList, LTRIM$(STR$(i))
-    NEXT
+        FOR i = 8 TO 120
+        AddItem FontSizeList, LTRIM$(STR$(i))
+        NEXT
 
-    HasFontList = True
-    END SUB
+        HasFontList = True
+        END SUB
 $END IF
 
 SUB RestoreFalcon
@@ -5284,38 +5287,38 @@ FUNCTION idezfilelist$ (path$, method, depth%, TotalFound AS INTEGER) 'method0=*
         idezfilelist$ = filelist$
         EXIT FUNCTION
     $ELSE
-        filelist$ = ""
-        DIM i AS INTEGER, x AS INTEGER, a2$
-        FOR i = 1 TO 2 - method
-        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        IF method = 0 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
-        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
-        END IF
-        IF method = 1 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
-        END IF
-        OPEN "opendlgfiles.dat" FOR INPUT AS #150
-        DO UNTIL EOF(150)
-        LINE INPUT #150, a$
-        IF LEN(a$) = 0 THEN EXIT DO
-        IF depth% = 1 THEN
-        FOR x = LEN(a$) TO 1 STEP -1
-        a2$ = MID$(a$, x, 1)
-        IF a2$ = "/" THEN
-        a$ = RIGHT$(a$, LEN(a$) - x)
-        EXIT FOR
-        END IF
-        NEXT
-        END IF
-        IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
-        TotalFound = TotalFound + 1
-        LOOP
-        CLOSE #150
-        NEXT
-        KILL "opendlgfiles.dat"
-        idezfilelist$ = filelist$
-        EXIT FUNCTION
+            filelist$ = ""
+            DIM i AS INTEGER, x AS INTEGER, a2$
+            FOR i = 1 TO 2 - method
+            OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+            IF method = 0 THEN
+            IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
+            IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
+            END IF
+            IF method = 1 THEN
+            IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
+            END IF
+            OPEN "opendlgfiles.dat" FOR INPUT AS #150
+            DO UNTIL EOF(150)
+            LINE INPUT #150, a$
+            IF LEN(a$) = 0 THEN EXIT DO
+            IF depth% = 1 THEN
+            FOR x = LEN(a$) TO 1 STEP -1
+            a2$ = MID$(a$, x, 1)
+            IF a2$ = "/" THEN
+            a$ = RIGHT$(a$, LEN(a$) - x)
+            EXIT FOR
+            END IF
+            NEXT
+            END IF
+            IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
+            TotalFound = TotalFound + 1
+            LOOP
+            CLOSE #150
+            NEXT
+            KILL "opendlgfiles.dat"
+            idezfilelist$ = filelist$
+            EXIT FUNCTION
     $END IF
 END FUNCTION
 
@@ -5357,36 +5360,36 @@ FUNCTION idezpathlist$ (path$, TotalFound%)
         idezpathlist$ = pathlist$
         EXIT FUNCTION
     $ELSE
-        pathlist$ = ""
-        DIM a2$
-        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -mindepth 1 -type d >opendlgfiles.dat"
-        OPEN "opendlgfiles.dat" FOR INPUT AS #150
-        DO UNTIL EOF(150)
-        LINE INPUT #150, a$
-        IF LEN(a$) = 0 THEN EXIT DO
-        FOR x = LEN(a$) TO 1 STEP -1
-        a2$ = MID$(a$, x, 1)
-        IF a2$ = "/" THEN
-        a$ = RIGHT$(a$, LEN(a$) - x)
-        EXIT FOR
-        END IF
-        NEXT
-        IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
-        TotalFound% = TotalFound% + 1
-        LOOP
-        CLOSE #150
-        KILL "opendlgfiles.dat"
+            pathlist$ = ""
+            DIM a2$
+            OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+            SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -mindepth 1 -type d >opendlgfiles.dat"
+            OPEN "opendlgfiles.dat" FOR INPUT AS #150
+            DO UNTIL EOF(150)
+            LINE INPUT #150, a$
+            IF LEN(a$) = 0 THEN EXIT DO
+            FOR x = LEN(a$) TO 1 STEP -1
+            a2$ = MID$(a$, x, 1)
+            IF a2$ = "/" THEN
+            a$ = RIGHT$(a$, LEN(a$) - x)
+            EXIT FOR
+            END IF
+            NEXT
+            IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
+            TotalFound% = TotalFound% + 1
+            LOOP
+            CLOSE #150
+            KILL "opendlgfiles.dat"
 
-        IF path$ <> "/" THEN
-        a$ = ".."
+            IF path$ <> "/" THEN
+            a$ = ".."
 
-        IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = a$ + sep + pathlist$
-        TotalFound% = TotalFound% + 1
-        END IF
+            IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = a$ + sep + pathlist$
+            TotalFound% = TotalFound% + 1
+            END IF
 
-        idezpathlist$ = pathlist$
-        EXIT FUNCTION
+            idezpathlist$ = pathlist$
+            EXIT FUNCTION
     $END IF
 END FUNCTION
 
@@ -5415,20 +5418,20 @@ FUNCTION idezchangepath$ (path$, newpath$)
         idezchangepath$ = path$ + "\" + newpath$
         EXIT FUNCTION
     $ELSE
-        'go back a path
-        IF newpath$ = ".." THEN
-        FOR x = LEN(path$) TO 1 STEP -1
-        a$ = MID$(path$, x, 1)
-        IF a$ = "/" THEN
-        idezchangepath$ = LEFT$(path$, x - 1)
-        IF x = 1 THEN idezchangepath$ = "/" 'root path cannot be ""
-        EXIT FOR
-        END IF
-        NEXT
-        EXIT FUNCTION
-        END IF
-        IF path$ = "/" THEN idezchangepath$ = "/" + newpath$ ELSE idezchangepath$ = path$ + "/" + newpath$
-        EXIT FUNCTION
+            'go back a path
+            IF newpath$ = ".." THEN
+            FOR x = LEN(path$) TO 1 STEP -1
+            a$ = MID$(path$, x, 1)
+            IF a$ = "/" THEN
+            idezchangepath$ = LEFT$(path$, x - 1)
+            IF x = 1 THEN idezchangepath$ = "/" 'root path cannot be ""
+            EXIT FOR
+            END IF
+            NEXT
+            EXIT FUNCTION
+            END IF
+            IF path$ = "/" THEN idezchangepath$ = "/" + newpath$ ELSE idezchangepath$ = path$ + "/" + newpath$
+            EXIT FUNCTION
     $END IF
 
 END FUNCTION
@@ -5437,7 +5440,7 @@ FUNCTION QuotedFilename$ (f$)
     $IF WIN THEN
         QuotedFilename$ = CHR$(34) + f$ + CHR$(34)
     $ELSE
-        QuotedFilename$ = "'" + f$ + "'"
+            QuotedFilename$ = "'" + f$ + "'"
     $END IF
 END FUNCTION
 
