@@ -3069,6 +3069,7 @@ Sub __UI_OnLoad
     b$ = "Checking Preview component..."
     GoSub ShowMessage
 
+    Dim As _Byte JustRecompiledPreview
     $If WIN Then
         If _FileExists("InForm/UiEditorPreview.exe") = 0 Then
             If _FileExists("InForm/UiEditorPreview.bas") = 0 Then
@@ -3078,6 +3079,7 @@ Sub __UI_OnLoad
                 GoSub ShowMessage
                 Shell _Hide "qb64.exe -s:exewithsource=true -x .\InForm\UiEditorPreview.bas"
                 If _FileExists("InForm/UiEditorPreview.exe") = 0 Then GoTo UiEditorPreviewNotFound
+                JustRecompiledPreview = True
             End If
         End If
 
@@ -3090,6 +3092,7 @@ Sub __UI_OnLoad
             GOSUB ShowMessage
             SHELL _HIDE "./qb64 -s:exewithsource=true -x ./InForm/UiEditorPreview.bas"
             IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
+            JustRecompiledPreview = True
             END IF
             END IF
     $End If
@@ -3274,32 +3277,34 @@ Sub __UI_OnLoad
 
     Dim TriggerUpdaterRecompile As _Byte
     TriggerUpdaterRecompile = False
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
-    If value$ = "True" Then
-        TriggerUpdaterRecompile = True
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
-    Else
-        $If WIN Then
-            If _FileExists("InForm/updater/InFormUpdater.exe") = False Then
-                TriggerUpdaterRecompile = True
-            End If
-        $Else
-                IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
-                TriggerUpdaterRecompile = True
-                END IF
-        $End If
-    End If
+    If JustRecompiledPreview = False Then
+        value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
+        If value$ = "True" Then
+            TriggerUpdaterRecompile = True
+            WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
+        Else
+            $If WIN Then
+                If _FileExists("InForm/updater/InFormUpdater.exe") = False Then
+                    TriggerUpdaterRecompile = True
+                End If
+            $Else
+                    IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
+                    TriggerUpdaterRecompile = True
+                    END IF
+            $End If
+        End If
 
-    If TriggerUpdaterRecompile Then
-        $If WIN Then
-            Shell _Hide _DontWait "qb64.exe -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
-        $Else
-                SHELL _HIDE _DONTWAIT "./qb64 -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
-        $End If
-    End If
+        If TriggerUpdaterRecompile Then
+            $If WIN Then
+                Shell _Hide _DontWait "qb64.exe -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+            $Else
+                    SHELL _HIDE _DONTWAIT "./qb64 -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+            $End If
+        End If
 
-    If CheckUpdates Then b$ = "Checking for updates..." Else b$ = "InForm Designer"
-    GoSub ShowMessage
+        If CheckUpdates Then b$ = "Checking for updates..." Else b$ = "InForm Designer"
+        GoSub ShowMessage
+    End If
 
     __UI_RefreshMenuBar
     __UI_ForceRedraw = True
