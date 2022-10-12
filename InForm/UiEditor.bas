@@ -1,303 +1,303 @@
-OPTION _EXPLICIT
+Option _Explicit
 
-$EXEICON:'.\resources\InForm.ico'
+$ExeIcon:'.\resources\InForm.ico'
 
 'Controls: --------------------------------------------------------------------
 'Main form
-DIM SHARED UiEditor AS LONG
-DIM SHARED StatusBar AS LONG
+Dim Shared UiEditor As Long
+Dim Shared StatusBar As Long
 
 'Menus
-DIM SHARED FileMenu AS LONG, EditMenu AS LONG, ViewMenu AS LONG
-DIM SHARED InsertMenu AS LONG, AlignMenu AS LONG, OptionsMenu AS LONG
-DIM SHARED HelpMenu AS LONG, FontSwitchMenu AS LONG
+Dim Shared FileMenu As Long, EditMenu As Long, ViewMenu As Long
+Dim Shared InsertMenu As Long, AlignMenu As Long, OptionsMenu As Long
+Dim Shared HelpMenu As Long, FontSwitchMenu As Long
 
 'Frames
-DIM SHARED Toolbox AS LONG, ColorMixer AS LONG
-DIM SHARED OpenFrame AS LONG, ZOrdering AS LONG
-DIM SHARED ControlProperties AS LONG, ControlToggles AS LONG
-DIM SHARED SetControlBinding AS LONG
+Dim Shared Toolbox As Long, ColorMixer As Long
+Dim Shared OpenFrame As Long, ZOrdering As Long
+Dim Shared ControlProperties As Long, ControlToggles As Long
+Dim Shared SetControlBinding As Long
 
 'Menu items
-DIM SHARED FileMenuNew AS LONG, FileMenuOpen AS LONG
-DIM SHARED FileMenuSave AS LONG, FileMenuSaveAs AS LONG
-DIM SHARED FileMenuExit AS LONG
+Dim Shared FileMenuNew As Long, FileMenuOpen As Long
+Dim Shared FileMenuSave As Long, FileMenuSaveAs As Long
+Dim Shared FileMenuExit As Long
 
-DIM SHARED FileMenuRecent AS LONG
-DIM SHARED FileMenuRecent1 AS LONG
-DIM SHARED FileMenuRecent2 AS LONG
-DIM SHARED FileMenuRecent3 AS LONG
-DIM SHARED FileMenuRecent4 AS LONG
-DIM SHARED FileMenuRecent5 AS LONG
-DIM SHARED FileMenuRecent6 AS LONG
-DIM SHARED FileMenuRecent7 AS LONG
-DIM SHARED FileMenuRecent8 AS LONG
-DIM SHARED FileMenuRecent9 AS LONG
+Dim Shared FileMenuRecent As Long
+Dim Shared FileMenuRecent1 As Long
+Dim Shared FileMenuRecent2 As Long
+Dim Shared FileMenuRecent3 As Long
+Dim Shared FileMenuRecent4 As Long
+Dim Shared FileMenuRecent5 As Long
+Dim Shared FileMenuRecent6 As Long
+Dim Shared FileMenuRecent7 As Long
+Dim Shared FileMenuRecent8 As Long
+Dim Shared FileMenuRecent9 As Long
 
-DIM SHARED EditMenuUndo AS LONG, EditMenuRedo AS LONG, EditMenuCut AS LONG
-DIM SHARED EditMenuCopy AS LONG, EditMenuPaste AS LONG
-DIM SHARED EditMenuDelete AS LONG, EditMenuSelectAll AS LONG
-DIM SHARED EditMenuCP437 AS LONG, EditMenuCP1252 AS LONG
-DIM SHARED EditMenuConvertType AS LONG, EditMenuSetDefaultButton AS LONG
-DIM SHARED EditMenuRestoreDimensions AS LONG, EditMenuBindControls AS LONG
-DIM SHARED EditMenuAllowMinMax AS LONG, EditMenuZOrdering AS LONG
+Dim Shared EditMenuUndo As Long, EditMenuRedo As Long, EditMenuCut As Long
+Dim Shared EditMenuCopy As Long, EditMenuPaste As Long
+Dim Shared EditMenuDelete As Long, EditMenuSelectAll As Long
+Dim Shared EditMenuCP437 As Long, EditMenuCP1252 As Long
+Dim Shared EditMenuConvertType As Long, EditMenuSetDefaultButton As Long
+Dim Shared EditMenuRestoreDimensions As Long, EditMenuBindControls As Long
+Dim Shared EditMenuAllowMinMax As Long, EditMenuZOrdering As Long
 
-DIM SHARED ViewMenuPreviewDetach AS LONG
-DIM SHARED ViewMenuShowPositionAndSize AS LONG
-DIM SHARED ViewMenuShowInvisibleControls AS LONG
-DIM SHARED ViewMenuPreview AS LONG, ViewMenuLoadedFonts AS LONG
+Dim Shared ViewMenuPreviewDetach As Long
+Dim Shared ViewMenuShowPositionAndSize As Long
+Dim Shared ViewMenuShowInvisibleControls As Long
+Dim Shared ViewMenuPreview As Long, ViewMenuLoadedFonts As Long
 
-DIM SHARED InsertMenuMenuBar AS LONG, InsertMenuContextMenu AS LONG
-DIM SHARED InsertMenuMenuItem AS LONG
+Dim Shared InsertMenuMenuBar As Long, InsertMenuContextMenu As Long
+Dim Shared InsertMenuMenuItem As Long
 
-DIM SHARED OptionsMenuSnapLines AS LONG
-DIM SHARED AlignMenuAlignLeft AS LONG
-DIM SHARED AlignMenuAlignRight AS LONG
-DIM SHARED AlignMenuAlignTops AS LONG
-DIM SHARED AlignMenuAlignBottoms AS LONG
-DIM SHARED AlignMenuAlignCentersV AS LONG
-DIM SHARED AlignMenuAlignCentersH AS LONG
-DIM SHARED AlignMenuAlignCenterV AS LONG
-DIM SHARED AlignMenuAlignCenterH AS LONG
-DIM SHARED AlignMenuDistributeV AS LONG
-DIM SHARED AlignMenuDistributeH AS LONG
+Dim Shared OptionsMenuSnapLines As Long
+Dim Shared AlignMenuAlignLeft As Long
+Dim Shared AlignMenuAlignRight As Long
+Dim Shared AlignMenuAlignTops As Long
+Dim Shared AlignMenuAlignBottoms As Long
+Dim Shared AlignMenuAlignCentersV As Long
+Dim Shared AlignMenuAlignCentersH As Long
+Dim Shared AlignMenuAlignCenterV As Long
+Dim Shared AlignMenuAlignCenterH As Long
+Dim Shared AlignMenuDistributeV As Long
+Dim Shared AlignMenuDistributeH As Long
 
-DIM SHARED OptionsMenuAutoName AS LONG, OptionsMenuSwapButtons AS LONG
-DIM SHARED OptionsMenuCheckUpdates AS LONG, OptionsMenuCheckUpdatesNow AS LONG
-DIM SHARED OptionsMenuDevChannel AS LONG
+Dim Shared OptionsMenuAutoName As Long, OptionsMenuSwapButtons As Long
+Dim Shared OptionsMenuCheckUpdates As Long, OptionsMenuCheckUpdatesNow As Long
+Dim Shared OptionsMenuDevChannel As Long
 
-DIM SHARED HelpMenuHelp AS LONG, HelpMenuAbout AS LONG
+Dim Shared HelpMenuHelp As Long, HelpMenuAbout As Long
 
-DIM SHARED FontSwitchMenuSwitch AS LONG
+Dim Shared FontSwitchMenuSwitch As Long
 
 'Toolbox buttons
-DIM SHARED AddButton AS LONG, AddLabel AS LONG
-DIM SHARED AddTextBox AS LONG, AddNumericBox AS LONG
-DIM SHARED AddCheckBox AS LONG, AddRadioButton AS LONG
-DIM SHARED AddListBox AS LONG, AddDropdownList AS LONG
-DIM SHARED AddTrackBar AS LONG, AddProgressBar AS LONG
-DIM SHARED AddPictureBox AS LONG, AddFrame AS LONG
-DIM SHARED AddToggleSwitch AS LONG
+Dim Shared AddButton As Long, AddLabel As Long
+Dim Shared AddTextBox As Long, AddNumericBox As Long
+Dim Shared AddCheckBox As Long, AddRadioButton As Long
+Dim Shared AddListBox As Long, AddDropdownList As Long
+Dim Shared AddTrackBar As Long, AddProgressBar As Long
+Dim Shared AddPictureBox As Long, AddFrame As Long
+Dim Shared AddToggleSwitch As Long
 
 'Control toggles
-DIM SHARED Stretch AS LONG, HasBorder AS LONG
-DIM SHARED ShowPercentage AS LONG, PasswordMaskCB AS LONG
-DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
-DIM SHARED Disabled AS LONG, Transparent AS LONG
-DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
-DIM SHARED Resizable AS LONG, AutoScroll AS LONG
-DIM SHARED AutoSize AS LONG, SizeTB AS LONG
-DIM SHARED HideTicks AS LONG, AutoPlayGif AS LONG
-DIM SHARED AddGifExtensionToggle AS LONG
+Dim Shared Stretch As Long, HasBorder As Long
+Dim Shared ShowPercentage As Long, PasswordMaskCB As Long
+Dim Shared WordWrap As Long, CanHaveFocus As Long
+Dim Shared Disabled As Long, Transparent As Long
+Dim Shared Hidden As Long, CenteredWindow As Long
+Dim Shared Resizable As Long, AutoScroll As Long
+Dim Shared AutoSize As Long, SizeTB As Long
+Dim Shared HideTicks As Long, AutoPlayGif As Long
+Dim Shared AddGifExtensionToggle As Long
 
 'Open/Save dialog
-DIM SHARED DialogBG AS LONG, FileNameLB AS LONG
-DIM SHARED FileNameTextBox AS LONG, PathLB AS LONG
-DIM SHARED FilesLB AS LONG, FileList AS LONG
-DIM SHARED PathsLB AS LONG, DirList AS LONG
-DIM SHARED OpenBT AS LONG, SaveBT AS LONG, CancelBT AS LONG
-DIM SHARED ShowOnlyFrmbinFilesCB AS LONG, SaveFrmOnlyCB AS LONG
+Dim Shared DialogBG As Long, FileNameLB As Long
+Dim Shared FileNameTextBox As Long, PathLB As Long
+Dim Shared FilesLB As Long, FileList As Long
+Dim Shared PathsLB As Long, DirList As Long
+Dim Shared OpenBT As Long, SaveBT As Long, CancelBT As Long
+Dim Shared ShowOnlyFrmbinFilesCB As Long, SaveFrmOnlyCB As Long
 
 'Z-ordering dialog
-DIM SHARED ControlList AS LONG, UpBT AS LONG
-DIM SHARED DownBT AS LONG, CloseZOrderingBT AS LONG
+Dim Shared ControlList As Long, UpBT As Long
+Dim Shared DownBT As Long, CloseZOrderingBT As Long
 
 'Set binding dialog
-DIM SHARED SourceControlLB AS LONG
-DIM SHARED SourceControlNameLB AS LONG
-DIM SHARED TargetControlLB AS LONG
-DIM SHARED TargetControlNameLB AS LONG
+Dim Shared SourceControlLB As Long
+Dim Shared SourceControlNameLB As Long
+Dim Shared TargetControlLB As Long
+Dim Shared TargetControlNameLB As Long
 'DIM SHARED SwapBT AS LONG
-DIM SHARED SourcePropertyLB AS LONG
-DIM SHARED SourcePropertyList AS LONG
-DIM SHARED TargetPropertyLB AS LONG
-DIM SHARED TargetPropertyList AS LONG
-DIM SHARED BindBT AS LONG
-DIM SHARED CancelBindBT AS LONG
+Dim Shared SourcePropertyLB As Long
+Dim Shared SourcePropertyList As Long
+Dim Shared TargetPropertyLB As Long
+Dim Shared TargetPropertyList As Long
+Dim Shared BindBT As Long
+Dim Shared CancelBindBT As Long
 
 'Properties
-DIM SHARED TextAlignLB AS LONG, AlignOptions AS LONG
-DIM SHARED VerticalAlignLB AS LONG, VAlignOptions AS LONG
-DIM SHARED ColorPropertiesList AS LONG, ColorPreview AS LONG
-DIM SHARED Red AS LONG, RedValue AS LONG
-DIM SHARED Green AS LONG, GreenValue AS LONG
-DIM SHARED Blue AS LONG, BlueValue AS LONG
-DIM SHARED NameLB AS LONG, CaptionLB AS LONG
-DIM SHARED TextLB AS LONG, TopLB AS LONG
-DIM SHARED LeftLB AS LONG, WidthLB AS LONG
-DIM SHARED HeightLB AS LONG, FontLB AS LONG
-DIM SHARED TooltipLB AS LONG, ValueLB AS LONG
-DIM SHARED MinLB AS LONG, MaxLB AS LONG
-DIM SHARED IntervalLB AS LONG, MinIntervalLB AS LONG
-DIM SHARED PaddingLeftrightLB AS LONG, NameTB AS LONG
-DIM SHARED CaptionTB AS LONG, TextTB AS LONG
-DIM SHARED TopTB AS LONG, LeftTB AS LONG
-DIM SHARED WidthTB AS LONG, HeightTB AS LONG
-DIM SHARED FontTB AS LONG, TooltipTB AS LONG
-DIM SHARED ValueTB AS LONG, MinTB AS LONG
-DIM SHARED MaxTB AS LONG, IntervalTB AS LONG
-DIM SHARED MinIntervalTB AS LONG, PaddingTB AS LONG
-DIM SHARED MaskTB AS LONG, MaskLB AS LONG
-DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
-DIM SHARED BooleanLB AS LONG, BooleanOptions AS LONG
-DIM SHARED FontListLB AS LONG, FontList AS LONG, FontSizeList
-DIM SHARED PasteListBT AS LONG, ContextMenuLB AS LONG
-DIM SHARED ContextMenuControlsList AS LONG
-DIM SHARED KeyboardComboLB AS LONG, KeyboardComboBT AS LONG
+Dim Shared TextAlignLB As Long, AlignOptions As Long
+Dim Shared VerticalAlignLB As Long, VAlignOptions As Long
+Dim Shared ColorPropertiesList As Long, ColorPreview As Long
+Dim Shared Red As Long, RedValue As Long
+Dim Shared Green As Long, GreenValue As Long
+Dim Shared Blue As Long, BlueValue As Long
+Dim Shared NameLB As Long, CaptionLB As Long
+Dim Shared TextLB As Long, TopLB As Long
+Dim Shared LeftLB As Long, WidthLB As Long
+Dim Shared HeightLB As Long, FontLB As Long
+Dim Shared TooltipLB As Long, ValueLB As Long
+Dim Shared MinLB As Long, MaxLB As Long
+Dim Shared IntervalLB As Long, MinIntervalLB As Long
+Dim Shared PaddingLeftrightLB As Long, NameTB As Long
+Dim Shared CaptionTB As Long, TextTB As Long
+Dim Shared TopTB As Long, LeftTB As Long
+Dim Shared WidthTB As Long, HeightTB As Long
+Dim Shared FontTB As Long, TooltipTB As Long
+Dim Shared ValueTB As Long, MinTB As Long
+Dim Shared MaxTB As Long, IntervalTB As Long
+Dim Shared MinIntervalTB As Long, PaddingTB As Long
+Dim Shared MaskTB As Long, MaskLB As Long
+Dim Shared BulletOptions As Long, BulletOptionsLB As Long
+Dim Shared BooleanLB As Long, BooleanOptions As Long
+Dim Shared FontListLB As Long, FontList As Long, FontSizeList
+Dim Shared PasteListBT As Long, ContextMenuLB As Long
+Dim Shared ContextMenuControlsList As Long
+Dim Shared KeyboardComboLB As Long, KeyboardComboBT As Long
 '------------------------------------------------------------------------------
 
 'Other shared variables:
-DIM SHARED UiPreviewPID AS LONG, TotalSelected AS LONG, FirstSelected AS LONG
-DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
-DIM SHARED PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
-DIM SHARED LastKeyPress AS DOUBLE, CheckUpdates AS _BYTE, CheckUpdatesNow AS _BYTE
-DIM SHARED CheckDevUpdates AS _BYTE, CheckUpdateDone AS _BYTE, CheckUpdateStartUpTrigger AS _BYTE
-DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
-DIM SHARED OpenDialogOpen AS _BYTE
-DIM SHARED PropertySent AS _BYTE, RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
-DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
-DIM SHARED InstanceHost AS LONG, InstanceClient AS LONG
-DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
-DIM SHARED Stream$, FormDataReceived AS _BYTE, LastFormData$
-DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
-DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
-DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
-DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
-DIM SHARED LoadedWithGifExtension AS _BYTE, AddGifExtension AS _BYTE
-DIM SHARED TotalGifLoaded AS LONG, SetBindingDialogOpen AS _BYTE
-DIM SHARED InitialControlSet AS STRING
+Dim Shared UiPreviewPID As Long, TotalSelected As Long, FirstSelected As Long
+Dim Shared PreviewFormID As Long, PreviewSelectionRectangle As Integer
+Dim Shared PreviewAttached As _Byte, AutoNameControls As _Byte
+Dim Shared LastKeyPress As Double, CheckUpdates As _Byte, CheckUpdatesNow As _Byte
+Dim Shared CheckDevUpdates As _Byte, CheckUpdateDone As _Byte, CheckUpdateStartUpTrigger As _Byte
+Dim Shared UiEditorTitle$, Edited As _Byte, ZOrderingDialogOpen As _Byte
+Dim Shared OpenDialogOpen As _Byte
+Dim Shared PropertySent As _Byte, RevertEdit As _Byte, OldColor As _Unsigned Long
+Dim Shared ColorPreviewWord$, BlinkStatusBar As Single, StatusBarBackColor As _Unsigned Long
+Dim Shared InstanceHost As Long, InstanceClient As Long
+Dim Shared HostPort As String, Host As Long, Client As Long
+Dim Shared Stream$, FormDataReceived As _Byte, LastFormData$
+Dim Shared prevScreenX As Integer, prevScreenY As Integer
+Dim Shared UndoPointer As Integer, TotalUndoImages As Integer
+Dim Shared totalBytesSent As _Unsigned _Integer64
+Dim Shared RecentMenuItem(1 To 9) As Long, RecentListBuilt As _Byte
+Dim Shared LoadedWithGifExtension As _Byte, AddGifExtension As _Byte
+Dim Shared TotalGifLoaded As Long, SetBindingDialogOpen As _Byte
+Dim Shared InitialControlSet As String
 
-TYPE newInputBox
-    ID AS LONG
-    LabelID AS LONG
-    Signal AS INTEGER
-    LastEdited AS SINGLE
-    DataType AS INTEGER
-    Sent AS _BYTE
-END TYPE
+Type newInputBox
+    ID As Long
+    LabelID As Long
+    Signal As Integer
+    LastEdited As Single
+    DataType As Integer
+    Sent As _Byte
+End Type
 
-CONST DT_Text = 1
-CONST DT_Integer = 2
-CONST DT_Float = 3
+Const DT_Text = 1
+Const DT_Integer = 2
+Const DT_Float = 3
 
-REDIM SHARED PreviewCaptions(0) AS STRING
-REDIM SHARED PreviewTexts(0) AS STRING
-REDIM SHARED PreviewMasks(0) AS STRING
-REDIM SHARED PreviewTips(0) AS STRING
-REDIM SHARED PreviewFonts(0) AS STRING
-REDIM SHARED PreviewActualFonts(0) AS STRING
-REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
-REDIM SHARED PreviewParentIDS(0) AS STRING
-REDIM SHARED PreviewContextMenu(0) AS STRING
-REDIM SHARED PreviewBoundTo(0) AS STRING
-REDIM SHARED PreviewBoundProperty(0) AS STRING
-REDIM SHARED PreviewKeyCombos(0) AS STRING
-REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
-REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
-REDIM SHARED zOrderIDs(0) AS LONG
-REDIM SHARED InputBox(1 TO 100) AS newInputBox
-REDIM SHARED Toggles(1 TO 100) AS LONG
-REDIM SHARED InputBoxText(1 TO 100) AS STRING
-DIM SHARED PreviewDefaultButtonID AS LONG
+ReDim Shared PreviewCaptions(0) As String
+ReDim Shared PreviewTexts(0) As String
+ReDim Shared PreviewMasks(0) As String
+ReDim Shared PreviewTips(0) As String
+ReDim Shared PreviewFonts(0) As String
+ReDim Shared PreviewActualFonts(0) As String
+ReDim Shared PreviewControls(0) As __UI_ControlTYPE
+ReDim Shared PreviewParentIDS(0) As String
+ReDim Shared PreviewContextMenu(0) As String
+ReDim Shared PreviewBoundTo(0) As String
+ReDim Shared PreviewBoundProperty(0) As String
+ReDim Shared PreviewKeyCombos(0) As String
+ReDim Shared PreviewAnimatedGif(0) As _Byte
+ReDim Shared PreviewAutoPlayGif(0) As _Byte
+ReDim Shared zOrderIDs(0) As Long
+ReDim Shared InputBox(1 To 100) As newInputBox
+ReDim Shared Toggles(1 To 100) As Long
+ReDim Shared InputBoxText(1 To 100) As String
+Dim Shared PreviewDefaultButtonID As Long
 
-DIM SHARED HasFontList AS _BYTE, ShowFontList AS _BYTE
-DIM SHARED AttemptToShowFontList AS _BYTE, BypassShowFontList AS _BYTE
-DIM SHARED TotalFontsFound AS LONG
-REDIM SHARED FontFile(0) AS STRING
+Dim Shared HasFontList As _Byte, ShowFontList As _Byte
+Dim Shared AttemptToShowFontList As _Byte, BypassShowFontList As _Byte
+Dim Shared TotalFontsFound As Long
+ReDim Shared FontFile(0) As String
 
-$IF WIN THEN
-    CONST PathSep$ = "\"
-$ELSE
-    CONST PathSep$ = "/"
-$END IF
+$If WIN Then
+    Const PathSep$ = "\"
+$Else
+        CONST PathSep$ = "/"
+$End If
 
-IF _FILEEXISTS("falcon.h") = 0 THEN RestoreFalcon
+If _FileExists("falcon.h") = 0 Then RestoreFalcon
 
-DIM SHARED CurrentPath$, ThisFileName$
+Dim Shared CurrentPath$, ThisFileName$
 
 'CheckPreviewTimer = _FREETIMER
 'ON TIMER(CheckPreviewTimer, .003) CheckPreview
 
 UiEditorTitle$ = "InForm Designer"
 
-$IF WIN THEN
-    DECLARE DYNAMIC LIBRARY "kernel32"
-        FUNCTION OpenProcess& (BYVAL dwDesiredAccess AS LONG, BYVAL bInheritHandle AS LONG, BYVAL dwProcessId AS LONG)
-        FUNCTION CloseHandle& (BYVAL hObject AS LONG)
-        FUNCTION GetExitCodeProcess& (BYVAL hProcess AS LONG, lpExitCode AS LONG)
-    END DECLARE
+$If WIN Then
+    Declare Dynamic Library "kernel32"
+        Function OpenProcess& (ByVal dwDesiredAccess As Long, Byval bInheritHandle As Long, Byval dwProcessId As Long)
+        Function CloseHandle& (ByVal hObject As Long)
+        Function GetExitCodeProcess& (ByVal hProcess As Long, lpExitCode As Long)
+    End Declare
 
-    DECLARE DYNAMIC LIBRARY "user32"
-        FUNCTION SetForegroundWindow& (BYVAL hWnd AS LONG)
-    END DECLARE
+    Declare Dynamic Library "user32"
+        Function SetForegroundWindow& (ByVal hWnd As Long)
+    End Declare
 
     ''Registry routines taken from the Wiki: http://www.qb64.org/wiki/Windows_Libraries#Registered_Fonts
     ''Code courtesy of Michael Calkins
     ''winreg.h
-    CONST HKEY_CLASSES_ROOT = &H80000000~&
-    CONST HKEY_CURRENT_USER = &H80000001~&
-    CONST HKEY_LOCAL_MACHINE = &H80000002~&
-    CONST HKEY_USERS = &H80000003~&
-    CONST HKEY_PERFORMANCE_DATA = &H80000004~&
-    CONST HKEY_CURRENT_CONFIG = &H80000005~&
-    CONST HKEY_DYN_DATA = &H80000006~&
-    CONST REG_OPTION_VOLATILE = 1
-    CONST REG_OPTION_NON_VOLATILE = 0
-    CONST REG_CREATED_NEW_KEY = 1
-    CONST REG_OPENED_EXISTING_KEY = 2
+    Const HKEY_CLASSES_ROOT = &H80000000~&
+    Const HKEY_CURRENT_USER = &H80000001~&
+    Const HKEY_LOCAL_MACHINE = &H80000002~&
+    Const HKEY_USERS = &H80000003~&
+    Const HKEY_PERFORMANCE_DATA = &H80000004~&
+    Const HKEY_CURRENT_CONFIG = &H80000005~&
+    Const HKEY_DYN_DATA = &H80000006~&
+    Const REG_OPTION_VOLATILE = 1
+    Const REG_OPTION_NON_VOLATILE = 0
+    Const REG_CREATED_NEW_KEY = 1
+    Const REG_OPENED_EXISTING_KEY = 2
 
     ''http://msdn.microsoft.com/en-us/library/ms724884(v=VS.85).aspx
-    CONST REG_NONE = 0
-    CONST REG_SZ = 1
-    CONST REG_EXPAND_SZ = 2
-    CONST REG_BINARY = 3
-    CONST REG_DWORD_LITTLE_ENDIAN = 4
-    CONST REG_DWORD = 4
-    CONST REG_DWORD_BIG_ENDIAN = 5
-    CONST REG_LINK = 6
-    CONST REG_MULTI_SZ = 7
-    CONST REG_RESOURCE_LIST = 8
-    CONST REG_FULL_RESOURCE_DESCRIPTOR = 9
-    CONST REG_RESOURCE_REQUIREMENTS_LIST = 10
-    CONST REG_QWORD_LITTLE_ENDIAN = 11
-    CONST REG_QWORD = 11
-    CONST REG_NOTIFY_CHANGE_NAME = 1
-    CONST REG_NOTIFY_CHANGE_ATTRIBUTES = 2
-    CONST REG_NOTIFY_CHANGE_LAST_SET = 4
-    CONST REG_NOTIFY_CHANGE_SECURITY = 8
+    Const REG_NONE = 0
+    Const REG_SZ = 1
+    Const REG_EXPAND_SZ = 2
+    Const REG_BINARY = 3
+    Const REG_DWORD_LITTLE_ENDIAN = 4
+    Const REG_DWORD = 4
+    Const REG_DWORD_BIG_ENDIAN = 5
+    Const REG_LINK = 6
+    Const REG_MULTI_SZ = 7
+    Const REG_RESOURCE_LIST = 8
+    Const REG_FULL_RESOURCE_DESCRIPTOR = 9
+    Const REG_RESOURCE_REQUIREMENTS_LIST = 10
+    Const REG_QWORD_LITTLE_ENDIAN = 11
+    Const REG_QWORD = 11
+    Const REG_NOTIFY_CHANGE_NAME = 1
+    Const REG_NOTIFY_CHANGE_ATTRIBUTES = 2
+    Const REG_NOTIFY_CHANGE_LAST_SET = 4
+    Const REG_NOTIFY_CHANGE_SECURITY = 8
 
     ''http://msdn.microsoft.com/en-us/library/ms724878(v=VS.85).aspx
-    CONST KEY_ALL_ACCESS = &HF003F&
-    CONST KEY_CREATE_LINK = &H0020&
-    CONST KEY_CREATE_SUB_KEY = &H0004&
-    CONST KEY_ENUMERATE_SUB_KEYS = &H0008&
-    CONST KEY_EXECUTE = &H20019&
-    CONST KEY_NOTIFY = &H0010&
-    CONST KEY_QUERY_VALUE = &H0001&
-    CONST KEY_READ = &H20019&
-    CONST KEY_SET_VALUE = &H0002&
-    CONST KEY_WOW64_32KEY = &H0200&
-    CONST KEY_WOW64_64KEY = &H0100&
-    CONST KEY_WRITE = &H20006&
+    Const KEY_ALL_ACCESS = &HF003F&
+    Const KEY_CREATE_LINK = &H0020&
+    Const KEY_CREATE_SUB_KEY = &H0004&
+    Const KEY_ENUMERATE_SUB_KEYS = &H0008&
+    Const KEY_EXECUTE = &H20019&
+    Const KEY_NOTIFY = &H0010&
+    Const KEY_QUERY_VALUE = &H0001&
+    Const KEY_READ = &H20019&
+    Const KEY_SET_VALUE = &H0002&
+    Const KEY_WOW64_32KEY = &H0200&
+    Const KEY_WOW64_64KEY = &H0100&
+    Const KEY_WRITE = &H20006&
 
     ''winerror.h
     ''http://msdn.microsoft.com/en-us/library/ms681382(v=VS.85).aspx
-    CONST ERROR_SUCCESS = 0
-    CONST ERROR_FILE_NOT_FOUND = &H2&
-    CONST ERROR_INVALID_HANDLE = &H6&
-    CONST ERROR_MORE_DATA = &HEA&
-    CONST ERROR_NO_MORE_ITEMS = &H103&
+    Const ERROR_SUCCESS = 0
+    Const ERROR_FILE_NOT_FOUND = &H2&
+    Const ERROR_INVALID_HANDLE = &H6&
+    Const ERROR_MORE_DATA = &HEA&
+    Const ERROR_NO_MORE_ITEMS = &H103&
 
-    DECLARE DYNAMIC LIBRARY "advapi32"
-        FUNCTION RegOpenKeyExA& (BYVAL hKey AS _OFFSET, BYVAL lpSubKey AS _OFFSET, BYVAL ulOptions AS _UNSIGNED LONG, BYVAL samDesired AS _UNSIGNED LONG, BYVAL phkResult AS _OFFSET)
-        FUNCTION RegCloseKey& (BYVAL hKey AS _OFFSET)
-        FUNCTION RegEnumValueA& (BYVAL hKey AS _OFFSET, BYVAL dwIndex AS _UNSIGNED LONG, BYVAL lpValueName AS _OFFSET, BYVAL lpcchValueName AS _OFFSET, BYVAL lpReserved AS _OFFSET, BYVAL lpType AS _OFFSET, BYVAL lpData AS _OFFSET, BYVAL lpcbData AS _OFFSET)
-    END DECLARE
-$ELSE
-    DECLARE LIBRARY
-    FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
-    END DECLARE
-$END IF
+    Declare Dynamic Library "advapi32"
+        Function RegOpenKeyExA& (ByVal hKey As _Offset, Byval lpSubKey As _Offset, Byval ulOptions As _Unsigned Long, Byval samDesired As _Unsigned Long, Byval phkResult As _Offset)
+        Function RegCloseKey& (ByVal hKey As _Offset)
+        Function RegEnumValueA& (ByVal hKey As _Offset, Byval dwIndex As _Unsigned Long, Byval lpValueName As _Offset, Byval lpcchValueName As _Offset, Byval lpReserved As _Offset, Byval lpType As _Offset, Byval lpData As _Offset, Byval lpcbData As _Offset)
+    End Declare
+$Else
+        DECLARE LIBRARY
+        FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
+        END DECLARE
+$End If
 
 '$include:'ini.bi'
 '$include:'InForm.bi'
@@ -307,190 +307,190 @@ $END IF
 '$include:'extensions/download.bas'
 
 'Event procedures: ---------------------------------------------------------------
-SUB __UI_Click (id AS LONG)
-    DIM Answer AS _BYTE, Dummy AS LONG, b$
-    STATIC LastClick#, LastClickedID AS LONG
+Sub __UI_Click (id As Long)
+    Dim Answer As _Byte, Dummy As Long, b$
+    Static LastClick#, LastClickedID As Long
 
     SendSignal -8
 
-    SELECT EVERYCASE id
-        CASE AlignMenuAlignLeft: Dummy = 201
-        CASE AlignMenuAlignRight: Dummy = 202
-        CASE AlignMenuAlignTops: Dummy = 203
-        CASE AlignMenuAlignBottoms: Dummy = 204
-        CASE AlignMenuAlignCentersV: Dummy = 205
-        CASE AlignMenuAlignCentersH: Dummy = 206
-        CASE AlignMenuAlignCenterV: Dummy = 207
-        CASE AlignMenuAlignCenterH: Dummy = 208
-        CASE AlignMenuDistributeV: Dummy = 209
-        CASE AlignMenuDistributeH: Dummy = 210
+    Select EveryCase id
+        Case AlignMenuAlignLeft: Dummy = 201
+        Case AlignMenuAlignRight: Dummy = 202
+        Case AlignMenuAlignTops: Dummy = 203
+        Case AlignMenuAlignBottoms: Dummy = 204
+        Case AlignMenuAlignCentersV: Dummy = 205
+        Case AlignMenuAlignCentersH: Dummy = 206
+        Case AlignMenuAlignCenterV: Dummy = 207
+        Case AlignMenuAlignCenterH: Dummy = 208
+        Case AlignMenuDistributeV: Dummy = 209
+        Case AlignMenuDistributeH: Dummy = 210
         CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops, _
              AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH, _
              AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV, _
              AlignMenuDistributeH
             b$ = MKI$(0)
             SendData b$, Dummy
-        CASE OptionsMenuAutoName
-            AutoNameControls = NOT AutoNameControls
+        Case OptionsMenuAutoName
+            AutoNameControls = Not AutoNameControls
             Control(id).Value = AutoNameControls
             SaveSettings
-        CASE OptionsMenuCheckUpdates
-            CheckUpdates = NOT CheckUpdates
+        Case OptionsMenuCheckUpdates
+            CheckUpdates = Not CheckUpdates
             Control(id).Value = CheckUpdates
             SaveSettings
-        CASE OptionsMenuDevChannel
-            CheckDevUpdates = NOT CheckDevUpdates
+        Case OptionsMenuDevChannel
+            CheckDevUpdates = Not CheckDevUpdates
             Control(id).Value = CheckDevUpdates
             SaveSettings
-        CASE OptionsMenuCheckUpdatesNow
+        Case OptionsMenuCheckUpdatesNow
             CheckUpdatesNow = True
             CheckUpdateDone = False
             CheckUpdateStartUpTrigger = False
-        CASE EditMenuConvertType
+        Case EditMenuConvertType
             b$ = MKI$(0)
             SendData b$, 225
-        CASE EditMenuSetDefaultButton
+        Case EditMenuSetDefaultButton
             SendSignal -6
-        CASE EditMenuRestoreDimensions
+        Case EditMenuRestoreDimensions
             SendSignal -7
-        CASE OptionsMenuSwapButtons
-            __UI_MouseButtonsSwap = NOT __UI_MouseButtonsSwap
+        Case OptionsMenuSwapButtons
+            __UI_MouseButtonsSwap = Not __UI_MouseButtonsSwap
             Control(id).Value = __UI_MouseButtonsSwap
             SaveSettings
-        CASE OptionsMenuSnapLines
-            __UI_SnapLines = NOT __UI_SnapLines
+        Case OptionsMenuSnapLines
+            __UI_SnapLines = Not __UI_SnapLines
             Control(id).Value = __UI_SnapLines
             SaveSettings
-        CASE InsertMenuMenuBar
+        Case InsertMenuMenuBar
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuBar) + "<END>"
             Send Client, b$
-        CASE InsertMenuMenuItem
+        Case InsertMenuMenuItem
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_MenuItem) + "<END>"
             Send Client, b$
-        CASE InsertMenuContextMenu
+        Case InsertMenuContextMenu
             b$ = "NEWCONTROL>" + MKI$(__UI_Type_ContextMenu) + "<END>"
             Send Client, b$
-        CASE ViewMenuPreviewDetach
-            PreviewAttached = NOT PreviewAttached
+        Case ViewMenuPreviewDetach
+            PreviewAttached = Not PreviewAttached
             Control(id).Value = PreviewAttached
             SaveSettings
-        CASE AddButton: Dummy = __UI_Type_Button
-        CASE AddLabel: Dummy = __UI_Type_Label
-        CASE AddTextBox: Dummy = __UI_Type_TextBox
-        CASE AddCheckBox: Dummy = __UI_Type_CheckBox
-        CASE AddRadioButton: Dummy = __UI_Type_RadioButton
-        CASE AddListBox: Dummy = __UI_Type_ListBox
-        CASE AddDropdownList: Dummy = __UI_Type_DropdownList
-        CASE AddTrackBar: Dummy = __UI_Type_TrackBar
-        CASE AddProgressBar: Dummy = __UI_Type_ProgressBar
-        CASE AddPictureBox: Dummy = __UI_Type_PictureBox
-        CASE AddFrame: Dummy = __UI_Type_Frame
-        CASE AddToggleSwitch: Dummy = __UI_Type_ToggleSwitch
+        Case AddButton: Dummy = __UI_Type_Button
+        Case AddLabel: Dummy = __UI_Type_Label
+        Case AddTextBox: Dummy = __UI_Type_TextBox
+        Case AddCheckBox: Dummy = __UI_Type_CheckBox
+        Case AddRadioButton: Dummy = __UI_Type_RadioButton
+        Case AddListBox: Dummy = __UI_Type_ListBox
+        Case AddDropdownList: Dummy = __UI_Type_DropdownList
+        Case AddTrackBar: Dummy = __UI_Type_TrackBar
+        Case AddProgressBar: Dummy = __UI_Type_ProgressBar
+        Case AddPictureBox: Dummy = __UI_Type_PictureBox
+        Case AddFrame: Dummy = __UI_Type_Frame
+        Case AddToggleSwitch: Dummy = __UI_Type_ToggleSwitch
         CASE AddButton, AddLabel, AddTextBox, AddCheckBox, _
              AddRadioButton, AddListBox, AddDropdownList, _
              AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
              AddToggleSwitch
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
             Send Client, b$
-        CASE AddNumericBox
+        Case AddNumericBox
             b$ = MKI$(0)
             SendData b$, 222
-        CASE Stretch
+        Case Stretch
             b$ = MKI$(Control(id).Value)
             SendData b$, 14
-        CASE HasBorder
+        Case HasBorder
             b$ = MKI$(Control(id).Value)
             SendData b$, 15
-        CASE Transparent
+        Case Transparent
             b$ = MKI$(Control(Transparent).Value)
             SendData b$, 28
-        CASE ShowPercentage
+        Case ShowPercentage
             b$ = MKI$(Control(id).Value)
             SendData b$, 16
-        CASE WordWrap
+        Case WordWrap
             b$ = MKI$(Control(id).Value)
             SendData b$, 17
 
             'Also: disable autosize
-            IF Control(id).Value THEN
+            If Control(id).Value Then
                 b$ = MKI$(0)
                 SendData b$, 39
-            END IF
-        CASE CanHaveFocus
+            End If
+        Case CanHaveFocus
             b$ = MKI$(Control(id).Value)
             SendData b$, 18
-        CASE ColorPreview
-            _CLIPBOARD$ = ColorPreviewWord$
-        CASE Disabled
+        Case ColorPreview
+            _Clipboard$ = ColorPreviewWord$
+        Case Disabled
             b$ = MKI$(Control(id).Value)
             SendData b$, 19
-        CASE Hidden
+        Case Hidden
             b$ = MKI$(Control(id).Value)
             SendData b$, 20
-        CASE CenteredWindow
+        Case CenteredWindow
             b$ = MKI$(Control(id).Value)
             SendData b$, 21
-        CASE Resizable
+        Case Resizable
             b$ = MKI$(Control(id).Value)
             SendData b$, 29
-        CASE PasswordMaskCB
+        Case PasswordMaskCB
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
-        CASE AutoScroll
+        Case AutoScroll
             b$ = MKI$(Control(id).Value)
             SendData b$, 38
-        CASE AutoSize
+        Case AutoSize
             b$ = MKI$(Control(id).Value)
             SendData b$, 39
-        CASE HideTicks
+        Case HideTicks
             b$ = MKI$(Control(id).Value)
             SendData b$, 42
-        CASE AutoPlayGif
+        Case AutoPlayGif
             b$ = MKI$(Control(id).Value)
             SendData b$, 44
-        CASE AddGifExtensionToggle
-            IF Control(AddGifExtensionToggle).Value = False AND TotalGifLoaded > 0 THEN
+        Case AddGifExtensionToggle
+            If Control(AddGifExtensionToggle).Value = False And TotalGifLoaded > 0 Then
                 Answer = MessageBox("Removing the GIF extension will load the existing animations as static frames. Proceed?", "", MsgBox_YesNo + MsgBox_Question)
-                IF Answer = MsgBox_No THEN
+                If Answer = MsgBox_No Then
                     Control(AddGifExtensionToggle).Value = True
-                ELSE
+                Else
                     b$ = "PAUSEALLGIF>" + "<END>"
                     Send Client, b$
-                END IF
-            END IF
-        CASE ViewMenuPreview
-            $IF WIN THEN
-                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
-            $ELSE
-                SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
-            $END IF
-        CASE ViewMenuLoadedFonts
-            DIM Temp$
-            Temp$ = "These fonts are currently in use in your form:" + CHR$(10)
-            FOR Dummy = 1 TO UBOUND(PreviewFonts)
-                IF LEN(PreviewFonts(Dummy)) THEN
-                    Temp$ = Temp$ + CHR$(10)
+                End If
+            End If
+        Case ViewMenuPreview
+            $If WIN Then
+                Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
+            $Else
+                    SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+            $End If
+        Case ViewMenuLoadedFonts
+            Dim Temp$
+            Temp$ = "These fonts are currently in use in your form:" + Chr$(10)
+            For Dummy = 1 To UBound(PreviewFonts)
+                If Len(PreviewFonts(Dummy)) Then
+                    Temp$ = Temp$ + Chr$(10)
                     Temp$ = Temp$ + PreviewFonts(Dummy)
-                END IF
-            NEXT
-            IF LEN(Temp$) THEN
+                End If
+            Next
+            If Len(Temp$) Then
                 Answer = MessageBox(Temp$, "Loaded fonts", MsgBox_OkOnly + MsgBox_Information)
-            ELSE
+            Else
                 Answer = MessageBox("There are no fonts loaded.", "", MsgBox_OkOnly + MsgBox_Critical)
-            END IF
-        CASE FileMenuNew
-            IF Edited THEN
-                $IF WIN THEN
+            End If
+        Case FileMenuNew
+            If Edited Then
+                $If WIN Then
                     Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
-                $ELSE
-                    Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
-                $END IF
-                IF Answer = MsgBox_Cancel THEN
-                    EXIT SUB
-                ELSEIF Answer = MsgBox_Yes THEN
+                $Else
+                        Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                $End If
+                If Answer = MsgBox_Cancel Then
+                    Exit Sub
+                ElseIf Answer = MsgBox_Yes Then
                     SaveForm False, False
-                END IF
-            END IF
+                End If
+            End If
 
             __UI_Focus = 0
             LastFormData$ = ""
@@ -502,17 +502,17 @@ SUB __UI_Click (id AS LONG)
             LoadedWithGifExtension = False
             Edited = False
             SendSignal -5
-        CASE FileMenuSave
-            IF LEN(ThisFileName$) THEN
+        Case FileMenuSave
+            If Len(ThisFileName$) Then
                 SaveForm True, False
-            ELSE
-                GOTO SaveAs
-            END IF
-        CASE FileMenuSaveAs
+            Else
+                GoTo SaveAs
+            End If
+        Case FileMenuSaveAs
             SaveAs:
             'Refresh the file list control's contents
-            DIM TotalFiles%
-            IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
+            Dim TotalFiles%
+            If CurrentPath$ = "" Then CurrentPath$ = _StartDir$
             Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -528,27 +528,27 @@ SUB __UI_Click (id AS LONG)
             OpenDialogOpen = True
             Caption(StatusBar) = "Specify the name under which to save the current form..."
             __UI_Focus = FileNameTextBox
-            IF LEN(ThisFileName$) THEN
+            If Len(ThisFileName$) Then
                 Text(FileNameTextBox) = ThisFileName$
-            ELSE
+            Else
                 Text(FileNameTextBox) = ""
-            END IF
-            IF LEN(Text(FileNameTextBox)) THEN
+            End If
+            If Len(Text(FileNameTextBox)) Then
                 Control(FileNameTextBox).SelectionStart = 0
-                Control(FileNameTextBox).Cursor = LEN(Text(FileNameTextBox))
+                Control(FileNameTextBox).Cursor = Len(Text(FileNameTextBox))
                 Control(FileNameTextBox).TextIsSelected = True
-            END IF
+            End If
             __UI_ForceRedraw = True
-        CASE SaveBT
+        Case SaveBT
             SaveFile:
-            IF OpenDialogOpen THEN
-                DIM FileToOpen$, FreeFileNum AS INTEGER
+            If OpenDialogOpen Then
+                Dim FileToOpen$, FreeFileNum As Integer
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
-                ThisFileName$ = LTRIM$(RTRIM$(Text(FileNameTextBox)))
-                IF ThisFileName$ = "" THEN EXIT SUB
-                IF UCASE$(RIGHT$(ThisFileName$, 4)) <> ".FRM" THEN
+                ThisFileName$ = LTrim$(RTrim$(Text(FileNameTextBox)))
+                If ThisFileName$ = "" Then Exit Sub
+                If UCase$(Right$(ThisFileName$, 4)) <> ".FRM" Then
                     ThisFileName$ = ThisFileName$ + ".frm"
-                END IF
+                End If
                 Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
                 Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
                 Control(FileList).FirstVisibleLine = 1
@@ -563,83 +563,83 @@ SUB __UI_Click (id AS LONG)
                 Caption(StatusBar) = "Ready."
                 __UI_Focus = 0
                 SaveForm True, Control(SaveFrmOnlyCB).Value
-            END IF
-        CASE HelpMenuAbout
-            DIM isBeta$
-            IF __UI_VersionIsBeta THEN isBeta$ = " Beta Version" ELSE isBeta$ = ""
-            Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")\nby Fellippe Heitor\n\nTwitter: @fellippeheitor\ne-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
-        CASE HelpMenuHelp
+            End If
+        Case HelpMenuAbout
+            Dim isBeta$
+            If __UI_VersionIsBeta Then isBeta$ = " Beta Version" Else isBeta$ = ""
+            Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + " (build" + Str$(__UI_VersionNumber) + isBeta$ + ")\nby Fellippe Heitor\n\nTwitter: @fellippeheitor\ne-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
+        Case HelpMenuHelp
             Answer = MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", MsgBox_OkOnly + MsgBox_Information)
-        CASE FileMenuExit
-            IF Edited THEN
-                $IF WIN THEN
+        Case FileMenuExit
+            If Edited Then
+                $If WIN Then
                     Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
-                $ELSE
-                    Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNo + MsgBox_Question)
-                $END IF
-                IF Answer = MsgBox_Cancel THEN
-                    EXIT SUB
-                ELSEIF Answer = MsgBox_Yes THEN
+                $Else
+                        Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNo + MsgBox_Question)
+                $End If
+                If Answer = MsgBox_Cancel Then
+                    Exit Sub
+                ElseIf Answer = MsgBox_Yes Then
                     SaveForm False, False
-                END IF
-            END IF
-            SYSTEM
-        CASE EditMenuZOrdering
+                End If
+            End If
+            System
+        Case EditMenuZOrdering
             'Fill the list:
             Caption(StatusBar) = "Editing z-ordering/tab ordering"
-            DIM j AS LONG, i AS LONG
-            STATIC Moving AS _BYTE
-            REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
+            Dim j As Long, i As Long
+            Static Moving As _Byte
+            ReDim _Preserve zOrderIDs(1 To UBound(PreviewControls)) As Long
             ReloadZList:
             ResetList ControlList
-            FOR i = 1 TO UBOUND(PreviewControls)
-                SELECT CASE PreviewControls(i).Type
-                    CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
+            For i = 1 To UBound(PreviewControls)
+                Select Case PreviewControls(i).Type
+                    Case 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
                         j = j + 1
                         zOrderIDs(j) = i
-                        AddItem ControlList, __UI_Type(PreviewControls(i).Type).Name + RTRIM$(PreviewControls(i).Name)
-                END SELECT
-            NEXT
-            IF Moving THEN RETURN
+                        AddItem ControlList, __UI_Type(PreviewControls(i).Type).Name + RTrim$(PreviewControls(i).Name)
+                End Select
+            Next
+            If Moving Then Return
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
             Control(ZOrdering).Left = 18: Control(ZOrdering).Top = 40
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
-        CASE EditMenuBindControls
+        Case EditMenuBindControls
             'Get controls' names and bound properties
-            DIM CurrentSource$
+            Dim CurrentSource$
             j = 0
-            FOR i = 1 TO UBOUND(PreviewControls)
-                IF PreviewControls(i).ControlIsSelected THEN
+            For i = 1 To UBound(PreviewControls)
+                If PreviewControls(i).ControlIsSelected Then
                     j = j + 1
-                    IF j = 1 THEN
-                        Caption(SourceControlNameLB) = RTRIM$(PreviewControls(i).Name)
+                    If j = 1 Then
+                        Caption(SourceControlNameLB) = RTrim$(PreviewControls(i).Name)
                         CurrentSource$ = PreviewBoundTo(i)
-                        IF LEN(PreviewBoundProperty(i)) = 0 THEN
+                        If Len(PreviewBoundProperty(i)) = 0 Then
                             Dummy = SelectItem(SourcePropertyList, "Value")
-                        ELSE
+                        Else
                             Dummy = SelectItem(SourcePropertyList, PreviewBoundProperty(i))
-                        END IF
-                    END IF
-                    IF j = 2 THEN
-                        Caption(TargetControlNameLB) = RTRIM$(PreviewControls(i).Name)
-                        IF LEN(PreviewBoundProperty(i)) = 0 THEN
+                        End If
+                    End If
+                    If j = 2 Then
+                        Caption(TargetControlNameLB) = RTrim$(PreviewControls(i).Name)
+                        If Len(PreviewBoundProperty(i)) = 0 Then
                             Dummy = SelectItem(TargetPropertyList, "Value")
-                        ELSE
+                        Else
                             Dummy = SelectItem(TargetPropertyList, PreviewBoundProperty(i))
-                        END IF
-                        EXIT FOR
-                    END IF
-                END IF
-            NEXT
+                        End If
+                        Exit For
+                    End If
+                End If
+            Next
 
-            IF CurrentSource$ = Caption(TargetControlNameLB) THEN
+            If CurrentSource$ = Caption(TargetControlNameLB) Then
                 Caption(BindBT) = "Rebind"
                 Caption(CancelBindBT) = "Unbind"
-            ELSE
+            Else
                 Caption(BindBT) = "Bind"
                 Caption(CancelBindBT) = "Cancel"
-            END IF
+            End If
 
             Caption(StatusBar) = "Defining control bindings"
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
@@ -649,75 +649,75 @@ SUB __UI_Click (id AS LONG)
             'CASE SwapBT
             '    SWAP Caption(SourceControlNameLB), Caption(TargetControlNameLB)
             '    SWAP Control(SourcePropertyList).Value, Control(TargetPropertyList).Value
-        CASE BindBT
+        Case BindBT
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(SetControlBinding).Left = -600: Control(SetControlBinding).Top = -600
             SetBindingDialogOpen = False
             b$ = "BINDCONTROLS>"
-            b$ = b$ + MKL$(LEN(Caption(SourceControlNameLB))) + Caption(SourceControlNameLB)
-            b$ = b$ + MKL$(LEN(Caption(TargetControlNameLB))) + Caption(TargetControlNameLB)
-            b$ = b$ + MKL$(LEN(GetItem(SourcePropertyList, Control(SourcePropertyList).Value)))
+            b$ = b$ + MKL$(Len(Caption(SourceControlNameLB))) + Caption(SourceControlNameLB)
+            b$ = b$ + MKL$(Len(Caption(TargetControlNameLB))) + Caption(TargetControlNameLB)
+            b$ = b$ + MKL$(Len(GetItem(SourcePropertyList, Control(SourcePropertyList).Value)))
             b$ = b$ + GetItem(SourcePropertyList, Control(SourcePropertyList).Value)
-            b$ = b$ + MKL$(LEN(GetItem(TargetPropertyList, Control(TargetPropertyList).Value)))
+            b$ = b$ + MKL$(Len(GetItem(TargetPropertyList, Control(TargetPropertyList).Value)))
             b$ = b$ + GetItem(TargetPropertyList, Control(TargetPropertyList).Value)
             b$ = b$ + "<END>"
             Send Client, b$
-        CASE CancelBindBT
+        Case CancelBindBT
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(SetControlBinding).Left = -600: Control(SetControlBinding).Top = -600
             SetBindingDialogOpen = False
-            IF Caption(CancelBindBT) = "Unbind" THEN
+            If Caption(CancelBindBT) = "Unbind" Then
                 b$ = "UNBINDCONTROLS>"
                 b$ = b$ + Caption(SourceControlNameLB)
                 b$ = b$ + "<END>"
                 Send Client, b$
-            END IF
-        CASE CloseZOrderingBT
+            End If
+        Case CloseZOrderingBT
             Caption(StatusBar) = "Ready."
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(ZOrdering).Left = -600: Control(ZOrdering).Top = -600
             __UI_Focus = 0
             ZOrderingDialogOpen = False
-        CASE UpBT
-            DIM PrevListValue AS LONG
+        Case UpBT
+            Dim PrevListValue As Long
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
             SendData b$, 211
-            _DELAY .1
-            Moving = True: GOSUB ReloadZList
+            _Delay .1
+            Moving = True: GoSub ReloadZList
             Moving = False
             Control(ControlList).Value = PrevListValue - 1
             __UI_Focus = ControlList
             __UI_ValueChanged ControlList
-        CASE DownBT
+        Case DownBT
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
-            _DELAY .1
-            Moving = True: GOSUB ReloadZList
+            _Delay .1
+            Moving = True: GoSub ReloadZList
             Moving = False
             Control(ControlList).Value = PrevListValue + 1
             __UI_Focus = ControlList
             __UI_ValueChanged ControlList
-        CASE FileMenuOpen
-            IF Edited THEN
-                $IF WIN THEN
+        Case FileMenuOpen
+            If Edited Then
+                $If WIN Then
                     Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
-                $ELSE
-                    Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
-                $END IF
-                IF Answer = MsgBox_Cancel THEN
-                    EXIT SUB
-                ELSEIF Answer = MsgBox_Yes THEN
+                $Else
+                        Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                $End If
+                If Answer = MsgBox_Cancel Then
+                    Exit Sub
+                ElseIf Answer = MsgBox_Yes Then
                     SaveForm False, False
-                END IF
-            END IF
+                End If
+            End If
 
             'Hide the preview
             SendSignal -2
 
             'Refresh the file list control's contents
-            IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
+            If CurrentPath$ = "" Then CurrentPath$ = _StartDir$
             Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -732,13 +732,13 @@ SUB __UI_Click (id AS LONG)
             OpenDialogOpen = True
             Caption(StatusBar) = "Select a form file to load..."
             __UI_Focus = FileNameTextBox
-            IF LEN(Text(FileNameTextBox)) > 0 THEN
+            If Len(Text(FileNameTextBox)) > 0 Then
                 Control(FileNameTextBox).SelectionStart = 0
-                Control(FileNameTextBox).Cursor = LEN(Text(FileNameTextBox))
+                Control(FileNameTextBox).Cursor = Len(Text(FileNameTextBox))
                 Control(FileNameTextBox).TextIsSelected = True
-            END IF
+            End If
             __UI_ForceRedraw = True
-        CASE CancelBT
+        Case CancelBT
             Text(FileNameTextBox) = ""
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
             Control(OpenFrame).Left = -600: Control(OpenFrame).Top = -600
@@ -752,66 +752,66 @@ SUB __UI_Click (id AS LONG)
         CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, _
              FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, _
              FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
-            DIM RecentToOpen$
+            Dim RecentToOpen$
             RecentToOpen$ = ToolTip(id)
-            IF _FILEEXISTS(RecentToOpen$) THEN
-                IF INSTR(RecentToOpen$, "/") > 0 OR INSTR(RecentToOpen$, "\") > 0 THEN
-                    FOR i = LEN(RecentToOpen$) TO 1 STEP -1
-                        IF ASC(RecentToOpen$, i) = 92 OR ASC(RecentToOpen$, i) = 47 THEN
-                            CurrentPath$ = LEFT$(RecentToOpen$, i - 1)
-                            RecentToOpen$ = MID$(RecentToOpen$, i + 1)
-                            EXIT FOR
-                        END IF
-                    NEXT
-                END IF
+            If _FileExists(RecentToOpen$) Then
+                If InStr(RecentToOpen$, "/") > 0 Or InStr(RecentToOpen$, "\") > 0 Then
+                    For i = Len(RecentToOpen$) To 1 Step -1
+                        If Asc(RecentToOpen$, i) = 92 Or Asc(RecentToOpen$, i) = 47 Then
+                            CurrentPath$ = Left$(RecentToOpen$, i - 1)
+                            RecentToOpen$ = Mid$(RecentToOpen$, i + 1)
+                            Exit For
+                        End If
+                    Next
+                End If
 
-                IF Edited THEN
-                    $IF WIN THEN
+                If Edited Then
+                    $If WIN Then
                         Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
-                    $ELSE
-                        Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
-                    $END IF
-                    IF Answer = MsgBox_Cancel THEN
-                        EXIT SUB
-                    ELSEIF Answer = MsgBox_Yes THEN
+                    $Else
+                            Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                    $End If
+                    If Answer = MsgBox_Cancel Then
+                        Exit Sub
+                    ElseIf Answer = MsgBox_Yes Then
                         SaveForm False, False
-                    END IF
-                END IF
+                    End If
+                End If
 
                 Text(FileNameTextBox) = RecentToOpen$
                 OpenDialogOpen = True
                 __UI_Click OpenBT
-            ELSE
+            Else
                 Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
                 RemoveFromRecentList RecentToOpen$
-            END IF
-        CASE OpenBT
+            End If
+        Case OpenBT
             OpenFile:
-            IF OpenDialogOpen THEN
+            If OpenDialogOpen Then
                 FileToOpen$ = CurrentPath$ + PathSep$ + Text(FileNameTextBox)
-                IF _FILEEXISTS(FileToOpen$) THEN
+                If _FileExists(FileToOpen$) Then
                     LoadedWithGifExtension = False
-                    IF _FILEEXISTS(LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas") THEN
-                        FreeFileNum = FREEFILE
-                        OPEN LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas" FOR BINARY AS #FreeFileNum
-                        b$ = SPACE$(LOF(FreeFileNum))
-                        GET #FreeFileNum, 1, b$
-                        CLOSE #FreeFileNum
-                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                    If _FileExists(Left$(FileToOpen$, Len(FileToOpen$) - 4) + ".bas") Then
+                        FreeFileNum = FreeFile
+                        Open Left$(FileToOpen$, Len(FileToOpen$) - 4) + ".bas" For Binary As #FreeFileNum
+                        b$ = Space$(LOF(FreeFileNum))
+                        Get #FreeFileNum, 1, b$
+                        Close #FreeFileNum
+                        If InStr(b$, Chr$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 Then
                             LoadedWithGifExtension = True
-                        END IF
-                    END IF
+                        End If
+                    End If
 
                     AddToRecentList FileToOpen$
                     ThisFileName$ = Text(FileNameTextBox)
 
                     'Send open command
-                    IF LoadedWithGifExtension = False THEN
+                    If LoadedWithGifExtension = False Then
                         LoadedWithGifExtension = 1 'Set to 1 to check whether a loaded file already had the gif extension
                         Control(AddGifExtensionToggle).Value = False
-                    ELSE
+                    Else
                         Control(AddGifExtensionToggle).Value = True
-                    END IF
+                    End If
                     AddGifExtension = False
                     b$ = "OPENFILE>" + FileToOpen$ + "<END>"
                     Send Client, b$
@@ -836,36 +836,36 @@ SUB __UI_Click (id AS LONG)
                     Stream$ = ""
                     FormDataReceived = False
                     InitialControlSet = ""
-                ELSE
+                Else
                     Answer = MessageBox("File not found.", "", MsgBox_OkOnly + MsgBox_Critical)
                     Control(FileList).Value = 0
-                END IF
-            END IF
-        CASE FileList
+                End If
+            End If
+        Case FileList
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
             Control(DirList).Value = 0
-            IF Control(FileList).HoveringVScrollbarButton = 0 AND LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
-                IF LEN(Text(FileNameTextBox)) > 0 THEN
-                    IF Caption(OpenFrame) = "Open" THEN
-                        GOTO OpenFile
-                    ELSE
-                        GOTO SaveFile
-                    END IF
-                END IF
-            END IF
-        CASE DirList
+            If Control(FileList).HoveringVScrollbarButton = 0 And LastClickedID = id And Timer - LastClick# < .3 Then 'Double click
+                If Len(Text(FileNameTextBox)) > 0 Then
+                    If Caption(OpenFrame) = "Open" Then
+                        GoTo OpenFile
+                    Else
+                        GoTo SaveFile
+                    End If
+                End If
+            End If
+        Case DirList
             Text(FileNameTextBox) = GetItem(DirList, Control(DirList).Value)
             Control(FileList).Value = 0
-            IF LastClickedID = id AND TIMER - LastClick# < .3 THEN 'Double click
+            If LastClickedID = id And Timer - LastClick# < .3 Then 'Double click
                 CurrentPath$ = idezchangepath(CurrentPath$, Text(FileNameTextBox))
                 Caption(PathLB) = "Path: " + CurrentPath$
                 Text(DirList) = idezpathlist$(CurrentPath$, TotalFiles%)
                 Control(DirList).Max = TotalFiles%
                 Control(DirList).LastVisibleItem = 0 'Reset it so it's recalculated
                 Control(DirList).Value = 0
-                GOTO ReloadList
-            END IF
-        CASE ShowOnlyFrmbinFilesCB
+                GoTo ReloadList
+            End If
+        Case ShowOnlyFrmbinFilesCB
             ReloadList:
             Text(FileList) = idezfilelist$(CurrentPath$, Control(ShowOnlyFrmbinFilesCB).Value + 1, 1, TotalFiles%)
             Control(FileList).Max = TotalFiles%
@@ -873,542 +873,542 @@ SUB __UI_Click (id AS LONG)
             Control(FileList).InputViewStart = 1
             Control(FileList).Value = 0
             Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
-        CASE EditMenuUndo
+        Case EditMenuUndo
             SendSignal 214
-        CASE EditMenuRedo
+        Case EditMenuRedo
             SendSignal 215
-        CASE EditMenuCopy
+        Case EditMenuCopy
             b$ = MKI$(0)
             SendData b$, 217
-        CASE EditMenuPaste
+        Case EditMenuPaste
             b$ = MKI$(0)
             SendData b$, 218
-        CASE EditMenuCut
+        Case EditMenuCut
             b$ = MKI$(0)
             SendData b$, 219
-        CASE EditMenuDelete
+        Case EditMenuDelete
             b$ = MKI$(0)
             SendData b$, 220
-        CASE EditMenuSelectAll
+        Case EditMenuSelectAll
             b$ = MKI$(0)
             SendData b$, 221
-        CASE EditMenuAllowMinMax
+        Case EditMenuAllowMinMax
             b$ = MKI$(0)
             SendData b$, 223
-        CASE EditMenuCP437
+        Case EditMenuCP437
             b$ = MKL$(437)
             SendData b$, 34 'Encoding
-        CASE EditMenuCP1252
+        Case EditMenuCP1252
             b$ = MKL$(1252)
             SendData b$, 34 'Encoding
-        CASE ViewMenuShowPositionAndSize
-            __UI_ShowPositionAndSize = NOT __UI_ShowPositionAndSize
+        Case ViewMenuShowPositionAndSize
+            __UI_ShowPositionAndSize = Not __UI_ShowPositionAndSize
             Control(id).Value = __UI_ShowPositionAndSize
             SaveSettings
-        CASE ViewMenuShowInvisibleControls
-            __UI_ShowInvisibleControls = NOT __UI_ShowInvisibleControls
+        Case ViewMenuShowInvisibleControls
+            __UI_ShowInvisibleControls = Not __UI_ShowInvisibleControls
             Control(id).Value = __UI_ShowInvisibleControls
             SaveSettings
-        CASE FontSwitchMenuSwitch, FontLB, FontListLB
-            AttemptToShowFontList = (ShowFontList = False OR BypassShowFontList = True)
-            ShowFontList = NOT ShowFontList
-            IF id <> FontSwitchMenuSwitch THEN __UI_MouseEnter FontLB
+        Case FontSwitchMenuSwitch, FontLB, FontListLB
+            AttemptToShowFontList = (ShowFontList = False Or BypassShowFontList = True)
+            ShowFontList = Not ShowFontList
+            If id <> FontSwitchMenuSwitch Then __UI_MouseEnter FontLB
             SaveSettings
             __UI_ForceRedraw = True
-        CASE PasteListBT
-            DIM Clip$
-            Clip$ = _CLIPBOARD$
-            Clip$ = Replace$(Clip$, CHR$(13) + CHR$(10), CHR$(10), 0, 0)
-            Clip$ = Replace$(Clip$, CHR$(10), "\n", 0, 0)
+        Case PasteListBT
+            Dim Clip$
+            Clip$ = _Clipboard$
+            Clip$ = Replace$(Clip$, Chr$(13) + Chr$(10), Chr$(10), 0, 0)
+            Clip$ = Replace$(Clip$, Chr$(10), "\n", 0, 0)
 
-            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
+            If PreviewControls(FirstSelected).Type = __UI_Type_ListBox Or PreviewControls(FirstSelected).Type = __UI_Type_DropdownList Then
                 Dummy = TextTB
-            ELSEIF (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
+            ElseIf (PreviewControls(FirstSelected).Type = __UI_Type_Label And PreviewControls(FirstSelected).WordWrap = True) Then
                 Dummy = CaptionTB
-            END IF
+            End If
 
             Text(Dummy) = Clip$
             __UI_Focus = Dummy
-            Control(Dummy).Cursor = LEN(Text(Dummy))
+            Control(Dummy).Cursor = Len(Text(Dummy))
             Control(Dummy).TextIsSelected = False
-        CASE KeyboardComboBT
+        Case KeyboardComboBT
             __UI_BypassKeyCombos = True
-            Caption(KeyboardComboBT) = CHR$(7) + " hit a key combo... (ESC to clear)"
+            Caption(KeyboardComboBT) = Chr$(7) + " hit a key combo... (ESC to clear)"
             ToolTip(KeyboardComboBT) = "Press a key combination to assign to the selected control"
-    END SELECT
+    End Select
 
     LastClickedID = id
-    LastClick# = TIMER
-    IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
-END SUB
+    LastClick# = Timer
+    If Caption(StatusBar) = "" Then Caption(StatusBar) = "Ready."
+End Sub
 
-SUB __UI_MouseEnter (id AS LONG)
-    SELECT CASE id
-        CASE FileMenuNew
+Sub __UI_MouseEnter (id As Long)
+    Select Case id
+        Case FileMenuNew
             Caption(StatusBar) = "Creates a new project."
-        CASE FileMenuOpen
+        Case FileMenuOpen
             Caption(StatusBar) = "Loads an existing project from disk."
-        CASE FileMenuExit
+        Case FileMenuExit
             Caption(StatusBar) = "Exits the editor."
-        CASE FileMenuSave
+        Case FileMenuSave
             Caption(StatusBar) = "Saves the current project to disk."
-        CASE FileMenuSaveAs
+        Case FileMenuSaveAs
             Caption(StatusBar) = "Saves a copy of the current project to disk."
-        CASE EditMenuUndo
+        Case EditMenuUndo
             Caption(StatusBar) = "Undoes the last edit."
-        CASE EditMenuRedo
+        Case EditMenuRedo
             Caption(StatusBar) = "Redoes the last undone edit."
-        CASE EditMenuCut
+        Case EditMenuCut
             Caption(StatusBar) = "Removes the selected controls and copies them to the Clipboard."
-        CASE EditMenuCopy
+        Case EditMenuCopy
             Caption(StatusBar) = "Copies the selected controls to the Clipboard."
-        CASE EditMenuPaste
+        Case EditMenuPaste
             Caption(StatusBar) = "Inserts controls previously cut or copied from the Clipboard."
-        CASE EditMenuDelete
+        Case EditMenuDelete
             Caption(StatusBar) = "Removes the selected controls."
-        CASE EditMenuSelectAll
+        Case EditMenuSelectAll
             Caption(StatusBar) = "Selects all controls."
-        CASE EditMenuCP437
+        Case EditMenuCP437
             Caption(StatusBar) = "Applies code page 437 to the current form."
-        CASE EditMenuCP1252
+        Case EditMenuCP1252
             Caption(StatusBar) = "Applies code page 1252 to the current form."
-        CASE EditMenuConvertType
+        Case EditMenuConvertType
             Caption(StatusBar) = "Converts this control's type into another similar in functionality."
-        CASE EditMenuSetDefaultButton
+        Case EditMenuSetDefaultButton
             Caption(StatusBar) = "Makes the currently selected button the default button."
-        CASE EditMenuRestoreDimensions
+        Case EditMenuRestoreDimensions
             Caption(StatusBar) = "Makes this control have the same dimensions as the loaded image."
-        CASE EditMenuAllowMinMax
+        Case EditMenuAllowMinMax
             Caption(StatusBar) = "Enables and validates the .Min and .Max properties for NumericTextBox controls."
-        CASE EditMenuZOrdering
+        Case EditMenuZOrdering
             Caption(StatusBar) = "Allows you to change tab-order/z-ordering of controls."
-        CASE ViewMenuPreviewDetach
+        Case ViewMenuPreviewDetach
             Caption(StatusBar) = "Toggles whether the preview form will be moved with the editor."
-        CASE ViewMenuShowPositionAndSize
+        Case ViewMenuShowPositionAndSize
             Caption(StatusBar) = "Toggles whether size and position indicators will be shown in the preview."
-        CASE ViewMenuShowInvisibleControls
+        Case ViewMenuShowInvisibleControls
             Caption(StatusBar) = "Show or hide invisible controls and binding indicators in the preview dialog."
-        CASE ViewMenuPreview
+        Case ViewMenuPreview
             Caption(StatusBar) = "Launches the preview window in case it's been closed accidentaly."
-        CASE ViewMenuLoadedFonts
+        Case ViewMenuLoadedFonts
             Caption(StatusBar) = "Shows a list of all fonts in use in the current form."
-        CASE InsertMenuMenuBar
+        Case InsertMenuMenuBar
             Caption(StatusBar) = "Inserts a new MenuBar control."
-        CASE InsertMenuMenuItem
+        Case InsertMenuMenuItem
             Caption(StatusBar) = "Inserts a new MenuItem control in the currently selected menu panel."
-        CASE OptionsMenuSnapLines
+        Case OptionsMenuSnapLines
             Caption(StatusBar) = "Toggles whether controls edges are automatically snapped to others."
-        CASE OptionsMenuAutoName
+        Case OptionsMenuAutoName
             Caption(StatusBar) = "Automatically sets control names based on caption and type"
-        CASE OptionsMenuSwapButtons
+        Case OptionsMenuSwapButtons
             Caption(StatusBar) = "Toggles left/right mouse buttons."
-        CASE OptionsMenuCheckUpdates
+        Case OptionsMenuCheckUpdates
             Caption(StatusBar) = "Allows InForm to automatically check for updates at start-up."
-        CASE OptionsMenuDevChannel
+        Case OptionsMenuDevChannel
             Caption(StatusBar) = "Receive updates from the development channel, for beta testing new features (experimental)."
-        CASE OptionsMenuCheckUpdatesNow
+        Case OptionsMenuCheckUpdatesNow
             Caption(StatusBar) = "Connects to server and check for new updates."
-        CASE FontLB, FontListLB
+        Case FontLB, FontListLB
             Control(FontLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
             Control(FontListLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
             Caption(FontLB) = "Font (toggle)"
             Caption(FontListLB) = "Font (toggle)"
-        CASE ELSE
-            IF Control(id).Type = __UI_Type_MenuItem OR Control(id).Type = __UI_Type_MenuBar THEN
+        Case Else
+            If Control(id).Type = __UI_Type_MenuItem Or Control(id).Type = __UI_Type_MenuBar Then
                 Caption(StatusBar) = ""
-            END IF
-    END SELECT
-END SUB
+            End If
+    End Select
+End Sub
 
-SUB __UI_MouseLeave (id AS LONG)
-    SELECT CASE id
-        CASE FontLB, FontListLB
+Sub __UI_MouseLeave (id As Long)
+    Select Case id
+        Case FontLB, FontListLB
             Control(FontLB).BackColor = __UI_DefaultColor(__UI_Type_Form, 2)
             Control(FontListLB).BackColor = __UI_DefaultColor(__UI_Type_Form, 2)
             Caption(FontLB) = "Font"
             Caption(FontListLB) = "Font"
-    END SELECT
-END SUB
+    End Select
+End Sub
 
-SUB __UI_FocusIn (id AS LONG)
-    SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
-            DIM ThisInputBox AS LONG
+Sub __UI_FocusIn (id As Long)
+    Select Case id
+        Case NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
+            Dim ThisInputBox As Long
             ThisInputBox = GetInputBoxFromID(id)
             InputBoxText(ThisInputBox) = Text(id)
             InputBox(ThisInputBox).Sent = False
             Caption(StatusBar) = "Editing property"
-        CASE FileNameTextBox
-            IF OpenDialogOpen = False THEN __UI_Focus = AddButton
-        CASE ControlList
-            IF OpenDialogOpen THEN __UI_Focus = FileNameTextBox
-        CASE BlueValue
-            IF OpenDialogOpen THEN __UI_Focus = CancelBT
-        CASE CloseZOrderingBT
-            IF ZOrderingDialogOpen = False THEN __UI_Focus = BlueValue
-        CASE AddButton
-            IF ZOrderingDialogOpen THEN __UI_Focus = ControlList
-        CASE CancelBT
-            IF ZOrderingDialogOpen THEN __UI_Focus = CloseZOrderingBT
-        CASE KeyboardComboBT
+        Case FileNameTextBox
+            If OpenDialogOpen = False Then __UI_Focus = AddButton
+        Case ControlList
+            If OpenDialogOpen Then __UI_Focus = FileNameTextBox
+        Case BlueValue
+            If OpenDialogOpen Then __UI_Focus = CancelBT
+        Case CloseZOrderingBT
+            If ZOrderingDialogOpen = False Then __UI_Focus = BlueValue
+        Case AddButton
+            If ZOrderingDialogOpen Then __UI_Focus = ControlList
+        Case CancelBT
+            If ZOrderingDialogOpen Then __UI_Focus = CloseZOrderingBT
+        Case KeyboardComboBT
             __UI_BypassKeyCombos = True
-            Caption(KeyboardComboBT) = CHR$(7) + " hit a key combo... (ESC to clear)"
+            Caption(KeyboardComboBT) = Chr$(7) + " hit a key combo... (ESC to clear)"
             ToolTip(KeyboardComboBT) = "Press a key combination to assign to the selected control"
-    END SELECT
-END SUB
+    End Select
+End Sub
 
-SUB __UI_FocusOut (id AS LONG)
-    SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
+Sub __UI_FocusOut (id As Long)
+    Select Case id
+        Case NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             ConfirmEdits id
-        CASE KeyboardComboBT
+        Case KeyboardComboBT
             __UI_BypassKeyCombos = False
             Caption(KeyboardComboBT) = "Click to assign"
-    END SELECT
-END SUB
+    End Select
+End Sub
 
-SUB __UI_MouseDown (id AS LONG)
-    SELECT CASE id
-        CASE Red, Green, Blue
+Sub __UI_MouseDown (id As Long)
+    Select Case id
+        Case Red, Green, Blue
             Caption(StatusBar) = "Color picker active. Release to apply the new values..."
-            SELECT CASE Control(ColorPropertiesList).Value
-                CASE 1
+            Select Case Control(ColorPropertiesList).Value
+                Case 1
                     OldColor = PreviewControls(FirstSelected).ForeColor
-                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).ForeColor
-                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 1)
-                CASE 2
+                    If OldColor = 0 Then OldColor = PreviewControls(PreviewFormID).ForeColor
+                    If OldColor = 0 Then OldColor = __UI_DefaultColor(__UI_Type_Form, 1)
+                Case 2
                     OldColor = PreviewControls(FirstSelected).BackColor
-                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).BackColor
-                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 2)
-                CASE 3
+                    If OldColor = 0 Then OldColor = PreviewControls(PreviewFormID).BackColor
+                    If OldColor = 0 Then OldColor = __UI_DefaultColor(__UI_Type_Form, 2)
+                Case 3
                     OldColor = PreviewControls(FirstSelected).SelectedForeColor
-                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).SelectedForeColor
-                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 3)
-                CASE 4
+                    If OldColor = 0 Then OldColor = PreviewControls(PreviewFormID).SelectedForeColor
+                    If OldColor = 0 Then OldColor = __UI_DefaultColor(__UI_Type_Form, 3)
+                Case 4
                     OldColor = PreviewControls(FirstSelected).SelectedBackColor
-                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).SelectedBackColor
-                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 4)
-                CASE 5
+                    If OldColor = 0 Then OldColor = PreviewControls(PreviewFormID).SelectedBackColor
+                    If OldColor = 0 Then OldColor = __UI_DefaultColor(__UI_Type_Form, 4)
+                Case 5
                     OldColor = PreviewControls(FirstSelected).BorderColor
-                    IF OldColor = 0 THEN OldColor = PreviewControls(PreviewFormID).BorderColor
-                    IF OldColor = 0 THEN OldColor = __UI_DefaultColor(__UI_Type_Form, 5)
-            END SELECT
-    END SELECT
-END SUB
+                    If OldColor = 0 Then OldColor = PreviewControls(PreviewFormID).BorderColor
+                    If OldColor = 0 Then OldColor = __UI_DefaultColor(__UI_Type_Form, 5)
+            End Select
+    End Select
+End Sub
 
-SUB __UI_MouseUp (id AS LONG)
-    SELECT CASE id
-        CASE Red, Green, Blue
+Sub __UI_MouseUp (id As Long)
+    Select Case id
+        Case Red, Green, Blue
             'Compose a new color and send it to the preview
             SendNewRGB
             Caption(StatusBar) = "Color changed."
-    END SELECT
-END SUB
+    End Select
+End Sub
 
-SUB AddToRecentList (FileName$)
-    DIM i AS LONG, j AS LONG, b$
+Sub AddToRecentList (FileName$)
+    Dim i As Long, j As Long, b$
 
     'Check if this FileName$ is already in the list; if so, delete it.
-    FOR i = 1 TO 9
-        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
-        IF b$ = FileName$ THEN
-            FOR j = i + 1 TO 9
-                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(j))
-                WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(j - 1), b$
-            NEXT
-            EXIT FOR
-        END IF
-    NEXT
+    For i = 1 To 9
+        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+        If b$ = FileName$ Then
+            For j = i + 1 To 9
+                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(j))
+                WriteSetting "InForm/InForm.ini", "Recent Projects", Str$(j - 1), b$
+            Next
+            Exit For
+        End If
+    Next
 
     'Make room for FileName$ by shifting existing list by one;
     '1 is the most recent, 9 is the oldest;
-    FOR i = 8 TO 1 STEP -1
-        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
-        WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(i + 1), b$
-    NEXT
+    For i = 8 To 1 Step -1
+        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+        WriteSetting "InForm/InForm.ini", "Recent Projects", Str$(i + 1), b$
+    Next
 
     WriteSetting "InForm/InForm.ini", "Recent Projects", "1", FileName$
     RecentListBuilt = False
-END SUB
+End Sub
 
-SUB RemoveFromRecentList (FileName$)
-    DIM i AS LONG, j AS LONG, b$
+Sub RemoveFromRecentList (FileName$)
+    Dim i As Long, j As Long, b$
 
     'Check if this FileName$ is already in the list; if so, delete it.
-    FOR i = 1 TO 9
-        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
-        IF b$ = FileName$ THEN
-            FOR j = i + 1 TO 9
-                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(j))
-                WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(j - 1), b$
-            NEXT
+    For i = 1 To 9
+        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+        If b$ = FileName$ Then
+            For j = i + 1 To 9
+                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(j))
+                WriteSetting "InForm/InForm.ini", "Recent Projects", Str$(j - 1), b$
+            Next
             WriteSetting "InForm/InForm.ini", "Recent Projects", "9", ""
-            EXIT FOR
-        END IF
-    NEXT
+            Exit For
+        End If
+    Next
     RecentListBuilt = False
-END SUB
+End Sub
 
 
-SUB SendNewRGB
-    DIM b$, NewColor AS _UNSIGNED LONG
+Sub SendNewRGB
+    Dim b$, NewColor As _Unsigned Long
     NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
-    b$ = _MK$(_UNSIGNED LONG, NewColor)
+    b$ = _MK$(_Unsigned Long, NewColor)
     SendData b$, Control(ColorPropertiesList).Value + 22
-END SUB
+End Sub
 
-FUNCTION PropertyFullySelected%% (id AS LONG)
+Function PropertyFullySelected%% (id As Long)
     PropertyFullySelected%% = Control(id).TextIsSelected AND _
                               Control(id).SelectionStart = 0 AND _
                               Control(id).Cursor = LEN(Text(id))
-END FUNCTION
+End Function
 
-SUB SelectPropertyFully (id AS LONG)
+Sub SelectPropertyFully (id As Long)
     Control(id).TextIsSelected = True
     Control(id).SelectionStart = 0
-    Control(id).Cursor = LEN(Text(id))
-END SUB
+    Control(id).Cursor = Len(Text(id))
+End Sub
 
-SUB SelectFontInList (FontSetup$)
-    DIM i AS LONG, thisFile$, thisSize%
+Sub SelectFontInList (FontSetup$)
+    Dim i As Long, thisFile$, thisSize%
 
-    IF FontSetup$ = "" THEN EXIT SUB
+    If FontSetup$ = "" Then Exit Sub
 
-    thisFile$ = UCASE$(LEFT$(FontSetup$, INSTR(FontSetup$, ",") - 1))
-    thisSize% = VAL(MID$(FontSetup$, INSTR(FontSetup$, ",") + 1))
+    thisFile$ = UCase$(Left$(FontSetup$, InStr(FontSetup$, ",") - 1))
+    thisSize% = Val(Mid$(FontSetup$, InStr(FontSetup$, ",") + 1))
 
     ResetList FontSizeList
-    FOR i = 8 TO 120
-        AddItem FontSizeList, LTRIM$(STR$(i))
-    NEXT
-    i = SelectItem(FontSizeList, LTRIM$(STR$(thisSize%)))
+    For i = 8 To 120
+        AddItem FontSizeList, LTrim$(Str$(i))
+    Next
+    i = SelectItem(FontSizeList, LTrim$(Str$(thisSize%)))
 
-    IF LEN(thisFile$) > 0 THEN
-        FOR i = 1 TO UBOUND(FontFile)
-            IF UCASE$(RIGHT$(FontFile(i), LEN(thisFile$))) = thisFile$ THEN
+    If Len(thisFile$) > 0 Then
+        For i = 1 To UBound(FontFile)
+            If UCase$(Right$(FontFile(i), Len(thisFile$))) = thisFile$ Then
                 Control(FontList).Value = i
                 BypassShowFontList = False
                 AttemptToShowFontList = False
-                EXIT SUB
-            END IF
-        NEXT
-    ELSE
-        IF thisSize% > 8 THEN thisSize% = 16 ELSE thisSize% = 8
+                Exit Sub
+            End If
+        Next
+    Else
+        If thisSize% > 8 Then thisSize% = 16 Else thisSize% = 8
         ResetList FontSizeList
         AddItem FontSizeList, "8"
         AddItem FontSizeList, "16"
-        i = SelectItem(FontSizeList, LTRIM$(STR$(thisSize%)))
+        i = SelectItem(FontSizeList, LTrim$(Str$(thisSize%)))
         Control(FontList).Value = 1 'Built-in VGA font
         BypassShowFontList = False
         AttemptToShowFontList = False
-        EXIT SUB
-    END IF
+        Exit Sub
+    End If
 
     'If this line is reached, the currently open form
     'uses a non-system font. In that case we must
     'disable the list.
     BypassShowFontList = True
-    IF AttemptToShowFontList THEN
+    If AttemptToShowFontList Then
         AttemptToShowFontList = False
         i = MessageBox("The current font isn't a system font.\nReset this control to the built-in font?", "", MsgBox_YesNo + MsgBox_Question)
-        IF i = MsgBox_Yes THEN
+        If i = MsgBox_Yes Then
             thisFile$ = ",16"
-            thisFile$ = MKL$(LEN(thisFile$)) + thisFile$
+            thisFile$ = MKL$(Len(thisFile$)) + thisFile$
             SendData thisFile$, 8
             BypassShowFontList = False
             ShowFontList = True
-        END IF
-    END IF
-END SUB
+        End If
+    End If
+End Sub
 
-SUB LoseFocus
-    IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
-    IF __UI_ActiveDropdownList > 0 THEN __UI_DestroyControl Control(__UI_ActiveDropdownList)
-    IF __UI_Focus > 0 THEN __UI_FocusOut __UI_Focus
+Sub LoseFocus
+    If __UI_TotalActiveMenus > 0 Then __UI_CloseAllMenus
+    If __UI_ActiveDropdownList > 0 Then __UI_DestroyControl Control(__UI_ActiveDropdownList)
+    If __UI_Focus > 0 Then __UI_FocusOut __UI_Focus
     __UI_Focus = 0
     __UI_ForceRedraw = True
-END SUB
+End Sub
 
-SUB __UI_BeforeUpdateDisplay
-    DIM b$
-    DIM i AS LONG, j AS LONG, Answer AS _BYTE
-    DIM incomingData$, Signal$
-    DIM thisData$, thisCommand$
-    STATIC OriginalImageWidth AS INTEGER, OriginalImageHeight AS INTEGER
-    STATIC PrevFirstSelected AS LONG, PreviewHasMenuActive AS INTEGER
-    STATIC ThisControlTurnsInto AS INTEGER
-    STATIC LastChange AS SINGLE
+Sub __UI_BeforeUpdateDisplay
+    Dim b$
+    Dim i As Long, j As Long, Answer As _Byte
+    Dim incomingData$, Signal$
+    Dim thisData$, thisCommand$
+    Static OriginalImageWidth As Integer, OriginalImageHeight As Integer
+    Static PrevFirstSelected As Long, PreviewHasMenuActive As Integer
+    Static ThisControlTurnsInto As Integer
+    Static LastChange As Single
 
-    IF TIMER - BlinkStatusBar < 1 THEN
-        IF TIMER - LastChange > .2 THEN
-            IF Control(StatusBar).BackColor = StatusBarBackColor THEN
+    If Timer - BlinkStatusBar < 1 Then
+        If Timer - LastChange > .2 Then
+            If Control(StatusBar).BackColor = StatusBarBackColor Then
                 Control(StatusBar).BackColor = _RGB32(222, 194, 127)
-            ELSE
+            Else
                 Control(StatusBar).BackColor = StatusBarBackColor
-            END IF
+            End If
             Control(StatusBar).Redraw = True
-            LastChange = TIMER
-        END IF
-    ELSE
+            LastChange = Timer
+        End If
+    Else
         Control(StatusBar).BackColor = StatusBarBackColor
         Control(StatusBar).Redraw = True
-    END IF
+    End If
 
-    IF __UI_BypassKeyCombos THEN
+    If __UI_BypassKeyCombos Then
         'Blink KeyCombo button
-        IF TIMER - LastChange > .4 THEN
-            IF Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1) THEN
+        If Timer - LastChange > .4 Then
+            If Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1) Then
                 Control(KeyboardComboBT).ForeColor = _RGB32(255, 0, 0)
-            ELSE
+            Else
                 Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1)
-            END IF
+            End If
             Control(KeyboardComboBT).Redraw = True
-            LastChange = TIMER
-        END IF
-    ELSE
+            LastChange = Timer
+        End If
+    Else
         Control(KeyboardComboBT).ForeColor = __UI_DefaultColor(__UI_Type_Button, 1)
         Control(KeyboardComboBT).Redraw = True
-    END IF
+    End If
 
-    IF OpenDialogOpen THEN
-        IF LEN(RTRIM$(LTRIM$(Text(FileNameTextBox)))) = 0 THEN
+    If OpenDialogOpen Then
+        If Len(RTrim$(LTrim$(Text(FileNameTextBox)))) = 0 Then
             Control(OpenBT).Disabled = True
             Control(SaveBT).Disabled = True
-        ELSE
+        Else
             Control(OpenBT).Disabled = False
             Control(SaveBT).Disabled = False
-        END IF
-    END IF
+        End If
+    End If
 
-    IF RecentListBuilt = False THEN
+    If RecentListBuilt = False Then
         'Build list of recent projects
         RecentListBuilt = True
-        FOR i = 1 TO 9
-            b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
-            IF LEN(b$) THEN
+        For i = 1 To 9
+            b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+            If Len(b$) Then
                 ToolTip(RecentMenuItem(i)) = b$
-                IF INSTR(b$, PathSep$) > 0 THEN
-                    FOR j = LEN(b$) TO 1 STEP -1
-                        IF MID$(b$, j, 1) = PathSep$ THEN
-                            SetCaption RecentMenuItem(i), "&" + LTRIM$(STR$(i)) + " " + MID$(b$, j + 1)
-                            EXIT FOR
-                        END IF
-                    NEXT
-                ELSE
-                    SetCaption RecentMenuItem(i), "&" + LTRIM$(STR$(i)) + " " + b$
-                END IF
+                If InStr(b$, PathSep$) > 0 Then
+                    For j = Len(b$) To 1 Step -1
+                        If Mid$(b$, j, 1) = PathSep$ Then
+                            SetCaption RecentMenuItem(i), "&" + LTrim$(Str$(i)) + " " + Mid$(b$, j + 1)
+                            Exit For
+                        End If
+                    Next
+                Else
+                    SetCaption RecentMenuItem(i), "&" + LTrim$(Str$(i)) + " " + b$
+                End If
                 Control(RecentMenuItem(i)).Disabled = False
                 Control(RecentMenuItem(i)).Hidden = False
-            ELSE
-                IF i = 1 THEN
+            Else
+                If i = 1 Then
                     SetCaption RecentMenuItem(i), "No recent projects"
                     ToolTip(RecentMenuItem(i)) = ""
                     Control(RecentMenuItem(i)).Disabled = True
-                ELSE
+                Else
                     Control(RecentMenuItem(i)).Hidden = True
-                END IF
-            END IF
-        NEXT
-    END IF
+                End If
+            End If
+        Next
+    End If
 
-    IF __UI_Focus = 0 THEN
-        IF Caption(StatusBar) = "" THEN Caption(StatusBar) = "Ready."
-    END IF
+    If __UI_Focus = 0 Then
+        If Caption(StatusBar) = "" Then Caption(StatusBar) = "Ready."
+    End If
 
     IF __UI_MouseDownOnID = Red OR __UI_MouseDownOnID = Green OR __UI_MouseDownOnID = Blue OR _
        __UI_PreviousMouseDownOnID = Red OR __UI_PreviousMouseDownOnID = Green OR __UI_PreviousMouseDownOnID = Blue THEN
 
-        SELECT CASE __UI_MouseDownOnID + __UI_PreviousMouseDownOnID
-            CASE Red
-                Text(RedValue) = LTRIM$(STR$(FIX(Control(Red).Value)))
-            CASE Green
-                Text(GreenValue) = LTRIM$(STR$(FIX(Control(Green).Value)))
-            CASE Blue
-                Text(BlueValue) = LTRIM$(STR$(FIX(Control(Blue).Value)))
-        END SELECT
+        Select Case __UI_MouseDownOnID + __UI_PreviousMouseDownOnID
+            Case Red
+                Text(RedValue) = LTrim$(Str$(Fix(Control(Red).Value)))
+            Case Green
+                Text(GreenValue) = LTrim$(Str$(Fix(Control(Green).Value)))
+            Case Blue
+                Text(BlueValue) = LTrim$(Str$(Fix(Control(Blue).Value)))
+        End Select
 
         'Compose a new color and preview it
-        DIM NewColor AS _UNSIGNED LONG
+        Dim NewColor As _Unsigned Long
         NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
         QuickColorPreview NewColor
-    END IF
+    End If
 
     'Check if another instance was launched and is passing
     'parameters:
-    STATIC BringToFront AS _BYTE, InstanceStream$
-    IF InstanceClient THEN
-        IF BringToFront = False THEN
-            $IF WIN THEN
-                i = SetForegroundWindow&(_WINDOWHANDLE)
-            $END IF
+    Static BringToFront As _Byte, InstanceStream$
+    If InstanceClient Then
+        If BringToFront = False Then
+            $If WIN Then
+                i = SetForegroundWindow&(_WindowHandle)
+            $End If
             BringToFront = True
-        END IF
+        End If
 
-        GET #InstanceClient, , incomingData$
+        Get #InstanceClient, , incomingData$
         InstanceStream$ = InstanceStream$ + incomingData$
 
-        IF INSTR(InstanceStream$, "<END>") THEN
-            IF LEFT$(InstanceStream$, 12) = "NEWINSTANCE>" THEN
-                InstanceStream$ = MID$(InstanceStream$, 13)
-                InstanceStream$ = LEFT$(InstanceStream$, INSTR(InstanceStream$, "<END>") - 1)
-                IF _FILEEXISTS(InstanceStream$) THEN
+        If InStr(InstanceStream$, "<END>") Then
+            If Left$(InstanceStream$, 12) = "NEWINSTANCE>" Then
+                InstanceStream$ = Mid$(InstanceStream$, 13)
+                InstanceStream$ = Left$(InstanceStream$, InStr(InstanceStream$, "<END>") - 1)
+                If _FileExists(InstanceStream$) Then
                     LoadNewInstanceForm:
-                    IF INSTR(InstanceStream$, "/") > 0 OR INSTR(InstanceStream$, "\") > 0 THEN
-                        FOR i = LEN(InstanceStream$) TO 1 STEP -1
-                            IF ASC(InstanceStream$, i) = 92 OR ASC(InstanceStream$, i) = 47 THEN
-                                CurrentPath$ = LEFT$(InstanceStream$, i - 1)
-                                InstanceStream$ = MID$(InstanceStream$, i + 1)
-                                EXIT FOR
-                            END IF
-                        NEXT
-                    END IF
+                    If InStr(InstanceStream$, "/") > 0 Or InStr(InstanceStream$, "\") > 0 Then
+                        For i = Len(InstanceStream$) To 1 Step -1
+                            If Asc(InstanceStream$, i) = 92 Or Asc(InstanceStream$, i) = 47 Then
+                                CurrentPath$ = Left$(InstanceStream$, i - 1)
+                                InstanceStream$ = Mid$(InstanceStream$, i + 1)
+                                Exit For
+                            End If
+                        Next
+                    End If
 
-                    IF Edited THEN
-                        $IF WIN THEN
+                    If Edited Then
+                        $If WIN Then
                             Answer = MessageBox("Save the current form?", "", MsgBox_YesNoCancel + MsgBox_Question)
-                        $ELSE
-                            Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
-                        $END IF
-                        IF Answer = MsgBox_Cancel THEN
-                            CLOSE InstanceClient
+                        $Else
+                                Answer = MessageBox("Save the current form?", "", MsgBox_YesNo + MsgBox_Question)
+                        $End If
+                        If Answer = MsgBox_Cancel Then
+                            Close InstanceClient
                             InstanceClient = 0
-                            EXIT SUB
-                        ELSEIF Answer = MsgBox_Yes THEN
+                            Exit Sub
+                        ElseIf Answer = MsgBox_Yes Then
                             SaveForm False, False
-                        END IF
-                    END IF
+                        End If
+                    End If
 
                     Text(FileNameTextBox) = InstanceStream$
                     OpenDialogOpen = True
                     __UI_Click OpenBT
-                END IF
-            END IF
-            CLOSE InstanceClient
+                End If
+            End If
+            Close InstanceClient
             InstanceClient = 0
-        END IF
-    ELSE
-        InstanceClient = _OPENCONNECTION(InstanceHost)
+        End If
+    Else
+        InstanceClient = _OpenConnection(InstanceHost)
         BringToFront = False
         InstanceStream$ = ""
-    END IF
+    End If
 
     'Check if a form file was dropped onto the Editor for loading
-    FOR i = 1 TO _TOTALDROPPEDFILES
-        IF _FILEEXISTS(_DROPPEDFILE(i)) THEN
-            InstanceStream$ = _DROPPEDFILE(i)
-            _FINISHDROP
-            GOTO LoadNewInstanceForm
-        END IF
-    NEXT
+    For i = 1 To _TotalDroppedFiles
+        If _FileExists(_DroppedFile(i)) Then
+            InstanceStream$ = _DroppedFile(i)
+            _FinishDrop
+            GoTo LoadNewInstanceForm
+        End If
+    Next
 
-    IF CheckUpdatesNow THEN
-        IF CheckUpdateDone = False THEN
-            STATIC ThisStep AS INTEGER
-            STATIC serverVersion$, isBeta$, serverBeta$, serverBeta%%
-            STATIC updateDescription$, serverVersionString$
-            STATIC OverallDownloadStart!
-            DIM Result$, remoteFile$, start!
-            IF ThisStep = 0 THEN
+    If CheckUpdatesNow Then
+        If CheckUpdateDone = False Then
+            Static ThisStep As Integer
+            Static serverVersion$, isBeta$, serverBeta$, serverBeta%%
+            Static updateDescription$, serverVersionString$
+            Static OverallDownloadStart!
+            Dim Result$, remoteFile$, start!
+            If ThisStep = 0 Then
                 '"Beginning update process"
                 ThisStep = 1
                 updateDescription$ = ""
@@ -1417,431 +1417,431 @@ SUB __UI_BeforeUpdateDisplay
                 serverVersionString$ = ""
                 serverBeta%% = False
                 Result$ = Download$("", "", 10)
-                IF _FILEEXISTS("InForm/InFormUpdate.ini") THEN KILL "InForm/InFormUpdate.ini"
-                OverallDownloadStart! = TIMER
-            END IF
+                If _FileExists("InForm/InFormUpdate.ini") Then Kill "InForm/InFormUpdate.ini"
+                OverallDownloadStart! = Timer
+            End If
 
-            Caption(StatusBar) = "Contacting update server" + STRING$(INT(TIMER - OverallDownloadStart!), ".")
+            Caption(StatusBar) = "Contacting update server" + String$(Int(Timer - OverallDownloadStart!), ".")
 
-            SELECT EVERYCASE ThisStep
-                CASE 1 'check availability
+            Select EveryCase ThisStep
+                Case 1 'check availability
                     '"Checking availability"
-                    start! = TIMER
+                    start! = Timer
 
-                    IF CheckDevUpdates THEN
+                    If CheckDevUpdates Then
                         remoteFile$ = "www.qb64.org/inform/update/latestdev.ini"
-                    ELSE
+                    Else
                         remoteFile$ = "www.qb64.org/inform/update/latest.ini"
-                    END IF
+                    End If
 
                     '"Fetching " + remoteFile$
                     Result$ = Download$(remoteFile$, "InForm/InFormUpdate.ini", 30)
-                    SELECT CASE CVI(LEFT$(Result$, 2))
-                        CASE 1 'Success
+                    Select Case CVI(Left$(Result$, 2))
+                        Case 1 'Success
                             ThisStep = 2
-                        CASE 2, 3 'Can't reach server / Timeout
+                        Case 2, 3 'Can't reach server / Timeout
                             ThisStep = 0
-                            IF TIMER - start! > 5 THEN
+                            If Timer - start! > 5 Then
                                 CheckUpdates = False 'disable auto-check if it times out
                                 SaveSettings
-                            END IF
-                            IF NOT CheckUpdateStartUpTrigger THEN
+                            End If
+                            If Not CheckUpdateStartUpTrigger Then
                                 b$ = "An error occurred. Make sure your computer is online."
                                 Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Exclamation)
                                 CheckUpdatesNow = False
                                 CheckUpdateStartUpTrigger = False
-                            END IF
+                            End If
                             CheckUpdateDone = True
                             Caption(StatusBar) = "Ready."
-                    END SELECT
-                CASE 2 'compare with current version
-                    DIM localVersionNumber!
+                    End Select
+                Case 2 'compare with current version
+                    Dim localVersionNumber!
 
                     localVersionNumber! = __UI_VersionNumber
 
                     '"Comparing versions"
-                    IF __UI_VersionIsBeta THEN isBeta$ = " Beta Version" ELSE isBeta$ = ""
+                    If __UI_VersionIsBeta Then isBeta$ = " Beta Version" Else isBeta$ = ""
                     serverBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")
                     serverBeta%% = (serverBeta$ = "true")
-                    IF serverBeta%% THEN serverBeta$ = " Beta Version" ELSE serverBeta$ = ""
+                    If serverBeta%% Then serverBeta$ = " Beta Version" Else serverBeta$ = ""
                     serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
                     serverVersionString$ = ReadSetting("InForm/InFormUpdate.ini", "", "versionstring")
                     updateDescription$ = ReadSetting("InForm/InFormUpdate.ini", "", "description")
 
                     'STR$(serverBeta%%) + "," + serverVersion$ + "," + serverVersionString$ + "," + updateDescription$
 
-                    IF serverBeta%% AND CheckDevUpdates = False THEN
+                    If serverBeta%% And CheckDevUpdates = False Then
                         CheckUpdateDone = True
-                        IF NOT CheckUpdateStartUpTrigger THEN
-                            IF __UI_VersionIsBeta THEN
+                        If Not CheckUpdateStartUpTrigger Then
+                            If __UI_VersionIsBeta Then
                                 b$ = "You already have the latest version of InForm."
-                                IF VAL(serverVersion$) > localVersionNumber! THEN
+                                If Val(serverVersion$) > localVersionNumber! Then
                                     b$ = b$ + "\nThere is a new development build available. Reenable 'Receive development updates' in the Options menu and\ntry updating again if you wish to keep helping beta test the new experimental features."
-                                END IF
-                            ELSE
+                                End If
+                            Else
                                 b$ = "You already have the latest stable version of InForm."
-                                IF VAL(serverVersion$) > localVersionNumber! THEN
+                                If Val(serverVersion$) > localVersionNumber! Then
                                     b$ = b$ + "\nThere is a development build available. Check 'Receive development updates' in the Options menu and\ntry updating again if you wish to help beta test the new experimental features."
-                                END IF
-                            END IF
+                                End If
+                            End If
                             Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
                             CheckUpdatesNow = False
                             CheckUpdateStartUpTrigger = False
-                        END IF
+                        End If
                         ThisStep = 0
                         Caption(StatusBar) = "Ready."
-                        EXIT SUB
-                    END IF
+                        Exit Sub
+                    End If
 
-                    IF VAL(serverVersion$) <= localVersionNumber! THEN
+                    If Val(serverVersion$) <= localVersionNumber! Then
                         CheckUpdateDone = True
-                        IF NOT CheckUpdateStartUpTrigger THEN
+                        If Not CheckUpdateStartUpTrigger Then
                             b$ = "You already have the latest version of InForm."
-                            IF __UI_VersionIsBeta THEN
+                            If __UI_VersionIsBeta Then
                                 b$ = b$ + "\nThis is a development build."
-                            END IF
+                            End If
                             Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
                             CheckUpdatesNow = False
                             CheckUpdateStartUpTrigger = False
-                        END IF
+                        End If
                         ThisStep = 0
                         Caption(StatusBar) = "Ready."
-                        EXIT SUB
-                    END IF
+                        Exit Sub
+                    End If
 
                     ThisStep = 3
-                    EXIT SUB
-                CASE 3 'An update is available.
+                    Exit Sub
+                Case 3 'An update is available.
                     Result$ = Download$("", "", 30) 'close connection
                     CheckUpdateDone = True
-                    DIM updaterPath$
-                    $IF WIN THEN
+                    Dim updaterPath$
+                    $If WIN Then
                         updaterPath$ = ".\InForm\updater\InFormUpdater.exe"
-                    $ELSE
-                        updaterPath$ = "./InForm/updater/InFormUpdater"
-                    $END IF
-                    IF _FILEEXISTS(updaterPath$) THEN
-                        _DELAY .2
-                        IF LEN(updateDescription$) THEN
-                            updateDescription$ = "\n" + CHR$(34) + updateDescription$ + CHR$(34) + "\n"
-                        END IF
+                    $Else
+                            updaterPath$ = "./InForm/updater/InFormUpdater"
+                    $End If
+                    If _FileExists(updaterPath$) Then
+                        _Delay .2
+                        If Len(updateDescription$) Then
+                            updateDescription$ = "\n" + Chr$(34) + updateDescription$ + Chr$(34) + "\n"
+                        End If
                         Caption(StatusBar) = "New version available: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")"
-                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")\n" + "New version: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")\n" + updateDescription$ + "\n" + "Update now?"
+                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + " (build" + Str$(__UI_VersionNumber) + isBeta$ + ")\n" + "New version: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")\n" + updateDescription$ + "\n" + "Update now?"
                         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
-                        IF Answer = MsgBox_Yes THEN
-                            SHELL _DONTWAIT updaterPath$
-                            SYSTEM
-                        END IF
+                        If Answer = MsgBox_Yes Then
+                            Shell _DontWait updaterPath$
+                            System
+                        End If
                         ThisStep = 0
-                    ELSE
+                    Else
                         b$ = "A new version of InForm is available, but the updater is\ncurrently being recompiled.\nPlease check again in a few moments."
                         Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
-                    END IF
-            END SELECT
-        END IF
-    END IF
+                    End If
+            End Select
+        End If
+    End If
 
     CheckPreview
 
-    GET #Client, , incomingData$
+    Get #Client, , incomingData$
     Stream$ = Stream$ + incomingData$
     'STATIC bytesIn~&&, refreshes~&
     'refreshes~& = refreshes~& + 1
     'bytesIn~&& = bytesIn~&& + LEN(incomingData$)
     'Caption(StatusBar) = "Received:" + STR$(bytesIn~&&) + " bytes | Sent:" + STR$(totalBytesSent) + " bytes"
 
-    $IF WIN THEN
-        IF PreviewAttached THEN
-            IF prevScreenX <> _SCREENX OR prevScreenY <> _SCREENY THEN
-                prevScreenX = _SCREENX
-                prevScreenY = _SCREENY
-                b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
+    $If WIN Then
+        If PreviewAttached Then
+            If prevScreenX <> _ScreenX Or prevScreenY <> _ScreenY Then
+                prevScreenX = _ScreenX
+                prevScreenY = _ScreenY
+                b$ = "WINDOWPOSITION>" + MKI$(_ScreenX) + MKI$(_ScreenY) + "<END>"
                 Send Client, b$
-            END IF
-        ELSE
-            IF prevScreenX <> -32001 OR prevScreenY <> -32001 THEN
+            End If
+        Else
+            If prevScreenX <> -32001 Or prevScreenY <> -32001 Then
                 prevScreenX = -32001
                 prevScreenY = -32001
                 b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
                 Send Client, b$
+            End If
+        End If
+    $Else
+            IF PreviewAttached = True THEN
+            PreviewAttached = False
+            SaveSettings
             END IF
-        END IF
-    $ELSE
-        IF PreviewAttached = True THEN
-        PreviewAttached = False
-        SaveSettings
-        END IF
-        Control(ViewMenuPreviewDetach).Disabled = True
-        Control(ViewMenuPreviewDetach).Value = False
-    $END IF
+            Control(ViewMenuPreviewDetach).Disabled = True
+            Control(ViewMenuPreviewDetach).Value = False
+    $End If
 
-    STATIC prevAutoName AS _BYTE, prevMouseSwap AS _BYTE
-    STATIC prevShowPos AS _BYTE, prevSnapLines AS _BYTE
-    STATIC prevShowInvisible AS _BYTE, SignalsFirstSent AS _BYTE
+    Static prevAutoName As _Byte, prevMouseSwap As _Byte
+    Static prevShowPos As _Byte, prevSnapLines As _Byte
+    Static prevShowInvisible As _Byte, SignalsFirstSent As _Byte
 
-    IF prevAutoName <> AutoNameControls OR SignalsFirstSent = False THEN
+    If prevAutoName <> AutoNameControls Or SignalsFirstSent = False Then
         prevAutoName = AutoNameControls
         b$ = "AUTONAME>" + MKI$(AutoNameControls) + "<END>"
         Send Client, b$
-    END IF
+    End If
 
-    IF prevMouseSwap <> __UI_MouseButtonsSwap OR SignalsFirstSent = False THEN
+    If prevMouseSwap <> __UI_MouseButtonsSwap Or SignalsFirstSent = False Then
         prevMouseSwap = __UI_MouseButtonsSwap
         b$ = "MOUSESWAP>" + MKI$(__UI_MouseButtonsSwap) + "<END>"
         Send Client, b$
-    END IF
+    End If
 
-    IF prevShowPos <> __UI_ShowPositionAndSize OR SignalsFirstSent = False THEN
+    If prevShowPos <> __UI_ShowPositionAndSize Or SignalsFirstSent = False Then
         prevShowPos = __UI_ShowPositionAndSize
         b$ = "SHOWPOSSIZE>" + MKI$(__UI_ShowPositionAndSize) + "<END>"
         Send Client, b$
-    END IF
+    End If
 
-    IF prevShowInvisible <> __UI_ShowInvisibleControls OR SignalsFirstSent = False THEN
+    If prevShowInvisible <> __UI_ShowInvisibleControls Or SignalsFirstSent = False Then
         prevShowInvisible = __UI_ShowInvisibleControls
         b$ = "SHOWINVISIBLECONTROLS>" + MKI$(__UI_ShowInvisibleControls) + "<END>"
         Send Client, b$
-    END IF
+    End If
 
-    IF prevSnapLines <> __UI_SnapLines OR SignalsFirstSent = False THEN
+    If prevSnapLines <> __UI_SnapLines Or SignalsFirstSent = False Then
         prevSnapLines = __UI_SnapLines
         b$ = "SNAPLINES>" + MKI$(__UI_SnapLines) + "<END>"
         Send Client, b$
-    END IF
+    End If
     SignalsFirstSent = True
 
-    DO WHILE INSTR(Stream$, "<END>") > 0
-        thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
-        Stream$ = MID$(Stream$, INSTR(Stream$, "<END>") + 5)
-        thisCommand$ = LEFT$(thisData$, INSTR(thisData$, ">") - 1)
-        thisData$ = MID$(thisData$, LEN(thisCommand$) + 2)
-        SELECT CASE UCASE$(thisCommand$)
-            CASE "TOTALSELECTEDCONTROLS"
+    Do While InStr(Stream$, "<END>") > 0
+        thisData$ = Left$(Stream$, InStr(Stream$, "<END>") - 1)
+        Stream$ = Mid$(Stream$, InStr(Stream$, "<END>") + 5)
+        thisCommand$ = Left$(thisData$, InStr(thisData$, ">") - 1)
+        thisData$ = Mid$(thisData$, Len(thisCommand$) + 2)
+        Select Case UCase$(thisCommand$)
+            Case "TOTALSELECTEDCONTROLS"
                 TotalSelected = CVL(thisData$)
-                IF SetBindingDialogOpen THEN
+                If SetBindingDialogOpen Then
                     Caption(CancelBindBT) = "Cancel"
                     __UI_Click CancelBindBT
-                END IF
-            CASE "FORMID"
+                End If
+            Case "FORMID"
                 PreviewFormID = CVL(thisData$)
-            CASE "FIRSTSELECTED"
+            Case "FIRSTSELECTED"
                 FirstSelected = CVL(thisData$)
-                IF SetBindingDialogOpen THEN
+                If SetBindingDialogOpen Then
                     Caption(CancelBindBT) = "Cancel"
                     __UI_Click CancelBindBT
-                END IF
-            CASE "DEFAULTBUTTONID"
+                End If
+            Case "DEFAULTBUTTONID"
                 PreviewDefaultButtonID = CVL(thisData$)
-            CASE "SHOWINVISIBLECONTROLS"
+            Case "SHOWINVISIBLECONTROLS"
                 __UI_ShowInvisibleControls = CVI(thisData$)
                 Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
-            CASE "CONTROLRENAMED"
-                IF LEN(InitialControlSet) THEN
-                    DIM insertionPoint AS LONG, endPoint
-                    insertionPoint = INSTR(InitialControlSet, CHR$(10) + LEFT$(thisData$, INSTR(thisData$, CHR$(10))))
-                    IF insertionPoint THEN
-                        endPoint = INSTR(insertionPoint + 1, InitialControlSet, CHR$(10))
-                        InitialControlSet = LEFT$(InitialControlSet, endPoint - 1) + CHR$(11) + MID$(thisData$, INSTR(thisData$, CHR$(10)) + 1) + MID$(InitialControlSet, endPoint)
-                    ELSE
+            Case "CONTROLRENAMED"
+                If Len(InitialControlSet) Then
+                    Dim insertionPoint As Long, endPoint
+                    insertionPoint = InStr(InitialControlSet, Chr$(10) + Left$(thisData$, InStr(thisData$, Chr$(10))))
+                    If insertionPoint Then
+                        endPoint = InStr(insertionPoint + 1, InitialControlSet, Chr$(10))
+                        InitialControlSet = Left$(InitialControlSet, endPoint - 1) + Chr$(11) + Mid$(thisData$, InStr(thisData$, Chr$(10)) + 1) + Mid$(InitialControlSet, endPoint)
+                    Else
                         'not found... maybe renamed previously in this session?
-                        insertionPoint = INSTR(InitialControlSet, CHR$(11) + LEFT$(thisData$, INSTR(thisData$, CHR$(10)) - 1) + CHR$(10))
-                        IF insertionPoint THEN
-                            insertionPoint = INSTR(insertionPoint, InitialControlSet, CHR$(11))
-                            endPoint = INSTR(insertionPoint + 1, InitialControlSet, CHR$(10))
-                            InitialControlSet = LEFT$(InitialControlSet, insertionPoint) + MID$(thisData$, INSTR(thisData$, CHR$(10)) + 1) + MID$(InitialControlSet, endPoint)
-                        END IF
-                    END IF
-                END IF
-            CASE "SHOWBINDCONTROLDIALOG"
+                        insertionPoint = InStr(InitialControlSet, Chr$(11) + Left$(thisData$, InStr(thisData$, Chr$(10)) - 1) + Chr$(10))
+                        If insertionPoint Then
+                            insertionPoint = InStr(insertionPoint, InitialControlSet, Chr$(11))
+                            endPoint = InStr(insertionPoint + 1, InitialControlSet, Chr$(10))
+                            InitialControlSet = Left$(InitialControlSet, insertionPoint) + Mid$(thisData$, InStr(thisData$, Chr$(10)) + 1) + Mid$(InitialControlSet, endPoint)
+                        End If
+                    End If
+                End If
+            Case "SHOWBINDCONTROLDIALOG"
                 __UI_Click EditMenuBindControls
-            CASE "ORIGINALIMAGEWIDTH"
+            Case "ORIGINALIMAGEWIDTH"
                 OriginalImageWidth = CVI(thisData$)
-            CASE "ORIGINALIMAGEHEIGHT"
+            Case "ORIGINALIMAGEHEIGHT"
                 OriginalImageHeight = CVI(thisData$)
-            CASE "TURNSINTO"
+            Case "TURNSINTO"
                 ThisControlTurnsInto = CVI(thisData$)
-            CASE "SELECTIONRECTANGLE"
+            Case "SELECTIONRECTANGLE"
                 PreviewSelectionRectangle = CVI(thisData$)
                 LoseFocus
-            CASE "MENUPANELACTIVE"
+            Case "MENUPANELACTIVE"
                 PreviewHasMenuActive = CVI(thisData$)
-            CASE "SIGNAL"
+            Case "SIGNAL"
                 Signal$ = Signal$ + thisData$
-            CASE "FORMDATA"
+            Case "FORMDATA"
                 LastFormData$ = thisData$
                 LoadPreview
-                IF NOT FormDataReceived THEN
+                If Not FormDataReceived Then
                     FormDataReceived = True
-                ELSE
+                Else
                     Edited = True
-                    IF __UI_Focus > 0 THEN
-                        IF PropertySent THEN PropertySent = False ELSE LoseFocus
-                    END IF
-                END IF
-            CASE "UNDOPOINTER"
+                    If __UI_Focus > 0 Then
+                        If PropertySent Then PropertySent = False Else LoseFocus
+                    End If
+                End If
+            Case "UNDOPOINTER"
                 UndoPointer = CVI(thisData$)
-            CASE "TOTALUNDOIMAGES"
+            Case "TOTALUNDOIMAGES"
                 TotalUndoImages = CVI(thisData$)
-        END SELECT
-    LOOP
+        End Select
+    Loop
 
-    IF NOT FormDataReceived THEN EXIT SUB
+    If Not FormDataReceived Then Exit Sub
 
-    IF InitialControlSet = "" THEN
-        InitialControlSet = CHR$(1)
-        FOR i = 1 TO UBOUND(PreviewControls)
-            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-                InitialControlSet = InitialControlSet + CHR$(10) + RTRIM$(PreviewControls(i).Name) + CHR$(10)
-            END IF
-        NEXT
-    END IF
+    If InitialControlSet = "" Then
+        InitialControlSet = Chr$(1)
+        For i = 1 To UBound(PreviewControls)
+            If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_Font And PreviewControls(i).Type <> __UI_Type_MenuPanel Then
+                InitialControlSet = InitialControlSet + Chr$(10) + RTrim$(PreviewControls(i).Name) + Chr$(10)
+            End If
+        Next
+    End If
 
     Control(EditMenuRestoreDimensions).Disabled = True
     SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
-    IF TotalSelected = 1 AND PreviewControls(FirstSelected).Type = __UI_Type_PictureBox AND OriginalImageWidth > 0 AND OriginalImageHeight > 0 THEN
+    If TotalSelected = 1 And PreviewControls(FirstSelected).Type = __UI_Type_PictureBox And OriginalImageWidth > 0 And OriginalImageHeight > 0 Then
         IF PreviewControls(FirstSelected).Height - (PreviewControls(FirstSelected).BorderSize * ABS(PreviewControls(FirstSelected).HasBorder)) <> OriginalImageHeight OR _
            PreviewControls(FirstSelected).Width - (PreviewControls(FirstSelected).BorderSize * ABS(PreviewControls(FirstSelected).HasBorder)) <> OriginalImageWidth THEN
             Control(EditMenuRestoreDimensions).Disabled = False
-            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTRIM$(STR$(OriginalImageWidth)) + "x" + LTRIM$(STR$(OriginalImageHeight)) + ")"
-        END IF
-    END IF
+            SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTrim$(Str$(OriginalImageWidth)) + "x" + LTrim$(Str$(OriginalImageHeight)) + ")"
+        End If
+    End If
 
-    IF ThisControlTurnsInto > 0 THEN
+    If ThisControlTurnsInto > 0 Then
         Control(EditMenuConvertType).Disabled = False
-        SetCaption EditMenuConvertType, "Co&nvert to " + RTRIM$(__UI_Type(ThisControlTurnsInto).Name)
-    ELSEIF ThisControlTurnsInto = -1 THEN
+        SetCaption EditMenuConvertType, "Co&nvert to " + RTrim$(__UI_Type(ThisControlTurnsInto).Name)
+    ElseIf ThisControlTurnsInto = -1 Then
         'Offer to turn text to numeric-only TextBox
         Control(EditMenuConvertType).Disabled = False
         SetCaption EditMenuConvertType, "Co&nvert to NumericTextBox"
-    ELSEIF ThisControlTurnsInto = -2 THEN
+    ElseIf ThisControlTurnsInto = -2 Then
         'Offer to turn numeric-only to text TextBox
         Control(EditMenuConvertType).Disabled = False
         SetCaption EditMenuConvertType, "Co&nvert to TextBox"
-    ELSE
+    Else
         Control(EditMenuConvertType).Disabled = True
         SetCaption EditMenuConvertType, "Co&nvert type"
-    END IF
+    End If
 
-    DO WHILE LEN(Signal$)
+    Do While Len(Signal$)
         'signals -1 and -3 deprecated for now
-        b$ = LEFT$(Signal$, 2)
-        Signal$ = MID$(Signal$, 3)
-        IF CVI(b$) = -2 THEN
+        b$ = Left$(Signal$, 2)
+        Signal$ = Mid$(Signal$, 3)
+        If CVI(b$) = -2 Then
             'User attempted to right-click a control but the preview
             'form is smaller than the menu panel. In such case the "Align"
             'menu is shown in the editor.
-            IF ZOrderingDialogOpen THEN __UI_Click CloseZOrderingBT
+            If ZOrderingDialogOpen Then __UI_Click CloseZOrderingBT
             __UI_ActivateMenu Control(AlignMenu), False
             __UI_ForceRedraw = True
-        ELSEIF CVI(b$) = -4 THEN
+        ElseIf CVI(b$) = -4 Then
             'User attempted to load an icon file that couldn't be previewed
             Answer = MessageBox("Icon couldn't be previewed. Make sure it's a valid icon file.", "", MsgBox_OkOnly + MsgBox_Exclamation)
-        ELSEIF CVI(b$) = -5 THEN
+        ElseIf CVI(b$) = -5 Then
             'Context menu was successfully shown on the preview
-            IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
+            If __UI_TotalActiveMenus > 0 Then __UI_CloseAllMenus
             __UI_Focus = 0
             __UI_ForceRedraw = True
-        ELSEIF CVI(b$) = -6 THEN
+        ElseIf CVI(b$) = -6 Then
             'User attempted to load an invalid icon file
             Answer = MessageBox("Only .ico files are accepted.", "", MsgBox_OkOnly + MsgBox_Exclamation)
-        ELSEIF CVI(b$) = -7 THEN
+        ElseIf CVI(b$) = -7 Then
             'A new empty form has just been created or a file has just finished loading from disk
             Edited = False
-        ELSEIF CVI(b$) = -9 THEN
+        ElseIf CVI(b$) = -9 Then
             'User attempted to close the preview form
             __UI_Click FileMenuNew
-            EXIT SUB
-        END IF
-    LOOP
+            Exit Sub
+        End If
+    Loop
 
-    IF PrevFirstSelected <> FirstSelected THEN
+    If PrevFirstSelected <> FirstSelected Then
         LoseFocus
         PrevFirstSelected = FirstSelected
         __UI_ForceRedraw = True
-        IF ZOrderingDialogOpen AND FirstSelected <> PreviewFormID THEN
-            FOR j = 1 TO UBOUND(zOrderIDs)
-                IF zOrderIDs(j) = FirstSelected THEN Control(ControlList).Value = j: __UI_ValueChanged ControlList: EXIT FOR
-            NEXT
-        END IF
-    END IF
+        If ZOrderingDialogOpen And FirstSelected <> PreviewFormID Then
+            For j = 1 To UBound(zOrderIDs)
+                If zOrderIDs(j) = FirstSelected Then Control(ControlList).Value = j: __UI_ValueChanged ControlList: Exit For
+            Next
+        End If
+    End If
 
-    IF LEN(ThisFileName$) THEN
+    If Len(ThisFileName$) Then
         Caption(__UI_FormID) = UiEditorTitle$ + " - " + ThisFileName$
-    ELSE
-        IF LEN(RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 THEN
+    Else
+        If Len(RTrim$(__UI_TrimAt0$(PreviewControls(PreviewFormID).Name))) > 0 Then
             Caption(__UI_FormID) = UiEditorTitle$ + " - Untitled.frm"
-        END IF
-    END IF
+        End If
+    End If
 
-    IF Edited THEN
-        IF RIGHT$(Caption(__UI_FormID), 1) <> "*" THEN Caption(__UI_FormID) = Caption(__UI_FormID) + "*"
-    END IF
+    If Edited Then
+        If Right$(Caption(__UI_FormID), 1) <> "*" Then Caption(__UI_FormID) = Caption(__UI_FormID) + "*"
+    End If
 
     'Ctrl+Z? Ctrl+Y?
     Control(EditMenuUndo).Disabled = True
     Control(EditMenuRedo).Disabled = True
-    IF UndoPointer > 0 THEN Control(EditMenuUndo).Disabled = False
-    IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
+    If UndoPointer > 0 Then Control(EditMenuUndo).Disabled = False
+    If UndoPointer < TotalUndoImages Then Control(EditMenuRedo).Disabled = False
 
-    IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
+    If (__UI_KeyHit = Asc("z") Or __UI_KeyHit = Asc("Z")) And __UI_CtrlIsDown Then
         SendSignal 214
-    ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
+    ElseIf (__UI_KeyHit = Asc("y") Or __UI_KeyHit = Asc("Y")) And __UI_CtrlIsDown Then
         SendSignal 215
-    END IF
+    End If
 
     'Make ZOrdering menu enabled/disabled according to control list
     Control(EditMenuZOrdering).Disabled = True
-    FOR i = 1 TO UBOUND(PreviewControls)
-        SELECT CASE PreviewControls(i).Type
-            CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
+    For i = 1 To UBound(PreviewControls)
+        Select Case PreviewControls(i).Type
+            Case 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
                 j = j + 1
-                IF j > 1 THEN
+                If j > 1 Then
                     Control(EditMenuZOrdering).Disabled = False
-                    EXIT FOR
-                END IF
-        END SELECT
-    NEXT
+                    Exit For
+                End If
+        End Select
+    Next
 
     Control(EditMenuCP1252).Value = False
     Control(EditMenuCP437).Value = False
     Control(FontSwitchMenuSwitch).Value = ShowFontList
-    IF BypassShowFontList THEN
+    If BypassShowFontList Then
         Control(FontSwitchMenuSwitch).Disabled = True
-    ELSE
+    Else
         Control(FontSwitchMenuSwitch).Disabled = False
-    END IF
-    SELECT CASE PreviewControls(PreviewFormID).Encoding
-        CASE 0, 437
+    End If
+    Select Case PreviewControls(PreviewFormID).Encoding
+        Case 0, 437
             Control(EditMenuCP437).Value = True
-        CASE 1252
+        Case 1252
             Control(EditMenuCP1252).Value = True
-    END SELECT
+    End Select
 
-    IF PreviewHasMenuActive THEN
+    If PreviewHasMenuActive Then
         Control(InsertMenuMenuItem).Disabled = False
-    ELSE
+    Else
         Control(InsertMenuMenuItem).Disabled = True
-    END IF
+    End If
 
     Control(EditMenuSetDefaultButton).Disabled = True
     Control(EditMenuSetDefaultButton).Value = False
     Control(EditMenuBindControls).Disabled = True
     Control(EditMenuAllowMinMax).Disabled = True
     Control(EditMenuAllowMinMax).Value = False
-    IF INSTR(LCASE$(PreviewControls(PreviewFormID).Name), "form") = 0 THEN
+    If InStr(LCase$(PreviewControls(PreviewFormID).Name), "form") = 0 Then
         Caption(ControlProperties) = "Control properties (Form):"
-    ELSE
+    Else
         Caption(ControlProperties) = "Control properties:"
-    END IF
+    End If
     Caption(AlignMenuAlignCenterV) = "Center Vertically (group)"
     Caption(AlignMenuAlignCenterH) = "Center Horizontally (group)-"
 
     Control(EditMenuPaste).Disabled = True
-    IF LEFT$(_CLIPBOARD$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
+    If Left$(_Clipboard$, Len(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ Then
         Control(EditMenuPaste).Disabled = False
-    END IF
+    End If
 
-    IF TotalSelected = 0 THEN
+    If TotalSelected = 0 Then
         FirstSelected = PreviewFormID
 
         Control(EditMenuCut).Disabled = True
@@ -1859,55 +1859,55 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuDistributeV).Disabled = True
         Control(AlignMenuDistributeH).Disabled = True
 
-    ELSEIF TotalSelected = 1 THEN
-        IF FirstSelected > 0 AND FirstSelected <= UBOUND(PreviewControls) THEN
+    ElseIf TotalSelected = 1 Then
+        If FirstSelected > 0 And FirstSelected <= UBound(PreviewControls) Then
             Control(EditMenuCut).Disabled = False
             Control(EditMenuCopy).Disabled = False
             Control(EditMenuDelete).Disabled = False
 
-            IF INSTR(LCASE$(PreviewControls(FirstSelected).Name), LCASE$(RTRIM$(__UI_Type(PreviewControls(FirstSelected).Type).Name))) = 0 THEN
-                Caption(ControlProperties) = "Control properties (Type = " + RTRIM$(__UI_Type(PreviewControls(FirstSelected).Type).Name) + "):"
-            ELSE
+            If InStr(LCase$(PreviewControls(FirstSelected).Name), LCase$(RTrim$(__UI_Type(PreviewControls(FirstSelected).Type).Name))) = 0 Then
+                Caption(ControlProperties) = "Control properties (Type = " + RTrim$(__UI_Type(PreviewControls(FirstSelected).Type).Name) + "):"
+            Else
                 Caption(ControlProperties) = "Control properties:"
-            END IF
+            End If
             Control(AlignMenuAlignLeft).Disabled = True
             Control(AlignMenuAlignRight).Disabled = True
             Control(AlignMenuAlignTops).Disabled = True
             Control(AlignMenuAlignBottoms).Disabled = True
-            IF PreviewControls(FirstSelected).Type <> __UI_Type_MenuBar AND PreviewControls(FirstSelected).Type <> __UI_Type_MenuItem THEN
+            If PreviewControls(FirstSelected).Type <> __UI_Type_MenuBar And PreviewControls(FirstSelected).Type <> __UI_Type_MenuItem Then
                 Control(AlignMenuAlignCenterV).Disabled = False
                 Control(AlignMenuAlignCenterH).Disabled = False
                 Caption(AlignMenuAlignCenterV) = "Center Vertically"
                 Caption(AlignMenuAlignCenterH) = "Center Horizontally-"
-            ELSE
+            Else
                 Control(AlignMenuAlignCenterV).Disabled = True
                 Control(AlignMenuAlignCenterH).Disabled = True
-            END IF
+            End If
             Control(AlignMenuAlignCentersV).Disabled = True
             Control(AlignMenuAlignCentersH).Disabled = True
             Control(AlignMenuDistributeV).Disabled = True
             Control(AlignMenuDistributeH).Disabled = True
 
-            IF PreviewControls(FirstSelected).Type = __UI_Type_Button THEN
+            If PreviewControls(FirstSelected).Type = __UI_Type_Button Then
                 Control(EditMenuSetDefaultButton).Disabled = False
-                IF PreviewDefaultButtonID <> FirstSelected THEN
+                If PreviewDefaultButtonID <> FirstSelected Then
                     Control(EditMenuSetDefaultButton).Value = False
-                ELSE
+                Else
                     Control(EditMenuSetDefaultButton).Value = True
-                END IF
-            ELSEIF PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
-                IF PreviewControls(FirstSelected).NumericOnly = True THEN
+                End If
+            ElseIf PreviewControls(FirstSelected).Type = __UI_Type_TextBox Then
+                If PreviewControls(FirstSelected).NumericOnly = True Then
                     Control(EditMenuAllowMinMax).Disabled = False
                     Control(EditMenuAllowMinMax).Value = False
-                    IF INSTR(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 THEN Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
-                ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
+                    If InStr(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 Then Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
+                ElseIf PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds Then
                     Control(EditMenuAllowMinMax).Disabled = False
                     Control(EditMenuAllowMinMax).Value = True
-                    IF INSTR(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 THEN Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
-                END IF
-            END IF
-        END IF
-    ELSEIF TotalSelected = 2 THEN
+                    If InStr(PreviewControls(FirstSelected).Name, "NumericTextBox") = 0 Then Caption(ControlProperties) = "Control properties (Type = NumericTextBox):"
+                End If
+            End If
+        End If
+    ElseIf TotalSelected = 2 Then
         Control(EditMenuBindControls).Disabled = False
 
         Caption(ControlProperties) = "Control properties: (multiple selection)"
@@ -1926,7 +1926,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuAlignCentersH).Disabled = False
         Control(AlignMenuDistributeV).Disabled = True
         Control(AlignMenuDistributeH).Disabled = True
-    ELSE
+    Else
         SetCaption ControlProperties, "Control properties: (multiple selection)"
 
         Control(EditMenuCut).Disabled = False
@@ -1943,340 +1943,340 @@ SUB __UI_BeforeUpdateDisplay
         Control(AlignMenuAlignCentersH).Disabled = False
         Control(AlignMenuDistributeV).Disabled = False
         Control(AlignMenuDistributeH).Disabled = False
-    END IF
+    End If
 
-    IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
+    If FirstSelected = 0 Then FirstSelected = PreviewFormID
 
-    FOR i = 1 TO UBOUND(InputBox)
+    For i = 1 To UBound(InputBox)
         Control(InputBox(i).ID).Disabled = False
         Control(InputBox(i).ID).Hidden = False
         Control(InputBox(i).LabelID).Hidden = False
-        IF __UI_Focus = InputBox(i).ID THEN
+        If __UI_Focus = InputBox(i).ID Then
             Control(InputBox(i).ID).Height = 22
             Control(InputBox(i).ID).BorderColor = _RGB32(0, 0, 0)
             Control(InputBox(i).ID).BorderSize = 2
-        ELSE
+        Else
             Control(InputBox(i).ID).Height = 23
             Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
             Control(InputBox(i).ID).BorderSize = 1
-        END IF
-    NEXT
+        End If
+    Next
     Control(FontSizeList).Hidden = True
 
-    FOR i = 1 TO UBOUND(Toggles)
+    For i = 1 To UBound(Toggles)
         Control(Toggles(i)).Disabled = True
         Control(Toggles(i)).Hidden = False
-    NEXT
+    Next
 
-    DIM ShadeOfGreen AS _UNSIGNED LONG, ShadeOfRed AS _UNSIGNED LONG
+    Dim ShadeOfGreen As _Unsigned Long, ShadeOfRed As _Unsigned Long
     ShadeOfGreen = _RGB32(28, 150, 50)
     ShadeOfRed = _RGB32(233, 44, 0)
 
-    CONST PropertyUpdateDelay = .1
+    Const PropertyUpdateDelay = .1
 
-    IF FirstSelected > 0 THEN
-        DIM ThisInputBox AS LONG
+    If FirstSelected > 0 Then
+        Dim ThisInputBox As Long
         ThisInputBox = GetInputBoxFromID(__UI_Focus)
 
-        IF __UI_Focus <> NameTB OR (__UI_Focus = NameTB AND RevertEdit = True) THEN
-            Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name)
-            IF (__UI_Focus = NameTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = NameTB THEN
-            IF PropertyFullySelected(NameTB) THEN
-                IF Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name) THEN
+        If __UI_Focus <> NameTB Or (__UI_Focus = NameTB And RevertEdit = True) Then
+            Text(NameTB) = RTrim$(PreviewControls(FirstSelected).Name)
+            If (__UI_Focus = NameTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = NameTB Then
+            If PropertyFullySelected(NameTB) Then
+                If Text(NameTB) = RTrim$(PreviewControls(FirstSelected).Name) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> CaptionTB OR (__UI_Focus = CaptionTB AND RevertEdit = True) THEN
-            Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
-            IF (__UI_Focus = CaptionTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = CaptionTB THEN
-            IF PropertyFullySelected(CaptionTB) THEN
-                IF Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> CaptionTB Or (__UI_Focus = CaptionTB And RevertEdit = True) Then
+            Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), Chr$(10), "\n", False, 0)
+            If (__UI_Focus = CaptionTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = CaptionTB Then
+            If PropertyFullySelected(CaptionTB) Then
+                If Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), Chr$(10), "\n", False, 0) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> TextTB OR (__UI_Focus = TextTB AND RevertEdit = True) THEN
-            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-                Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0)
-            ELSE
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> TextTB Or (__UI_Focus = TextTB And RevertEdit = True) Then
+            If PreviewControls(FirstSelected).Type = __UI_Type_ListBox Or PreviewControls(FirstSelected).Type = __UI_Type_DropdownList Then
+                Text(TextTB) = Replace(PreviewTexts(FirstSelected), Chr$(10), "\n", False, 0)
+            Else
                 Text(TextTB) = PreviewTexts(FirstSelected)
-                IF LEN(PreviewMasks(FirstSelected)) > 0 AND PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
+                If Len(PreviewMasks(FirstSelected)) > 0 And PreviewControls(FirstSelected).Type = __UI_Type_TextBox Then
                     Mask(TextTB) = PreviewMasks(FirstSelected)
-                ELSE
+                Else
                     Mask(TextTB) = ""
-                END IF
-            END IF
-            IF (__UI_Focus = TextTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = TextTB THEN
+                End If
+            End If
+            If (__UI_Focus = TextTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = TextTB Then
             Control(TextTB).NumericOnly = PreviewControls(FirstSelected).NumericOnly
-            IF PropertyFullySelected(TextTB) THEN
+            If PropertyFullySelected(TextTB) Then
                 IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)) OR _
                    ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> MaskTB OR (__UI_Focus = MaskTB AND RevertEdit = True) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> MaskTB Or (__UI_Focus = MaskTB And RevertEdit = True) Then
             Text(MaskTB) = PreviewMasks(FirstSelected)
-            IF (__UI_Focus = MaskTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = MaskTB THEN
-            IF PropertyFullySelected(MaskTB) THEN
-                IF Text(MaskTB) = PreviewMasks(FirstSelected) THEN
+            If (__UI_Focus = MaskTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = MaskTB Then
+            If PropertyFullySelected(MaskTB) Then
+                If Text(MaskTB) = PreviewMasks(FirstSelected) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> TopTB OR (__UI_Focus = TopTB AND RevertEdit = True) THEN
-            Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
-            IF (__UI_Focus = TopTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = TopTB THEN
-            IF PropertyFullySelected(TopTB) THEN
-                IF Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> TopTB Or (__UI_Focus = TopTB And RevertEdit = True) Then
+            Text(TopTB) = LTrim$(Str$(PreviewControls(FirstSelected).Top))
+            If (__UI_Focus = TopTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = TopTB Then
+            If PropertyFullySelected(TopTB) Then
+                If Text(TopTB) = LTrim$(Str$(PreviewControls(FirstSelected).Top)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> LeftTB OR (__UI_Focus = LeftTB AND RevertEdit = True) THEN
-            Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
-            IF (__UI_Focus = LeftTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = LeftTB THEN
-            IF PropertyFullySelected(LeftTB) THEN
-                IF Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> LeftTB Or (__UI_Focus = LeftTB And RevertEdit = True) Then
+            Text(LeftTB) = LTrim$(Str$(PreviewControls(FirstSelected).Left))
+            If (__UI_Focus = LeftTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = LeftTB Then
+            If PropertyFullySelected(LeftTB) Then
+                If Text(LeftTB) = LTrim$(Str$(PreviewControls(FirstSelected).Left)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> WidthTB OR (__UI_Focus = WidthTB AND RevertEdit = True) THEN
-            Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
-            IF (__UI_Focus = WidthTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = WidthTB THEN
-            IF PropertyFullySelected(WidthTB) THEN
-                IF Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> WidthTB Or (__UI_Focus = WidthTB And RevertEdit = True) Then
+            Text(WidthTB) = LTrim$(Str$(PreviewControls(FirstSelected).Width))
+            If (__UI_Focus = WidthTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = WidthTB Then
+            If PropertyFullySelected(WidthTB) Then
+                If Text(WidthTB) = LTrim$(Str$(PreviewControls(FirstSelected).Width)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> HeightTB OR (__UI_Focus = HeightTB AND RevertEdit = True) THEN
-            Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
-            IF (__UI_Focus = HeightTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = HeightTB THEN
-            IF PropertyFullySelected(HeightTB) THEN
-                IF Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> HeightTB Or (__UI_Focus = HeightTB And RevertEdit = True) Then
+            Text(HeightTB) = LTrim$(Str$(PreviewControls(FirstSelected).Height))
+            If (__UI_Focus = HeightTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = HeightTB Then
+            If PropertyFullySelected(HeightTB) Then
+                If Text(HeightTB) = LTrim$(Str$(PreviewControls(FirstSelected).Height)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
-            IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> FontTB Or (__UI_Focus = FontTB And RevertEdit = True) Then
+            If Len(PreviewFonts(FirstSelected)) > 0 Then
                 Text(FontTB) = PreviewFonts(FirstSelected)
-            ELSE
+            Else
                 Text(FontTB) = PreviewFonts(PreviewFormID)
-            END IF
-            IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = FontTB THEN
-            IF PropertyFullySelected(FontTB) THEN
-                IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
+            End If
+            If (__UI_Focus = FontTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = FontTB Then
+            If PropertyFullySelected(FontTB) Then
+                If Text(FontTB) = PreviewFonts(FirstSelected) Or Text(FontTB) = PreviewFonts(PreviewFormID) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+                    End If
+                End If
+            End If
+        End If
+        If Len(PreviewFonts(FirstSelected)) > 0 Then
             SelectFontInList PreviewActualFonts(FirstSelected)
-        ELSE
+        Else
             SelectFontInList PreviewActualFonts(PreviewFormID)
-        END IF
-        IF __UI_Focus <> TooltipTB OR (__UI_Focus = TooltipTB AND RevertEdit = True) THEN
-            Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
-            IF (__UI_Focus = TooltipTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = TooltipTB THEN
-            IF PropertyFullySelected(FontTB) THEN
-                IF Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0) THEN
+        End If
+        If __UI_Focus <> TooltipTB Or (__UI_Focus = TooltipTB And RevertEdit = True) Then
+            Text(TooltipTB) = Replace(PreviewTips(FirstSelected), Chr$(10), "\n", False, 0)
+            If (__UI_Focus = TooltipTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = TooltipTB Then
+            If PropertyFullySelected(FontTB) Then
+                If Text(TooltipTB) = Replace(PreviewTips(FirstSelected), Chr$(10), "\n", False, 0) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> ValueTB OR (__UI_Focus = ValueTB AND RevertEdit = True) THEN
-            Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
-            IF (__UI_Focus = ValueTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = ValueTB THEN
-            IF PropertyFullySelected(ValueTB) THEN
-                IF Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> ValueTB Or (__UI_Focus = ValueTB And RevertEdit = True) Then
+            Text(ValueTB) = LTrim$(Str$(PreviewControls(FirstSelected).Value))
+            If (__UI_Focus = ValueTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = ValueTB Then
+            If PropertyFullySelected(ValueTB) Then
+                If Text(ValueTB) = LTrim$(Str$(PreviewControls(FirstSelected).Value)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> MinTB OR (__UI_Focus = MinTB AND RevertEdit = True) THEN
-            Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
-            IF (__UI_Focus = MinTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = MinTB THEN
-            IF PropertyFullySelected(MinTB) THEN
-                IF Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> MinTB Or (__UI_Focus = MinTB And RevertEdit = True) Then
+            Text(MinTB) = LTrim$(Str$(PreviewControls(FirstSelected).Min))
+            If (__UI_Focus = MinTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = MinTB Then
+            If PropertyFullySelected(MinTB) Then
+                If Text(MinTB) = LTrim$(Str$(PreviewControls(FirstSelected).Min)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> MaxTB OR (__UI_Focus = MaxTB AND RevertEdit = True) THEN
-            Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
-            IF (__UI_Focus = MaxTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = MaxTB THEN
-            IF PropertyFullySelected(MaxTB) THEN
-                IF Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> MaxTB Or (__UI_Focus = MaxTB And RevertEdit = True) Then
+            Text(MaxTB) = LTrim$(Str$(PreviewControls(FirstSelected).Max))
+            If (__UI_Focus = MaxTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = MaxTB Then
+            If PropertyFullySelected(MaxTB) Then
+                If Text(MaxTB) = LTrim$(Str$(PreviewControls(FirstSelected).Max)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> IntervalTB OR (__UI_Focus = IntervalTB AND RevertEdit = True) THEN
-            Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
-            IF (__UI_Focus = IntervalTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = IntervalTB THEN
-            IF PropertyFullySelected(IntervalTB) THEN
-                IF Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> IntervalTB Or (__UI_Focus = IntervalTB And RevertEdit = True) Then
+            Text(IntervalTB) = LTrim$(Str$(PreviewControls(FirstSelected).Interval))
+            If (__UI_Focus = IntervalTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = IntervalTB Then
+            If PropertyFullySelected(IntervalTB) Then
+                If Text(IntervalTB) = LTrim$(Str$(PreviewControls(FirstSelected).Interval)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> MinIntervalTB OR (__UI_Focus = MinIntervalTB AND RevertEdit = True) THEN
-            Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval))
-        ELSEIF __UI_Focus = MinIntervalTB THEN
-            IF PropertyFullySelected(MinIntervalTB) THEN
-                IF Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> MinIntervalTB Or (__UI_Focus = MinIntervalTB And RevertEdit = True) Then
+            Text(MinIntervalTB) = LTrim$(Str$(PreviewControls(FirstSelected).MinInterval))
+        ElseIf __UI_Focus = MinIntervalTB Then
+            If PropertyFullySelected(MinIntervalTB) Then
+                If Text(MinIntervalTB) = LTrim$(Str$(PreviewControls(FirstSelected).MinInterval)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> PaddingTB OR (__UI_Focus = PaddingTB AND RevertEdit = True) THEN
-            Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
-            IF (__UI_Focus = PaddingTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = PaddingTB THEN
-            IF PropertyFullySelected(PaddingTB) THEN
-                IF Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> PaddingTB Or (__UI_Focus = PaddingTB And RevertEdit = True) Then
+            Text(PaddingTB) = LTrim$(Str$(PreviewControls(FirstSelected).Padding))
+            If (__UI_Focus = PaddingTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = PaddingTB Then
+            If PropertyFullySelected(PaddingTB) Then
+                If Text(PaddingTB) = LTrim$(Str$(PreviewControls(FirstSelected).Padding)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-        IF __UI_Focus <> SizeTB OR (__UI_Focus = SizeTB AND RevertEdit = True) THEN
-            Text(SizeTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize))
-            IF (__UI_Focus = SizeTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = SizeTB THEN
-            IF PropertyFullySelected(SizeTB) THEN
-                IF Text(SizeTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize)) THEN
+                    End If
+                End If
+            End If
+        End If
+        If __UI_Focus <> SizeTB Or (__UI_Focus = SizeTB And RevertEdit = True) Then
+            Text(SizeTB) = LTrim$(Str$(PreviewControls(FirstSelected).BorderSize))
+            If (__UI_Focus = SizeTB And RevertEdit = True) Then RevertEdit = False: SelectPropertyFully __UI_Focus
+        ElseIf __UI_Focus = SizeTB Then
+            If PropertyFullySelected(SizeTB) Then
+                If Text(SizeTB) = LTrim$(Str$(PreviewControls(FirstSelected).BorderSize)) Then
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
+                Else
+                    If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
                         Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
+                    Else
                         Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-    END IF
+                    End If
+                End If
+            End If
+        End If
+    End If
 
     Control(TextTB).Max = 0
     Control(TextTB).Min = 0
-    IF PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND __UI_Focus = TextTB THEN
+    If PreviewControls(FirstSelected).Type = __UI_Type_TextBox And __UI_Focus = TextTB Then
         Control(TextTB).Max = PreviewControls(FirstSelected).Max
         Control(TextTB).Min = PreviewControls(FirstSelected).Min
-    END IF
+    End If
 
     'Update checkboxes:
     Control(Stretch).Value = PreviewControls(FirstSelected).Stretch
@@ -2289,7 +2289,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(Hidden).Value = PreviewControls(FirstSelected).Hidden
     Control(CenteredWindow).Value = PreviewControls(FirstSelected).CenteredWindow
     Control(PasswordMaskCB).Value = PreviewControls(FirstSelected).PasswordField
-    Control(BooleanOptions).Value = ABS(PreviewControls(FirstSelected).Value <> 0) + 1
+    Control(BooleanOptions).Value = Abs(PreviewControls(FirstSelected).Value <> 0) + 1
     Control(AlignOptions).Value = PreviewControls(FirstSelected).Align + 1
     Control(VAlignOptions).Value = PreviewControls(FirstSelected).VAlign + 1
     Control(BulletOptions).Value = PreviewControls(FirstSelected).BulletStyle + 1
@@ -2300,30 +2300,30 @@ SUB __UI_BeforeUpdateDisplay
     Control(HideTicks).Value = (PreviewControls(FirstSelected).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight)
     Control(AutoPlayGif).Value = PreviewAutoPlayGif(FirstSelected)
 
-    IF LEN(PreviewContextMenu(FirstSelected)) THEN
-        DIM ItemFound AS _BYTE
+    If Len(PreviewContextMenu(FirstSelected)) Then
+        Dim ItemFound As _Byte
         ItemFound = SelectItem(ContextMenuControlsList, PreviewContextMenu(FirstSelected))
-    ELSE
+    Else
         Control(ContextMenuControlsList).Value = 1
-    END IF
-    IF __UI_BypassKeyCombos = False THEN
-        IF TotalSelected = 1 AND LEN(PreviewKeyCombos(FirstSelected)) THEN
+    End If
+    If __UI_BypassKeyCombos = False Then
+        If TotalSelected = 1 And Len(PreviewKeyCombos(FirstSelected)) Then
             Caption(KeyboardComboBT) = PreviewKeyCombos(FirstSelected)
-        ELSE
+        Else
             Caption(KeyboardComboBT) = "Click to assign"
-        END IF
-    END IF
+        End If
+    End If
 
-    STATIC ShowInvalidValueWarning AS _BYTE
-    IF Control(__UI_Focus).BorderColor = ShadeOfRed THEN
-        IF ShowInvalidValueWarning = False THEN
+    Static ShowInvalidValueWarning As _Byte
+    If Control(__UI_Focus).BorderColor = ShadeOfRed Then
+        If ShowInvalidValueWarning = False Then
             ShowInvalidValueWarning = True
             Caption(StatusBar) = "Invalid value; ESC for previous or adjusted value"
-            BlinkStatusBar = TIMER
-        END IF
-    ELSE
+            BlinkStatusBar = Timer
+        End If
+    Else
         ShowInvalidValueWarning = False
-    END IF
+    End If
 
     'Disable properties that don't apply
     Control(AlignOptions).Disabled = True
@@ -2335,9 +2335,9 @@ SUB __UI_BeforeUpdateDisplay
     Caption(MaxLB) = "Max"
     Control(SizeTB).Disabled = True
     Control(SizeTB).Hidden = True
-    IF TotalSelected > 0 THEN
-        SELECT EVERYCASE PreviewControls(FirstSelected).Type
-            CASE __UI_Type_ToggleSwitch
+    If TotalSelected > 0 Then
+        Select EveryCase PreviewControls(FirstSelected).Type
+            Case __UI_Type_ToggleSwitch
                 Control(CanHaveFocus).Disabled = False
                 Control(Disabled).Disabled = False
                 Control(Hidden).Disabled = False
@@ -2352,519 +2352,519 @@ SUB __UI_BeforeUpdateDisplay
                 Control(MinIntervalTB).Disabled = True
                 Control(PaddingTB).Disabled = True
                 Control(BulletOptions).Disabled = True
-            CASE __UI_Type_MenuBar, __UI_Type_MenuItem
+            Case __UI_Type_MenuBar, __UI_Type_MenuItem
                 Control(Disabled).Disabled = False
                 Control(Hidden).Disabled = False
-            CASE __UI_Type_MenuBar
+            Case __UI_Type_MenuBar
                 'Check if this is the last menu bar item so that Align options can be enabled
-                FOR i = UBOUND(PreviewControls) TO 1 STEP -1
-                    IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type = __UI_Type_MenuBar THEN
-                        EXIT FOR
-                    END IF
-                NEXT
-                IF i = FirstSelected THEN
+                For i = UBound(PreviewControls) To 1 Step -1
+                    If PreviewControls(i).ID > 0 And PreviewControls(i).Type = __UI_Type_MenuBar Then
+                        Exit For
+                    End If
+                Next
+                If i = FirstSelected Then
                     Control(AlignOptions).Disabled = False
-                END IF
+                End If
 
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TooltipTB, AlignOptions
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case NameTB, CaptionTB, TooltipTB, AlignOptions
                             Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
-            CASE __UI_Type_ContextMenu
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB
+                    End Select
+                Next
+            Case __UI_Type_ContextMenu
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case NameTB
                             Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
-            CASE __UI_Type_MenuItem
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TextTB, TooltipTB, BulletOptions, BooleanOptions, KeyboardComboBT
+                    End Select
+                Next
+            Case __UI_Type_MenuItem
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case NameTB, CaptionTB, TextTB, TooltipTB, BulletOptions, BooleanOptions, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
-            CASE __UI_Type_PictureBox
+                    End Select
+                Next
+            Case __UI_Type_PictureBox
                 Caption(TextLB) = "Image file"
                 Control(AlignOptions).Disabled = False
                 Control(VAlignOptions).Disabled = False
                 Control(Stretch).Disabled = False
                 Control(Transparent).Disabled = False
-                IF PreviewAnimatedGif(FirstSelected) THEN
+                If PreviewAnimatedGif(FirstSelected) Then
                     Control(AutoPlayGif).Disabled = False
-                END IF
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, TextTB, TopTB, LeftTB, WidthTB, HeightTB, TooltipTB, AlignOptions, VAlignOptions
+                End If
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case NameTB, TextTB, TopTB, LeftTB, WidthTB, HeightTB, TooltipTB, AlignOptions, VAlignOptions
                             Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
-            CASE __UI_Type_Label
+                    End Select
+                Next
+            Case __UI_Type_Label
                 Control(Transparent).Disabled = False
                 Control(AutoSize).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, PaddingTB, AlignOptions, VAlignOptions, FontList
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, PaddingTB, AlignOptions, VAlignOptions, FontList
                             Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
-            CASE __UI_Type_Frame
+                    End Select
+                Next
+            Case __UI_Type_Frame
                 Control(Transparent).Disabled = True
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
                             Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
-            CASE __UI_Type_TextBox
-                STATIC PreviousNumericState AS _BYTE
+                    End Select
+                Next
+            Case __UI_Type_TextBox
+                Static PreviousNumericState As _Byte
                 Control(Transparent).Disabled = False
                 Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False)
-                IF PreviousNumericState <> PreviewControls(FirstSelected).NumericOnly THEN
+                If PreviousNumericState <> PreviewControls(FirstSelected).NumericOnly Then
                     PreviousNumericState = PreviewControls(FirstSelected).NumericOnly
                     __UI_ForceRedraw = True
-                END IF
-                IF PreviewControls(FirstSelected).NumericOnly = True THEN
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
+                End If
+                If PreviewControls(FirstSelected).NumericOnly = True Then
+                    For i = 1 To UBound(InputBox)
+                        Select Case InputBox(i).ID
+                            Case ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                                 Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
+                            Case Else
                                 Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
-                ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
+                        End Select
+                    Next
+                ElseIf PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds Then
+                    For i = 1 To UBound(InputBox)
+                        Select Case InputBox(i).ID
+                            Case ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                                 Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
+                            Case Else
                                 Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
-                ELSE
+                        End Select
+                    Next
+                Else
                     Caption(MaxLB) = "Max length"
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
+                    For i = 1 To UBound(InputBox)
+                        Select Case InputBox(i).ID
+                            Case ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                                 Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
+                            Case Else
                                 Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
-                END IF
-            CASE __UI_Type_Button, __UI_Type_MenuItem
+                        End Select
+                    Next
+                End If
+            Case __UI_Type_Button, __UI_Type_MenuItem
                 Caption(TextLB) = "Image file"
-            CASE __UI_Type_Button
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
+            Case __UI_Type_Button
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
                             Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
-            CASE __UI_Type_CheckBox, __UI_Type_RadioButton
+                    End Select
+                Next
+            Case __UI_Type_CheckBox, __UI_Type_RadioButton
                 Control(Transparent).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB
                             Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
-            CASE __UI_Type_ToggleSwitch
+                    End Select
+                Next
+            Case __UI_Type_ToggleSwitch
                 Control(Transparent).Disabled = True
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE WidthTB, HeightTB, TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case WidthTB, HeightTB, TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
                             Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
-            CASE __UI_Type_ProgressBar
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
+                    End Select
+                Next
+            Case __UI_Type_ProgressBar
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
-            CASE __UI_Type_TrackBar
+                    End Select
+                Next
+            Case __UI_Type_TrackBar
                 Control(HideTicks).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList, KeyboardComboBT
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
-            CASE __UI_Type_ListBox, __UI_Type_DropdownList
+                    End Select
+                Next
+            Case __UI_Type_ListBox, __UI_Type_DropdownList
                 Caption(TextLB) = "List items"
                 Caption(ValueLB) = "Selected item"
                 Control(Transparent).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
+                For i = 1 To UBound(InputBox)
+                    Select Case InputBox(i).ID
+                        Case CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
                             Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
+                        Case Else
                             Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
-            CASE __UI_Type_ListBox
+                    End Select
+                Next
+            Case __UI_Type_ListBox
                 Control(AutoScroll).Disabled = False
-            CASE __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
+            Case __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
                 Control(HasBorder).Disabled = False
-            CASE __UI_Type_ProgressBar
+            Case __UI_Type_ProgressBar
                 Control(ShowPercentage).Disabled = False
-            CASE __UI_Type_Label
+            Case __UI_Type_Label
                 Control(WordWrap).Disabled = False
-            CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar
+            Case __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar
                 Control(CanHaveFocus).Disabled = False
-            CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar
+            Case __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar
                 Control(Disabled).Disabled = False
-            CASE __UI_Type_Frame, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
+            Case __UI_Type_Frame, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
                 Control(Hidden).Disabled = False
-            CASE __UI_Type_Label
+            Case __UI_Type_Label
                 Control(AlignOptions).Disabled = False
                 Control(VAlignOptions).Disabled = False
-        END SELECT
-    ELSE
+        End Select
+    Else
         'Properties relative to the form
         Control(CenteredWindow).Disabled = False
         Control(Resizable).Disabled = False
         Control(AddGifExtensionToggle).Disabled = False
         Caption(TextLB) = "Icon file"
 
-        FOR i = 1 TO UBOUND(InputBox)
-            SELECT CASE InputBox(i).ID
-                CASE NameTB, CaptionTB, TextTB, WidthTB, HeightTB, FontTB, FontList
+        For i = 1 To UBound(InputBox)
+            Select Case InputBox(i).ID
+                Case NameTB, CaptionTB, TextTB, WidthTB, HeightTB, FontTB, FontList
                     Control(InputBox(i).ID).Disabled = False
-                CASE ELSE
+                Case Else
                     Control(InputBox(i).ID).Disabled = True
-            END SELECT
-        NEXT
-    END IF
+            End Select
+        Next
+    End If
 
-    IF TotalSelected > 1 THEN Control(NameTB).Disabled = True
+    If TotalSelected > 1 Then Control(NameTB).Disabled = True
 
-    IF HasFontList AND (ShowFontList = True AND BypassShowFontList = False) THEN
+    If HasFontList And (ShowFontList = True And BypassShowFontList = False) Then
         Control(FontTB).Disabled = True
-    ELSE
+    Else
         Control(FontList).Disabled = True
-    END IF
+    End If
 
     IF PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR _
        PreviewControls(FirstSelected).Type = __UI_Type_MenuBar OR _
         PreviewControls(FirstSelected).Type = __UI_Type_MenuItem THEN
         Control(ContextMenuControlsList).Disabled = True
-    ELSE
+    Else
         Control(ContextMenuControlsList).Disabled = False
-    END IF
+    End If
 
-    DIM LastTopForInputBox AS INTEGER
+    Dim LastTopForInputBox As Integer
     LastTopForInputBox = -12
-    CONST TopIncrementForInputBox = 22
-    FOR i = 1 TO UBOUND(InputBox)
+    Const TopIncrementForInputBox = 22
+    For i = 1 To UBound(InputBox)
         'Exception for SizeTB:
-        IF InputBox(i).ID = SizeTB THEN _CONTINUE
+        If InputBox(i).ID = SizeTB Then _Continue
 
-        IF Control(InputBox(i).ID).Disabled THEN
+        If Control(InputBox(i).ID).Disabled Then
             Control(InputBox(i).ID).Hidden = True
             Control(InputBox(i).LabelID).Hidden = True
-        ELSE
+        Else
             LastTopForInputBox = LastTopForInputBox + TopIncrementForInputBox
             Control(InputBox(i).ID).Top = LastTopForInputBox
             Control(InputBox(i).LabelID).Top = LastTopForInputBox
-        END IF
-    NEXT
+        End If
+    Next
 
     LastTopForInputBox = -12
-    FOR i = 1 TO UBOUND(Toggles)
-        IF Control(Toggles(i)).Disabled THEN
+    For i = 1 To UBound(Toggles)
+        If Control(Toggles(i)).Disabled Then
             Control(Toggles(i)).Hidden = True
-        ELSE
+        Else
             LastTopForInputBox = LastTopForInputBox + TopIncrementForInputBox
             Control(Toggles(i)).Top = LastTopForInputBox
-        END IF
-    NEXT
+        End If
+    Next
 
     'Custom cases
-    Control(AutoPlayGif).Disabled = NOT Control(AddGifExtensionToggle).Value
+    Control(AutoPlayGif).Disabled = Not Control(AddGifExtensionToggle).Value
     Control(AutoSize).Disabled = Control(WordWrap).Value
-    IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame THEN
+    If Control(HasBorder).Value = True And PreviewControls(FirstSelected).Type <> __UI_Type_Frame Then
         Control(SizeTB).Disabled = False
         Control(SizeTB).Hidden = False
         Control(SizeTB).Height = 22
         Control(SizeTB).Top = Control(HasBorder).Top
         Caption(HasBorder) = "Has border     Size"
-    END IF
+    End If
 
     Control(FontSizeList).Disabled = Control(FontList).Disabled
     Control(FontSizeList).Hidden = Control(FontList).Hidden
     Control(FontSizeList).Top = Control(FontList).Top
     Control(PasteListBT).Hidden = True
 
-    IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
-        IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
+    If PreviewControls(FirstSelected).Type = __UI_Type_ListBox Or PreviewControls(FirstSelected).Type = __UI_Type_DropdownList Then
+        If InStr(_Clipboard$, Chr$(10)) Then
             Control(PasteListBT).Top = Control(TextTB).Top
             Control(PasteListBT).Hidden = False
-        END IF
-    ELSEIF (PreviewControls(FirstSelected).Type = __UI_Type_Label AND PreviewControls(FirstSelected).WordWrap = True) THEN
-        IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
+        End If
+    ElseIf (PreviewControls(FirstSelected).Type = __UI_Type_Label And PreviewControls(FirstSelected).WordWrap = True) Then
+        If InStr(_Clipboard$, Chr$(10)) Then
             Control(PasteListBT).Top = Control(CaptionTB).Top
             Control(PasteListBT).Hidden = False
-        END IF
-    END IF
+        End If
+    End If
 
     'Update the color mixer
-    DIM ThisColor AS _UNSIGNED LONG, ThisBackColor AS _UNSIGNED LONG
+    Dim ThisColor As _Unsigned Long, ThisBackColor As _Unsigned Long
 
-    SELECT EVERYCASE Control(ColorPropertiesList).Value
-        CASE 0
+    Select EveryCase Control(ColorPropertiesList).Value
+        Case 0
             Control(ColorPropertiesList).Value = 1
-        CASE IS > 5
+        Case Is > 5
             Control(ColorPropertiesList).Value = 5
-        CASE 1, 2 'ForeColor, BackColor
+        Case 1, 2 'ForeColor, BackColor
             ThisColor = PreviewControls(FirstSelected).ForeColor
-            IF ThisColor = 0 THEN ThisColor = PreviewControls(PreviewFormID).ForeColor
-            IF ThisColor = 0 THEN ThisColor = __UI_DefaultColor(__UI_Type_Form, 1)
+            If ThisColor = 0 Then ThisColor = PreviewControls(PreviewFormID).ForeColor
+            If ThisColor = 0 Then ThisColor = __UI_DefaultColor(__UI_Type_Form, 1)
             ThisBackColor = PreviewControls(FirstSelected).BackColor
-            IF ThisBackColor = 0 THEN ThisBackColor = PreviewControls(PreviewFormID).BackColor
-            IF ThisBackColor = 0 THEN ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 2)
-        CASE 3, 4 'SelectedForeColor, SelectedBackColor
+            If ThisBackColor = 0 Then ThisBackColor = PreviewControls(PreviewFormID).BackColor
+            If ThisBackColor = 0 Then ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 2)
+        Case 3, 4 'SelectedForeColor, SelectedBackColor
             ThisColor = PreviewControls(FirstSelected).SelectedForeColor
-            IF ThisColor = 0 THEN ThisColor = PreviewControls(PreviewFormID).SelectedForeColor
-            IF ThisColor = 0 THEN ThisColor = __UI_DefaultColor(__UI_Type_Form, 3)
+            If ThisColor = 0 Then ThisColor = PreviewControls(PreviewFormID).SelectedForeColor
+            If ThisColor = 0 Then ThisColor = __UI_DefaultColor(__UI_Type_Form, 3)
             ThisBackColor = PreviewControls(FirstSelected).SelectedBackColor
-            IF ThisBackColor = 0 THEN ThisBackColor = PreviewControls(PreviewFormID).SelectedBackColor
-            IF ThisBackColor = 0 THEN ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 4)
-        CASE 5 'BorderColor
+            If ThisBackColor = 0 Then ThisBackColor = PreviewControls(PreviewFormID).SelectedBackColor
+            If ThisBackColor = 0 Then ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 4)
+        Case 5 'BorderColor
             ThisColor = PreviewControls(FirstSelected).BorderColor
-            IF ThisColor = 0 THEN ThisColor = PreviewControls(PreviewFormID).BorderColor
-            IF ThisColor = 0 THEN ThisColor = __UI_DefaultColor(__UI_Type_Form, 5)
+            If ThisColor = 0 Then ThisColor = PreviewControls(PreviewFormID).BorderColor
+            If ThisColor = 0 Then ThisColor = __UI_DefaultColor(__UI_Type_Form, 5)
             ThisBackColor = PreviewControls(FirstSelected).BackColor
-            IF ThisBackColor = 0 THEN ThisBackColor = PreviewControls(PreviewFormID).BackColor
-            IF ThisBackColor = 0 THEN ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 2)
-        CASE 1, 3, 5
-            IF __UI_Focus <> Red AND __UI_Focus <> RedValue THEN
-                Control(Red).Value = _RED32(ThisColor)
-                Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
-            END IF
-            IF __UI_Focus <> Green AND __UI_Focus <> GreenValue THEN
-                Control(Green).Value = _GREEN32(ThisColor)
-                Text(GreenValue) = LTRIM$(STR$(Control(Green).Value))
-            END IF
-            IF __UI_Focus <> Blue AND __UI_Focus <> BlueValue THEN
-                Control(Blue).Value = _BLUE32(ThisColor)
-                Text(BlueValue) = LTRIM$(STR$(Control(Blue).Value))
-            END IF
-        CASE 2, 4
-            IF __UI_Focus <> Red AND __UI_Focus <> RedValue THEN
-                Control(Red).Value = _RED32(ThisBackColor)
-                Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
-            END IF
-            IF __UI_Focus <> Green AND __UI_Focus <> GreenValue THEN
-                Control(Green).Value = _GREEN32(ThisBackColor)
-                Text(GreenValue) = LTRIM$(STR$(Control(Green).Value))
-            END IF
-            IF __UI_Focus <> Blue AND __UI_Focus <> BlueValue THEN
-                Control(Blue).Value = _BLUE32(ThisBackColor)
-                Text(BlueValue) = LTRIM$(STR$(Control(Blue).Value))
-            END IF
-    END SELECT
+            If ThisBackColor = 0 Then ThisBackColor = PreviewControls(PreviewFormID).BackColor
+            If ThisBackColor = 0 Then ThisBackColor = __UI_DefaultColor(__UI_Type_Form, 2)
+        Case 1, 3, 5
+            If __UI_Focus <> Red And __UI_Focus <> RedValue Then
+                Control(Red).Value = _Red32(ThisColor)
+                Text(RedValue) = LTrim$(Str$(Control(Red).Value))
+            End If
+            If __UI_Focus <> Green And __UI_Focus <> GreenValue Then
+                Control(Green).Value = _Green32(ThisColor)
+                Text(GreenValue) = LTrim$(Str$(Control(Green).Value))
+            End If
+            If __UI_Focus <> Blue And __UI_Focus <> BlueValue Then
+                Control(Blue).Value = _Blue32(ThisColor)
+                Text(BlueValue) = LTrim$(Str$(Control(Blue).Value))
+            End If
+        Case 2, 4
+            If __UI_Focus <> Red And __UI_Focus <> RedValue Then
+                Control(Red).Value = _Red32(ThisBackColor)
+                Text(RedValue) = LTrim$(Str$(Control(Red).Value))
+            End If
+            If __UI_Focus <> Green And __UI_Focus <> GreenValue Then
+                Control(Green).Value = _Green32(ThisBackColor)
+                Text(GreenValue) = LTrim$(Str$(Control(Green).Value))
+            End If
+            If __UI_Focus <> Blue And __UI_Focus <> BlueValue Then
+                Control(Blue).Value = _Blue32(ThisBackColor)
+                Text(BlueValue) = LTrim$(Str$(Control(Blue).Value))
+            End If
+    End Select
 
-    IF Control(ColorPreview).HelperCanvas = 0 THEN
-        Control(ColorPreview).HelperCanvas = _NEWIMAGE(Control(ColorPreview).Width, Control(ColorPreview).Height, 32)
-    END IF
+    If Control(ColorPreview).HelperCanvas = 0 Then
+        Control(ColorPreview).HelperCanvas = _NewImage(Control(ColorPreview).Width, Control(ColorPreview).Height, 32)
+    End If
 
-    STATIC PrevPreviewForeColor AS _UNSIGNED LONG, PrevPreviewBackColor AS _UNSIGNED LONG
-    STATIC PrevColorPropertiesListValue AS _BYTE
-    IF PrevPreviewForeColor <> ThisColor OR PrevPreviewBackColor <> ThisBackColor OR PrevColorPropertiesListValue <> Control(ColorPropertiesList).Value THEN
+    Static PrevPreviewForeColor As _Unsigned Long, PrevPreviewBackColor As _Unsigned Long
+    Static PrevColorPropertiesListValue As _Byte
+    If PrevPreviewForeColor <> ThisColor Or PrevPreviewBackColor <> ThisBackColor Or PrevColorPropertiesListValue <> Control(ColorPropertiesList).Value Then
         PrevPreviewForeColor = ThisColor
         PrevPreviewBackColor = ThisBackColor
         PrevColorPropertiesListValue = Control(ColorPropertiesList).Value
         UpdateColorPreview Control(ColorPropertiesList).Value, ThisColor, ThisBackColor
-    END IF
-END SUB
+    End If
+End Sub
 
-SUB __UI_BeforeUnload
-    DIM Answer AS _BYTE
-    IF Edited THEN
-        $IF WIN THEN
+Sub __UI_BeforeUnload
+    Dim Answer As _Byte
+    If Edited Then
+        $If WIN Then
             Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNoCancel + MsgBox_Question)
-        $ELSE
-            Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNo + MsgBox_Question)
-        $END IF
-        IF Answer = MsgBox_Cancel THEN
+        $Else
+                Answer = MessageBox("Save the current form before leaving?", "", MsgBox_YesNo + MsgBox_Question)
+        $End If
+        If Answer = MsgBox_Cancel Then
             __UI_UnloadSignal = False
-        ELSEIF Answer = MsgBox_Yes THEN
-            IF ThisFileName$ = "" THEN
+        ElseIf Answer = MsgBox_Yes Then
+            If ThisFileName$ = "" Then
                 ThisFileName$ = "untitled"
-            END IF
+            End If
             SaveForm False, False
-        END IF
-    END IF
+        End If
+    End If
     SaveSettings
-END SUB
+End Sub
 
-SUB SaveSettings
-    DIM value$
+Sub SaveSettings
+    Dim value$
 
-    IF _DIREXISTS("InForm") = 0 THEN EXIT SUB
+    If _DirExists("InForm") = 0 Then Exit Sub
 
-    IF PreviewAttached THEN value$ = "True" ELSE value$ = "False"
+    If PreviewAttached Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Keep preview window attached", value$
 
-    IF AutoNameControls THEN value$ = "True" ELSE value$ = "False"
+    If AutoNameControls Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Auto-name controls", value$
 
-    IF __UI_SnapLines THEN value$ = "True" ELSE value$ = "False"
+    If __UI_SnapLines Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Snap to edges", value$
 
-    IF __UI_ShowPositionAndSize THEN value$ = "True" ELSE value$ = "False"
+    If __UI_ShowPositionAndSize Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", value$
 
-    IF __UI_ShowInvisibleControls THEN value$ = "True" ELSE value$ = "False"
+    If __UI_ShowInvisibleControls Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", value$
 
-    IF CheckUpdates THEN value$ = "True" ELSE value$ = "False"
+    If CheckUpdates Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
 
-    IF CheckDevUpdates THEN value$ = "True" ELSE value$ = "False"
+    If CheckDevUpdates Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", value$
 
-    IF ShowFontList THEN value$ = "True" ELSE value$ = "False"
+    If ShowFontList Then value$ = "True" Else value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", value$
 
-    $IF WIN THEN
-    $ELSE
-        IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Swap mouse buttons", value$
-    $END IF
-END SUB
+    $If WIN Then
+    $Else
+            IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
+            WriteSetting "InForm/InForm.ini", "InForm Settings", "Swap mouse buttons", value$
+    $End If
+End Sub
 
-SUB __UI_BeforeInit
+Sub __UI_BeforeInit
     __UI_KeepScreenHidden = True
     __UI_EditorMode = True
-END SUB
+End Sub
 
-SUB __UI_FormResized
-END SUB
+Sub __UI_FormResized
+End Sub
 
-SUB Handshake
+Sub Handshake
     'Handshake: each module sends the other their PID:
 
-    DIM b$, i AS INTEGER
+    Dim b$, i As Integer
 
     Stream$ = "" 'clear buffer
 
     b$ = "EDITORPID>" + MKL$(__UI_GetPID) + "<END>"
     Send Client, b$
 
-    $IF WIN THEN
-        CONST TIMEOUT = 10
-    $ELSE
-        CONST TIMEOUT = 120
-    $END IF
+    $If WIN Then
+        Const TIMEOUT = 10
+    $Else
+            CONST TIMEOUT = 120
+    $End If
 
-    DIM start!, incomingData$, thisData$
-    start! = TIMER
-    DO
+    Dim start!, incomingData$, thisData$
+    start! = Timer
+    Do
         incomingData$ = ""
-        GET #Client, , incomingData$
+        Get #Client, , incomingData$
         Stream$ = Stream$ + incomingData$
-        IF INSTR(Stream$, "<END>") THEN
-            thisData$ = LEFT$(Stream$, INSTR(Stream$, "<END>") - 1)
-            Stream$ = MID$(Stream$, LEN(thisData$) + 6)
-            IF LEFT$(thisData$, 11) = "PREVIEWPID>" THEN
-                UiPreviewPID = CVL(MID$(thisData$, 12))
-            END IF
-            EXIT DO
-        END IF
-    LOOP UNTIL TIMER - start! > TIMEOUT
+        If InStr(Stream$, "<END>") Then
+            thisData$ = Left$(Stream$, InStr(Stream$, "<END>") - 1)
+            Stream$ = Mid$(Stream$, Len(thisData$) + 6)
+            If Left$(thisData$, 11) = "PREVIEWPID>" Then
+                UiPreviewPID = CVL(Mid$(thisData$, 12))
+            End If
+            Exit Do
+        End If
+    Loop Until Timer - start! > TIMEOUT
 
-    IF UiPreviewPID = 0 THEN
+    If UiPreviewPID = 0 Then
         i = MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", MsgBox_OkOnly + MsgBox_Critical)
-        SYSTEM
-    END IF
-END SUB
+        System
+    End If
+End Sub
 
-SUB __UI_OnLoad
-    DIM i AS LONG, b$
-    DIM prevDest AS LONG
+Sub __UI_OnLoad
+    Dim i As Long, b$
+    Dim prevDest As Long
 
     b$ = "Starting..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
     'Load splash image:
-    DIM tempIcon AS LONG
-    tempIcon = _LOADIMAGE("./InForm/resources/Application-icon-128.png", 32)
+    Dim tempIcon As Long
+    tempIcon = _LoadImage("./InForm/resources/Application-icon-128.png", 32)
 
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
     b$ = "Opening communication port (click 'unblock' if your Operating System asks)..."
-    GOSUB ShowMessage
-    DIM HostAttempts AS INTEGER
-    DO
+    GoSub ShowMessage
+    Dim HostAttempts As Integer
+    Do
         HostAttempts = HostAttempts + 1
-        InstanceHost = _OPENHOST("TCP/IP:60680") '60680 = #ED08, as the functionality was implemented in Beta 8 of the EDitor ;-)
-    LOOP UNTIL InstanceHost <> 0 OR HostAttempts > 1000
+        InstanceHost = _OpenHost("TCP/IP:60680") '60680 = #ED08, as the functionality was implemented in Beta 8 of the EDitor ;-)
+    Loop Until InstanceHost <> 0 Or HostAttempts > 1000
 
-    IF InstanceHost = 0 THEN
+    If InstanceHost = 0 Then
         'There is probably another instance of InForm Designer running.
         '(i) attempt to communicate and pass parameters and
         '(ii) bring it to the front.
 
         HostAttempts = 0
-        DO
+        Do
             HostAttempts = HostAttempts + 1
-            Host = _OPENCLIENT("TCP/IP:60680:localhost")
-        LOOP UNTIL Host <> 0 OR HostAttempts > 1000
+            Host = _OpenClient("TCP/IP:60680:localhost")
+        Loop Until Host <> 0 Or HostAttempts > 1000
 
-        IF Host THEN
-            b$ = "NEWINSTANCE>" + COMMAND$ + "<END>"
+        If Host Then
+            b$ = "NEWINSTANCE>" + Command$ + "<END>"
             Send Host, b$
-            _DELAY 1
-            CLOSE Host
-        END IF
-        SYSTEM
-    END IF
+            _Delay 1
+            Close Host
+        End If
+        System
+    End If
 
-    _SCREENSHOW
-    _ICON
+    _ScreenShow
+    _Icon
 
-    RANDOMIZE TIMER
+    Randomize Timer
     HostAttempts = 0
-    DO
+    Do
         HostAttempts = HostAttempts + 1
-        HostPort = LTRIM$(STR$(INT(RND * 5000 + 60000)))
-        Host = _OPENHOST("TCP/IP:" + HostPort)
-    LOOP UNTIL Host <> 0 OR HostAttempts > 1000
+        HostPort = LTrim$(Str$(Int(Rnd * 5000 + 60000)))
+        Host = _OpenHost("TCP/IP:" + HostPort)
+    Loop Until Host <> 0 Or HostAttempts > 1000
 
-    IF Host = 0 THEN
-        DIM Answer AS _BYTE
+    If Host = 0 Then
+        Dim Answer As _Byte
         Answer = MessageBox("Unable to open communication port.", "", MsgBox_OkOnly + MsgBox_Critical)
-        SYSTEM
-    END IF
+        System
+    End If
 
     PreviewAttached = True
     AutoNameControls = True
@@ -2880,112 +2880,86 @@ SUB __UI_OnLoad
     i = RegisterKeyCombo("ctrl+y", EditMenuRedo)
     i = RegisterKeyCombo("f1", HelpMenuHelp)
 
-    DIM FileToOpen$, FreeFileNum AS INTEGER
+    Dim FileToOpen$, FreeFileNum As Integer
 
     b$ = "Reading settings..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
-    IF _DIREXISTS("InForm") = 0 THEN MKDIR "InForm"
+    If _DirExists("InForm") = 0 Then MkDir "InForm"
 
-    DIM value$
+    Dim value$
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Keep preview window attached")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         PreviewAttached = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Keep preview window attached", "True"
         PreviewAttached = True
-    END IF
+    End If
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Auto-name controls")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         AutoNameControls = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Auto-name controls", "True"
         AutoNameControls = True
-    END IF
+    End If
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Snap to edges")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         __UI_SnapLines = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Snap to edges", "True"
         __UI_SnapLines = True
-    END IF
+    End If
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show position and size")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         __UI_ShowPositionAndSize = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", "True"
         __UI_ShowPositionAndSize = True
-    END IF
+    End If
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show invisible controls")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         __UI_ShowInvisibleControls = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", "True"
         __UI_ShowInvisibleControls = True
-    END IF
+    End If
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Check for updates")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         CheckUpdates = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", "True"
         CheckUpdates = True
-    END IF
+    End If
     CheckUpdatesNow = CheckUpdates
-    IF CheckUpdatesNow THEN CheckUpdateStartUpTrigger = True
+    If CheckUpdatesNow Then CheckUpdateStartUpTrigger = True
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Receive development updates")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         CheckDevUpdates = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", "False"
         CheckDevUpdates = False
-    END IF
+    End If
 
     value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show font list")
-    IF LEN(value$) THEN
+    If Len(value$) Then
         ShowFontList = (value$ = "True")
-    ELSE
+    Else
         WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", "True"
         ShowFontList = True
-    END IF
+    End If
 
-    DIM TriggerUpdaterRecompile AS _BYTE
-    TriggerUpdaterRecompile = False
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
-    IF value$ = "True" THEN
-        TriggerUpdaterRecompile = True
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
-    ELSE
-        $IF WIN THEN
-            IF _FILEEXISTS("InForm/updater/InFormUpdater.exe") = False THEN
-                TriggerUpdaterRecompile = True
-            END IF
-        $ELSE
-            IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
-            TriggerUpdaterRecompile = True
-            END IF
-        $END IF
-    END IF
-
-    IF TriggerUpdaterRecompile THEN
-        $IF WIN THEN
-            SHELL _HIDE _DONTWAIT "qb64.exe -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater.exe"
-        $ELSE
-            SHELL _HIDE _DONTWAIT "./qb64 -x InForm/updater/InFormUpdater.bas -o InForm/updater/InFormUpdater"
-        $END IF
-    END IF
-
-    $IF WIN THEN
-    $ELSE
-        value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Swap mouse buttons")
-        __UI_MouseButtonsSwap = (value$ = "True")
-        Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
-    $END IF
+    $If WIN Then
+    $Else
+            value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Swap mouse buttons")
+            __UI_MouseButtonsSwap = (value$ = "True")
+            Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
+    $End If
 
     Control(ViewMenuPreviewDetach).Value = PreviewAttached
     Control(OptionsMenuAutoName).Value = AutoNameControls
@@ -2995,143 +2969,141 @@ SUB __UI_OnLoad
     Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
     Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
 
-    IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
+    If _FileExists("InForm/UiEditorPreview.frmbin") Then Kill "InForm/UiEditorPreview.frmbin"
 
     b$ = "Parsing command line..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
-    IF _FILEEXISTS(COMMAND$) THEN
-        SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
-            CASE ".bas"
+    If _FileExists(Command$) Then
+        Select Case LCase$(Right$(Command$, 4))
+            Case ".bas"
                 'Does this .bas $include a .frm?
-                FreeFileNum = FREEFILE
-                DIM uB$
-                OPEN COMMAND$ FOR BINARY AS #FreeFileNum
-                b$ = SPACE$(LOF(FreeFileNum))
-                GET #FreeFileNum, 1, b$
-                SEEK #FreeFileNum, 1
-                IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                FreeFileNum = FreeFile
+                Dim uB$
+                Open Command$ For Binary As #FreeFileNum
+                b$ = Space$(LOF(FreeFileNum))
+                Get #FreeFileNum, 1, b$
+                Seek #FreeFileNum, 1
+                If InStr(b$, Chr$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 Then
                     LoadedWithGifExtension = True
-                END IF
-                DO
-                    IF EOF(FreeFileNum) THEN EXIT DO
-                    LINE INPUT #FreeFileNum, b$
-                    b$ = LTRIM$(RTRIM$(b$))
-                    uB$ = UCASE$(b$)
+                End If
+                Do
+                    If EOF(FreeFileNum) Then Exit Do
+                    Line Input #FreeFileNum, b$
+                    b$ = LTrim$(RTrim$(b$))
+                    uB$ = UCase$(b$)
                     IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
                     INSTR(uB$, "$INCLUDE") > 0 THEN
-                        DIM FirstMark AS INTEGER, SecondMark AS INTEGER
-                        FirstMark = INSTR(INSTR(uB$, "$INCLUDE") + 8, uB$, "'")
-                        IF FirstMark > 0 THEN
-                            SecondMark = INSTR(FirstMark + 1, uB$, "'")
-                            IF SecondMark > 0 THEN
-                                uB$ = MID$(uB$, FirstMark + 1, SecondMark - FirstMark - 1)
-                                IF RIGHT$(uB$, 4) = ".FRM" THEN
-                                    FileToOpen$ = MID$(b$, FirstMark + 1, SecondMark - FirstMark - 1)
+                        Dim FirstMark As Integer, SecondMark As Integer
+                        FirstMark = InStr(InStr(uB$, "$INCLUDE") + 8, uB$, "'")
+                        If FirstMark > 0 Then
+                            SecondMark = InStr(FirstMark + 1, uB$, "'")
+                            If SecondMark > 0 Then
+                                uB$ = Mid$(uB$, FirstMark + 1, SecondMark - FirstMark - 1)
+                                If Right$(uB$, 4) = ".FRM" Then
+                                    FileToOpen$ = Mid$(b$, FirstMark + 1, SecondMark - FirstMark - 1)
 
-                                    IF INSTR(COMMAND$, "/") > 0 OR INSTR(COMMAND$, "\") > 0 THEN
-                                        FOR i = LEN(COMMAND$) TO 1 STEP -1
-                                            IF ASC(COMMAND$, i) = 92 OR ASC(COMMAND$, i) = 47 THEN
-                                                FileToOpen$ = LEFT$(COMMAND$, i - 1) + PathSep$ + FileToOpen$
-                                                EXIT FOR
-                                            END IF
-                                        NEXT
-                                    END IF
+                                    If InStr(Command$, "/") > 0 Or InStr(Command$, "\") > 0 Then
+                                        For i = Len(Command$) To 1 Step -1
+                                            If Asc(Command$, i) = 92 Or Asc(Command$, i) = 47 Then
+                                                FileToOpen$ = Left$(Command$, i - 1) + PathSep$ + FileToOpen$
+                                                Exit For
+                                            End If
+                                        Next
+                                    End If
 
-                                    EXIT DO
-                                END IF
-                            END IF
-                        END IF
-                    END IF
-                LOOP
-                CLOSE #FreeFileNum
-            CASE ELSE
-                IF LCASE$(RIGHT$(COMMAND$, 7)) = ".frmbin" OR LCASE$(RIGHT$(COMMAND$, 4)) = ".frm" THEN
-                    FileToOpen$ = COMMAND$
-                    IF _FILEEXISTS(LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas") THEN
-                        FreeFileNum = FREEFILE
-                        OPEN LEFT$(FileToOpen$, LEN(FileToOpen$) - 4) + ".bas" FOR BINARY AS #FreeFileNum
-                        b$ = SPACE$(LOF(FreeFileNum))
-                        GET #FreeFileNum, 1, b$
-                        CLOSE #FreeFileNum
-                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                                    Exit Do
+                                End If
+                            End If
+                        End If
+                    End If
+                Loop
+                Close #FreeFileNum
+            Case Else
+                If LCase$(Right$(Command$, 7)) = ".frmbin" Or LCase$(Right$(Command$, 4)) = ".frm" Then
+                    FileToOpen$ = Command$
+                    If _FileExists(Left$(FileToOpen$, Len(FileToOpen$) - 4) + ".bas") Then
+                        FreeFileNum = FreeFile
+                        Open Left$(FileToOpen$, Len(FileToOpen$) - 4) + ".bas" For Binary As #FreeFileNum
+                        b$ = Space$(LOF(FreeFileNum))
+                        Get #FreeFileNum, 1, b$
+                        Close #FreeFileNum
+                        If InStr(b$, Chr$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 Then
                             LoadedWithGifExtension = True
-                        END IF
-                    END IF
-                END IF
-        END SELECT
+                        End If
+                    End If
+                End If
+        End Select
 
-        IF LEN(FileToOpen$) > 0 THEN
-            IF INSTR(FileToOpen$, "/") > 0 OR INSTR(FileToOpen$, "\") > 0 THEN
-                FOR i = LEN(FileToOpen$) TO 1 STEP -1
-                    IF ASC(FileToOpen$, i) = 92 OR ASC(FileToOpen$, i) = 47 THEN
-                        CurrentPath$ = LEFT$(FileToOpen$, i - 1)
-                        ThisFileName$ = MID$(FileToOpen$, i + 1)
-                        EXIT FOR
-                    END IF
-                NEXT
-            ELSE
+        If Len(FileToOpen$) > 0 Then
+            If InStr(FileToOpen$, "/") > 0 Or InStr(FileToOpen$, "\") > 0 Then
+                For i = Len(FileToOpen$) To 1 Step -1
+                    If Asc(FileToOpen$, i) = 92 Or Asc(FileToOpen$, i) = 47 Then
+                        CurrentPath$ = Left$(FileToOpen$, i - 1)
+                        ThisFileName$ = Mid$(FileToOpen$, i + 1)
+                        Exit For
+                    End If
+                Next
+            Else
                 ThisFileName$ = FileToOpen$
-            END IF
-            FreeFileNum = FREEFILE
-            OPEN FileToOpen$ FOR BINARY AS #FreeFileNum
-            b$ = SPACE$(LOF(FreeFileNum))
-            GET #FreeFileNum, 1, b$
-            CLOSE #FreeFileNum
+            End If
+            FreeFileNum = FreeFile
+            Open FileToOpen$ For Binary As #FreeFileNum
+            b$ = Space$(LOF(FreeFileNum))
+            Get #FreeFileNum, 1, b$
+            Close #FreeFileNum
 
-            OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FreeFileNum
-            PUT #FreeFileNum, 1, b$
-            CLOSE #FreeFileNum
-            IF LoadedWithGifExtension = False THEN
+            Open "InForm/UiEditorPreview.frmbin" For Binary As #FreeFileNum
+            Put #FreeFileNum, 1, b$
+            Close #FreeFileNum
+            If LoadedWithGifExtension = False Then
                 LoadedWithGifExtension = 1 'Query whether this file contains the gif extension
                 Control(AddGifExtensionToggle).Value = False
-            ELSE
+            Else
                 Control(AddGifExtensionToggle).Value = True
-            END IF
+            End If
             AddToRecentList FileToOpen$
-        END IF
-    END IF
+        End If
+    End If
 
     b$ = "Checking Preview component..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
-    $IF WIN THEN
-        IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN
-            IF _FILEEXISTS("InForm/UiEditorPreview.bas") = 0 THEN
-                GOTO UiEditorPreviewNotFound
-            ELSE
+    Dim As _Byte JustRecompiledPreview
+    $If WIN Then
+        If _FileExists("InForm/UiEditorPreview.exe") = 0 Then
+            If _FileExists("InForm/UiEditorPreview.bas") = 0 Then
+                GoTo UiEditorPreviewNotFound
+            Else
                 b$ = "Compiling Preview component..."
-                GOSUB ShowMessage
-                SHELL _HIDE "qb64.exe -x .\InForm\UiEditorPreview.bas -o .\InForm\UiEditorPreview.exe"
-                IF _FILEEXISTS("InForm/UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
+                GoSub ShowMessage
+                Shell _Hide "qb64.exe -s:exewithsource=true -x .\InForm\UiEditorPreview.bas"
+                If _FileExists("InForm/UiEditorPreview.exe") = 0 Then GoTo UiEditorPreviewNotFound
+                JustRecompiledPreview = True
+            End If
+        End If
+
+    $Else
+            IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
+            IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
+            GOTO UiEditorPreviewNotFound
+            ELSE
+            b$ = "Compiling Preview component..."
+            GOSUB ShowMessage
+            SHELL _HIDE "./qb64 -s:exewithsource=true -x ./InForm/UiEditorPreview.bas"
+            IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
+            JustRecompiledPreview = True
             END IF
-        END IF
-        b$ = "Launching Preview component..."
-        GOSUB ShowMessage
-        SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
-    $ELSE
-        IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
-        IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
-        GOTO UiEditorPreviewNotFound
-        ELSE
-        b$ = "Compiling Preview component..."
-        GOSUB ShowMessage
-        SHELL _HIDE "./qb64 -x ./InForm/UiEditorPreview.bas -o ./InForm/UiEditorPreview"
-        IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
-        END IF
-        END IF
-        b$ = "Launching Preview component..."
-        GOSUB ShowMessage
-        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
-    $END IF
+            END IF
+    $End If
 
     b$ = "Reading directory..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
     'Fill "open dialog" listboxes:
     '-------------------------------------------------
-    DIM TotalFiles%
-    IF CurrentPath$ = "" THEN CurrentPath$ = _STARTDIR$
+    Dim TotalFiles%
+    If CurrentPath$ = "" Then CurrentPath$ = _StartDir$
     Text(FileList) = idezfilelist$(CurrentPath$, 0, 1, TotalFiles%)
     Control(FileList).Max = TotalFiles%
     Control(FileList).LastVisibleItem = 0 'Reset it so it's recalculated
@@ -3145,7 +3117,7 @@ SUB __UI_OnLoad
 
     'Load font list
     b$ = "Loading font list..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
     LoadFontList
 
     'Assign InputBox IDs:
@@ -3175,8 +3147,8 @@ SUB __UI_OnLoad
     i = i + 1: InputBox(i).ID = ContextMenuControlsList: InputBox(i).LabelID = ContextMenuLB: InputBox(i).DataType = DT_Text
     i = i + 1: InputBox(i).ID = KeyboardComboBT: InputBox(i).LabelID = KeyboardComboLB: InputBox(i).DataType = DT_Text
 
-    REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
-    REDIM InputBoxText(1 TO i) AS STRING
+    ReDim _Preserve InputBox(1 To i) As newInputBox
+    ReDim InputBoxText(1 To i) As String
 
     'Assign Toggles IDs:
     i = 0
@@ -3196,9 +3168,9 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = HideTicks
     i = i + 1: Toggles(i) = AutoPlayGif
     i = i + 1: Toggles(i) = AddGifExtensionToggle
-    REDIM _PRESERVE Toggles(1 TO i) AS LONG
+    ReDim _Preserve Toggles(1 To i) As Long
 
-    ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
+    ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + Chr$(10) + "The first font that can be found/loaded is used."
     ToolTip(FontList) = "System fonts may not be available in all computers. To specify a local font file, right-click 'Font' to the left of this list and disable 'Show system fonts list'."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
     ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
@@ -3206,66 +3178,66 @@ SUB __UI_OnLoad
     StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
     Control(StatusBar).BackColor = StatusBarBackColor
 
-    FOR i = 1 TO 9
-        RecentMenuItem(i) = __UI_GetID("FileMenuRecent" + LTRIM$(STR$(i)))
-    NEXT
+    For i = 1 To 9
+        RecentMenuItem(i) = __UI_GetID("FileMenuRecent" + LTrim$(Str$(i)))
+    Next
 
     b$ = "Loading images..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
 
     'Load toolbox images:
-    DIM CommControls AS LONG
+    Dim CommControls As Long
     CommControls = LoadEditorImage("commoncontrols.bmp")
     __UI_ClearColor CommControls, 0, 0
 
     i = 0
-    Control(AddButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddLabel).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddLabel).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddTextBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTextBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddCheckBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddCheckBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddRadioButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddRadioButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddListBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddListBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddDropdownList).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddDropdownList).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddTrackBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTrackBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddProgressBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddProgressBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddPictureBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddPictureBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddFrame).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddFrame).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
+    Control(AddButton).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddButton).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddLabel).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddLabel).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddTextBox).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddTextBox).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddCheckBox).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddCheckBox).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddRadioButton).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddRadioButton).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddListBox).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddListBox).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddDropdownList).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddDropdownList).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddTrackBar).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddTrackBar).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddProgressBar).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddProgressBar).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddPictureBox).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddPictureBox).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
+    Control(AddFrame).HelperCanvas = _NewImage(16, 16, 32)
+    i = i + 1: _PutImage (0, 0), CommControls, Control(AddFrame).HelperCanvas, (0, i * 16 - 16)-Step(15, 15)
 
     'Draw ToggleSwitch icon
-    prevDest = _DEST
-    Control(AddToggleSwitch).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddToggleSwitch).HelperCanvas
-    LINE (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
-    LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
-    LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
+    prevDest = _Dest
+    Control(AddToggleSwitch).HelperCanvas = _NewImage(16, 16, 32)
+    _Dest Control(AddToggleSwitch).HelperCanvas
+    Line (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
+    Line (2, 4)-(13, 11), _RGB32(170, 170, 170), B
+    Line (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
 
     'Draw AddNumericBox icon
-    Control(AddNumericBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddNumericBox).HelperCanvas
-    _FONT 8
-    LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
-    LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
-    COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
+    Control(AddNumericBox).HelperCanvas = _NewImage(16, 16, 32)
+    _Dest Control(AddNumericBox).HelperCanvas
+    _Font 8
+    Line (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
+    Line (1, 3)-(15, 13), _RGB32(132, 165, 189), B
+    Color _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
     __UI_PrintString 5, 3, "#"
 
     'Draw PasteListBT icon
-    Control(PasteListBT).HelperCanvas = _NEWIMAGE(17, 17, 32)
-    _DEST Control(PasteListBT).HelperCanvas
-    _FONT 16
-    FOR i = 4 TO 15 STEP 4
-        LINE (3, i)-STEP(_WIDTH - 6, 1), _RGB32(122, 122, 122), BF
-    NEXT
+    Control(PasteListBT).HelperCanvas = _NewImage(17, 17, 32)
+    _Dest Control(PasteListBT).HelperCanvas
+    _Font 16
+    For i = 4 To 15 Step 4
+        Line (3, i)-Step(_Width - 6, 1), _RGB32(122, 122, 122), BF
+    Next
 
     'Import Align menu icons from InForm.ui
     Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas
@@ -3275,158 +3247,194 @@ SUB __UI_OnLoad
     Control(AlignMenuAlignCentersV).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).HelperCanvas
     Control(AlignMenuAlignCentersH).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).HelperCanvas
 
-    _DEST prevDest
+    _Dest prevDest
 
     Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
 
-    _FREEIMAGE CommControls
+    _FreeImage CommControls
+
+    b$ = "Launching Preview component..."
+    GoSub ShowMessage
+    $If WIN Then
+        Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
+    $Else
+            SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+    $End If
 
     b$ = "Connecting to preview component..."
-    GOSUB ShowMessage
-    DO
-        Client = _OPENCONNECTION(Host)
-        IF Client THEN EXIT DO
-        IF _EXIT THEN SYSTEM 'Can't force user to wait...
-        _DISPLAY
-        _LIMIT 15
-    LOOP
+    GoSub ShowMessage
+    Do
+        Client = _OpenConnection(Host)
+        If Client Then Exit Do
+        If _Exit Then System 'Can't force user to wait...
+        _Display
+        _Limit 15
+    Loop
 
     b$ = "Connected! Handshaking..."
-    GOSUB ShowMessage
+    GoSub ShowMessage
     Handshake
 
-    IF CheckUpdates THEN b$ = "Checking for updates..." ELSE b$ = "InForm Designer"
-    GOSUB ShowMessage
+    Dim TriggerUpdaterRecompile As _Byte
+    TriggerUpdaterRecompile = False
+    If JustRecompiledPreview = False Then
+        value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
+        If value$ = "True" Then
+            TriggerUpdaterRecompile = True
+            WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
+        Else
+            $If WIN Then
+                If _FileExists("InForm/updater/InFormUpdater.exe") = False Then
+                    TriggerUpdaterRecompile = True
+                End If
+            $Else
+                    IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
+                    TriggerUpdaterRecompile = True
+                    END IF
+            $End If
+        End If
+
+        If TriggerUpdaterRecompile Then
+            $If WIN Then
+                Shell _Hide _DontWait "qb64.exe -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+            $Else
+                    SHELL _HIDE _DONTWAIT "./qb64 -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+            $End If
+        End If
+
+        If CheckUpdates Then b$ = "Checking for updates..." Else b$ = "InForm Designer"
+        GoSub ShowMessage
+    End If
 
     __UI_RefreshMenuBar
     __UI_ForceRedraw = True
-    _FREEIMAGE tempIcon
+    _FreeImage tempIcon
 
-    _ACCEPTFILEDROP
+    _AcceptFileDrop
 
-    EXIT SUB
+    Exit Sub
     UiEditorPreviewNotFound:
     i = MessageBox("UiEditorPreview component not found or failed to load.", "UiEditor", MsgBox_OkOnly + MsgBox_Critical)
-    SYSTEM
+    System
 
     ShowMessage:
-    DIM PreserveDestMessage AS LONG
-    PreserveDestMessage = _DEST
-    _DEST 0
-    _FONT Control(__UI_FormID).Font
-    IF tempIcon < -1 THEN
-        CLS , _RGB32(255, 255, 255)
-        _PUTIMAGE (_WIDTH / 2 - _WIDTH(tempIcon) / 2, _HEIGHT / 2 - _HEIGHT(tempIcon) / 2), tempIcon
-        COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
-        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT / 2 + _HEIGHT(tempIcon) / 2 + _FONTHEIGHT, b$
-        _DISPLAY
-    ELSE
-        CLS , __UI_DefaultColor(__UI_Type_Form, 2)
-        COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
-        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, b$
-    END IF
-    _DISPLAY
-    _DEST PreserveDestMessage
-    RETURN
-END SUB
+    Dim PreserveDestMessage As Long
+    PreserveDestMessage = _Dest
+    _Dest 0
+    _Font Control(__UI_FormID).Font
+    If tempIcon < -1 Then
+        Cls , _RGB32(255, 255, 255)
+        _PutImage (_Width / 2 - _Width(tempIcon) / 2, _Height / 2 - _Height(tempIcon) / 2), tempIcon
+        Color __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
+        __UI_PrintString _Width \ 2 - _PrintWidth(b$) \ 2, _Height / 2 + _Height(tempIcon) / 2 + _FontHeight, b$
+        _Display
+    Else
+        Cls , __UI_DefaultColor(__UI_Type_Form, 2)
+        Color __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
+        __UI_PrintString _Width \ 2 - _PrintWidth(b$) \ 2, _Height \ 2 - _FontHeight \ 2, b$
+    End If
+    _Display
+    _Dest PreserveDestMessage
+    Return
+End Sub
 
-SUB __UI_KeyPress (id AS LONG)
-    DIM i AS LONG
-    LastKeyPress = TIMER
-    SELECT EVERYCASE id
-        CASE RedValue, GreenValue, BlueValue
-            DIM TempID AS LONG
-            IF __UI_KeyHit = 18432 THEN
-                IF VAL(Text(id)) < 255 THEN
-                    Text(id) = LTRIM$(STR$(VAL(Text(id)) + 1))
-                END IF
+Sub __UI_KeyPress (id As Long)
+    Dim i As Long
+    LastKeyPress = Timer
+    Select EveryCase id
+        Case RedValue, GreenValue, BlueValue
+            Dim TempID As Long
+            If __UI_KeyHit = 18432 Then
+                If Val(Text(id)) < 255 Then
+                    Text(id) = LTrim$(Str$(Val(Text(id)) + 1))
+                End If
                 SelectPropertyFully id
-                TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
-                Control(TempID).Value = VAL(Text(id))
+                TempID = __UI_GetID(Left$(UCase$(RTrim$(Control(id).Name)), Len(UCase$(RTrim$(Control(id).Name))) - 5))
+                Control(TempID).Value = Val(Text(id))
                 SendNewRGB
-            ELSEIF __UI_KeyHit = 20480 THEN
-                IF VAL(Text(id)) > 0 THEN
-                    Text(id) = LTRIM$(STR$(VAL(Text(id)) - 1))
-                END IF
+            ElseIf __UI_KeyHit = 20480 Then
+                If Val(Text(id)) > 0 Then
+                    Text(id) = LTrim$(Str$(Val(Text(id)) - 1))
+                End If
                 SelectPropertyFully id
-                TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
-                Control(TempID).Value = VAL(Text(id))
+                TempID = __UI_GetID(Left$(UCase$(RTrim$(Control(id).Name)), Len(UCase$(RTrim$(Control(id).Name))) - 5))
+                Control(TempID).Value = Val(Text(id))
                 SendNewRGB
-            ELSEIF __UI_KeyHit = 13 THEN
-                TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
-                Control(TempID).Value = VAL(Text(id))
+            ElseIf __UI_KeyHit = 13 Then
+                TempID = __UI_GetID(Left$(UCase$(RTrim$(Control(id).Name)), Len(UCase$(RTrim$(Control(id).Name))) - 5))
+                Control(TempID).Value = Val(Text(id))
                 SendNewRGB
                 SelectPropertyFully id
-            END IF
+            End If
             Caption(StatusBar) = "Color changed."
-        CASE FileNameTextBox
-            IF OpenDialogOpen THEN
-                IF __UI_KeyHit = 27 THEN
+        Case FileNameTextBox
+            If OpenDialogOpen Then
+                If __UI_KeyHit = 27 Then
                     __UI_KeyHit = 0
                     __UI_Click CancelBT
-                ELSEIF __UI_KeyHit = 13 THEN
+                ElseIf __UI_KeyHit = 13 Then
                     __UI_KeyHit = 0
-                    IF Caption(OpenFrame) = "Open" THEN
+                    If Caption(OpenFrame) = "Open" Then
                         __UI_Click OpenBT
-                    ELSE
+                    Else
                         __UI_Click SaveBT
-                    END IF
-                ELSEIF __UI_KeyHit = 18432 OR __UI_KeyHit = 20480 THEN
-                    IF Control(FileList).Max > 0 THEN __UI_Focus = FileList
-                ELSE
-                    IF Control(FileList).Max > 0 THEN
-                        SELECT CASE __UI_KeyHit
-                            CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
-                                IF Caption(OpenFrame) = "Open" THEN
+                    End If
+                ElseIf __UI_KeyHit = 18432 Or __UI_KeyHit = 20480 Then
+                    If Control(FileList).Max > 0 Then __UI_Focus = FileList
+                Else
+                    If Control(FileList).Max > 0 Then
+                        Select Case __UI_KeyHit
+                            Case 48 To 57, 65 To 90, 97 To 122 'Alphanumeric
+                                If Caption(OpenFrame) = "Open" Then
                                     __UI_ListBoxSearchItem Control(FileList)
-                                END IF
-                        END SELECT
-                    END IF
-                END IF
-            END IF
-        CASE FileList, DirList, CancelBT, OpenBT, SaveBT, ShowOnlyFrmbinFilesCB, SaveFrmOnlyCB
-            IF __UI_KeyHit = 27 THEN
+                                End If
+                        End Select
+                    End If
+                End If
+            End If
+        Case FileList, DirList, CancelBT, OpenBT, SaveBT, ShowOnlyFrmbinFilesCB, SaveFrmOnlyCB
+            If __UI_KeyHit = 27 Then
                 __UI_Click CancelBT
-            END IF
-        CASE FileList
-            IF __UI_KeyHit = 13 THEN
+            End If
+        Case FileList
+            If __UI_KeyHit = 13 Then
                 __UI_KeyHit = 0
-                IF Caption(OpenFrame) = "Open" THEN
+                If Caption(OpenFrame) = "Open" Then
                     __UI_Click OpenBT
-                ELSE
+                Else
                     __UI_Click SaveBT
-                END IF
-            END IF
-        CASE ControlList, UpBT, DownBT, CloseZOrderingBT
-            IF __UI_KeyHit = 27 THEN
+                End If
+            End If
+        Case ControlList, UpBT, DownBT, CloseZOrderingBT
+            If __UI_KeyHit = 27 Then
                 __UI_Click CloseZOrderingBT
-            END IF
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
-            IF __UI_KeyHit = 13 THEN
+            End If
+        Case NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
+            If __UI_KeyHit = 13 Then
                 'Send the preview the new property value
                 ConfirmEdits id
-            ELSEIF __UI_KeyHit = 32 THEN
-                IF id = NameTB THEN
+            ElseIf __UI_KeyHit = 32 Then
+                If id = NameTB Then
                     __UI_KeyHit = 0
                     Caption(StatusBar) = "Control names cannot contain spaces"
-                    BlinkStatusBar = TIMER
-                ELSE
+                    BlinkStatusBar = Timer
+                Else
                     InputBox(GetInputBoxFromID(id)).Sent = False
                     Send Client, "LOCKCONTROLS><END>"
-                END IF
-            ELSEIF __UI_KeyHit = 27 THEN
+                End If
+            ElseIf __UI_KeyHit = 27 Then
                 RevertEdit = True
                 Caption(StatusBar) = "Previous property value restored."
-            ELSE
+            Else
                 InputBox(GetInputBoxFromID(id)).Sent = False
                 Send Client, "LOCKCONTROLS><END>"
-            END IF
-        CASE KeyboardComboBT
-            DIM Combo$
-            IF __UI_CtrlIsDown THEN Combo$ = "Ctrl+"
-            IF __UI_ShiftIsDown THEN Combo$ = Combo$ + "Shift+"
-            SELECT CASE __UI_KeyHit
-                CASE 27
+            End If
+        Case KeyboardComboBT
+            Dim Combo$
+            If __UI_CtrlIsDown Then Combo$ = "Ctrl+"
+            If __UI_ShiftIsDown Then Combo$ = Combo$ + "Shift+"
+            Select Case __UI_KeyHit
+                Case 27
                     __UI_Focus = 0
                     __UI_BypassKeyCombos = False
                     ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
@@ -3434,163 +3442,163 @@ SUB __UI_KeyPress (id AS LONG)
                     __UI_ForceRedraw = True
                 CASE __UI_FKey(1), __UI_FKey(2), __UI_FKey(3), __UI_FKey(4), __UI_FKey(5), __UI_FKey(6), _
                      __UI_FKey(7), __UI_FKey(8), __UI_FKey(9), __UI_FKey(10), __UI_FKey(11), __UI_FKey(12)
-                    FOR i = 1 TO 12
-                        IF __UI_FKey(i) = __UI_KeyHit THEN
-                            Combo$ = Combo$ + "F" + LTRIM$(STR$(i))
-                            SendData MKI$(LEN(Combo$)) + Combo$, 43
+                    For i = 1 To 12
+                        If __UI_FKey(i) = __UI_KeyHit Then
+                            Combo$ = Combo$ + "F" + LTrim$(Str$(i))
+                            SendData MKI$(Len(Combo$)) + Combo$, 43
                             __UI_Focus = 0
                             __UI_BypassKeyCombos = False
                             ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
                             __UI_ForceRedraw = True
-                            EXIT FOR
-                        END IF
-                    NEXT
-                CASE 65 TO 90, 97 TO 122 'Alphanumeric
-                    Combo$ = Combo$ + UCASE$(CHR$(__UI_KeyHit))
-                    IF INSTR(Combo$, "Ctrl+") > 0 THEN
-                        SendData MKI$(LEN(Combo$)) + Combo$, 43
+                            Exit For
+                        End If
+                    Next
+                Case 65 To 90, 97 To 122 'Alphanumeric
+                    Combo$ = Combo$ + UCase$(Chr$(__UI_KeyHit))
+                    If InStr(Combo$, "Ctrl+") > 0 Then
+                        SendData MKI$(Len(Combo$)) + Combo$, 43
                         __UI_Focus = 0
                         __UI_BypassKeyCombos = False
                         ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
                         __UI_ForceRedraw = True
-                    END IF
-            END SELECT
-    END SELECT
-END SUB
+                    End If
+            End Select
+    End Select
+End Sub
 
-SUB ConfirmEdits (id AS LONG)
-    DIM b$, TempValue AS LONG
+Sub ConfirmEdits (id As Long)
+    Dim b$, TempValue As Long
 
     IF InputBoxText(GetInputBoxFromID(id)) <> Text(id) AND _
        InputBox(GetInputBoxFromID(id)).Sent = False THEN
-        SELECT CASE InputBox(GetInputBoxFromID(id)).DataType
-            CASE DT_Text
-                b$ = MKL$(LEN(Text(id))) + Text(id)
-            CASE DT_Integer
-                b$ = MKI$(VAL(Text(id)))
-            CASE DT_Float
-                b$ = _MK$(_FLOAT, VAL(Text(id)))
-        END SELECT
+        Select Case InputBox(GetInputBoxFromID(id)).DataType
+            Case DT_Text
+                b$ = MKL$(Len(Text(id))) + Text(id)
+            Case DT_Integer
+                b$ = MKI$(Val(Text(id)))
+            Case DT_Float
+                b$ = _MK$(_Float, Val(Text(id)))
+        End Select
         TempValue = GetPropertySignal(id)
         SendData b$, TempValue
         PropertySent = True
         Text(id) = RestoreCHR(Text(id))
         SelectPropertyFully id
         InputBoxText(GetInputBoxFromID(id)) = Text(id)
-        InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
+        InputBox(GetInputBoxFromID(id)).LastEdited = Timer
         InputBox(GetInputBoxFromID(id)).Sent = True
         Caption(StatusBar) = "Ready."
-    END IF
-END SUB
+    End If
+End Sub
 
-FUNCTION GetPropertySignal& (id AS LONG)
-    DIM i AS LONG
-    FOR i = 1 TO UBOUND(InputBox)
-        IF InputBox(i).ID = id THEN GetPropertySignal& = InputBox(i).Signal: EXIT FUNCTION
-    NEXT
-END FUNCTION
+Function GetPropertySignal& (id As Long)
+    Dim i As Long
+    For i = 1 To UBound(InputBox)
+        If InputBox(i).ID = id Then GetPropertySignal& = InputBox(i).Signal: Exit Function
+    Next
+End Function
 
-FUNCTION GetInputBoxFromID& (id AS LONG)
-    DIM i AS LONG
-    FOR i = 1 TO UBOUND(InputBox)
-        IF InputBox(i).ID = id THEN GetInputBoxFromID& = i: EXIT FUNCTION
-    NEXT
-END FUNCTION
+Function GetInputBoxFromID& (id As Long)
+    Dim i As Long
+    For i = 1 To UBound(InputBox)
+        If InputBox(i).ID = id Then GetInputBoxFromID& = i: Exit Function
+    Next
+End Function
 
-SUB __UI_TextChanged (id AS LONG)
-    SELECT CASE id
-        CASE RedValue, GreenValue, BlueValue
-            DIM TempID AS LONG
-            TempID = __UI_GetID(LEFT$(UCASE$(RTRIM$(Control(id).Name)), LEN(UCASE$(RTRIM$(Control(id).Name))) - 5))
-            Control(TempID).Value = VAL(Text(id))
-        CASE FileNameTextBox
+Sub __UI_TextChanged (id As Long)
+    Select Case id
+        Case RedValue, GreenValue, BlueValue
+            Dim TempID As Long
+            TempID = __UI_GetID(Left$(UCase$(RTrim$(Control(id).Name)), Len(UCase$(RTrim$(Control(id).Name))) - 5))
+            Control(TempID).Value = Val(Text(id))
+        Case FileNameTextBox
             PreselectFile
-    END SELECT
-END SUB
+    End Select
+End Sub
 
-SUB __UI_ValueChanged (id AS LONG)
-    IF __UI_StateHasChanged THEN EXIT SUB 'skip values changed programmatically
+Sub __UI_ValueChanged (id As Long)
+    If __UI_StateHasChanged Then Exit Sub 'skip values changed programmatically
 
-    DIM b$, i AS LONG
-    SELECT EVERYCASE id
-        CASE AlignOptions
-            IF __UI_Focus <> id THEN EXIT SUB
+    Dim b$, i As Long
+    Select EveryCase id
+        Case AlignOptions
+            If __UI_Focus <> id Then Exit Sub
             b$ = MKI$(Control(AlignOptions).Value - 1)
             SendData b$, 22
             PropertySent = True
-        CASE VAlignOptions
-            IF __UI_Focus <> id THEN EXIT SUB
+        Case VAlignOptions
+            If __UI_Focus <> id Then Exit Sub
             b$ = MKI$(Control(VAlignOptions).Value - 1)
             SendData b$, 32
             PropertySent = True
-        CASE BulletOptions
-            IF __UI_Focus <> id THEN EXIT SUB
+        Case BulletOptions
+            If __UI_Focus <> id Then Exit Sub
             b$ = MKI$(Control(BulletOptions).Value - 1)
             SendData b$, 37
             PropertySent = True
-        CASE BooleanOptions
-            b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
+        Case BooleanOptions
+            b$ = _MK$(_Float, -(Control(BooleanOptions).Value - 1))
             SendData b$, GetPropertySignal(BooleanOptions)
             PropertySent = True
-        CASE ContextMenuControlsList
+        Case ContextMenuControlsList
             i = Control(ContextMenuControlsList).Value
-            IF i > 1 THEN
+            If i > 1 Then
                 b$ = GetItem(ContextMenuControlsList, i)
-                b$ = MKI$(LEN(b$)) + b$
-            ELSE
+                b$ = MKI$(Len(b$)) + b$
+            Else
                 b$ = MKI$(0)
-            END IF
+            End If
             SendData b$, 41
-        CASE FontList, FontSizeList
+        Case FontList, FontSizeList
             b$ = FontFile(Control(FontList).Value) + "," + GetItem$(FontSizeList, Control(FontSizeList).Value)
-            b$ = MKL$(LEN(b$)) + b$
+            b$ = MKL$(Len(b$)) + b$
             SendData b$, 8
             PropertySent = True
-        CASE Red
-            Text(RedValue) = LTRIM$(STR$(Control(Red).Value))
-        CASE Green
-            Text(GreenValue) = LTRIM$(STR$(Control(Green).Value))
-        CASE Blue
-            Text(BlueValue) = LTRIM$(STR$(Control(Blue).Value))
-        CASE ControlList
+        Case Red
+            Text(RedValue) = LTrim$(Str$(Control(Red).Value))
+        Case Green
+            Text(GreenValue) = LTrim$(Str$(Control(Green).Value))
+        Case Blue
+            Text(BlueValue) = LTrim$(Str$(Control(Blue).Value))
+        Case ControlList
             Control(UpBT).Disabled = False
             Control(DownBT).Disabled = False
-            IF Control(ControlList).Value = 1 THEN
+            If Control(ControlList).Value = 1 Then
                 Control(UpBT).Disabled = True
-            ELSEIF Control(ControlList).Value = 0 THEN
+            ElseIf Control(ControlList).Value = 0 Then
                 Control(UpBT).Disabled = True
                 Control(DownBT).Disabled = True
-            ELSEIF Control(ControlList).Value = Control(ControlList).Max THEN
+            ElseIf Control(ControlList).Value = Control(ControlList).Max Then
                 Control(DownBT).Disabled = True
-            END IF
-            IF Control(ControlList).Value > 0 THEN
+            End If
+            If Control(ControlList).Value > 0 Then
                 b$ = MKL$(zOrderIDs(Control(ControlList).Value))
-            ELSE
+            Else
                 b$ = MKL$(0)
-            END IF
+            End If
             SendData b$, 213
-        CASE FileList
+        Case FileList
             Text(FileNameTextBox) = GetItem(FileList, Control(FileList).Value)
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
+        Case NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
             Send Client, "LOCKCONTROLS><END>"
-    END SELECT
-END SUB
+    End Select
+End Sub
 
-SUB PreselectFile
-    DIM b$
+Sub PreselectFile
+    Dim b$
     b$ = GetItem(FileList, Control(FileList).Value)
-    IF LCASE$(Text(FileNameTextBox)) = LCASE$(LEFT$(b$, LEN(Text(FileNameTextBox)))) THEN
-        Text(FileNameTextBox) = Text(FileNameTextBox) + MID$(b$, LEN(Text(FileNameTextBox)) + 1)
+    If LCase$(Text(FileNameTextBox)) = LCase$(Left$(b$, Len(Text(FileNameTextBox)))) Then
+        Text(FileNameTextBox) = Text(FileNameTextBox) + Mid$(b$, Len(Text(FileNameTextBox)) + 1)
         Control(FileNameTextBox).TextIsSelected = True
-        Control(FileNameTextBox).SelectionStart = LEN(Text(FileNameTextBox))
-    END IF
-END SUB
+        Control(FileNameTextBox).SelectionStart = Len(Text(FileNameTextBox))
+    End If
+End Sub
 
-FUNCTION EditorImageData$ (FileName$)
-    DIM A$
+Function EditorImageData$ (FileName$)
+    Dim A$
 
-    SELECT CASE LCASE$(FileName$)
-        CASE "disk.png"
+    Select Case LCase$(FileName$)
+        Case "disk.png"
             A$ = MKI$(16) + MKI$(16)
             A$ = A$ + "0000005D@1AA15TB=MdA[`hQ7>c[ZZj<7:HOcPgL^=COc=g<0FGMbd7Nc=cH"
             A$ = A$ + "NiE<:A4A]<eC<eDEBmdE9UDB>0000`0GHIUb854?oWiUFj_iUCno4;\`o;Nh"
@@ -3615,7 +3623,7 @@ FUNCTION EditorImageData$ (FileName$)
             A$ = A$ + "0000OcUFImoS;^ho:NhQo_8R8noR8Rho;R8Ro_8R8noR8Rho;R8Ro_8R8n_R"
             A$ = A$ + "7NholXC>iW@14X=9P02@<`03FLa5Gh4000`?000001000040000@00000100"
             A$ = A$ + "0040000@000001000040000@0000o@000<D5B81B0000%%70"
-        CASE "commoncontrols.bmp"
+        Case "commoncontrols.bmp"
             A$ = MKI$(16) + MKI$(176)
             A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_emfjo<ZE:"
             A$ = A$ + "o?G>0loN21`ocU30o_W@0loLi0`ok940o?G>0loN21`ocU30o_W@0loN:1aoFKL[oK?0fo_cmFjoD^F>ok]c6ooooooooooooooo"
@@ -3768,103 +3776,103 @@ FUNCTION EditorImageData$ (FileName$)
             A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo?WLBiof3PmoGJYDn?WLBioUb9Uoc9WDnOYUBioLb9UoG:WDn?WLBioUF:U"
             A$ = A$ + "oc9WDnOYLBioLb9UoGJYDn?WLBiof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
             A$ = A$ + "fo_m0Hoof3PmoK?0%fo?"
-    END SELECT
+    End Select
 
     EditorImageData$ = A$
-END FUNCTION
+End Function
 
 '---------------------------------------------------------------------------------
-FUNCTION LoadEditorImage& (FileName$)
-    DIM MemoryBlock AS _MEM, TempImage AS LONG
-    DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
+Function LoadEditorImage& (FileName$)
+    Dim MemoryBlock As _MEM, TempImage As Long
+    Dim NewWidth As Integer, NewHeight As Integer, A$, BASFILE$
 
     A$ = EditorImageData$(FileName$)
-    IF LEN(A$) = 0 THEN EXIT FUNCTION
+    If Len(A$) = 0 Then Exit Function
 
-    NewWidth = CVI(LEFT$(A$, 2))
-    NewHeight = CVI(MID$(A$, 3, 2))
-    A$ = MID$(A$, 5)
+    NewWidth = CVI(Left$(A$, 2))
+    NewHeight = CVI(Mid$(A$, 3, 2))
+    A$ = Mid$(A$, 5)
 
     BASFILE$ = Unpack$(A$)
 
-    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
-    MemoryBlock = _MEMIMAGE(TempImage)
+    TempImage = _NewImage(NewWidth, NewHeight, 32)
+    MemoryBlock = _MemImage(TempImage)
 
-    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
-    _MEMFREE MemoryBlock
+    __UI_MemCopy MemoryBlock.OFFSET, _Offset(BASFILE$), Len(BASFILE$)
+    _MemFree MemoryBlock
 
     LoadEditorImage& = TempImage
-END FUNCTION
+End Function
 
-FUNCTION Unpack$ (PackedData$)
+Function Unpack$ (PackedData$)
     'Adapted from Dav's BIN2BAS
     'http://www.qbasicnews.com/dav/qb64.php
-    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$
+    Dim A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$
 
     A$ = PackedData$
 
-    FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
-        IF INSTR(1, B$, "%") THEN
-            FOR C% = 1 TO LEN(B$): F$ = MID$(B$, C%, 1)
-                IF F$ <> "%" THEN C$ = C$ + F$
-            NEXT: B$ = C$
-            END IF: FOR t% = LEN(B$) TO 1 STEP -1
-            B& = B& * 64 + ASC(MID$(B$, t%)) - 48
-            NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
-            X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
-    NEXT: btemp$ = btemp$ + X$: NEXT
+    For i& = 1 To Len(A$) Step 4: B$ = Mid$(A$, i&, 4)
+        If InStr(1, B$, "%") Then
+            For C% = 1 To Len(B$): F$ = Mid$(B$, C%, 1)
+                If F$ <> "%" Then C$ = C$ + F$
+            Next: B$ = C$
+            End If: For t% = Len(B$) To 1 Step -1
+            B& = B& * 64 + Asc(Mid$(B$, t%)) - 48
+            Next: X$ = "": For t% = 1 To Len(B$) - 1
+            X$ = X$ + Chr$(B& And 255): B& = B& \ 256
+    Next: btemp$ = btemp$ + X$: Next
 
     Unpack$ = btemp$
-END FUNCTION
+End Function
 
-FUNCTION ReadSequential$ (Txt$, Bytes%)
-    ReadSequential$ = LEFT$(Txt$, Bytes%)
-    Txt$ = MID$(Txt$, Bytes% + 1)
-END FUNCTION
+Function ReadSequential$ (Txt$, Bytes%)
+    ReadSequential$ = Left$(Txt$, Bytes%)
+    Txt$ = Mid$(Txt$, Bytes% + 1)
+End Function
 
-SUB LoadPreview
-    DIM b$, __UI_EOF AS _BYTE, Answer AS _BYTE
-    DIM NewType AS INTEGER, NewWidth AS INTEGER, NewHeight AS INTEGER
-    DIM NewLeft AS INTEGER, NewTop AS INTEGER, NewName AS STRING
-    DIM NewParentID AS STRING, FloatValue AS _FLOAT, Dummy AS LONG
-    DIM FormData$
-    STATIC PrevTotalGifLoaded AS LONG
+Sub LoadPreview
+    Dim b$, __UI_EOF As _Byte, Answer As _Byte
+    Dim NewType As Integer, NewWidth As Integer, NewHeight As Integer
+    Dim NewLeft As Integer, NewTop As Integer, NewName As String
+    Dim NewParentID As String, FloatValue As _Float, Dummy As Long
+    Dim FormData$
+    Static PrevTotalGifLoaded As Long
 
-    TIMER(__UI_EventsTimer) OFF
-    TIMER(__UI_RefreshTimer) OFF
+    Timer(__UI_EventsTimer) Off
+    Timer(__UI_RefreshTimer) Off
 
     FormData$ = LastFormData$
 
     AddGifExtension = False
     TotalGifLoaded = 0
-    IF LoadedWithGifExtension = 1 THEN PrevTotalGifLoaded = 0
+    If LoadedWithGifExtension = 1 Then PrevTotalGifLoaded = 0
 
     b$ = ReadSequential$(FormData$, 4)
 
-    REDIM PreviewCaptions(0 TO CVL(b$)) AS STRING
-    REDIM PreviewTexts(0 TO CVL(b$)) AS STRING
-    REDIM PreviewMasks(0 TO CVL(b$)) AS STRING
-    REDIM PreviewTips(0 TO CVL(b$)) AS STRING
-    REDIM PreviewFonts(0 TO CVL(b$)) AS STRING
-    REDIM PreviewActualFonts(0 TO CVL(b$)) AS STRING
-    REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
-    REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
-    REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
-    REDIM PreviewBoundTo(0 TO CVL(b$)) AS STRING
-    REDIM PreviewBoundProperty(0 TO CVL(b$)) AS STRING
-    REDIM PreviewKeyCombos(0 TO CVL(b$)) AS STRING
-    REDIM PreviewAnimatedGif(0 TO CVL(b$)) AS _BYTE
-    REDIM PreviewAutoPlayGif(0 TO CVL(b$)) AS _BYTE
+    ReDim PreviewCaptions(0 To CVL(b$)) As String
+    ReDim PreviewTexts(0 To CVL(b$)) As String
+    ReDim PreviewMasks(0 To CVL(b$)) As String
+    ReDim PreviewTips(0 To CVL(b$)) As String
+    ReDim PreviewFonts(0 To CVL(b$)) As String
+    ReDim PreviewActualFonts(0 To CVL(b$)) As String
+    ReDim PreviewControls(0 To CVL(b$)) As __UI_ControlTYPE
+    ReDim PreviewParentIDS(0 To CVL(b$)) As String
+    ReDim PreviewContextMenu(0 To CVL(b$)) As String
+    ReDim PreviewBoundTo(0 To CVL(b$)) As String
+    ReDim PreviewBoundProperty(0 To CVL(b$)) As String
+    ReDim PreviewKeyCombos(0 To CVL(b$)) As String
+    ReDim PreviewAnimatedGif(0 To CVL(b$)) As _Byte
+    ReDim PreviewAutoPlayGif(0 To CVL(b$)) As _Byte
 
     ResetList ContextMenuControlsList
     AddItem ContextMenuControlsList, "(none)"
 
     b$ = ReadSequential$(FormData$, 2)
-    IF CVI(b$) <> -1 THEN GOTO LoadError
-    DO
+    If CVI(b$) <> -1 Then GoTo LoadError
+    Do
         b$ = ReadSequential$(FormData$, 4)
         Dummy = CVL(b$)
-        IF Dummy <= 0 OR Dummy > UBOUND(PreviewControls) THEN EXIT DO 'Corrupted exchange file.
+        If Dummy <= 0 Or Dummy > UBound(PreviewControls) Then Exit Do 'Corrupted exchange file.
         b$ = ReadSequential$(FormData$, 2)
         NewType = CVI(b$)
         b$ = ReadSequential$(FormData$, 2)
@@ -3879,18 +3887,18 @@ SUB LoadPreview
         b$ = ReadSequential$(FormData$, 2)
         NewTop = CVI(b$)
         b$ = ReadSequential$(FormData$, 2)
-        IF CVI(b$) > 0 THEN
+        If CVI(b$) > 0 Then
             NewParentID = ReadSequential$(FormData$, CVI(b$))
-        ELSE
+        Else
             NewParentID = ""
-        END IF
+        End If
 
-        IF NewType = __UI_Type_ContextMenu THEN
+        If NewType = __UI_Type_ContextMenu Then
             AddItem ContextMenuControlsList, NewName
-        END IF
+        End If
 
         PreviewControls(Dummy).ID = Dummy
-        PreviewParentIDS(Dummy) = RTRIM$(NewParentID)
+        PreviewParentIDS(Dummy) = RTrim$(NewParentID)
         PreviewControls(Dummy).Type = NewType
         PreviewControls(Dummy).Name = NewName
         PreviewControls(Dummy).Width = NewWidth
@@ -3898,1242 +3906,1242 @@ SUB LoadPreview
         PreviewControls(Dummy).Left = NewLeft
         PreviewControls(Dummy).Top = NewTop
 
-        DO 'read properties
+        Do 'read properties
             b$ = ReadSequential$(FormData$, 2)
-            SELECT CASE CVI(b$)
-                CASE -2 'Caption
+            Select Case CVI(b$)
+                Case -2 'Caption
                     b$ = ReadSequential$(FormData$, 4)
                     b$ = ReadSequential$(FormData$, CVL(b$))
                     PreviewCaptions(Dummy) = b$
-                CASE -3 'Text
+                Case -3 'Text
                     b$ = ReadSequential$(FormData$, 4)
                     b$ = ReadSequential$(FormData$, CVL(b$))
                     PreviewTexts(Dummy) = b$
-                CASE -4 'Stretch
+                Case -4 'Stretch
                     PreviewControls(Dummy).Stretch = True
-                CASE -5 'Font
-                    DIM FontSetup$
-                    DIM NewFontSize$
+                Case -5 'Font
+                    Dim FontSetup$
+                    Dim NewFontSize$
                     b$ = ReadSequential$(FormData$, 2)
                     FontSetup$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewFonts(Dummy) = FontSetup$
-                    NewFontSize$ = MID$(FontSetup$, INSTR(FontSetup$, ","))
+                    NewFontSize$ = Mid$(FontSetup$, InStr(FontSetup$, ","))
                     b$ = ReadSequential$(FormData$, 2)
                     FontSetup$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewActualFonts(Dummy) = FontSetup$ + NewFontSize$
-                CASE -6 'ForeColor
+                Case -6 'ForeColor
                     b$ = ReadSequential$(FormData$, 4)
-                    PreviewControls(Dummy).ForeColor = _CV(_UNSIGNED LONG, b$)
-                CASE -7 'BackColor
+                    PreviewControls(Dummy).ForeColor = _CV(_Unsigned Long, b$)
+                Case -7 'BackColor
                     b$ = ReadSequential$(FormData$, 4)
-                    PreviewControls(Dummy).BackColor = _CV(_UNSIGNED LONG, b$)
-                CASE -8 'SelectedForeColor
+                    PreviewControls(Dummy).BackColor = _CV(_Unsigned Long, b$)
+                Case -8 'SelectedForeColor
                     b$ = ReadSequential$(FormData$, 4)
-                    PreviewControls(Dummy).SelectedForeColor = _CV(_UNSIGNED LONG, b$)
-                CASE -9 'SelectedBackColor
+                    PreviewControls(Dummy).SelectedForeColor = _CV(_Unsigned Long, b$)
+                Case -9 'SelectedBackColor
                     b$ = ReadSequential$(FormData$, 4)
-                    PreviewControls(Dummy).SelectedBackColor = _CV(_UNSIGNED LONG, b$)
-                CASE -10 'BorderColor
+                    PreviewControls(Dummy).SelectedBackColor = _CV(_Unsigned Long, b$)
+                Case -10 'BorderColor
                     b$ = ReadSequential$(FormData$, 4)
-                    PreviewControls(Dummy).BorderColor = _CV(_UNSIGNED LONG, b$)
-                CASE -11
+                    PreviewControls(Dummy).BorderColor = _CV(_Unsigned Long, b$)
+                Case -11
                     PreviewControls(Dummy).BackStyle = __UI_Transparent
-                CASE -12
+                Case -12
                     PreviewControls(Dummy).HasBorder = True
-                CASE -13
+                Case -13
                     b$ = ReadSequential$(FormData$, 1)
-                    PreviewControls(Dummy).Align = _CV(_BYTE, b$)
-                CASE -14
-                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
-                    PreviewControls(Dummy).Value = _CV(_FLOAT, b$)
-                CASE -15
-                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
-                    PreviewControls(Dummy).Min = _CV(_FLOAT, b$)
-                CASE -16
-                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
-                    PreviewControls(Dummy).Max = _CV(_FLOAT, b$)
-                CASE -19
+                    PreviewControls(Dummy).Align = _CV(_Byte, b$)
+                Case -14
+                    b$ = ReadSequential$(FormData$, Len(FloatValue))
+                    PreviewControls(Dummy).Value = _CV(_Float, b$)
+                Case -15
+                    b$ = ReadSequential$(FormData$, Len(FloatValue))
+                    PreviewControls(Dummy).Min = _CV(_Float, b$)
+                Case -16
+                    b$ = ReadSequential$(FormData$, Len(FloatValue))
+                    PreviewControls(Dummy).Max = _CV(_Float, b$)
+                Case -19
                     PreviewControls(Dummy).ShowPercentage = True
-                CASE -20
+                Case -20
                     PreviewControls(Dummy).CanHaveFocus = True
-                CASE -21
+                Case -21
                     PreviewControls(Dummy).Disabled = True
-                CASE -22
+                Case -22
                     PreviewControls(Dummy).Hidden = True
-                CASE -23
+                Case -23
                     PreviewControls(Dummy).CenteredWindow = True
-                CASE -24 'Tips
+                Case -24 'Tips
                     b$ = ReadSequential$(FormData$, 4)
                     b$ = ReadSequential$(FormData$, CVL(b$))
                     PreviewTips(Dummy) = b$
-                CASE -25 'ContextMenu
+                Case -25 'ContextMenu
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewContextMenu(Dummy) = b$
-                CASE -26
-                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
-                    PreviewControls(Dummy).Interval = _CV(_FLOAT, b$)
-                CASE -27
+                Case -26
+                    b$ = ReadSequential$(FormData$, Len(FloatValue))
+                    PreviewControls(Dummy).Interval = _CV(_Float, b$)
+                Case -27
                     PreviewControls(Dummy).WordWrap = True
-                CASE -29
+                Case -29
                     PreviewControls(Dummy).CanResize = True
-                CASE -31
+                Case -31
                     b$ = ReadSequential$(FormData$, 2)
                     PreviewControls(Dummy).Padding = CVI(b$)
-                CASE -32
+                Case -32
                     b$ = ReadSequential$(FormData$, 1)
-                    PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
-                CASE -33
+                    PreviewControls(Dummy).VAlign = _CV(_Byte, b$)
+                Case -33
                     PreviewControls(Dummy).PasswordField = True
-                CASE -34
+                Case -34
                     b$ = ReadSequential$(FormData$, 4)
                     PreviewControls(Dummy).Encoding = CVL(b$)
-                CASE -35
+                Case -35
                     PreviewDefaultButtonID = Dummy
-                CASE -36 'Mask
+                Case -36 'Mask
                     b$ = ReadSequential$(FormData$, 4)
                     b$ = ReadSequential$(FormData$, CVL(b$))
                     PreviewMasks(Dummy) = b$
-                CASE -37
-                    b$ = ReadSequential$(FormData$, LEN(FloatValue))
-                    PreviewControls(Dummy).MinInterval = _CV(_FLOAT, b$)
-                CASE -38
+                Case -37
+                    b$ = ReadSequential$(FormData$, Len(FloatValue))
+                    PreviewControls(Dummy).MinInterval = _CV(_Float, b$)
+                Case -38
                     PreviewControls(Dummy).NumericOnly = True
-                CASE -39
+                Case -39
                     PreviewControls(Dummy).NumericOnly = __UI_NumericWithBounds
-                CASE -40
+                Case -40
                     PreviewControls(Dummy).BulletStyle = __UI_Bullet
-                CASE -41
+                Case -41
                     PreviewControls(Dummy).AutoScroll = True
-                CASE -42
+                Case -42
                     PreviewControls(Dummy).AutoSize = True
-                CASE -43
+                Case -43
                     b$ = ReadSequential$(FormData$, 2)
                     PreviewControls(Dummy).BorderSize = CVI(b$)
-                CASE -44 'Key combo
+                Case -44 'Key combo
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewKeyCombos(Dummy) = b$
-                CASE -45 'Animated Gif
+                Case -45 'Animated Gif
                     PreviewAnimatedGif(Dummy) = True
                     TotalGifLoaded = TotalGifLoaded + 1
                     AddGifExtension = True
-                    IF LoadedWithGifExtension = 1 THEN
+                    If LoadedWithGifExtension = 1 Then
                         LoadedWithGifExtension = True
                         Control(AddGifExtensionToggle).Value = True
-                    END IF
-                CASE -46 'Auto-play Gif
+                    End If
+                Case -46 'Auto-play Gif
                     PreviewAutoPlayGif(Dummy) = True
-                CASE -47 'ControlIsSelected
+                Case -47 'ControlIsSelected
                     PreviewControls(Dummy).ControlIsSelected = True
-                CASE -48 'BoundTo
+                Case -48 'BoundTo
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewBoundTo(Dummy) = b$
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
                     PreviewBoundProperty(Dummy) = b$
-                CASE -1 'new control
-                    EXIT DO
-                CASE -1024
+                Case -1 'new control
+                    Exit Do
+                Case -1024
                     __UI_EOF = True
-                    EXIT DO
-                CASE ELSE
-                    EXIT DO
-            END SELECT
-        LOOP
-    LOOP UNTIL __UI_EOF
+                    Exit Do
+                Case Else
+                    Exit Do
+            End Select
+        Loop
+    Loop Until __UI_EOF
     LoadError:
-    TIMER(__UI_EventsTimer) ON
-    TIMER(__UI_RefreshTimer) ON
-    IF LoadedWithGifExtension = 1 THEN LoadedWithGifExtension = False
-    IF PrevTotalGifLoaded <> TotalGifLoaded THEN
-        IF PrevTotalGifLoaded = 0 AND LoadedWithGifExtension = False THEN
+    Timer(__UI_EventsTimer) On
+    Timer(__UI_RefreshTimer) On
+    If LoadedWithGifExtension = 1 Then LoadedWithGifExtension = False
+    If PrevTotalGifLoaded <> TotalGifLoaded Then
+        If PrevTotalGifLoaded = 0 And LoadedWithGifExtension = False Then
             Answer = MessageBox("You loaded an animated GIF file.\nDo you want to include the GIF extension?", "", MsgBox_YesNo + MsgBox_Question)
-            IF Answer = MsgBox_Yes THEN
+            If Answer = MsgBox_Yes Then
                 Control(AddGifExtensionToggle).Value = True
-            ELSE
+            Else
                 b$ = "PAUSEALLGIF>" + "<END>"
                 Send Client, b$
                 Control(AddGifExtensionToggle).Value = False
-            END IF
-        END IF
+            End If
+        End If
         PrevTotalGifLoaded = TotalGifLoaded
-    END IF
-END SUB
+    End If
+End Sub
 
-SUB SendData (b$, Property AS INTEGER)
+Sub SendData (b$, Property As Integer)
     'IF PreviewSelectionRectangle THEN EXIT SUB
     b$ = "PROPERTY>" + MKI$(Property) + b$ + "<END>"
     Send Client, b$
-END SUB
+End Sub
 
-SUB Send (channel AS LONG, b$)
-    totalBytesSent = totalBytesSent + LEN(b$)
-    PUT #channel, , b$
-END SUB
+Sub Send (channel As Long, b$)
+    totalBytesSent = totalBytesSent + Len(b$)
+    Put #channel, , b$
+End Sub
 
-SUB SendSignal (Value AS INTEGER)
-    DIM b$
+Sub SendSignal (Value As Integer)
+    Dim b$
     b$ = "SIGNAL>" + MKI$(Value) + "<END>"
     Send Client, b$
-END SUB
+End Sub
 
-SUB UpdateColorPreview (Attribute AS _BYTE, ForeColor AS _UNSIGNED LONG, BackColor AS _UNSIGNED LONG)
-    _DEST Control(ColorPreview).HelperCanvas
-    _FONT Control(ColorPreview).Font
-    IF Attribute = 5 THEN
-        CLS , BackColor
-        LINE (20, 20)-STEP(_WIDTH - 41, _HEIGHT - 41), ForeColor, B
-        LINE (21, 21)-STEP(_WIDTH - 43, _HEIGHT - 43), ForeColor, B
-        ColorPreviewWord$ = "#" + MID$(HEX$(ForeColor), 3)
-        COLOR ForeColor, BackColor
-        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, ColorPreviewWord$
-    ELSE
-        CLS , BackColor
-        COLOR ForeColor, BackColor
-        SELECT CASE Attribute
-            CASE 1, 3
-                ColorPreviewWord$ = "FG: #" + MID$(HEX$(ForeColor), 3)
-            CASE 2, 4
-                ColorPreviewWord$ = "BG: #" + MID$(HEX$(BackColor), 3)
-        END SELECT
-        __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(ColorPreviewWord$) \ 2, _HEIGHT \ 2 - _FONTHEIGHT \ 2, ColorPreviewWord$
-        ColorPreviewWord$ = MID$(ColorPreviewWord$, 5)
-    END IF
-    _DEST 0
+Sub UpdateColorPreview (Attribute As _Byte, ForeColor As _Unsigned Long, BackColor As _Unsigned Long)
+    _Dest Control(ColorPreview).HelperCanvas
+    _Font Control(ColorPreview).Font
+    If Attribute = 5 Then
+        Cls , BackColor
+        Line (20, 20)-Step(_Width - 41, _Height - 41), ForeColor, B
+        Line (21, 21)-Step(_Width - 43, _Height - 43), ForeColor, B
+        ColorPreviewWord$ = "#" + Mid$(Hex$(ForeColor), 3)
+        Color ForeColor, BackColor
+        __UI_PrintString _Width \ 2 - _PrintWidth(ColorPreviewWord$) \ 2, _Height \ 2 - _FontHeight \ 2, ColorPreviewWord$
+    Else
+        Cls , BackColor
+        Color ForeColor, BackColor
+        Select Case Attribute
+            Case 1, 3
+                ColorPreviewWord$ = "FG: #" + Mid$(Hex$(ForeColor), 3)
+            Case 2, 4
+                ColorPreviewWord$ = "BG: #" + Mid$(Hex$(BackColor), 3)
+        End Select
+        __UI_PrintString _Width \ 2 - _PrintWidth(ColorPreviewWord$) \ 2, _Height \ 2 - _FontHeight \ 2, ColorPreviewWord$
+        ColorPreviewWord$ = Mid$(ColorPreviewWord$, 5)
+    End If
+    _Dest 0
     Control(ColorPreview).Redraw = True 'Force update
-END SUB
+End Sub
 
-SUB QuickColorPreview (ThisColor AS _UNSIGNED LONG)
-    _DEST Control(ColorPreview).HelperCanvas
-    CLS , __UI_DefaultColor(__UI_Type_Form, 2)
-    LINE (0, 0)-STEP(_WIDTH, _HEIGHT / 2), ThisColor, BF
-    LINE (0, _HEIGHT / 2)-STEP(_WIDTH, _HEIGHT / 2), OldColor, BF
-    _DEST 0
+Sub QuickColorPreview (ThisColor As _Unsigned Long)
+    _Dest Control(ColorPreview).HelperCanvas
+    Cls , __UI_DefaultColor(__UI_Type_Form, 2)
+    Line (0, 0)-Step(_Width, _Height / 2), ThisColor, BF
+    Line (0, _Height / 2)-Step(_Width, _Height / 2), OldColor, BF
+    _Dest 0
     Control(ColorPreview).Redraw = True 'Force update
-END SUB
+End Sub
 
-SUB CheckPreview
+Sub CheckPreview
     'Check if the preview window is still alive
-    DIM b$
+    Dim b$
 
-    IF OpenDialogOpen THEN EXIT SUB
+    If OpenDialogOpen Then Exit Sub
 
-    $IF WIN THEN
-        DIM hnd&, b&, c&, ExitCode&
-        IF UiPreviewPID > 0 THEN
+    $If WIN Then
+        Dim hnd&, b&, c&, ExitCode&
+        If UiPreviewPID > 0 Then
             hnd& = OpenProcess(&H400, 0, UiPreviewPID)
             b& = GetExitCodeProcess(hnd&, ExitCode&)
             c& = CloseHandle(hnd&)
-            IF b& = 1 AND ExitCode& = 259 THEN
+            If b& = 1 And ExitCode& = 259 Then
                 'Preview is active.
                 Control(ViewMenuPreview).Disabled = True
-            ELSE
+            Else
                 'Preview was closed.
 
-                TIMER(__UI_EventsTimer) OFF
+                Timer(__UI_EventsTimer) Off
 
                 __UI_WaitMessage = "Reloading preview window..."
                 UiPreviewPID = 0
                 __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
 
-                CLOSE Client
+                Close Client
                 Client = 0
 
                 __UI_UpdateDisplay
 
-                SHELL _DONTWAIT ".\InForm\UiEditorPreview.exe " + HostPort
+                Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
 
-                DO
-                    Client = _OPENCONNECTION(Host)
-                    IF Client THEN EXIT DO
-                    IF _EXIT THEN SYSTEM 'Can't force user to wait...
-                    _DISPLAY
-                    _LIMIT 15
-                LOOP
+                Do
+                    Client = _OpenConnection(Host)
+                    If Client Then Exit Do
+                    If _Exit Then System 'Can't force user to wait...
+                    _Display
+                    _Limit 15
+                Loop
 
                 Handshake
 
-                IF LEN(LastFormData$) THEN
+                If Len(LastFormData$) Then
                     b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
                     Send Client, b$
                     prevScreenX = -1
                     prevScreenY = -1
                     UndoPointer = 0
                     TotalUndoImages = 0
-                END IF
+                End If
 
-                TIMER(__UI_EventsTimer) ON
+                Timer(__UI_EventsTimer) On
+            End If
+        End If
+    $Else
+            IF UiPreviewPID > 0 THEN
+            IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
+            'Preview was closed.
+            TIMER(__UI_EventsTimer) OFF
+            Control(ViewMenuPreview).Disabled = False
+            __UI_WaitMessage = "Reloading preview window..."
+            UiPreviewPID = 0
+            __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
+
+            CLOSE Client
+            Client = 0
+
+            __UI_UpdateDisplay
+
+            SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+
+            DO
+            Client = _OPENCONNECTION(Host)
+            IF Client THEN EXIT DO
+            IF _EXIT THEN SYSTEM 'Can't force user to wait...
+            _DISPLAY
+            _LIMIT 15
+            LOOP
+
+            Handshake
+
+            IF LEN(LastFormData$) THEN
+            b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
+            Send Client, b$
+            prevScreenX = -1
+            prevScreenY = -1
+            UndoPointer = 0
+            TotalUndoImages = 0
             END IF
-        END IF
-    $ELSE
-        IF UiPreviewPID > 0 THEN
-        IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
-        'Preview was closed.
-        TIMER(__UI_EventsTimer) OFF
-        Control(ViewMenuPreview).Disabled = False
-        __UI_WaitMessage = "Reloading preview window..."
-        UiPreviewPID = 0
-        __UI_ProcessInputTimer = 0 'Make the "Please wait" message show up immediataly
 
-        CLOSE Client
-        Client = 0
+            TIMER(__UI_EventsTimer) ON
+            ELSE
+            'Preview is active.
+            Control(ViewMenuPreview).Disabled = True
+            END IF
+            END IF
+    $End If
+End Sub
 
-        __UI_UpdateDisplay
-
-        SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
-
-        DO
-        Client = _OPENCONNECTION(Host)
-        IF Client THEN EXIT DO
-        IF _EXIT THEN SYSTEM 'Can't force user to wait...
-        _DISPLAY
-        _LIMIT 15
-        LOOP
-
-        Handshake
-
-        IF LEN(LastFormData$) THEN
-        b$ = "RESTORECRASH>" + LastFormData$ + "<END>"
-        Send Client, b$
-        prevScreenX = -1
-        prevScreenY = -1
-        UndoPointer = 0
-        TotalUndoImages = 0
-        END IF
-
-        TIMER(__UI_EventsTimer) ON
-        ELSE
-        'Preview is active.
-        Control(ViewMenuPreview).Disabled = True
-        END IF
-        END IF
-    $END IF
-END SUB
-
-SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
-    DIM BaseOutputFileName AS STRING, j AS LONG
-    DIM TextFileNum AS INTEGER, Answer AS _BYTE, b$, i AS LONG
-    DIM a$, FontSetup$, FindSep AS INTEGER, NewFontFile AS STRING
-    DIM Dummy AS LONG, BackupFile$
-    DIM PreserveBackup AS _BYTE, BackupCode$
-    DIM tempThisFileName$
+Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
+    Dim BaseOutputFileName As String, j As Long
+    Dim TextFileNum As Integer, Answer As _Byte, b$, i As Long
+    Dim a$, FontSetup$, FindSep As Integer, NewFontFile As String
+    Dim Dummy As Long, BackupFile$
+    Dim PreserveBackup As _Byte, BackupCode$
+    Dim tempThisFileName$
 
     tempThisFileName$ = ThisFileName$
-    IF UCASE$(RIGHT$(tempThisFileName$, 4)) = ".FRM" OR UCASE$(RIGHT$(tempThisFileName$, 4)) = ".BAS" THEN
-        tempThisFileName$ = LEFT$(tempThisFileName$, LEN(tempThisFileName$) - 4)
-    END IF
+    If UCase$(Right$(tempThisFileName$, 4)) = ".FRM" Or UCase$(Right$(tempThisFileName$, 4)) = ".BAS" Then
+        tempThisFileName$ = Left$(tempThisFileName$, Len(tempThisFileName$) - 4)
+    End If
 
     BaseOutputFileName = CurrentPath$ + PathSep$ + tempThisFileName$
 
-    IF (_FILEEXISTS(BaseOutputFileName + ".bas") AND SaveOnlyFrm = False) AND _FILEEXISTS(BaseOutputFileName + ".frm") THEN
-        b$ = "These files will be overwritten:" + CHR$(10) + "    "
-        b$ = b$ + tempThisFileName$ + ".bas" + CHR$(10) + "    "
-        b$ = b$ + tempThisFileName$ + ".frm" + CHR$(10)
+    If (_FileExists(BaseOutputFileName + ".bas") And SaveOnlyFrm = False) And _FileExists(BaseOutputFileName + ".frm") Then
+        b$ = "These files will be overwritten:" + Chr$(10) + "    "
+        b$ = b$ + tempThisFileName$ + ".bas" + Chr$(10) + "    "
+        b$ = b$ + tempThisFileName$ + ".frm" + Chr$(10)
         b$ = b$ + "Proceed?"
-    ELSEIF (_FILEEXISTS(BaseOutputFileName + ".bas") AND SaveOnlyFrm = False) AND _FILEEXISTS(BaseOutputFileName + ".frm") = 0 THEN
-        b$ = "'" + tempThisFileName$ + ".bas" + "' will be overwritten." + CHR$(10)
+    ElseIf (_FileExists(BaseOutputFileName + ".bas") And SaveOnlyFrm = False) And _FileExists(BaseOutputFileName + ".frm") = 0 Then
+        b$ = "'" + tempThisFileName$ + ".bas" + "' will be overwritten." + Chr$(10)
         b$ = b$ + "Proceed?"
-    ELSEIF _FILEEXISTS(BaseOutputFileName + ".frm") THEN
-        b$ = "'" + tempThisFileName$ + ".frm" + "' will be overwritten." + CHR$(10)
+    ElseIf _FileExists(BaseOutputFileName + ".frm") Then
+        b$ = "'" + tempThisFileName$ + ".frm" + "' will be overwritten." + Chr$(10)
         b$ = b$ + "Proceed?"
-    END IF
+    End If
 
-    IF LEN(b$) > 0 THEN
+    If Len(b$) > 0 Then
         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
-        IF Answer = MsgBox_No THEN EXIT SUB
-    END IF
+        If Answer = MsgBox_No Then Exit Sub
+    End If
 
     AddGifExtension = Control(AddGifExtensionToggle).Value
 
-    IF (AddGifExtension OR Control(AddGifExtensionToggle).Value) AND LoadedWithGifExtension = False AND TotalGifLoaded = 0 THEN
+    If (AddGifExtension Or Control(AddGifExtensionToggle).Value) And LoadedWithGifExtension = False And TotalGifLoaded = 0 Then
         Answer = MessageBox("Are you sure you want to include the GIF extension?\n(no animated GIFs have been added to this form)", "", MsgBox_YesNo + MsgBox_Question)
         AddGifExtension = (Answer = MsgBox_Yes)
-    END IF
+    End If
 
     AddToRecentList BaseOutputFileName + ".frm"
 
     'Backup existing files
-    FOR i = 1 TO 2
-        IF i = 1 THEN
-            IF SaveOnlyFrm THEN
-                _CONTINUE
-            ELSE
+    For i = 1 To 2
+        If i = 1 Then
+            If SaveOnlyFrm Then
+                _Continue
+            Else
                 BackupFile$ = BaseOutputFileName + ".bas"
-            END IF
-        END IF
-        IF i = 2 THEN BackupFile$ = BaseOutputFileName + ".frm"
+            End If
+        End If
+        If i = 2 Then BackupFile$ = BaseOutputFileName + ".frm"
 
-        IF _FILEEXISTS(BackupFile$) THEN
-            TextFileNum = FREEFILE
-            OPEN BackupFile$ FOR BINARY AS #TextFileNum
-            b$ = SPACE$(LOF(TextFileNum))
-            GET #TextFileNum, 1, b$
-            CLOSE #TextFileNum
+        If _FileExists(BackupFile$) Then
+            TextFileNum = FreeFile
+            Open BackupFile$ For Binary As #TextFileNum
+            b$ = Space$(LOF(TextFileNum))
+            Get #TextFileNum, 1, b$
+            Close #TextFileNum
 
-            TextFileNum = FREEFILE
-            OPEN BackupFile$ + "-backup" FOR OUTPUT AS #TextFileNum: CLOSE #TextFileNum
-            OPEN BackupFile$ + "-backup" FOR BINARY AS #TextFileNum
-            PUT #TextFileNum, 1, b$
-            CLOSE #TextFileNum
+            TextFileNum = FreeFile
+            Open BackupFile$ + "-backup" For Output As #TextFileNum: Close #TextFileNum
+            Open BackupFile$ + "-backup" For Binary As #TextFileNum
+            Put #TextFileNum, 1, b$
+            Close #TextFileNum
 
-            IF i = 1 THEN
-                BackupCode$ = Replace$(b$, CHR$(13) + CHR$(10), CHR$(10), 0, 0)
+            If i = 1 Then
+                BackupCode$ = Replace$(b$, Chr$(13) + Chr$(10), Chr$(10), 0, 0)
                 PreserveBackup = True
-            END IF
-        END IF
-    NEXT
+            End If
+        End If
+    Next
 
     '.FRM file
-    TextFileNum = FREEFILE
-    OPEN BaseOutputFileName + ".frm" FOR OUTPUT AS #TextFileNum
-    PRINT #TextFileNum, "': This form was generated by"
-    PRINT #TextFileNum, "': InForm - GUI library for QB64 - "; __UI_Version
-    PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
-    PRINT #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
-    PRINT #TextFileNum, "'-----------------------------------------------------------"
-    PRINT #TextFileNum, "SUB __UI_LoadForm"
-    PRINT #TextFileNum,
-    IF LEN(PreviewTexts(PreviewFormID)) > 0 THEN
-        PRINT #TextFileNum, "    $EXEICON:'" + PreviewTexts(PreviewFormID) + "'"
-    END IF
-    IF PreviewControls(PreviewFormID).CanResize THEN
-        PRINT #TextFileNum, "    $RESIZE:ON"
-    END IF
-    PRINT #TextFileNum, "    DIM __UI_NewID AS LONG, __UI_RegisterResult AS LONG"
-    PRINT #TextFileNum,
+    TextFileNum = FreeFile
+    Open BaseOutputFileName + ".frm" For Output As #TextFileNum
+    Print #TextFileNum, "': This form was generated by"
+    Print #TextFileNum, "': InForm - GUI library for QB64 - "; __UI_Version
+    Print #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
+    Print #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
+    Print #TextFileNum, "'-----------------------------------------------------------"
+    Print #TextFileNum, "SUB __UI_LoadForm"
+    Print #TextFileNum,
+    If Len(PreviewTexts(PreviewFormID)) > 0 Then
+        Print #TextFileNum, "    $EXEICON:'" + PreviewTexts(PreviewFormID) + "'"
+    End If
+    If PreviewControls(PreviewFormID).CanResize Then
+        Print #TextFileNum, "    $RESIZE:ON"
+    End If
+    Print #TextFileNum, "    DIM __UI_NewID AS LONG, __UI_RegisterResult AS LONG"
+    Print #TextFileNum,
 
     'First pass is for the main form and containers (frames and menubars).
     'Second pass is for the rest of controls.
     'Controls named __UI_+anything are ignored, as they are automatically created.
-    DIM ThisPass AS _BYTE, AddContextMenuToForm AS STRING
-    FOR ThisPass = 1 TO 2
-        FOR i = 1 TO UBOUND(PreviewControls)
-            IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_MenuPanel AND PreviewControls(i).Type <> __UI_Type_Font AND LEN(RTRIM$(PreviewControls(i).Name)) > 0 THEN
-                IF UCASE$(LEFT$(PreviewControls(i).Name, 5)) = "__UI_" THEN GOTO EndOfThisPass 'Internal controls
+    Dim ThisPass As _Byte, AddContextMenuToForm As String
+    For ThisPass = 1 To 2
+        For i = 1 To UBound(PreviewControls)
+            If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_MenuPanel And PreviewControls(i).Type <> __UI_Type_Font And Len(RTrim$(PreviewControls(i).Name)) > 0 Then
+                If UCase$(Left$(PreviewControls(i).Name, 5)) = "__UI_" Then GoTo EndOfThisPass 'Internal controls
                 a$ = "    __UI_NewID = __UI_NewControl("
-                SELECT CASE PreviewControls(i).Type
-                    CASE __UI_Type_Form: a$ = a$ + "__UI_Type_Form, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_Frame: a$ = a$ + "__UI_Type_Frame, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_Button: a$ = a$ + "__UI_Type_Button, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_Label: a$ = a$ + "__UI_Type_Label, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_CheckBox: a$ = a$ + "__UI_Type_CheckBox, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_RadioButton: a$ = a$ + "__UI_Type_RadioButton, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_TextBox: a$ = a$ + "__UI_Type_TextBox, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_ProgressBar: a$ = a$ + "__UI_Type_ProgressBar, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_ListBox: a$ = a$ + "__UI_Type_ListBox, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_DropdownList: a$ = a$ + "__UI_Type_DropdownList, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_MenuBar: a$ = a$ + "__UI_Type_MenuBar, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_MenuItem: a$ = a$ + "__UI_Type_MenuItem, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_PictureBox: a$ = a$ + "__UI_Type_PictureBox, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_TrackBar: a$ = a$ + "__UI_Type_TrackBar, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
-                    CASE __UI_Type_ToggleSwitch: a$ = a$ + "__UI_Type_ToggleSwitch, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
-                END SELECT
-                a$ = a$ + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ","
-                a$ = a$ + STR$(PreviewControls(i).Width) + ","
-                a$ = a$ + STR$(PreviewControls(i).Height) + ","
-                a$ = a$ + STR$(PreviewControls(i).Left) + ","
-                a$ = a$ + STR$(PreviewControls(i).Top) + ","
-                IF LEN(PreviewParentIDS(i)) > 0 THEN
-                    a$ = a$ + " __UI_GetID(" + CHR$(34) + PreviewParentIDS(i) + CHR$(34) + "))"
-                ELSE
+                Select Case PreviewControls(i).Type
+                    Case __UI_Type_Form: a$ = a$ + "__UI_Type_Form, ": If ThisPass = 2 Then GoTo EndOfThisPass
+                    Case __UI_Type_Frame: a$ = a$ + "__UI_Type_Frame, ": If ThisPass = 2 Then GoTo EndOfThisPass
+                    Case __UI_Type_Button: a$ = a$ + "__UI_Type_Button, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_Label: a$ = a$ + "__UI_Type_Label, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_CheckBox: a$ = a$ + "__UI_Type_CheckBox, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_RadioButton: a$ = a$ + "__UI_Type_RadioButton, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_TextBox: a$ = a$ + "__UI_Type_TextBox, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_ProgressBar: a$ = a$ + "__UI_Type_ProgressBar, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_ListBox: a$ = a$ + "__UI_Type_ListBox, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_DropdownList: a$ = a$ + "__UI_Type_DropdownList, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_MenuBar: a$ = a$ + "__UI_Type_MenuBar, ": If ThisPass = 2 Then GoTo EndOfThisPass
+                    Case __UI_Type_MenuItem: a$ = a$ + "__UI_Type_MenuItem, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_PictureBox: a$ = a$ + "__UI_Type_PictureBox, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_TrackBar: a$ = a$ + "__UI_Type_TrackBar, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                    Case __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, ": If ThisPass = 2 Then GoTo EndOfThisPass
+                    Case __UI_Type_ToggleSwitch: a$ = a$ + "__UI_Type_ToggleSwitch, ": If ThisPass = 1 Then GoTo EndOfThisPass
+                End Select
+                a$ = a$ + Chr$(34) + RTrim$(PreviewControls(i).Name) + Chr$(34) + ","
+                a$ = a$ + Str$(PreviewControls(i).Width) + ","
+                a$ = a$ + Str$(PreviewControls(i).Height) + ","
+                a$ = a$ + Str$(PreviewControls(i).Left) + ","
+                a$ = a$ + Str$(PreviewControls(i).Top) + ","
+                If Len(PreviewParentIDS(i)) > 0 Then
+                    a$ = a$ + " __UI_GetID(" + Chr$(34) + PreviewParentIDS(i) + Chr$(34) + "))"
+                Else
                     a$ = a$ + " 0)"
-                END IF
-                PRINT #TextFileNum, a$
-                PRINT #TextFileNum, "    __UI_RegisterResult = 0"
+                End If
+                Print #TextFileNum, a$
+                Print #TextFileNum, "    __UI_RegisterResult = 0"
 
-                IF PreviewControls(i).Type = __UI_Type_ContextMenu THEN
-                    PRINT #TextFileNum,
-                    IF LEN(AddContextMenuToForm) > 0 AND RTRIM$(PreviewControls(i).Name) = AddContextMenuToForm THEN
-                        PRINT #TextFileNum, "    Control(__UI_FormID).ContextMenuID = __UI_GetID(" + CHR$(34) + AddContextMenuToForm + CHR$(34) + ")"
-                        PRINT #TextFileNum,
+                If PreviewControls(i).Type = __UI_Type_ContextMenu Then
+                    Print #TextFileNum,
+                    If Len(AddContextMenuToForm) > 0 And RTrim$(PreviewControls(i).Name) = AddContextMenuToForm Then
+                        Print #TextFileNum, "    Control(__UI_FormID).ContextMenuID = __UI_GetID(" + Chr$(34) + AddContextMenuToForm + Chr$(34) + ")"
+                        Print #TextFileNum,
                         AddContextMenuToForm = ""
-                    END IF
-                    _CONTINUE
-                END IF
+                    End If
+                    _Continue
+                End If
 
-                IF PreviewDefaultButtonID = i THEN
-                    PRINT #TextFileNum, "    __UI_DefaultButtonID = __UI_NewID"
-                END IF
+                If PreviewDefaultButtonID = i Then
+                    Print #TextFileNum, "    __UI_DefaultButtonID = __UI_NewID"
+                End If
 
-                IF LEN(PreviewCaptions(i)) > 0 THEN
-                    SELECT CASE PreviewControls(i).Type
+                If Len(PreviewCaptions(i)) > 0 Then
+                    Select Case PreviewControls(i).Type
                         CASE __UI_Type_Form, __UI_Type_Frame, __UI_Type_Button, _
                              __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton, _
                              __UI_Type_TextBox, __UI_Type_ProgressBar, __UI_Type_MenuBar, _
                              __UI_Type_MenuItem
                             a$ = "    SetCaption __UI_NewID, " + SpecialCharsToEscapeCode$(PreviewCaptions(i))
-                            PRINT #TextFileNum, a$
-                    END SELECT
-                END IF
+                            Print #TextFileNum, a$
+                    End Select
+                End If
 
-                IF LEN(PreviewTips(i)) > 0 THEN
+                If Len(PreviewTips(i)) > 0 Then
                     a$ = "    ToolTip(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTips(i))
-                    PRINT #TextFileNum, a$
-                END IF
+                    Print #TextFileNum, a$
+                End If
 
-                IF LEN(PreviewTexts(i)) > 0 THEN
-                    SELECT CASE PreviewControls(i).Type
-                        CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                            DIM TempCaption$, TempText$, ThisItem%
-                            DIM findLF&
+                If Len(PreviewTexts(i)) > 0 Then
+                    Select Case PreviewControls(i).Type
+                        Case __UI_Type_ListBox, __UI_Type_DropdownList
+                            Dim TempCaption$, TempText$, ThisItem%
+                            Dim findLF&
 
                             TempText$ = PreviewTexts(i)
                             ThisItem% = 0
-                            DO WHILE LEN(TempText$)
+                            Do While Len(TempText$)
                                 ThisItem% = ThisItem% + 1
-                                findLF& = INSTR(TempText$, CHR$(10))
-                                IF findLF& THEN
-                                    TempCaption$ = LEFT$(TempText$, findLF& - 1)
-                                    TempText$ = MID$(TempText$, findLF& + 1)
-                                ELSE
+                                findLF& = InStr(TempText$, Chr$(10))
+                                If findLF& Then
+                                    TempCaption$ = Left$(TempText$, findLF& - 1)
+                                    TempText$ = Mid$(TempText$, findLF& + 1)
+                                Else
                                     TempCaption$ = TempText$
                                     TempText$ = ""
-                                END IF
-                                a$ = "    AddItem __UI_NewID, " + CHR$(34) + TempCaption$ + CHR$(34)
-                                PRINT #TextFileNum, a$
-                            LOOP
-                        CASE __UI_Type_PictureBox, __UI_Type_Button, __UI_Type_MenuItem
-                            IF AddGifExtension AND PreviewAnimatedGif(i) THEN
-                                a$ = "    __UI_RegisterResult = OpenGif(__UI_NewID, " + CHR$(34) + PreviewTexts(i) + CHR$(34) + ")"
-                            ELSE
-                                a$ = "    LoadImage Control(__UI_NewID), " + CHR$(34) + PreviewTexts(i) + CHR$(34)
-                            END IF
-                            PRINT #TextFileNum, a$
+                                End If
+                                a$ = "    AddItem __UI_NewID, " + Chr$(34) + TempCaption$ + Chr$(34)
+                                Print #TextFileNum, a$
+                            Loop
+                        Case __UI_Type_PictureBox, __UI_Type_Button, __UI_Type_MenuItem
+                            If AddGifExtension And PreviewAnimatedGif(i) Then
+                                a$ = "    __UI_RegisterResult = OpenGif(__UI_NewID, " + Chr$(34) + PreviewTexts(i) + Chr$(34) + ")"
+                            Else
+                                a$ = "    LoadImage Control(__UI_NewID), " + Chr$(34) + PreviewTexts(i) + Chr$(34)
+                            End If
+                            Print #TextFileNum, a$
 
-                            IF AddGifExtension AND PreviewAutoPlayGif(i) THEN
+                            If AddGifExtension And PreviewAutoPlayGif(i) Then
                                 a$ = "    IF __UI_RegisterResult THEN PlayGif __UI_NewID"
-                                PRINT #TextFileNum, a$
-                            END IF
-                        CASE ELSE
-                            IF PreviewControls(i).Type = __UI_Type_TextBox AND PreviewControls(i).NumericOnly <> 0 THEN
+                                Print #TextFileNum, a$
+                            End If
+                        Case Else
+                            If PreviewControls(i).Type = __UI_Type_TextBox And PreviewControls(i).NumericOnly <> 0 Then
                                 'skip saving Text() for NumericTextBox controls
-                            ELSE
+                            Else
                                 a$ = "    Text(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewTexts(i))
-                                PRINT #TextFileNum, a$
-                            END IF
-                    END SELECT
-                END IF
-                IF LEN(PreviewMasks(i)) > 0 THEN
+                                Print #TextFileNum, a$
+                            End If
+                    End Select
+                End If
+                If Len(PreviewMasks(i)) > 0 Then
                     a$ = "    Mask(__UI_NewID) = " + SpecialCharsToEscapeCode$(PreviewMasks(i))
-                    PRINT #TextFileNum, a$
-                END IF
-                IF PreviewControls(i).TransparentColor > 0 THEN
-                    PRINT #TextFileNum, "    __UI_ClearColor Control(__UI_NewID).HelperCanvas, " + LTRIM$(STR$(PreviewControls(i).TransparentColor)) + ", -1"
-                END IF
-                IF PreviewControls(i).Stretch = True THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Stretch = True"
-                END IF
+                    Print #TextFileNum, a$
+                End If
+                If PreviewControls(i).TransparentColor > 0 Then
+                    Print #TextFileNum, "    __UI_ClearColor Control(__UI_NewID).HelperCanvas, " + LTrim$(Str$(PreviewControls(i).TransparentColor)) + ", -1"
+                End If
+                If PreviewControls(i).Stretch = True Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Stretch = True"
+                End If
                 'Fonts
-                IF LEN(PreviewFonts(i)) > 0 THEN
+                If Len(PreviewFonts(i)) > 0 Then
                     FontSetup$ = PreviewFonts(i)
 
                     'Parse FontSetup$ into Font variables
-                    FindSep = INSTR(FontSetup$, ",")
-                    NewFontFile = LEFT$(FontSetup$, FindSep - 1)
-                    FontSetup$ = MID$(FontSetup$, FindSep + 1)
+                    FindSep = InStr(FontSetup$, ",")
+                    NewFontFile = Left$(FontSetup$, FindSep - 1)
+                    FontSetup$ = Mid$(FontSetup$, FindSep + 1)
 
-                    FontSetup$ = "SetFont(" + CHR$(34) + NewFontFile + CHR$(34) + ", " + FontSetup$ + ")"
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Font = " + FontSetup$
-                END IF
+                    FontSetup$ = "SetFont(" + Chr$(34) + NewFontFile + Chr$(34) + ", " + FontSetup$ + ")"
+                    Print #TextFileNum, "    Control(__UI_NewID).Font = " + FontSetup$
+                End If
                 'Colors are saved only if they differ from the theme's defaults
-                IF PreviewControls(i).ForeColor > 0 AND PreviewControls(i).ForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 1) THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).ForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).ForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).ForeColor))) + ")"
-                END IF
-                IF PreviewControls(i).BackColor > 0 AND PreviewControls(i).BackColor <> __UI_DefaultColor(PreviewControls(i).Type, 2) THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).BackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BackColor))) + ")"
-                END IF
-                IF PreviewControls(i).SelectedForeColor > 0 AND PreviewControls(i).SelectedForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 3) THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).SelectedForeColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedForeColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedForeColor))) + ")"
-                END IF
-                IF PreviewControls(i).SelectedBackColor > 0 AND PreviewControls(i).SelectedBackColor <> __UI_DefaultColor(PreviewControls(i).Type, 4) THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).SelectedBackColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).SelectedBackColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).SelectedBackColor))) + ")"
-                END IF
-                IF PreviewControls(i).BorderColor > 0 AND PreviewControls(i).BorderColor <> __UI_DefaultColor(PreviewControls(i).Type, 5) THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).BorderColor = _RGB32(" + LTRIM$(STR$(_RED32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_GREEN32(PreviewControls(i).BorderColor))) + ", " + LTRIM$(STR$(_BLUE32(PreviewControls(i).BorderColor))) + ")"
-                END IF
-                IF PreviewControls(i).BackStyle = __UI_Transparent THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).BackStyle = __UI_Transparent"
-                END IF
-                IF PreviewControls(i).HasBorder THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = True"
-                ELSE
-                    PRINT #TextFileNum, "    Control(__UI_NewID).HasBorder = False"
-                END IF
-                IF PreviewControls(i).Align = __UI_Center THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Center"
-                ELSEIF PreviewControls(i).Align = __UI_Right THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Align = __UI_Right"
-                END IF
-                IF PreviewControls(i).VAlign = __UI_Middle THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Middle"
-                ELSEIF PreviewControls(i).VAlign = __UI_Bottom THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Bottom"
-                END IF
-                IF PreviewControls(i).PasswordField = True AND PreviewControls(i).Type = __UI_Type_TextBox THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
-                END IF
-                IF PreviewControls(i).Value <> 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
-                END IF
-                IF PreviewControls(i).Min <> 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
-                END IF
-                IF PreviewControls(i).Max <> 0 THEN
+                If PreviewControls(i).ForeColor > 0 And PreviewControls(i).ForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 1) Then
+                    Print #TextFileNum, "    Control(__UI_NewID).ForeColor = _RGB32(" + LTrim$(Str$(_Red32(PreviewControls(i).ForeColor))) + ", " + LTrim$(Str$(_Green32(PreviewControls(i).ForeColor))) + ", " + LTrim$(Str$(_Blue32(PreviewControls(i).ForeColor))) + ")"
+                End If
+                If PreviewControls(i).BackColor > 0 And PreviewControls(i).BackColor <> __UI_DefaultColor(PreviewControls(i).Type, 2) Then
+                    Print #TextFileNum, "    Control(__UI_NewID).BackColor = _RGB32(" + LTrim$(Str$(_Red32(PreviewControls(i).BackColor))) + ", " + LTrim$(Str$(_Green32(PreviewControls(i).BackColor))) + ", " + LTrim$(Str$(_Blue32(PreviewControls(i).BackColor))) + ")"
+                End If
+                If PreviewControls(i).SelectedForeColor > 0 And PreviewControls(i).SelectedForeColor <> __UI_DefaultColor(PreviewControls(i).Type, 3) Then
+                    Print #TextFileNum, "    Control(__UI_NewID).SelectedForeColor = _RGB32(" + LTrim$(Str$(_Red32(PreviewControls(i).SelectedForeColor))) + ", " + LTrim$(Str$(_Green32(PreviewControls(i).SelectedForeColor))) + ", " + LTrim$(Str$(_Blue32(PreviewControls(i).SelectedForeColor))) + ")"
+                End If
+                If PreviewControls(i).SelectedBackColor > 0 And PreviewControls(i).SelectedBackColor <> __UI_DefaultColor(PreviewControls(i).Type, 4) Then
+                    Print #TextFileNum, "    Control(__UI_NewID).SelectedBackColor = _RGB32(" + LTrim$(Str$(_Red32(PreviewControls(i).SelectedBackColor))) + ", " + LTrim$(Str$(_Green32(PreviewControls(i).SelectedBackColor))) + ", " + LTrim$(Str$(_Blue32(PreviewControls(i).SelectedBackColor))) + ")"
+                End If
+                If PreviewControls(i).BorderColor > 0 And PreviewControls(i).BorderColor <> __UI_DefaultColor(PreviewControls(i).Type, 5) Then
+                    Print #TextFileNum, "    Control(__UI_NewID).BorderColor = _RGB32(" + LTrim$(Str$(_Red32(PreviewControls(i).BorderColor))) + ", " + LTrim$(Str$(_Green32(PreviewControls(i).BorderColor))) + ", " + LTrim$(Str$(_Blue32(PreviewControls(i).BorderColor))) + ")"
+                End If
+                If PreviewControls(i).BackStyle = __UI_Transparent Then
+                    Print #TextFileNum, "    Control(__UI_NewID).BackStyle = __UI_Transparent"
+                End If
+                If PreviewControls(i).HasBorder Then
+                    Print #TextFileNum, "    Control(__UI_NewID).HasBorder = True"
+                Else
+                    Print #TextFileNum, "    Control(__UI_NewID).HasBorder = False"
+                End If
+                If PreviewControls(i).Align = __UI_Center Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Align = __UI_Center"
+                ElseIf PreviewControls(i).Align = __UI_Right Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Align = __UI_Right"
+                End If
+                If PreviewControls(i).VAlign = __UI_Middle Then
+                    Print #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Middle"
+                ElseIf PreviewControls(i).VAlign = __UI_Bottom Then
+                    Print #TextFileNum, "    Control(__UI_NewID).VAlign = __UI_Bottom"
+                End If
+                If PreviewControls(i).PasswordField = True And PreviewControls(i).Type = __UI_Type_TextBox Then
+                    Print #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
+                End If
+                If PreviewControls(i).Value <> 0 Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Value = " + LTrim$(Str$(PreviewControls(i).Value))
+                End If
+                If PreviewControls(i).Min <> 0 Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Min = " + LTrim$(Str$(PreviewControls(i).Min))
+                End If
+                If PreviewControls(i).Max <> 0 Then
                     IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
                     PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
-                        PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
-                    END IF
-                END IF
-                IF PreviewControls(i).ShowPercentage THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).ShowPercentage = True"
-                END IF
-                IF PreviewControls(i).CanHaveFocus THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).CanHaveFocus = True"
-                END IF
-                IF PreviewControls(i).Disabled THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Disabled = True"
-                END IF
-                IF PreviewControls(i).Hidden THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Hidden = True"
-                END IF
-                IF PreviewControls(i).CenteredWindow THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).CenteredWindow = True"
-                END IF
-                IF LEN(PreviewContextMenu(i)) THEN
-                    IF PreviewControls(i).Type = __UI_Type_Form THEN
+                        Print #TextFileNum, "    Control(__UI_NewID).Max = " + LTrim$(Str$(PreviewControls(i).Max))
+                    End If
+                End If
+                If PreviewControls(i).ShowPercentage Then
+                    Print #TextFileNum, "    Control(__UI_NewID).ShowPercentage = True"
+                End If
+                If PreviewControls(i).CanHaveFocus Then
+                    Print #TextFileNum, "    Control(__UI_NewID).CanHaveFocus = True"
+                End If
+                If PreviewControls(i).Disabled Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Disabled = True"
+                End If
+                If PreviewControls(i).Hidden Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Hidden = True"
+                End If
+                If PreviewControls(i).CenteredWindow Then
+                    Print #TextFileNum, "    Control(__UI_NewID).CenteredWindow = True"
+                End If
+                If Len(PreviewContextMenu(i)) Then
+                    If PreviewControls(i).Type = __UI_Type_Form Then
                         AddContextMenuToForm = PreviewContextMenu(i)
-                    ELSE
-                        PRINT #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + CHR$(34) + PreviewContextMenu(i) + CHR$(34) + ")"
-                    END IF
-                END IF
-                IF LEN(PreviewKeyCombos(i)) THEN
-                    PRINT #TextFileNum, "    __UI_RegisterResult = RegisterKeyCombo(" + CHR$(34) + PreviewKeyCombos(i) + CHR$(34) + ", __UI_NewID)"
-                END IF
-                IF PreviewControls(i).Interval THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Interval = " + LTRIM$(STR$(PreviewControls(i).Interval))
-                END IF
-                IF PreviewControls(i).MinInterval THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).MinInterval = " + LTRIM$(STR$(PreviewControls(i).MinInterval))
-                END IF
-                IF PreviewControls(i).WordWrap THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).WordWrap = True"
-                END IF
-                IF PreviewControls(i).CanResize AND PreviewControls(i).Type = __UI_Type_Form THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).CanResize = True"
-                END IF
-                IF PreviewControls(i).Padding > 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Padding = " + LTRIM$(STR$(PreviewControls(i).Padding))
-                END IF
-                IF PreviewControls(i).BorderSize > 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).BorderSize = " + LTRIM$(STR$(PreviewControls(i).BorderSize))
-                END IF
-                IF PreviewControls(i).Encoding > 0 THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTRIM$(STR$(PreviewControls(i).Encoding))
-                END IF
-                IF PreviewControls(i).NumericOnly = True THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).NumericOnly = True"
-                ELSEIF PreviewControls(i).NumericOnly = __UI_NumericWithBounds THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds"
-                END IF
-                IF PreviewControls(i).BulletStyle > 0 THEN
-                    SELECT CASE PreviewControls(i).BulletStyle
-                        CASE __UI_Bullet
-                            PRINT #TextFileNum, "    Control(__UI_NewID).BulletStyle = __UI_Bullet"
-                    END SELECT
-                END IF
-                IF PreviewControls(i).AutoScroll THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).AutoScroll = True"
-                END IF
-                IF PreviewControls(i).AutoSize THEN
-                    PRINT #TextFileNum, "    Control(__UI_NewID).AutoSize = True"
-                END IF
-                PRINT #TextFileNum,
-            END IF
+                    Else
+                        Print #TextFileNum, "    Control(__UI_NewID).ContextMenuID = __UI_GetID(" + Chr$(34) + PreviewContextMenu(i) + Chr$(34) + ")"
+                    End If
+                End If
+                If Len(PreviewKeyCombos(i)) Then
+                    Print #TextFileNum, "    __UI_RegisterResult = RegisterKeyCombo(" + Chr$(34) + PreviewKeyCombos(i) + Chr$(34) + ", __UI_NewID)"
+                End If
+                If PreviewControls(i).Interval Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Interval = " + LTrim$(Str$(PreviewControls(i).Interval))
+                End If
+                If PreviewControls(i).MinInterval Then
+                    Print #TextFileNum, "    Control(__UI_NewID).MinInterval = " + LTrim$(Str$(PreviewControls(i).MinInterval))
+                End If
+                If PreviewControls(i).WordWrap Then
+                    Print #TextFileNum, "    Control(__UI_NewID).WordWrap = True"
+                End If
+                If PreviewControls(i).CanResize And PreviewControls(i).Type = __UI_Type_Form Then
+                    Print #TextFileNum, "    Control(__UI_NewID).CanResize = True"
+                End If
+                If PreviewControls(i).Padding > 0 Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Padding = " + LTrim$(Str$(PreviewControls(i).Padding))
+                End If
+                If PreviewControls(i).BorderSize > 0 Then
+                    Print #TextFileNum, "    Control(__UI_NewID).BorderSize = " + LTrim$(Str$(PreviewControls(i).BorderSize))
+                End If
+                If PreviewControls(i).Encoding > 0 Then
+                    Print #TextFileNum, "    Control(__UI_NewID).Encoding = " + LTrim$(Str$(PreviewControls(i).Encoding))
+                End If
+                If PreviewControls(i).NumericOnly = True Then
+                    Print #TextFileNum, "    Control(__UI_NewID).NumericOnly = True"
+                ElseIf PreviewControls(i).NumericOnly = __UI_NumericWithBounds Then
+                    Print #TextFileNum, "    Control(__UI_NewID).NumericOnly = __UI_NumericWithBounds"
+                End If
+                If PreviewControls(i).BulletStyle > 0 Then
+                    Select Case PreviewControls(i).BulletStyle
+                        Case __UI_Bullet
+                            Print #TextFileNum, "    Control(__UI_NewID).BulletStyle = __UI_Bullet"
+                    End Select
+                End If
+                If PreviewControls(i).AutoScroll Then
+                    Print #TextFileNum, "    Control(__UI_NewID).AutoScroll = True"
+                End If
+                If PreviewControls(i).AutoSize Then
+                    Print #TextFileNum, "    Control(__UI_NewID).AutoSize = True"
+                End If
+                Print #TextFileNum,
+            End If
             EndOfThisPass:
-        NEXT
-    NEXT ThisPass
+        Next
+    Next ThisPass
 
     'Save control bindings
-    DIM BindingsSection AS _BYTE
-    DIM BindingDone(0 TO UBOUND(PreviewControls)) AS _BYTE
-    FOR i = 1 TO UBOUND(PreviewControls)
-        IF LEN(PreviewBoundTo(i)) > 0 AND BindingDone(i) = False THEN
-            IF BindingsSection = False THEN
-                PRINT #TextFileNum, "    'Control bindings:"
+    Dim BindingsSection As _Byte
+    Dim BindingDone(0 To UBound(PreviewControls)) As _Byte
+    For i = 1 To UBound(PreviewControls)
+        If Len(PreviewBoundTo(i)) > 0 And BindingDone(i) = False Then
+            If BindingsSection = False Then
+                Print #TextFileNum, "    'Control bindings:"
                 BindingsSection = True
-            END IF
+            End If
             BindingDone(i) = True
-            PRINT #TextFileNum, "    __UI_Bind __UI_GetID(" + CHR$(34);
-            PRINT #TextFileNum, RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + "), ";
-            PRINT #TextFileNum, "__UI_GetID(" + CHR$(34);
-            PRINT #TextFileNum, PreviewBoundTo(i) + CHR$(34) + "), ";
-            PRINT #TextFileNum, CHR$(34) + PreviewBoundProperty(i) + CHR$(34) + ", ";
-            FOR j = 1 TO UBOUND(PreviewControls)
-                IF PreviewBoundTo(j) = RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) THEN
+            Print #TextFileNum, "    __UI_Bind __UI_GetID(" + Chr$(34);
+            Print #TextFileNum, RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) + Chr$(34) + "), ";
+            Print #TextFileNum, "__UI_GetID(" + Chr$(34);
+            Print #TextFileNum, PreviewBoundTo(i) + Chr$(34) + "), ";
+            Print #TextFileNum, Chr$(34) + PreviewBoundProperty(i) + Chr$(34) + ", ";
+            For j = 1 To UBound(PreviewControls)
+                If PreviewBoundTo(j) = RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) Then
                     BindingDone(j) = True
-                    PRINT #TextFileNum, CHR$(34) + PreviewBoundProperty(j) + CHR$(34)
-                    EXIT FOR
-                END IF
-            NEXT
-        END IF
-    NEXT
+                    Print #TextFileNum, Chr$(34) + PreviewBoundProperty(j) + Chr$(34)
+                    Exit For
+                End If
+            Next
+        End If
+    Next
 
-    PRINT #TextFileNum, "END SUB"
-    PRINT #TextFileNum,
-    PRINT #TextFileNum, "SUB __UI_AssignIDs"
-    FOR i = 1 TO UBOUND(PreviewControls)
-        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-            PRINT #TextFileNum, "    " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " = __UI_GetID(" + CHR$(34) + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + ")"
-        END IF
-    NEXT
-    PRINT #TextFileNum, "END SUB"
-    CLOSE #TextFileNum
+    Print #TextFileNum, "END SUB"
+    Print #TextFileNum,
+    Print #TextFileNum, "SUB __UI_AssignIDs"
+    For i = 1 To UBound(PreviewControls)
+        If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_Font And PreviewControls(i).Type <> __UI_Type_MenuPanel Then
+            Print #TextFileNum, "    " + RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) + " = __UI_GetID(" + Chr$(34) + RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) + Chr$(34) + ")"
+        End If
+    Next
+    Print #TextFileNum, "END SUB"
+    Close #TextFileNum
 
     '.BAS file
-    IF NOT SaveOnlyFrm THEN
-        IF PreserveBackup THEN
-            DIM insertionPoint AS LONG, endPoint AS LONG, firstCASE AS LONG
-            DIM insertionPoint2 AS LONG, endPoint2 AS LONG
-            DIM temp$, thisBlock$, addedItems$, indenting AS LONG
-            DIM checkConditionResult AS _BYTE, controlToRemove$, found AS _BYTE
-            DIM charSep$
+    If Not SaveOnlyFrm Then
+        If PreserveBackup Then
+            Dim insertionPoint As Long, endPoint As Long, firstCASE As Long
+            Dim insertionPoint2 As Long, endPoint2 As Long
+            Dim temp$, thisBlock$, addedItems$, indenting As Long
+            Dim checkConditionResult As _Byte, controlToRemove$, found As _Byte
+            Dim charSep$
 
-            charSep$ = " =<>+-/\^:;,*()'" + CHR$(10)
+            charSep$ = " =<>+-/\^:;,*()'" + Chr$(10)
 
             'Check which controls got removed/renamed since this form was loaded
-            IF LEN(InitialControlSet) THEN
-                insertionPoint2 = INSTR(InitialControlSet, CHR$(10))
-                DO
-                    endPoint2 = INSTR(insertionPoint2 + 1, InitialControlSet, CHR$(10))
-                    thisBlock$ = MID$(InitialControlSet, insertionPoint2 + 1, endPoint2 - insertionPoint2 - 1)
+            If Len(InitialControlSet) Then
+                insertionPoint2 = InStr(InitialControlSet, Chr$(10))
+                Do
+                    endPoint2 = InStr(insertionPoint2 + 1, InitialControlSet, Chr$(10))
+                    thisBlock$ = Mid$(InitialControlSet, insertionPoint2 + 1, endPoint2 - insertionPoint2 - 1)
                     temp$ = thisBlock$
                     controlToRemove$ = ""
 
-                    IF INSTR(temp$, CHR$(11)) THEN
+                    If InStr(temp$, Chr$(11)) Then
                         'control was in the initial state but got renamed
-                        controlToRemove$ = LEFT$(temp$, INSTR(temp$, CHR$(11)) - 1)
-                        temp$ = MID$(temp$, INSTR(temp$, CHR$(11)) + 1)
-                    ELSE
+                        controlToRemove$ = Left$(temp$, InStr(temp$, Chr$(11)) - 1)
+                        temp$ = Mid$(temp$, InStr(temp$, Chr$(11)) + 1)
+                    Else
                         controlToRemove$ = temp$
-                    END IF
+                    End If
 
                     found = False
-                    FOR i = 1 TO UBOUND(PreviewControls)
-                        IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-                            IF LCASE$(RTRIM$(PreviewControls(i).Name)) = LCASE$(temp$) THEN
+                    For i = 1 To UBound(PreviewControls)
+                        If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_Font And PreviewControls(i).Type <> __UI_Type_MenuPanel Then
+                            If LCase$(RTrim$(PreviewControls(i).Name)) = LCase$(temp$) Then
                                 found = True
-                                EXIT FOR
-                            END IF
-                        END IF
-                    NEXT
+                                Exit For
+                            End If
+                        End If
+                    Next
 
-                    IF found THEN
-                        IF INSTR(thisBlock$, CHR$(11)) THEN
+                    If found Then
+                        If InStr(thisBlock$, Chr$(11)) Then
                             'controlToRemove$ was in the initial state but got renamed to temp$
-                            insertionPoint = INSTR(BackupCode$, controlToRemove$)
-                            DO WHILE insertionPoint > 0
+                            insertionPoint = InStr(BackupCode$, controlToRemove$)
+                            Do While insertionPoint > 0
                                 found = True
-                                IF OutsideQuotes(BackupCode$, insertionPoint) THEN
-                                    a$ = MID$(BackupCode$, insertionPoint - 1, 1)
-                                    b$ = MID$(BackupCode$, insertionPoint + LEN(controlToRemove$), 1)
-                                    IF LEN(a$) > 0 AND INSTR(charSep$, a$) = 0 THEN found = False
-                                    IF LEN(b$) > 0 AND INSTR(charSep$, b$) = 0 THEN found = False
-                                    IF found THEN
-                                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + temp$ + MID$(BackupCode$, insertionPoint + LEN(controlToRemove$))
-                                    END IF
-                                END IF
-                                insertionPoint = INSTR(insertionPoint + 1, BackupCode$, controlToRemove$)
-                            LOOP
-                        END IF
-                    ELSE
+                                If OutsideQuotes(BackupCode$, insertionPoint) Then
+                                    a$ = Mid$(BackupCode$, insertionPoint - 1, 1)
+                                    b$ = Mid$(BackupCode$, insertionPoint + Len(controlToRemove$), 1)
+                                    If Len(a$) > 0 And InStr(charSep$, a$) = 0 Then found = False
+                                    If Len(b$) > 0 And InStr(charSep$, b$) = 0 Then found = False
+                                    If found Then
+                                        BackupCode$ = Left$(BackupCode$, insertionPoint - 1) + temp$ + Mid$(BackupCode$, insertionPoint + Len(controlToRemove$))
+                                    End If
+                                End If
+                                insertionPoint = InStr(insertionPoint + 1, BackupCode$, controlToRemove$)
+                            Loop
+                        End If
+                    Else
                         'comment next controlToRemove$ occurrences, since the control no longer exists
-                        insertionPoint = INSTR(BackupCode$, controlToRemove$)
-                        DO WHILE insertionPoint > 0
+                        insertionPoint = InStr(BackupCode$, controlToRemove$)
+                        Do While insertionPoint > 0
                             found = True
-                            COLOR 8: PRINT insertionPoint, MID$(BackupCode$, insertionPoint, 30)
-                            IF OutsideQuotes(BackupCode$, insertionPoint) THEN
-                                a$ = MID$(BackupCode$, insertionPoint - 1, 1)
-                                b$ = MID$(BackupCode$, insertionPoint + LEN(controlToRemove$), 1)
-                                IF LEN(a$) > 0 AND INSTR(charSep$, a$) = 0 THEN found = False
-                                IF LEN(b$) > 0 AND INSTR(charSep$, b$) = 0 THEN found = False
-                                IF found THEN
-                                    endPoint = INSTR(insertionPoint, BackupCode$, CHR$(10))
-                                    IF endPoint = 0 THEN endPoint = LEN(BackupCode$)
-                                    temp$ = " '<-- " + CHR$(34) + controlToRemove$ + CHR$(34) + " deleted from Form on " + DATE$
-                                    BackupCode$ = LEFT$(BackupCode$, endPoint - 1) + temp$ + MID$(BackupCode$, endPoint)
-                                    COLOR 14: PRINT insertionPoint, MID$(BackupCode$, insertionPoint, 30)
-                                END IF
-                            END IF
-                            SLEEP
-                            insertionPoint = INSTR(insertionPoint + 1, BackupCode$, controlToRemove$)
-                        LOOP
-                    END IF
+                            Color 8: Print insertionPoint, Mid$(BackupCode$, insertionPoint, 30)
+                            If OutsideQuotes(BackupCode$, insertionPoint) Then
+                                a$ = Mid$(BackupCode$, insertionPoint - 1, 1)
+                                b$ = Mid$(BackupCode$, insertionPoint + Len(controlToRemove$), 1)
+                                If Len(a$) > 0 And InStr(charSep$, a$) = 0 Then found = False
+                                If Len(b$) > 0 And InStr(charSep$, b$) = 0 Then found = False
+                                If found Then
+                                    endPoint = InStr(insertionPoint, BackupCode$, Chr$(10))
+                                    If endPoint = 0 Then endPoint = Len(BackupCode$)
+                                    temp$ = " '<-- " + Chr$(34) + controlToRemove$ + Chr$(34) + " deleted from Form on " + Date$
+                                    BackupCode$ = Left$(BackupCode$, endPoint - 1) + temp$ + Mid$(BackupCode$, endPoint)
+                                    Color 14: Print insertionPoint, Mid$(BackupCode$, insertionPoint, 30)
+                                End If
+                            End If
+                            Sleep
+                            insertionPoint = InStr(insertionPoint + 1, BackupCode$, controlToRemove$)
+                        Loop
+                    End If
 
                     insertionPoint2 = endPoint2 + 1
-                LOOP WHILE insertionPoint2 < LEN(InitialControlSet)
-            END IF
+                Loop While insertionPoint2 < Len(InitialControlSet)
+            End If
 
             'Find insertion points in BackupCode$ for eventual new controls
             '1- Controls' IDs
             addedItems$ = ""
-            FOR i = 1 TO UBOUND(PreviewControls)
-                IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-                    temp$ = "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
-                    IF INSTR(BackupCode$, temp$) = 0 THEN
-                        addedItems$ = addedItems$ + temp$ + CHR$(10)
-                    END IF
-                END IF
-            NEXT
+            For i = 1 To UBound(PreviewControls)
+                If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_Font And PreviewControls(i).Type <> __UI_Type_MenuPanel Then
+                    temp$ = "DIM SHARED " + RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
+                    If InStr(BackupCode$, temp$) = 0 Then
+                        addedItems$ = addedItems$ + temp$ + Chr$(10)
+                    End If
+                End If
+            Next
 
-            insertionPoint = INSTR(BackupCode$, "DIM SHARED ")
-            IF LEN(addedItems$) THEN
-                BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + addedItems$ + MID$(BackupCode$, insertionPoint)
-            END IF
+            insertionPoint = InStr(BackupCode$, "DIM SHARED ")
+            If Len(addedItems$) Then
+                BackupCode$ = Left$(BackupCode$, insertionPoint - 1) + addedItems$ + Mid$(BackupCode$, insertionPoint)
+            End If
 
             '2- Remove "control deleted" comments, if any has been readded.
-            FOR i = 1 TO UBOUND(PreviewControls)
-                IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-                    temp$ = " '<-- " + CHR$(34) + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + " deleted from Form on"
-                    insertionPoint = INSTR(BackupCode$, temp$)
-                    DO WHILE insertionPoint > 0
-                        endPoint = INSTR(insertionPoint, BackupCode$, CHR$(10))
-                        BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + MID$(BackupCode$, endPoint)
-                        insertionPoint = INSTR(BackupCode$, temp$)
-                    LOOP
-                END IF
-            NEXT
+            For i = 1 To UBound(PreviewControls)
+                If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_Font And PreviewControls(i).Type <> __UI_Type_MenuPanel Then
+                    temp$ = " '<-- " + Chr$(34) + RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) + Chr$(34) + " deleted from Form on"
+                    insertionPoint = InStr(BackupCode$, temp$)
+                    Do While insertionPoint > 0
+                        endPoint = InStr(insertionPoint, BackupCode$, Chr$(10))
+                        BackupCode$ = Left$(BackupCode$, insertionPoint - 1) + Mid$(BackupCode$, endPoint)
+                        insertionPoint = InStr(BackupCode$, temp$)
+                    Loop
+                End If
+            Next
 
             '3- Even procedures
-            FOR i = 4 TO 13
-                SELECT EVERYCASE i
-                    CASE 4: temp$ = "SUB __UI_Click (id AS LONG)"
-                    CASE 5: temp$ = "SUB __UI_MouseEnter (id AS LONG)"
-                    CASE 6: temp$ = "SUB __UI_MouseLeave (id AS LONG)"
-                    CASE 7: temp$ = "SUB __UI_FocusIn (id AS LONG)"
-                    CASE 8: temp$ = "SUB __UI_FocusOut (id AS LONG)"
-                    CASE 9: temp$ = "SUB __UI_MouseDown (id AS LONG)"
-                    CASE 10: temp$ = "SUB __UI_MouseUp (id AS LONG)"
-                    CASE 11: temp$ = "SUB __UI_KeyPress (id AS LONG)"
-                    CASE 12: temp$ = "SUB __UI_TextChanged (id AS LONG)"
-                    CASE 13: temp$ = "SUB __UI_ValueChanged (id AS LONG)"
+            For i = 4 To 13
+                Select EveryCase i
+                    Case 4: temp$ = "SUB __UI_Click (id AS LONG)"
+                    Case 5: temp$ = "SUB __UI_MouseEnter (id AS LONG)"
+                    Case 6: temp$ = "SUB __UI_MouseLeave (id AS LONG)"
+                    Case 7: temp$ = "SUB __UI_FocusIn (id AS LONG)"
+                    Case 8: temp$ = "SUB __UI_FocusOut (id AS LONG)"
+                    Case 9: temp$ = "SUB __UI_MouseDown (id AS LONG)"
+                    Case 10: temp$ = "SUB __UI_MouseUp (id AS LONG)"
+                    Case 11: temp$ = "SUB __UI_KeyPress (id AS LONG)"
+                    Case 12: temp$ = "SUB __UI_TextChanged (id AS LONG)"
+                    Case 13: temp$ = "SUB __UI_ValueChanged (id AS LONG)"
 
-                    CASE 4 TO 13
-                        insertionPoint = INSTR(BackupCode$, temp$)
-                        endPoint = INSTR(insertionPoint, BackupCode$, "END SUB" + CHR$(10)) + 8
-                        thisBlock$ = MID$(BackupCode$, insertionPoint, endPoint - insertionPoint)
+                    Case 4 To 13
+                        insertionPoint = InStr(BackupCode$, temp$)
+                        endPoint = InStr(insertionPoint, BackupCode$, "END SUB" + Chr$(10)) + 8
+                        thisBlock$ = Mid$(BackupCode$, insertionPoint, endPoint - insertionPoint)
 
-                        IF INSTR(thisBlock$, "SELECT CASE id") THEN
-                            firstCASE = INSTR(thisBlock$, "    CASE ")
-                            IF firstCASE THEN
-                                firstCASE = _INSTRREV(firstCASE, thisBlock$, CHR$(10))
-                                indenting = INSTR(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
-                            ELSE
+                        If InStr(thisBlock$, "SELECT CASE id") Then
+                            firstCASE = InStr(thisBlock$, "    CASE ")
+                            If firstCASE Then
+                                firstCASE = _InStrRev(firstCASE, thisBlock$, Chr$(10))
+                                indenting = InStr(firstCASE, thisBlock$, "CASE ") - firstCASE - 1
+                            Else
                                 indenting = 8
-                                firstCASE = _INSTRREV(INSTR(thisBlock$, "END SELECT"), thisBlock$, CHR$(10))
-                            END IF
+                                firstCASE = _InStrRev(InStr(thisBlock$, "END SELECT"), thisBlock$, Chr$(10))
+                            End If
                             addedItems$ = ""
-                            FOR Dummy = 1 TO UBOUND(PreviewControls)
-                                GOSUB checkCondition
-                                IF checkConditionResult THEN
+                            For Dummy = 1 To UBound(PreviewControls)
+                                GoSub checkCondition
+                                If checkConditionResult Then
                                     IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND _
                                        INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
-                                        addedItems$ = addedItems$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
-                                    ELSEIF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") > 0 THEN
+                                        addedItems$ = addedItems$ + Space$(indenting) + "CASE " + RTrim$(PreviewControls(Dummy).Name) + Chr$(10) + Chr$(10)
+                                    ElseIf InStr(thisBlock$, " CASE " + RTrim$(PreviewControls(Dummy).Name) + " '<-- " + Chr$(34) + RTrim$(PreviewControls(Dummy).Name) + Chr$(34) + " deleted from Form on ") > 0 Then
                                         thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
                                         " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + _
                                         MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
                                         " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + _
                                         " deleted from Form on "), thisBlock$, CHR$(10)))
-                                    END IF
-                                END IF
-                            NEXT
+                                    End If
+                                End If
+                            Next
 
-                            IF LEN(addedItems$) THEN
-                                thisBlock$ = LEFT$(thisBlock$, firstCASE) + addedItems$ + MID$(thisBlock$, firstCASE + 1)
-                            END IF
+                            If Len(addedItems$) Then
+                                thisBlock$ = Left$(thisBlock$, firstCASE) + addedItems$ + Mid$(thisBlock$, firstCASE + 1)
+                            End If
 
-                            BackupCode$ = LEFT$(BackupCode$, insertionPoint - 1) + thisBlock$ + MID$(BackupCode$, endPoint)
-                        END IF
-                END SELECT
-            NEXT
+                            BackupCode$ = Left$(BackupCode$, insertionPoint - 1) + thisBlock$ + Mid$(BackupCode$, endPoint)
+                        End If
+                End Select
+            Next
 
-            OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum: CLOSE #TextFileNum
-            OPEN BaseOutputFileName + ".bas" FOR BINARY AS #TextFileNum
-            PUT #TextFileNum, , BackupCode$
-        ELSE
-            OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
-            PRINT #TextFileNum, "': This program uses"
-            PRINT #TextFileNum, "': InForm - GUI library for QB64 - "; __UI_Version
-            PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
-            PRINT #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
-            PRINT #TextFileNum, "'-----------------------------------------------------------"
-            PRINT #TextFileNum,
-            PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
-            FOR i = 1 TO UBOUND(PreviewControls)
-                IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type <> __UI_Type_Font AND PreviewControls(i).Type <> __UI_Type_MenuPanel THEN
-                    PRINT #TextFileNum, "DIM SHARED " + RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
-                END IF
-            NEXT
-            PRINT #TextFileNum,
-            PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
-            IF AddGifExtension THEN
-                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
-            END IF
-            PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.bi'"
-            PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
-            PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
-            IF AddGifExtension THEN
-                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
-            END IF
-            PRINT #TextFileNum,
-            PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
-            FOR i = 0 TO 14
-                SELECT EVERYCASE i
-                    CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
-                    CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
-                    CASE 2
-                        PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
-                        PRINT #TextFileNum, "    'This event occurs at approximately 60 frames per second."
-                        PRINT #TextFileNum, "    'You can change the update frequency by calling SetFrameRate DesiredRate%"
-                    CASE 3
-                        PRINT #TextFileNum, "SUB __UI_BeforeUnload"
-                        PRINT #TextFileNum, "    'If you set __UI_UnloadSignal = False here you can"
-                        PRINT #TextFileNum, "    'cancel the user's request to close."
-                    CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
-                    CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
-                    CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
-                    CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
-                    CASE 8
-                        PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
-                        PRINT #TextFileNum, "    'This event occurs right before a control loses focus."
-                        PRINT #TextFileNum, "    'To prevent a control from losing focus, set __UI_KeepFocus = True below."
-                    CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
-                    CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
-                    CASE 11
-                        PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
-                        PRINT #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit."
-                        PRINT #TextFileNum, "    'You can change it and even cancel it by making it = 0"
-                    CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
-                    CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
-                    CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
+            Open BaseOutputFileName + ".bas" For Output As #TextFileNum: Close #TextFileNum
+            Open BaseOutputFileName + ".bas" For Binary As #TextFileNum
+            Put #TextFileNum, , BackupCode$
+        Else
+            Open BaseOutputFileName + ".bas" For Output As #TextFileNum
+            Print #TextFileNum, "': This program uses"
+            Print #TextFileNum, "': InForm - GUI library for QB64 - "; __UI_Version
+            Print #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
+            Print #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
+            Print #TextFileNum, "'-----------------------------------------------------------"
+            Print #TextFileNum,
+            Print #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
+            For i = 1 To UBound(PreviewControls)
+                If PreviewControls(i).ID > 0 And PreviewControls(i).Type <> __UI_Type_Font And PreviewControls(i).Type <> __UI_Type_MenuPanel Then
+                    Print #TextFileNum, "DIM SHARED " + RTrim$(__UI_TrimAt0$(PreviewControls(i).Name)) + " AS LONG"
+                End If
+            Next
+            Print #TextFileNum,
+            Print #TextFileNum, "': External modules: ---------------------------------------------------------------"
+            If AddGifExtension Then
+                Print #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
+            End If
+            Print #TextFileNum, "'$INCLUDE:'InForm\InForm.bi'"
+            Print #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
+            Print #TextFileNum, "'$INCLUDE:'" + Mid$(BaseOutputFileName, Len(CurrentPath$) + 2) + ".frm'"
+            If AddGifExtension Then
+                Print #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
+            End If
+            Print #TextFileNum,
+            Print #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
+            For i = 0 To 14
+                Select EveryCase i
+                    Case 0: Print #TextFileNum, "SUB __UI_BeforeInit"
+                    Case 1: Print #TextFileNum, "SUB __UI_OnLoad"
+                    Case 2
+                        Print #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
+                        Print #TextFileNum, "    'This event occurs at approximately 60 frames per second."
+                        Print #TextFileNum, "    'You can change the update frequency by calling SetFrameRate DesiredRate%"
+                    Case 3
+                        Print #TextFileNum, "SUB __UI_BeforeUnload"
+                        Print #TextFileNum, "    'If you set __UI_UnloadSignal = False here you can"
+                        Print #TextFileNum, "    'cancel the user's request to close."
+                    Case 4: Print #TextFileNum, "SUB __UI_Click (id AS LONG)"
+                    Case 5: Print #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
+                    Case 6: Print #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
+                    Case 7: Print #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
+                    Case 8
+                        Print #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
+                        Print #TextFileNum, "    'This event occurs right before a control loses focus."
+                        Print #TextFileNum, "    'To prevent a control from losing focus, set __UI_KeepFocus = True below."
+                    Case 9: Print #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
+                    Case 10: Print #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
+                    Case 11
+                        Print #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
+                        Print #TextFileNum, "    'When this event is fired, __UI_KeyHit will contain the code of the key hit."
+                        Print #TextFileNum, "    'You can change it and even cancel it by making it = 0"
+                    Case 12: Print #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
+                    Case 13: Print #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
+                    Case 14: Print #TextFileNum, "SUB __UI_FormResized"
 
-                    CASE 0, 3, 14
-                        PRINT #TextFileNum,
+                    Case 0, 3, 14
+                        Print #TextFileNum,
 
-                    CASE 1
-                        IF PreviewDefaultButtonID > 0 THEN
-                            PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
-                        ELSE
-                            PRINT #TextFileNum,
-                        END IF
+                    Case 1
+                        If PreviewDefaultButtonID > 0 Then
+                            Print #TextFileNum, "    __UI_DefaultButtonID = " + RTrim$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
+                        Else
+                            Print #TextFileNum,
+                        End If
 
-                    CASE 2
-                        IF AddGifExtension = True AND TotalGifLoaded > 0 THEN
-                            PRINT #TextFileNum,
-                            PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
-                            PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
-                            FOR Dummy = 1 TO UBOUND(PreviewControls)
-                                IF PreviewAnimatedGif(Dummy) THEN
-                                    PRINT #TextFileNum, "    UpdateGif " + RTRIM$(PreviewControls(Dummy).Name)
-                                END IF
-                            NEXT
-                        ELSE
-                            PRINT #TextFileNum,
-                        END IF
+                    Case 2
+                        If AddGifExtension = True And TotalGifLoaded > 0 Then
+                            Print #TextFileNum,
+                            Print #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
+                            Print #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
+                            For Dummy = 1 To UBound(PreviewControls)
+                                If PreviewAnimatedGif(Dummy) Then
+                                    Print #TextFileNum, "    UpdateGif " + RTrim$(PreviewControls(Dummy).Name)
+                                End If
+                            Next
+                        Else
+                            Print #TextFileNum,
+                        End If
 
-                    CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-                        PRINT #TextFileNum, "    SELECT CASE id"
-                        FOR Dummy = 1 TO UBOUND(PreviewControls)
-                            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
-                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                                PRINT #TextFileNum,
-                            END IF
-                        NEXT
-                        PRINT #TextFileNum, "    END SELECT"
+                    Case 4 To 6, 9, 10 'All controls except for Menu panels, and internal context menus
+                        Print #TextFileNum, "    SELECT CASE id"
+                        For Dummy = 1 To UBound(PreviewControls)
+                            If PreviewControls(Dummy).ID > 0 And PreviewControls(Dummy).Type <> __UI_Type_Font And PreviewControls(Dummy).Type <> __UI_Type_ContextMenu Then
+                                Print #TextFileNum, "        CASE " + RTrim$(PreviewControls(Dummy).Name)
+                                Print #TextFileNum,
+                            End If
+                        Next
+                        Print #TextFileNum, "    END SELECT"
 
-                    CASE 7, 8, 11 'Controls that can have focus only
-                        PRINT #TextFileNum, "    SELECT CASE id"
-                        FOR Dummy = 1 TO UBOUND(PreviewControls)
-                            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
-                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                                PRINT #TextFileNum,
-                            END IF
-                        NEXT
-                        PRINT #TextFileNum, "    END SELECT"
+                    Case 7, 8, 11 'Controls that can have focus only
+                        Print #TextFileNum, "    SELECT CASE id"
+                        For Dummy = 1 To UBound(PreviewControls)
+                            If PreviewControls(Dummy).ID > 0 And PreviewControls(Dummy).CanHaveFocus Then
+                                Print #TextFileNum, "        CASE " + RTrim$(PreviewControls(Dummy).Name)
+                                Print #TextFileNum,
+                            End If
+                        Next
+                        Print #TextFileNum, "    END SELECT"
 
-                    CASE 12 'Text boxes
-                        PRINT #TextFileNum, "    SELECT CASE id"
-                        FOR Dummy = 1 TO UBOUND(PreviewControls)
-                            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
-                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                                PRINT #TextFileNum,
-                            END IF
-                        NEXT
-                        PRINT #TextFileNum, "    END SELECT"
+                    Case 12 'Text boxes
+                        Print #TextFileNum, "    SELECT CASE id"
+                        For Dummy = 1 To UBound(PreviewControls)
+                            If PreviewControls(Dummy).ID > 0 And (PreviewControls(Dummy).Type = __UI_Type_TextBox) Then
+                                Print #TextFileNum, "        CASE " + RTrim$(PreviewControls(Dummy).Name)
+                                Print #TextFileNum,
+                            End If
+                        Next
+                        Print #TextFileNum, "    END SELECT"
 
-                    CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
-                        PRINT #TextFileNum, "    SELECT CASE id"
-                        FOR Dummy = 1 TO UBOUND(PreviewControls)
-                            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
-                                PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
-                                PRINT #TextFileNum,
-                            END IF
-                        NEXT
-                        PRINT #TextFileNum, "    END SELECT"
-                END SELECT
-                PRINT #TextFileNum, "END SUB"
-                PRINT #TextFileNum,
-            NEXT
-        END IF
-        PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
-        CLOSE #TextFileNum
-    END IF
+                    Case 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
+                        Print #TextFileNum, "    SELECT CASE id"
+                        For Dummy = 1 To UBound(PreviewControls)
+                            If PreviewControls(Dummy).ID > 0 And (PreviewControls(Dummy).Type = __UI_Type_ListBox Or PreviewControls(Dummy).Type = __UI_Type_DropdownList Or PreviewControls(Dummy).Type = __UI_Type_TrackBar Or PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch Or PreviewControls(Dummy).Type = __UI_Type_CheckBox Or PreviewControls(Dummy).Type = __UI_Type_RadioButton) Then
+                                Print #TextFileNum, "        CASE " + RTrim$(PreviewControls(Dummy).Name)
+                                Print #TextFileNum,
+                            End If
+                        Next
+                        Print #TextFileNum, "    END SELECT"
+                End Select
+                Print #TextFileNum, "END SUB"
+                Print #TextFileNum,
+            Next
+        End If
+        Print #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
+        Close #TextFileNum
+    End If
 
     AddToRecentList BaseOutputFileName + ".frm"
 
-    b$ = "Exporting successful. Files output:" + CHR$(10)
-    IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".bas" + CHR$(10)
-    b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm"
+    b$ = "Exporting successful. Files output:" + Chr$(10)
+    If Not SaveOnlyFrm Then b$ = b$ + "    " + Mid$(BaseOutputFileName, Len(CurrentPath$) + 2) + ".bas" + Chr$(10)
+    b$ = b$ + "    " + Mid$(BaseOutputFileName, Len(CurrentPath$) + 2) + ".frm"
 
-    IF ExitToQB64 AND NOT SaveOnlyFrm THEN
-        $IF WIN THEN
-            IF _FILEEXISTS("qb64.exe") THEN
+    If ExitToQB64 And Not SaveOnlyFrm Then
+        $If WIN Then
+            If _FileExists("qb64.exe") Then
+                b$ = b$ + Chr$(10) + Chr$(10) + "Exit to QB64?"
+            Else
+                b$ = b$ + Chr$(10) + Chr$(10) + "Close the editor?"
+            End If
+        $Else
+                IF _FILEEXISTS("qb64") THEN
                 b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
-            ELSE
+                ELSE
                 b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
-            END IF
-        $ELSE
-            IF _FILEEXISTS("qb64") THEN
-            b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
-            ELSE
-            b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
-            END IF
-        $END IF
+                END IF
+        $End If
         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
-        IF Answer = MsgBox_No THEN Edited = False: EXIT SUB
-        $IF WIN THEN
-            IF _FILEEXISTS("qb64.exe") THEN SHELL _DONTWAIT "qb64.exe " + QuotedFilename$(BaseOutputFileName + ".bas")
-        $ELSE
-            IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
-        $END IF
-        SYSTEM
-    ELSE
+        If Answer = MsgBox_No Then Edited = False: Exit Sub
+        $If WIN Then
+            If _FileExists("qb64.exe") Then Shell _DontWait "qb64.exe " + QuotedFilename$(BaseOutputFileName + ".bas")
+        $Else
+                IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
+        $End If
+        System
+    Else
         Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
         Edited = False
-    END IF
+    End If
 
-    EXIT SUB
+    Exit Sub
 
     checkCondition:
     checkConditionResult = False
-    SELECT CASE i
-        CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).Type <> __UI_Type_Font AND PreviewControls(Dummy).Type <> __UI_Type_ContextMenu THEN
+    Select Case i
+        Case 4 To 6, 9, 10 'All controls except for Menu panels, and internal context menus
+            If PreviewControls(Dummy).ID > 0 And PreviewControls(Dummy).Type <> __UI_Type_Font And PreviewControls(Dummy).Type <> __UI_Type_ContextMenu Then
                 checkConditionResult = True
-            END IF
+            End If
 
-        CASE 7, 8, 11 'Controls that can have focus only
-            IF PreviewControls(Dummy).ID > 0 AND PreviewControls(Dummy).CanHaveFocus THEN
+        Case 7, 8, 11 'Controls that can have focus only
+            If PreviewControls(Dummy).ID > 0 And PreviewControls(Dummy).CanHaveFocus Then
                 checkConditionResult = True
-            END IF
+            End If
 
-        CASE 12 'Text boxes
-            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_TextBox) THEN
+        Case 12 'Text boxes
+            If PreviewControls(Dummy).ID > 0 And (PreviewControls(Dummy).Type = __UI_Type_TextBox) Then
                 checkConditionResult = True
-            END IF
+            End If
 
-        CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
-            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
+        Case 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
+            If PreviewControls(Dummy).ID > 0 And (PreviewControls(Dummy).Type = __UI_Type_ListBox Or PreviewControls(Dummy).Type = __UI_Type_DropdownList Or PreviewControls(Dummy).Type = __UI_Type_TrackBar Or PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch Or PreviewControls(Dummy).Type = __UI_Type_CheckBox Or PreviewControls(Dummy).Type = __UI_Type_RadioButton) Then
                 checkConditionResult = True
-            END IF
-    END SELECT
-    RETURN
+            End If
+    End Select
+    Return
 
-END SUB
+End Sub
 
-$IF WIN THEN
-    SUB LoadFontList
-        DIM hKey AS _OFFSET
-        DIM Ky AS _OFFSET
-        DIM SubKey AS STRING
-        DIM Value AS STRING
-        DIM bData AS STRING
-        DIM dwType AS _UNSIGNED LONG
-        DIM numBytes AS _UNSIGNED LONG
-        DIM numTchars AS _UNSIGNED LONG
-        DIM l AS LONG
-        DIM dwIndex AS _UNSIGNED LONG
+$If WIN Then
+    Sub LoadFontList
+        Dim hKey As _Offset
+        Dim Ky As _Offset
+        Dim SubKey As String
+        Dim Value As String
+        Dim bData As String
+        Dim dwType As _Unsigned Long
+        Dim numBytes As _Unsigned Long
+        Dim numTchars As _Unsigned Long
+        Dim l As Long
+        Dim dwIndex As _Unsigned Long
 
         hKey = hKey 'no warnings on my watch
         Ky = HKEY_LOCAL_MACHINE
-        SubKey = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" + CHR$(0)
-        Value = SPACE$(261) 'ANSI Value name limit 260 chars + 1 null
-        bData = SPACE$(&H7FFF) 'arbitrary
+        SubKey = "SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" + Chr$(0)
+        Value = Space$(261) 'ANSI Value name limit 260 chars + 1 null
+        bData = Space$(&H7FFF) 'arbitrary
 
         HasFontList = True
         AddItem FontList, "Built-in VGA font"
         TotalFontsFound = 1
 
-        l = RegOpenKeyExA(Ky, _OFFSET(SubKey), 0, KEY_READ, _OFFSET(hKey))
-        IF l THEN
+        l = RegOpenKeyExA(Ky, _Offset(SubKey), 0, KEY_READ, _Offset(hKey))
+        If l Then
             'HasFontList = False
-            EXIT SUB
-        ELSE
+            Exit Sub
+        Else
             dwIndex = 0
-            DO
-                numBytes = LEN(bData)
-                numTchars = LEN(Value)
-                l = RegEnumValueA(hKey, dwIndex, _OFFSET(Value), _OFFSET(numTchars), 0, _OFFSET(dwType), _OFFSET(bData), _OFFSET(numBytes))
-                IF l THEN
-                    IF l <> ERROR_NO_MORE_ITEMS THEN
+            Do
+                numBytes = Len(bData)
+                numTchars = Len(Value)
+                l = RegEnumValueA(hKey, dwIndex, _Offset(Value), _Offset(numTchars), 0, _Offset(dwType), _Offset(bData), _Offset(numBytes))
+                If l Then
+                    If l <> ERROR_NO_MORE_ITEMS Then
                         'HasFontList = False
-                        EXIT SUB
-                    END IF
-                    EXIT DO
-                ELSE
-                    IF UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".TTF" OR UCASE$(RIGHT$(formatData(dwType, numBytes, bData), 4)) = ".OTF" THEN
+                        Exit Sub
+                    End If
+                    Exit Do
+                Else
+                    If UCase$(Right$(formatData(dwType, numBytes, bData), 4)) = ".TTF" Or UCase$(Right$(formatData(dwType, numBytes, bData), 4)) = ".OTF" Then
                         TotalFontsFound = TotalFontsFound + 1
-                        IF TotalFontsFound > UBOUND(FontFile) THEN
-                            REDIM _PRESERVE FontFile(TotalFontsFound) AS STRING
-                        END IF
-                        DIM tempName$
-                        tempName$ = LEFT$(Value, numTchars)
-                        IF RIGHT$(tempName$, 11) = " (TrueType)" THEN
-                            tempName$ = LEFT$(tempName$, LEN(tempName$) - 11)
-                        END IF
+                        If TotalFontsFound > UBound(FontFile) Then
+                            ReDim _Preserve FontFile(TotalFontsFound) As String
+                        End If
+                        Dim tempName$
+                        tempName$ = Left$(Value, numTchars)
+                        If Right$(tempName$, 11) = " (TrueType)" Then
+                            tempName$ = Left$(tempName$, Len(tempName$) - 11)
+                        End If
                         AddItem FontList, tempName$
                         FontFile(TotalFontsFound) = formatData(dwType, numBytes, bData)
-                    END IF
-                END IF
+                    End If
+                End If
                 dwIndex = dwIndex + 1
-            LOOP
+            Loop
             l = RegCloseKey(hKey)
-        END IF
+        End If
 
-        FOR l = 8 TO 120
-            AddItem FontSizeList, LTRIM$(STR$(l))
-        NEXT
-    END SUB
+        For l = 8 To 120
+            AddItem FontSizeList, LTrim$(Str$(l))
+        Next
+    End Sub
 
-    FUNCTION whatType$ (dwType AS _UNSIGNED LONG)
-        SELECT CASE dwType
-            CASE REG_SZ: whatType = "REG_SZ"
-            CASE REG_EXPAND_SZ: whatType = "REG_EXPAND_SZ"
-            CASE REG_BINARY: whatType = "REG_BINARY"
-            CASE REG_DWORD: whatType = "REG_DWORD"
-            CASE REG_DWORD_BIG_ENDIAN: whatType = "REG_DWORD_BIG_ENDIAN"
-            CASE REG_LINK: whatType = "REG_LINK"
-            CASE REG_MULTI_SZ: whatType = "REG_MULTI_SZ"
-            CASE REG_RESOURCE_LIST: whatType = "REG_RESOURCE_LIST"
-            CASE REG_FULL_RESOURCE_DESCRIPTOR: whatType = "REG_FULL_RESOURCE_DESCRIPTOR"
-            CASE REG_RESOURCE_REQUIREMENTS_LIST: whatType = "REG_RESOURCE_REQUIREMENTS_LIST"
-            CASE REG_QWORD: whatType = "REG_QWORD"
-            CASE ELSE: whatType = "unknown"
-        END SELECT
-    END FUNCTION
+    Function whatType$ (dwType As _Unsigned Long)
+        Select Case dwType
+            Case REG_SZ: whatType = "REG_SZ"
+            Case REG_EXPAND_SZ: whatType = "REG_EXPAND_SZ"
+            Case REG_BINARY: whatType = "REG_BINARY"
+            Case REG_DWORD: whatType = "REG_DWORD"
+            Case REG_DWORD_BIG_ENDIAN: whatType = "REG_DWORD_BIG_ENDIAN"
+            Case REG_LINK: whatType = "REG_LINK"
+            Case REG_MULTI_SZ: whatType = "REG_MULTI_SZ"
+            Case REG_RESOURCE_LIST: whatType = "REG_RESOURCE_LIST"
+            Case REG_FULL_RESOURCE_DESCRIPTOR: whatType = "REG_FULL_RESOURCE_DESCRIPTOR"
+            Case REG_RESOURCE_REQUIREMENTS_LIST: whatType = "REG_RESOURCE_REQUIREMENTS_LIST"
+            Case REG_QWORD: whatType = "REG_QWORD"
+            Case Else: whatType = "unknown"
+        End Select
+    End Function
 
-    FUNCTION whatKey$ (hKey AS _OFFSET)
+    Function whatKey$ (hKey As _Offset)
         hKey = hKey 'the lengths I'll go not to have warnings....
-        SELECT CASE hKey
-            CASE HKEY_CLASSES_ROOT: whatKey = "HKEY_CLASSES_ROOT"
-            CASE HKEY_CURRENT_USER: whatKey = "HKEY_CURRENT_USER"
-            CASE HKEY_LOCAL_MACHINE: whatKey = "HKEY_LOCAL_MACHINE"
-            CASE HKEY_USERS: whatKey = "HKEY_USERS"
-            CASE HKEY_PERFORMANCE_DATA: whatKey = "HKEY_PERFORMANCE_DATA"
-            CASE HKEY_CURRENT_CONFIG: whatKey = "HKEY_CURRENT_CONFIG"
-            CASE HKEY_DYN_DATA: whatKey = "HKEY_DYN_DATA"
-        END SELECT
-    END FUNCTION
+        Select Case hKey
+            Case HKEY_CLASSES_ROOT: whatKey = "HKEY_CLASSES_ROOT"
+            Case HKEY_CURRENT_USER: whatKey = "HKEY_CURRENT_USER"
+            Case HKEY_LOCAL_MACHINE: whatKey = "HKEY_LOCAL_MACHINE"
+            Case HKEY_USERS: whatKey = "HKEY_USERS"
+            Case HKEY_PERFORMANCE_DATA: whatKey = "HKEY_PERFORMANCE_DATA"
+            Case HKEY_CURRENT_CONFIG: whatKey = "HKEY_CURRENT_CONFIG"
+            Case HKEY_DYN_DATA: whatKey = "HKEY_DYN_DATA"
+        End Select
+    End Function
 
-    FUNCTION formatData$ (dwType AS _UNSIGNED LONG, numBytes AS _UNSIGNED LONG, bData AS STRING)
-        DIM t AS STRING
-        DIM ul AS _UNSIGNED LONG
-        DIM b AS _UNSIGNED _BYTE
-        SELECT CASE dwType
-            CASE REG_SZ, REG_EXPAND_SZ, REG_MULTI_SZ
-                formatData = LEFT$(bData, numBytes - 1)
-            CASE REG_DWORD
-                t = LCASE$(HEX$(CVL(LEFT$(bData, 4))))
-                formatData = "0x" + STRING$(8 - LEN(t), &H30) + t
-            CASE ELSE
-                IF numBytes THEN
-                    b = ASC(LEFT$(bData, 1))
-                    IF b < &H10 THEN
-                        t = t + "0" + LCASE$(HEX$(b))
-                    ELSE
-                        t = t + LCASE$(HEX$(b))
-                    END IF
-                END IF
-                FOR ul = 2 TO numBytes
-                    b = ASC(MID$(bData, ul, 1))
-                    IF b < &H10 THEN
-                        t = t + " 0" + LCASE$(HEX$(b))
-                    ELSE
-                        t = t + " " + LCASE$(HEX$(b))
-                    END IF
-                NEXT
+    Function formatData$ (dwType As _Unsigned Long, numBytes As _Unsigned Long, bData As String)
+        Dim t As String
+        Dim ul As _Unsigned Long
+        Dim b As _Unsigned _Byte
+        Select Case dwType
+            Case REG_SZ, REG_EXPAND_SZ, REG_MULTI_SZ
+                formatData = Left$(bData, numBytes - 1)
+            Case REG_DWORD
+                t = LCase$(Hex$(CVL(Left$(bData, 4))))
+                formatData = "0x" + String$(8 - Len(t), &H30) + t
+            Case Else
+                If numBytes Then
+                    b = Asc(Left$(bData, 1))
+                    If b < &H10 Then
+                        t = t + "0" + LCase$(Hex$(b))
+                    Else
+                        t = t + LCase$(Hex$(b))
+                    End If
+                End If
+                For ul = 2 To numBytes
+                    b = Asc(Mid$(bData, ul, 1))
+                    If b < &H10 Then
+                        t = t + " 0" + LCase$(Hex$(b))
+                    Else
+                        t = t + " " + LCase$(Hex$(b))
+                    End If
+                Next
                 formatData = t
-        END SELECT
-    END FUNCTION
-$ELSE
-    SUB LoadFontList
-    DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$, depth%, x AS INTEGER
+        End Select
+    End Function
+$Else
+        SUB LoadFontList
+        DIM TotalFiles%, FontPath$, i AS LONG, ThisFont$, depth%, x AS INTEGER
 
-    FontPath$ = "/usr/share/fonts"
-    depth% = 4
-    IF INSTR(_OS$, "MAC") > 0 THEN
-    FontPath$ = "/Library/Fonts"
-    depth% = 1
-    END IF
-    Text(FontList) = idezfilelist$(FontPath$, 1, depth%, TotalFiles%)
-    Control(FontList).Max = TotalFiles%
-    Control(FontList).LastVisibleItem = 0 'Reset it so it's recalculated
+        FontPath$ = "/usr/share/fonts"
+        depth% = 2
+        IF INSTR(_OS$, "MAC") > 0 THEN
+        FontPath$ = "/Library/Fonts"
+        depth% = 1
+        END IF
+        Text(FontList) = idezfilelist$(FontPath$, 1, depth%, TotalFiles%)
+        Control(FontList).Max = TotalFiles%
+        Control(FontList).LastVisibleItem = 0 'Reset it so it's recalculated
 
-    TotalFontsFound = TotalFiles%
-    FOR i = TotalFiles% TO 1 STEP -1
-    ThisFont$ = GetItem(FontList, i)
-    IF UCASE$(RIGHT$(ThisFont$, 4)) = ".TTF" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".TTC" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".OTF" THEN
-    'Valid font
-    ELSE
-    RemoveItem FontList, i
-    TotalFontsFound = TotalFontsFound - 1
-    END IF
-    NEXT
+        TotalFontsFound = TotalFiles%
+        FOR i = TotalFiles% TO 1 STEP -1
+        ThisFont$ = GetItem(FontList, i)
+        IF UCASE$(RIGHT$(ThisFont$, 4)) = ".TTF" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".TTC" OR UCASE$(RIGHT$(ThisFont$, 4)) = ".OTF" THEN
+        'Valid font
+        ELSE
+        RemoveItem FontList, i
+        TotalFontsFound = TotalFontsFound - 1
+        END IF
+        NEXT
 
-    TotalFontsFound = TotalFontsFound + 1
-    Text(FontList) = "Built-in VGA font" + CHR$(10) + Text(FontList)
-    Control(FontList).Max = TotalFontsFound
+        TotalFontsFound = TotalFontsFound + 1
+        Text(FontList) = "Built-in VGA font" + CHR$(10) + Text(FontList)
+        Control(FontList).Max = TotalFontsFound
 
-    REDIM FontFile(TotalFontsFound) AS STRING
-    IF INSTR(_OS$, "MAC") = 0 THEN FontPath$ = "" ELSE FontPath$ = FontPath$ + "/"
-    FOR i = 3 TO TotalFontsFound
-    ThisFont$ = GetItem(FontList, i)
-    FontFile(i) = FontPath$ + GetItem(FontList, i)
-    ThisFont$ = LEFT$(ThisFont$, LEN(ThisFont$) - 4) 'Remove extension from list
+        REDIM FontFile(TotalFontsFound) AS STRING
+        IF INSTR(_OS$, "MAC") = 0 THEN FontPath$ = "" ELSE FontPath$ = FontPath$ + "/"
+        FOR i = 3 TO TotalFontsFound
+        ThisFont$ = GetItem(FontList, i)
+        FontFile(i) = FontPath$ + GetItem(FontList, i)
+        ThisFont$ = LEFT$(ThisFont$, LEN(ThisFont$) - 4) 'Remove extension from list
 
-    FOR x = LEN(ThisFont$) TO 1 STEP -1
-    IF ASC(ThisFont$, x) = 47 THEN '"/"
-    ThisFont$ = MID$(ThisFont$, x + 1)
-    EXIT FOR
-    END IF
-    NEXT
+        FOR x = LEN(ThisFont$) TO 1 STEP -1
+        IF ASC(ThisFont$, x) = 47 THEN '"/"
+        ThisFont$ = MID$(ThisFont$, x + 1)
+        EXIT FOR
+        END IF
+        NEXT
 
-    ReplaceItem FontList, i, ThisFont$
-    NEXT
+        ReplaceItem FontList, i, ThisFont$
+        NEXT
 
-    FOR i = 8 TO 120
-    AddItem FontSizeList, LTRIM$(STR$(i))
-    NEXT
+        FOR i = 8 TO 120
+        AddItem FontSizeList, LTRIM$(STR$(i))
+        NEXT
 
-    HasFontList = True
-    END SUB
-$END IF
+        HasFontList = True
+        END SUB
+$End If
 
-SUB RestoreFalcon
-    DIM A$, B$, FileNum AS INTEGER
+Sub RestoreFalcon
+    Dim A$, B$, FileNum As Integer
     A$ = ""
     A$ = A$ + "STVKSaFMTE68RTVKdEVL^56K_<f;`5VLd=g;fU6IUmf;VmVKdm2MdIf;c9gH_HVLUE6Mi1GIQeFH\MFH]i2JRdP2_l2EXE68Vm6K"
     A$ = A$ + "\mfMYifIP`FJSEVKcE68Q17L\UFIc12M_1BMdI6>TEfH_AFIXT28Qi6IP4fLcmfHY56MUA68T56MQ1bK^aFN=X`;_0b@_1GNbUfI"
@@ -5252,223 +5260,223 @@ SUB RestoreFalcon
     A$ = A$ + "meP2%%%0"
 
     B$ = Unpack$(A$)
-    FileNum = FREEFILE
-    OPEN "falcon.h" FOR BINARY AS #FileNum
-    PUT #FileNum, 1, B$
-    CLOSE #FileNum
-END SUB
+    FileNum = FreeFile
+    Open "falcon.h" For Binary As #FileNum
+    Put #FileNum, 1, B$
+    Close #FileNum
+End Sub
 
 'FUNCTION idezfilelist$ and idezpathlist$ (and helper functions) were
 'adapted from ide_methods.bas (QB64):
-FUNCTION idezfilelist$ (path$, method, depth%, TotalFound AS INTEGER) 'method0=*.frm and *.frmbin, method1=*.*
-    DIM sep AS STRING * 1, filelist$, a$, dummy%
-    sep = CHR$(10)
+Function idezfilelist$ (path$, method, depth%, TotalFound As Integer) 'method0=*.frm and *.frmbin, method1=*.*
+    Dim sep As String * 1, filelist$, a$, dummy%
+    sep = Chr$(10)
 
     TotalFound = 0
     dummy% = depth%
-    $IF WIN THEN
-        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        IF method = 0 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.frm >opendlgfiles.dat"
-        IF method = 1 THEN SHELL _HIDE "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.* >opendlgfiles.dat"
+    $If WIN Then
+        Open "opendlgfiles.dat" For Output As #150: Close #150
+        If method = 0 Then Shell _Hide "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.frm >opendlgfiles.dat"
+        If method = 1 Then Shell _Hide "dir /b /ON /A-D " + QuotedFilename$(path$) + "\*.* >opendlgfiles.dat"
         filelist$ = ""
-        OPEN "opendlgfiles.dat" FOR INPUT AS #150
-        DO UNTIL EOF(150)
-            LINE INPUT #150, a$
-            IF LEN(a$) THEN 'skip blank entries
-                IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
+        Open "opendlgfiles.dat" For Input As #150
+        Do Until EOF(150)
+            Line Input #150, a$
+            If Len(a$) Then 'skip blank entries
+                If filelist$ = "" Then filelist$ = a$ Else filelist$ = filelist$ + sep + a$
                 TotalFound = TotalFound + 1
+            End If
+        Loop
+        Close #150
+        Kill "opendlgfiles.dat"
+        idezfilelist$ = filelist$
+        Exit Function
+    $Else
+            filelist$ = ""
+            DIM i AS INTEGER, x AS INTEGER, a2$
+            FOR i = 1 TO 2 - method
+            OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+            IF method = 0 THEN
+            IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
+            IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
             END IF
-        LOOP
-        CLOSE #150
-        KILL "opendlgfiles.dat"
-        idezfilelist$ = filelist$
-        EXIT FUNCTION
-    $ELSE
-        filelist$ = ""
-        DIM i AS INTEGER, x AS INTEGER, a2$
-        FOR i = 1 TO 2 - method
-        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        IF method = 0 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.frm*" + CHR$(34) + " >opendlgfiles.dat"
-        IF i = 2 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*.FRM*" + CHR$(34) + " >opendlgfiles.dat"
-        END IF
-        IF method = 1 THEN
-        IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
-        END IF
-        OPEN "opendlgfiles.dat" FOR INPUT AS #150
-        DO UNTIL EOF(150)
-        LINE INPUT #150, a$
-        IF LEN(a$) = 0 THEN EXIT DO
-        IF depth% = 1 THEN
-        FOR x = LEN(a$) TO 1 STEP -1
-        a2$ = MID$(a$, x, 1)
-        IF a2$ = "/" THEN
-        a$ = RIGHT$(a$, LEN(a$) - x)
-        EXIT FOR
-        END IF
-        NEXT
-        END IF
-        IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
-        TotalFound = TotalFound + 1
-        LOOP
-        CLOSE #150
-        NEXT
-        KILL "opendlgfiles.dat"
-        idezfilelist$ = filelist$
-        EXIT FUNCTION
-    $END IF
-END FUNCTION
+            IF method = 1 THEN
+            IF i = 1 THEN SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth " + LTRIM$(STR$(depth%)) + " -type f -name " + CHR$(34) + "*" + CHR$(34) + " >opendlgfiles.dat"
+            END IF
+            OPEN "opendlgfiles.dat" FOR INPUT AS #150
+            DO UNTIL EOF(150)
+            LINE INPUT #150, a$
+            IF LEN(a$) = 0 THEN EXIT DO
+            IF depth% = 1 THEN
+            FOR x = LEN(a$) TO 1 STEP -1
+            a2$ = MID$(a$, x, 1)
+            IF a2$ = "/" THEN
+            a$ = RIGHT$(a$, LEN(a$) - x)
+            EXIT FOR
+            END IF
+            NEXT
+            END IF
+            IF filelist$ = "" THEN filelist$ = a$ ELSE filelist$ = filelist$ + sep + a$
+            TotalFound = TotalFound + 1
+            LOOP
+            CLOSE #150
+            NEXT
+            KILL "opendlgfiles.dat"
+            idezfilelist$ = filelist$
+            EXIT FUNCTION
+    $End If
+End Function
 
-FUNCTION idezpathlist$ (path$, TotalFound%)
-    DIM sep AS STRING * 1, a$, pathlist$, c AS INTEGER, x AS INTEGER, b$
-    DIM i AS INTEGER
-    sep = CHR$(10)
+Function idezpathlist$ (path$, TotalFound%)
+    Dim sep As String * 1, a$, pathlist$, c As Integer, x As Integer, b$
+    Dim i As Integer
+    sep = Chr$(10)
 
     TotalFound% = 0
-    $IF WIN THEN
-        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        a$ = "": IF RIGHT$(path$, 1) = ":" THEN a$ = "\" 'use a \ after a drive letter
-        SHELL _HIDE "dir /b /ON /AD " + QuotedFilename$(path$ + a$) + " >opendlgfiles.dat"
+    $If WIN Then
+        Open "opendlgfiles.dat" For Output As #150: Close #150
+        a$ = "": If Right$(path$, 1) = ":" Then a$ = "\" 'use a \ after a drive letter
+        Shell _Hide "dir /b /ON /AD " + QuotedFilename$(path$ + a$) + " >opendlgfiles.dat"
         pathlist$ = ""
-        OPEN "opendlgfiles.dat" FOR INPUT AS #150
-        DO UNTIL EOF(150)
-            LINE INPUT #150, a$
-            IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
+        Open "opendlgfiles.dat" For Input As #150
+        Do Until EOF(150)
+            Line Input #150, a$
+            If pathlist$ = "" Then pathlist$ = a$ Else pathlist$ = pathlist$ + sep + a$
             TotalFound% = TotalFound% + 1
-        LOOP
-        CLOSE #150
-        KILL "opendlgfiles.dat"
+        Loop
+        Close #150
+        Kill "opendlgfiles.dat"
         'count instances of / or \
         c = 0
-        FOR x = 1 TO LEN(path$)
-            b$ = MID$(path$, x, 1)
-            IF b$ = PathSep$ THEN c = c + 1
-        NEXT
-        IF c >= 1 THEN
-            IF LEN(pathlist$) THEN pathlist$ = ".." + sep + pathlist$ ELSE pathlist$ = ".."
+        For x = 1 To Len(path$)
+            b$ = Mid$(path$, x, 1)
+            If b$ = PathSep$ Then c = c + 1
+        Next
+        If c >= 1 Then
+            If Len(pathlist$) Then pathlist$ = ".." + sep + pathlist$ Else pathlist$ = ".."
             TotalFound% = TotalFound% + 1
-        END IF
+        End If
         'add drive paths
-        FOR i = 0 TO 25
-            IF LEN(pathlist$) THEN pathlist$ = pathlist$ + sep
-            pathlist$ = pathlist$ + CHR$(65 + i) + ":"
+        For i = 0 To 25
+            If Len(pathlist$) Then pathlist$ = pathlist$ + sep
+            pathlist$ = pathlist$ + Chr$(65 + i) + ":"
             TotalFound% = TotalFound% + 1
-        NEXT
+        Next
         idezpathlist$ = pathlist$
-        EXIT FUNCTION
-    $ELSE
-        pathlist$ = ""
-        DIM a2$
-        OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
-        SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -mindepth 1 -type d >opendlgfiles.dat"
-        OPEN "opendlgfiles.dat" FOR INPUT AS #150
-        DO UNTIL EOF(150)
-        LINE INPUT #150, a$
-        IF LEN(a$) = 0 THEN EXIT DO
-        FOR x = LEN(a$) TO 1 STEP -1
-        a2$ = MID$(a$, x, 1)
-        IF a2$ = "/" THEN
-        a$ = RIGHT$(a$, LEN(a$) - x)
-        EXIT FOR
-        END IF
-        NEXT
-        IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
-        TotalFound% = TotalFound% + 1
-        LOOP
-        CLOSE #150
-        KILL "opendlgfiles.dat"
+        Exit Function
+    $Else
+            pathlist$ = ""
+            DIM a2$
+            OPEN "opendlgfiles.dat" FOR OUTPUT AS #150: CLOSE #150
+            SHELL _HIDE "find " + QuotedFilename$(path$) + " -maxdepth 1 -mindepth 1 -type d >opendlgfiles.dat"
+            OPEN "opendlgfiles.dat" FOR INPUT AS #150
+            DO UNTIL EOF(150)
+            LINE INPUT #150, a$
+            IF LEN(a$) = 0 THEN EXIT DO
+            FOR x = LEN(a$) TO 1 STEP -1
+            a2$ = MID$(a$, x, 1)
+            IF a2$ = "/" THEN
+            a$ = RIGHT$(a$, LEN(a$) - x)
+            EXIT FOR
+            END IF
+            NEXT
+            IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = pathlist$ + sep + a$
+            TotalFound% = TotalFound% + 1
+            LOOP
+            CLOSE #150
+            KILL "opendlgfiles.dat"
 
-        IF path$ <> "/" THEN
-        a$ = ".."
+            IF path$ <> "/" THEN
+            a$ = ".."
 
-        IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = a$ + sep + pathlist$
-        TotalFound% = TotalFound% + 1
-        END IF
+            IF pathlist$ = "" THEN pathlist$ = a$ ELSE pathlist$ = a$ + sep + pathlist$
+            TotalFound% = TotalFound% + 1
+            END IF
 
-        idezpathlist$ = pathlist$
-        EXIT FUNCTION
-    $END IF
-END FUNCTION
+            idezpathlist$ = pathlist$
+            EXIT FUNCTION
+    $End If
+End Function
 
-FUNCTION idezchangepath$ (path$, newpath$)
-    DIM x AS INTEGER, a$
+Function idezchangepath$ (path$, newpath$)
+    Dim x As Integer, a$
 
     idezchangepath$ = path$ 'default (for unsuccessful cases)
 
-    $IF WIN THEN
+    $If WIN Then
         'go back a path
-        IF newpath$ = ".." THEN
+        If newpath$ = ".." Then
+            For x = Len(path$) To 1 Step -1
+                a$ = Mid$(path$, x, 1)
+                If a$ = "\" Then
+                    idezchangepath$ = Left$(path$, x - 1)
+                    Exit For
+                End If
+            Next
+            Exit Function
+        End If
+        'change drive
+        If Len(newpath$) = 2 And Right$(newpath$, 1) = ":" Then
+            idezchangepath$ = newpath$
+            Exit Function
+        End If
+        idezchangepath$ = path$ + "\" + newpath$
+        Exit Function
+    $Else
+            'go back a path
+            IF newpath$ = ".." THEN
             FOR x = LEN(path$) TO 1 STEP -1
-                a$ = MID$(path$, x, 1)
-                IF a$ = "\" THEN
-                    idezchangepath$ = LEFT$(path$, x - 1)
-                    EXIT FOR
-                END IF
+            a$ = MID$(path$, x, 1)
+            IF a$ = "/" THEN
+            idezchangepath$ = LEFT$(path$, x - 1)
+            IF x = 1 THEN idezchangepath$ = "/" 'root path cannot be ""
+            EXIT FOR
+            END IF
             NEXT
             EXIT FUNCTION
-        END IF
-        'change drive
-        IF LEN(newpath$) = 2 AND RIGHT$(newpath$, 1) = ":" THEN
-            idezchangepath$ = newpath$
+            END IF
+            IF path$ = "/" THEN idezchangepath$ = "/" + newpath$ ELSE idezchangepath$ = path$ + "/" + newpath$
             EXIT FUNCTION
-        END IF
-        idezchangepath$ = path$ + "\" + newpath$
-        EXIT FUNCTION
-    $ELSE
-        'go back a path
-        IF newpath$ = ".." THEN
-        FOR x = LEN(path$) TO 1 STEP -1
-        a$ = MID$(path$, x, 1)
-        IF a$ = "/" THEN
-        idezchangepath$ = LEFT$(path$, x - 1)
-        IF x = 1 THEN idezchangepath$ = "/" 'root path cannot be ""
-        EXIT FOR
-        END IF
-        NEXT
-        EXIT FUNCTION
-        END IF
-        IF path$ = "/" THEN idezchangepath$ = "/" + newpath$ ELSE idezchangepath$ = path$ + "/" + newpath$
-        EXIT FUNCTION
-    $END IF
+    $End If
 
-END FUNCTION
+End Function
 
-FUNCTION QuotedFilename$ (f$)
-    $IF WIN THEN
-        QuotedFilename$ = CHR$(34) + f$ + CHR$(34)
-    $ELSE
-        QuotedFilename$ = "'" + f$ + "'"
-    $END IF
-END FUNCTION
+Function QuotedFilename$ (f$)
+    $If WIN Then
+        QuotedFilename$ = Chr$(34) + f$ + Chr$(34)
+    $Else
+            QuotedFilename$ = "'" + f$ + "'"
+    $End If
+End Function
 
 '---------------------------------------------------------------------------------
-FUNCTION SpecialCharsToEscapeCode$ (Text$)
-    DIM i AS LONG, Temp$
+Function SpecialCharsToEscapeCode$ (Text$)
+    Dim i As Long, Temp$
 
-    Temp$ = CHR$(34)
-    FOR i = 1 TO LEN(Text$)
-        IF ASC(Text$, i) < 32 OR ASC(Text$, i) = 34 OR ASC(Text$, i) = 92 THEN
-            Temp$ = Temp$ + "\" + LTRIM$(STR$(ASC(Text$, i))) + ";"
-        ELSE
-            Temp$ = Temp$ + MID$(Text$, i, 1)
-        END IF
-    NEXT
-    SpecialCharsToEscapeCode$ = Temp$ + CHR$(34)
-END FUNCTION
+    Temp$ = Chr$(34)
+    For i = 1 To Len(Text$)
+        If Asc(Text$, i) < 32 Or Asc(Text$, i) = 34 Or Asc(Text$, i) = 92 Then
+            Temp$ = Temp$ + "\" + LTrim$(Str$(Asc(Text$, i))) + ";"
+        Else
+            Temp$ = Temp$ + Mid$(Text$, i, 1)
+        End If
+    Next
+    SpecialCharsToEscapeCode$ = Temp$ + Chr$(34)
+End Function
 
 '---------------------------------------------------------------------------------
-FUNCTION OutsideQuotes%% (text$, position AS LONG)
-    DIM quote%%
-    DIM start AS LONG
-    DIM i AS LONG
+Function OutsideQuotes%% (text$, position As Long)
+    Dim quote%%
+    Dim start As Long
+    Dim i As Long
 
-    start = _INSTRREV(position, text$, CHR$(10)) + 1
+    start = _InStrRev(position, text$, Chr$(10)) + 1
     quote%% = False
-    FOR i = start TO position
-        IF ASC(text$, i) = 34 THEN quote%% = NOT quote%%
-        IF ASC(text$, i) = 10 THEN EXIT FOR
-    NEXT
-    OutsideQuotes%% = NOT quote%%
-END FUNCTION
+    For i = start To position
+        If Asc(text$, i) = 34 Then quote%% = Not quote%%
+        If Asc(text$, i) = 10 Then Exit For
+    Next
+    OutsideQuotes%% = Not quote%%
+End Function
 
 '$include:'InForm.ui'

@@ -7917,26 +7917,30 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
         END IF
 
         IF LEN(Text(This.ID)) THEN
-            DIM TempText$, FindLF&, ThisItem%, ThisItemTop%
+            DIM TempText$, Position&, FindLF&, ThisItem%, ThisItemTop%
             DIM ItemHeight AS INTEGER, LastVisibleItem AS INTEGER
 
             ItemHeight = uspacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
             This.ItemHeight = ItemHeight
             TempText$ = __UI_TrimAt0$(Text(This.ID))
             ThisItem% = 0
+            Position& = 1
             DO WHILE LEN(TempText$)
                 ThisItem% = ThisItem% + 1
-                FindLF& = INSTR(TempText$, CHR$(10))
+                FindLF& = INSTR(Position&, TempText$, CHR$(10))
                 IF FindLF& THEN
-                    TempCaption$ = LEFT$(TempText$, FindLF& - 1)
-                    TempText$ = MID$(TempText$, FindLF& + 1)
+                    TempCaption$ = MID$(TempText$, Position&, FindLF& - Position&)
                 ELSE
-                    TempCaption$ = TempText$
+                    TempCaption$ = MID$(TempText$, Position&)
                     TempText$ = ""
                 END IF
+                Position& = FindLF& + 1
                 IF ThisItem% >= This.InputViewStart THEN
                     ThisItemTop% = ((ThisItem% - This.InputViewStart + 1) * ItemHeight - ItemHeight) + CaptionIndent
-                    IF ThisItemTop% + ItemHeight > This.Height THEN _CONTINUE
+                    IF ThisItemTop% + ItemHeight > This.Height THEN
+                        IF This.Max = 0 THEN _CONTINUE
+                        EXIT DO
+                    END IF
                     LastVisibleItem = LastVisibleItem + 1
 
                     IF ThisItem% = This.Value AND __UI_Focus = This.ID THEN Caption(This.ID) = TempCaption$
@@ -7967,7 +7971,7 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState)
                 END IF
             LOOP
 
-            This.Max = ThisItem%
+            IF This.Max = 0 THEN This.Max = ThisItem%
 
             IF This.LastVisibleItem < LastVisibleItem THEN This.LastVisibleItem = LastVisibleItem
             IF This.InputViewStart > This.Max THEN This.InputViewStart = 0
