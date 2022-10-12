@@ -1,2 +1,3 @@
-/build.bat
-/copy.bat
+build.bat
+copy.bat
+*.exe
