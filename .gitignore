@@ -1,2 +1,5 @@
 *.exe
+UiEditor
+InForm/UiEditorPreview
+InForm/vbdos2inform
 *.ini
