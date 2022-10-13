@@ -168,7 +168,7 @@ void uprint_extra(int32 startx, int32 starty, int32 str_in, int64 bytelen, int32
             if (max_width && (pen_x + 8 > startx + max_width))
                 break;
             if (cp > 255)
-                continue;
+                cp = 32;
             switch (write_page->font) {
             case 8:
                 builtin_start = &charset8x8[cp][0][0];
@@ -209,8 +209,14 @@ void uprint_extra(int32 startx, int32 starty, int32 str_in, int64 bytelen, int32
             if (do_render) {
                 for (draw_y = pen_y - fhandle->glyph->bitmap_top, pixmap_y = 0; pixmap_y < fhandle->glyph->bitmap.rows; draw_y++, pixmap_y++) {
                     for (draw_x = pen_x + fhandle->glyph->bitmap_left, pixmap_x = 0; pixmap_x < fhandle->glyph->bitmap.width; draw_x++, pixmap_x++) {
-                        pset_and_clip(draw_x, draw_y,
-                                      ((int)(fhandle->glyph->bitmap.buffer[pixmap_y * fhandle->glyph->bitmap.width + pixmap_x] * alpha) << 24) | rgb);
+                        if (write_page->compatible_mode == 32 && !write_page->alpha_disabled) {
+                            pset_and_clip(draw_x, draw_y,
+                                          ((int)(fhandle->glyph->bitmap.buffer[pixmap_y * fhandle->glyph->bitmap.width + pixmap_x] * alpha) << 24) | rgb);
+                        } else {
+                            if (fhandle->glyph->bitmap.buffer[pixmap_y * fhandle->glyph->bitmap.width + pixmap_x] > 102) {
+                                pset_and_clip(draw_x, draw_y, colour);
+                            }
+                        }
                     }
                 }
             }
