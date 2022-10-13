@@ -1,4 +1,4 @@
-#include "internal/c/parts/video/font/ttf/src/freetypeamalgam.h"
+#include "FreeTypeAmalgam.h"
 // The following license applies to utf8decode() and associated data only
 //  Copyright (c) 2008-2010 Bjoern Hoehrmann <bjoern@hoehrmann.de>
 //  See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
