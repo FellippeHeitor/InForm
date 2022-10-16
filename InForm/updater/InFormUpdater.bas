@@ -5,26 +5,26 @@
 '-----------------------------------------------------------
 
 ': Controls' IDs: ------------------------------------------------------------------
-DIM SHARED InFormUpdater AS LONG
-DIM SHARED PictureBox2 AS LONG
-DIM SHARED InFormresourcesApplicationicon128PX AS LONG
-DIM SHARED InFormLB AS LONG
-DIM SHARED forQB64LB AS LONG
-DIM SHARED ListBox1 AS LONG
-DIM SHARED RetryBT AS LONG
-DIM SHARED CancelBT AS LONG
-DIM SHARED ActivityIndicator AS LONG
+Dim Shared InFormUpdater As Long
+Dim Shared PictureBox2 As Long
+Dim Shared InFormresourcesApplicationicon128PX As Long
+Dim Shared InFormLB As Long
+Dim Shared forQB64LB As Long
+Dim Shared ListBox1 As Long
+Dim Shared RetryBT As Long
+Dim Shared CancelBT As Long
+Dim Shared ActivityIndicator As Long
 
-DIM SHARED binaryExtension$, pathAppend$
-DIM SHARED CheckDevUpdates AS _BYTE
+Dim Shared binaryExtension$, pathAppend$
+Dim Shared CheckDevUpdates As _Byte
 
-$IF WIN THEN
+$If WIN Then
     binaryExtension$ = ".exe"
     pathAppend$ = ""
-$ELSE
-    binaryExtension$ = ""
-    pathAppend$ = "./"
-$END IF
+$Else
+        binaryExtension$ = ""
+        pathAppend$ = "./"
+$End If
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../InForm.bi'
@@ -418,3 +418,4 @@ SUB __UI_FormResized
 END SUB
 
 '$INCLUDE:'../InForm.ui'
+

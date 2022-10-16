@@ -5,10 +5,10 @@
 '-----------------------------------------------------------
 
 ': Controls' IDs: ------------------------------------------------------------------
-DIM SHARED gifplaySample AS LONG
-DIM SHARED PictureBox1 AS LONG
-DIM SHARED LoadBT AS LONG
-DIM SHARED PlayBT AS LONG
+Dim Shared gifplaySample As Long
+Dim Shared PictureBox1 As Long
+Dim Shared LoadBT As Long
+Dim Shared PlayBT As Long
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'gifplay.bi'
@@ -95,3 +95,4 @@ SUB __UI_FormResized
 END SUB
 
 '$INCLUDE:'..\InForm.ui'
+

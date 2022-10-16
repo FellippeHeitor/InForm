@@ -1,4 +1,8 @@
 Option _Explicit
+Option _ExplicitArray
+
+$Console:Only
+_Dest _Console
 
 '$INCLUDE:'InFormVersion.bas'
 

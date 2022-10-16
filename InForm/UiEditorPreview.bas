@@ -1,4 +1,5 @@
 Option _Explicit
+Option _ExplicitArray
 
 Dim Shared UiEditorPID As Long, ExeIcon As Long
 Dim Shared AutoNameControls As _Byte
@@ -3990,3 +3991,4 @@ Function LoadEditorImage& (FileName$)
 End Function
 
 '$include:'InForm.ui'
+

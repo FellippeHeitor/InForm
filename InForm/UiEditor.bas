@@ -1,4 +1,5 @@
 Option _Explicit
+Option _ExplicitArray
 
 $ExeIcon:'.\resources\InForm.ico'
 
@@ -5352,3 +5353,4 @@ Function OutsideQuotes%% (text$, position As Long)
 End Function
 
 '$include:'InForm.ui'
+

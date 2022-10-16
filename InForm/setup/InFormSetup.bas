@@ -5,38 +5,38 @@
 '-----------------------------------------------------------
 
 ': Controls' IDs: ------------------------------------------------------------------
-DIM SHARED InFormSetup AS LONG
-DIM SHARED PictureBox2 AS LONG
-DIM SHARED InFormresourcesApplicationicon128PX AS LONG
-DIM SHARED InFormLB AS LONG
-DIM SHARED forQB64LB AS LONG
-DIM SHARED ListBox1 AS LONG
-DIM SHARED RetryBT AS LONG
-DIM SHARED CancelBT AS LONG
-DIM SHARED ActivityIndicator AS LONG
+Dim Shared InFormSetup As Long
+Dim Shared PictureBox2 As Long
+Dim Shared InFormresourcesApplicationicon128PX As Long
+Dim Shared InFormLB As Long
+Dim Shared forQB64LB As Long
+Dim Shared ListBox1 As Long
+Dim Shared RetryBT As Long
+Dim Shared CancelBT As Long
+Dim Shared ActivityIndicator As Long
 
-$VERSIONINFO:FILEVERSION#=0,0,0,1
-$VERSIONINFO:PRODUCTVERSION#=0,0,0,7
-$VERSIONINFO:CompanyName=Fellippe Heitor
-$VERSIONINFO:FileDescription=InForm - GUI library for QB64
-$VERSIONINFO:FileVersion=v0.1
-$VERSIONINFO:InternalName=InFormSetup.bas
-$VERSIONINFO:LegalCopyright=Open source
-$VERSIONINFO:OriginalFilename=InFormSetup.exe
-$VERSIONINFO:ProductName=InForm Setup
-$VERSIONINFO:ProductVersion=v0.7
-$VERSIONINFO:Comments=Requires the latest build of QB64
-$VERSIONINFO:Web=www.qb64.org/inform
+$VersionInfo:FILEVERSION#=0,0,0,1
+$VersionInfo:PRODUCTVERSION#=0,0,0,7
+$VersionInfo:CompanyName=Fellippe Heitor
+$VersionInfo:FileDescription=InForm - GUI library for QB64
+$VersionInfo:FileVersion=v0.1
+$VersionInfo:InternalName=InFormSetup.bas
+$VersionInfo:LegalCopyright=Open source
+$VersionInfo:OriginalFilename=InFormSetup.exe
+$VersionInfo:ProductName=InForm Setup
+$VersionInfo:ProductVersion=v0.7
+$VersionInfo:Comments=Requires the latest build of QB64
+$VersionInfo:Web=www.qb64.org/inform
 
-DIM SHARED binaryExtension$, pathAppend$
+Dim Shared binaryExtension$, pathAppend$
 
-$IF WIN THEN
+$If WIN Then
     binaryExtension$ = ".exe"
     pathAppend$ = ""
-$ELSE
-    binaryExtension$ = ""
-    pathAppend$ = "./"
-$END IF
+$Else
+        binaryExtension$ = ""
+        pathAppend$ = "./"
+$End If
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../InForm.bi'
@@ -1941,3 +1941,4 @@ FUNCTION IconData$
 END FUNCTION
 
 '$INCLUDE:'../InForm.ui'
+
