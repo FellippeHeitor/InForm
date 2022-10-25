@@ -208,8 +208,10 @@ ReDim Shared FontFile(0) As String
 
 $If WIN Then
     Const PathSep$ = "\"
+    Const QB64PE_EXE = "qb64pe.exe"
 $Else
         CONST PathSep$ = "/"
+        Const QB64PE_EXE = "qb64pe"
 $End If
 
 Dim Shared CurrentPath$, ThisFileName$
@@ -3076,7 +3078,7 @@ Sub __UI_OnLoad
             Else
                 b$ = "Compiling Preview component..."
                 GoSub ShowMessage
-                Shell _Hide "qb64.exe -s:exewithsource=true -x .\InForm\UiEditorPreview.bas"
+                Shell _Hide QB64PE_EXE + " -s:exewithsource=true -x .\InForm\UiEditorPreview.bas"
                 If _FileExists("InForm/UiEditorPreview.exe") = 0 Then GoTo UiEditorPreviewNotFound
                 JustRecompiledPreview = True
             End If
@@ -3089,7 +3091,7 @@ Sub __UI_OnLoad
             ELSE
             b$ = "Compiling Preview component..."
             GOSUB ShowMessage
-            SHELL _HIDE "./qb64 -s:exewithsource=true -x ./InForm/UiEditorPreview.bas"
+            SHELL _HIDE "./" + QB64PE_EXE + " -s:exewithsource=true -x ./InForm/UiEditorPreview.bas"
             IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
             JustRecompiledPreview = True
             END IF
@@ -3295,9 +3297,9 @@ Sub __UI_OnLoad
 
         If TriggerUpdaterRecompile Then
             $If WIN Then
-                Shell _Hide _DontWait "qb64.exe -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+                Shell _Hide _DontWait QB64PE_EXE + " -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
             $Else
-                    SHELL _HIDE _DONTWAIT "./qb64 -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
+                    SHELL _HIDE _DONTWAIT "./" + QB64PE_EXE + " -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
             $End If
         End If
 
@@ -4907,7 +4909,7 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
 
     If ExitToQB64 And Not SaveOnlyFrm Then
         $If WIN Then
-            If _FileExists("qb64.exe") Then
+            If _FileExists(QB64PE_EXE) Then
                 b$ = b$ + Chr$(10) + Chr$(10) + "Exit to QB64?"
             Else
                 b$ = b$ + Chr$(10) + Chr$(10) + "Close the editor?"
@@ -4922,9 +4924,9 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
         Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
         If Answer = MsgBox_No Then Edited = False: Exit Sub
         $If WIN Then
-            If _FileExists("qb64.exe") Then Shell _DontWait "qb64.exe " + QuotedFilename$(BaseOutputFileName + ".bas")
+            If _FileExists(QB64PE_EXE) Then Shell _DontWait QB64PE_EXE + " " + QuotedFilename$(BaseOutputFileName + ".bas")
         $Else
-                IF _FILEEXISTS("qb64") THEN SHELL _DONTWAIT "./qb64 " + QuotedFilename$(BaseOutputFileName + ".bas")
+                IF _FILEEXISTS(QB64PE_EXE) THEN SHELL _DONTWAIT "./" + QB64PE_EXE + "  " + QuotedFilename$(BaseOutputFileName + ".bas")
         $End If
         System
     Else
