@@ -45,4 +45,3 @@ the actual program you will add your code to.
 * Make the library standalone and work from any directory
 * Remove all gimmicky features like the defunct auto-update & installer
 * Ensure the library does not write anything to disk and runs completely from memory
-* Add cross-platform common dialogs like MessageBox, InputBox, PasswordBox, ColorPicker, OpenFileDialog, SaveFileDialog, SelectFolderDialog, Tray-popup, Notification Beep
