@@ -1,5 +1,10 @@
+# Ignore all
+*
+# Unignore all with extensions
+!*.*
+# Unignore all dirs
+!*/
+# Ignore all exe files
 *.exe
-UiEditor
-InForm/UiEditorPreview
-InForm/vbdos2inform
+# Ignore all ini files
 *.ini
