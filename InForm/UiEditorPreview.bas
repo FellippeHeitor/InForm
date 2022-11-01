@@ -78,14 +78,12 @@ $If WIN Then
         Function CloseHandle& (ByVal hObject As Long)
         Function GetExitCodeProcess& (ByVal hProcess As Long, lpExitCode As Long)
     End Declare
-
     Const PathSep$ = "\"
 $Else
-        DECLARE LIBRARY
+    DECLARE LIBRARY
         FUNCTION PROCESS_CLOSED& ALIAS kill (BYVAL pid AS INTEGER, BYVAL signal AS INTEGER)
-        END DECLARE
-
-        CONST PathSep$ = "/"
+    END DECLARE
+    CONST PathSep$ = "/"
 $End If
 
 'Load context menu icon image:
@@ -401,11 +399,15 @@ Sub __UI_BeforeUpdateDisplay
                 _ScreenHide
                 Answer = MessageBox("InForm Designer is not running. Please run the main program.", "InForm Preview", 0)
             End If
+			If _FileExists("..\UiEditorPreview.frmbin") Then Kill "..\UiEditorPreview.frmbin"
             System
         End If
         b& = CloseHandle(hnd&)
     $Else
-            IF PROCESS_CLOSED(UiEditorPID, 0) THEN SYSTEM
+        IF PROCESS_CLOSED(UiEditorPID, 0) THEN 
+			If _FileExists("UiEditorPreview.frmbin") Then Kill "UiEditorPreview.frmbin"
+			SYSTEM
+		END IF
     $End If
 
     If __UI_IsDragging Then
@@ -601,7 +603,7 @@ Sub __UI_BeforeUpdateDisplay
             Close #FileToLoad
 
             FileToLoad = FreeFile
-            Open "InForm/UiEditorPreview.frmbin" For Binary As #FileToLoad
+            Open "UiEditorPreview.frmbin" For Binary As #FileToLoad
             Put #FileToLoad, 1, a$
             Close #FileToLoad
 
@@ -621,7 +623,7 @@ Sub __UI_BeforeUpdateDisplay
             a$ = Unpack$(EmptyForm$)
 
             FileToLoad = FreeFile
-            Open "InForm/UiEditorPreview.frmbin" For Binary As #FileToLoad
+            Open "UiEditorPreview.frmbin" For Binary As #FileToLoad
             Put #FileToLoad, 1, a$
             Close #FileToLoad
 
@@ -1661,10 +1663,10 @@ End Sub
 Sub __UI_BeforeInit
     __UI_DesignMode = True
 
-    If _FileExists("InForm/UiEditorPreview.frmbin") Then
+    If _FileExists("UiEditorPreview.frmbin") Then
         Dim FileToLoad As Integer, a$
         FileToLoad = FreeFile
-        Open "InForm/UiEditorPreview.frmbin" For Binary As #FileToLoad
+        Open "UiEditorPreview.frmbin" For Binary As #FileToLoad
         a$ = Space$(LOF(FileToLoad))
         Get #FileToLoad, 1, a$
         Close #FileToLoad
@@ -2344,14 +2346,14 @@ Sub LoadPreview (Destination As _Byte)
 
     Const LogFileLoad = False
 
-    If _FileExists("InForm/UiEditorPreview.frmbin") = 0 And Destination = InDisk Then
+    If _FileExists("UiEditorPreview.frmbin") = 0 And Destination = InDisk Then
         Exit Sub
     End If
 
     If Destination = InDisk Then
         Disk = True
         BinaryFileNum = FreeFile
-        Open "InForm/UiEditorPreview.frmbin" For Binary As #BinaryFileNum
+        Open "UiEditorPreview.frmbin" For Binary As #BinaryFileNum
     ElseIf Destination = ToUndoBuffer Then
         UndoBuffer = True
     End If
@@ -2775,7 +2777,7 @@ Sub LoadPreview (Destination As _Byte)
     LoadError:
     If Disk Then
         Close #BinaryFileNum
-        Kill "InForm/UiEditorPreview.frmbin"
+        Kill "UiEditorPreview.frmbin"
     End If
     If LogFileLoad Then Close #LogFileNum
     __UI_AutoRefresh = True
@@ -2792,11 +2794,11 @@ Sub LoadPreviewText
 
     Const LogFileLoad = False
 
-    If _FileExists("InForm/UiEditorPreview.frmbin") = 0 Then
+    If _FileExists("UiEditorPreview.frmbin") = 0 Then
         Exit Sub
     Else
         BinaryFileNum = FreeFile
-        Open "InForm/UiEditorPreview.frmbin" For Binary As #BinaryFileNum
+        Open "UiEditorPreview.frmbin" For Binary As #BinaryFileNum
 
         LogFileNum = FreeFile
         If LogFileLoad Then Open "ui_log.txt" For Output As #LogFileNum
@@ -3148,7 +3150,7 @@ Sub LoadPreviewText
 
         LoadError:
         Close #BinaryFileNum
-        Kill "InForm/UiEditorPreview.frmbin"
+        Kill "UiEditorPreview.frmbin"
         __UI_AutoRefresh = True
         Exit Sub
     End If
@@ -3247,7 +3249,7 @@ Sub SavePreview (Destination As _Byte)
     If Destination = InDisk Then
         Disk = True
         BinFileNum = FreeFile
-        Open "InForm/UiEditorPreview.frmbin" For Binary As #BinFileNum
+        Open "UiEditorPreview.frmbin" For Binary As #BinFileNum
     ElseIf Destination = ToEditor Then
         TCP = True
     ElseIf Destination = ToUndoBuffer Then
@@ -3931,7 +3933,7 @@ Sub LoadDefaultFonts
         Control(__UI_FormID).Font = SetFont("/usr/share/fonts/TTF/arial.ttf", 12)
     End If
     If Control(__UI_FormID).Font = 8 Or Control(__UI_FormID).Font = 16 Then
-        Control(__UI_FormID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12)
+        Control(__UI_FormID).Font = SetFont("resources/NotoMono-Regular.ttf", 12)
     End If
 End Sub
 
