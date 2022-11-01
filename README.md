@@ -2,7 +2,7 @@
 
 ![InForm logo](InForm/resources/Application-icon-128.png)
 
-A GUI engine and WYSIWYG interface designer for QB64-PE
+A GUI engine and WYSIWYG interface designer for QB64 and QB64-PE
 
 Wiki: <https://github.com/a740g/InForm/wiki>
 
