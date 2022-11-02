@@ -10,7 +10,7 @@ Declare CustomType Library
     Sub __UI_MemCopy Alias memcpy (ByVal dest As _Offset, Byval source As _Offset, Byval bytes As Long)
 End Declare
 
-Declare Library "./falcon"
+Declare Library "./InForm/falcon"
     Sub uprint_extra (ByVal x&, Byval y&, Byval chars%&, Byval length%&, Byval kern&, Byval do_render&, txt_width&, Byval charpos%&, charcount&, Byval colour~&, Byval max_width&)
     Function uprint (ByVal x&, Byval y&, chars$, Byval txt_len&, Byval colour~&, Byval max_width&)
     Function uprintwidth (chars$, Byval txt_len&, Byval max_width&)
@@ -21,15 +21,15 @@ End Declare
 
 $If WIN Then
     Declare Library
-        Function __UI_MB& Alias MessageBox (ByVal ignore&, message$, title$, Byval type&)
-        Function GetSystemMetrics& (ByVal WhichMetric&)
+    Function __UI_MB& Alias MessageBox (ByVal ignore&, message$, title$, Byval type&)
+    Function GetSystemMetrics& (ByVal WhichMetric&)
     End Declare
 
     Const __UI_SM_SWAPBUTTON = 23
 $Else
-        DECLARE LIBRARY ""
+    DECLARE LIBRARY ""
         FUNCTION __UI_MB& ALIAS MessageBox (BYVAL ignore&, message$, title$, BYVAL type&)
-        END DECLARE
+    END DECLARE
 $End If
 
 $ScreenHide

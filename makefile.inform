@@ -1,0 +1,68 @@
+
+# Makefile for InForm
+# Copyright (c) 2022 Samuel Gomes
+
+#MAKEFLAGS += --no-builtin-rules
+
+ifndef OS
+	$(error "OS must be set to 'lnx', 'win', or 'osx'")
+endif
+
+ifeq ($(OS),lnx)
+	RM := rm -fr
+	EXTENSION :=
+	DIR_SLASH := /
+endif
+
+ifeq ($(OS),win)
+	RM := del /Q
+	EXTENSION := .exe
+	DIR_SLASH := /
+endif
+
+ifeq ($(OS),osx)
+	RM := rm -fr
+	EXTENSION :=
+	DIR_SLASH := \\
+endif
+
+# This should point to your QB64 installation
+FILE1 := qb64
+FILE2 := qb64pe
+ROOT_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+
+ifeq (,$(wildcard $(FILE1)$(EXTENSION)))
+	QB64 := $(FILE2)
+else ifeq (,$(wildcard $(FILE2)$(EXTENSION)))
+	QB64 := $(FILE1)
+endif
+
+QB64PE_FLAGS := -x -p
+ROOT_PATH := $(ROOT_DIR)$(DIR_SLASH)
+INFORM_PATH := InForm$(DIR_SLASH)
+UiEditorSRC := UiEditor.bas
+UiEditorEXE := UiEditor$(EXTENSION) 
+UiEditorPreviewSRC := UiEditorPreview.bas
+UiEditorPreviewEXE := UiEditorPreview$(EXTENSION) 
+
+
+.PHONY: all clean
+
+all: $(UiEditorEXE) $(UiEditorPreviewEXE)
+
+$(UiEditorEXE) : $(INFORM_PATH)$(UiEditorSRC)
+	$(ROOT_PATH)$(QB64)$(EXTENSION) $(QB64PE_FLAGS) -o $(INFORM_PATH)$(UiEditorEXE) $(INFORM_PATH)$(UiEditorSRC) 
+	strip $(INFORM_PATH)$(UiEditorEXE)
+
+$(UiEditorPreviewEXE): $(INFORM_PATH)$(UiEditorPreviewSRC)
+	$(ROOT_PATH)$(QB64)$(EXTENSION) $(QB64PE_FLAGS) -s:exewithsource=true -o $(INFORM_PATH)$(UiEditorPreviewEXE) $(INFORM_PATH)$(UiEditorPreviewSRC) 
+	strip $(INFORM_PATH)$(UiEditorPreviewEXE)
+
+clean:
+ifeq ($(OS),win)
+	$(RM) InForm\UiEditor$(EXTENSION) InForm\UiEditorPreview$(EXTENSION) InForm\vbdos2inform$(EXTENSION)
+else
+	$(RM) InForm/UiEditor$(EXTENSION) InForm/UiEditorPreview$(EXTENSION) InForm/vbdos2inform$(EXTENSION)
+endif
+
+

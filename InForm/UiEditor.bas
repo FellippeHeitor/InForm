@@ -1,5 +1,5 @@
-Option _Explicit
-Option _ExplicitArray
+OPTION _EXPLICIT
+OPTION _EXPLICITARRAY
 
 $ExeIcon:'.\resources\InForm.ico'
 
@@ -64,8 +64,6 @@ Dim Shared AlignMenuDistributeV As Long
 Dim Shared AlignMenuDistributeH As Long
 
 Dim Shared OptionsMenuAutoName As Long, OptionsMenuSwapButtons As Long
-Dim Shared OptionsMenuCheckUpdates As Long, OptionsMenuCheckUpdatesNow As Long
-Dim Shared OptionsMenuDevChannel As Long
 
 Dim Shared HelpMenuHelp As Long, HelpMenuAbout As Long
 
@@ -151,8 +149,7 @@ Dim Shared KeyboardComboLB As Long, KeyboardComboBT As Long
 Dim Shared UiPreviewPID As Long, TotalSelected As Long, FirstSelected As Long
 Dim Shared PreviewFormID As Long, PreviewSelectionRectangle As Integer
 Dim Shared PreviewAttached As _Byte, AutoNameControls As _Byte
-Dim Shared LastKeyPress As Double, CheckUpdates As _Byte, CheckUpdatesNow As _Byte
-Dim Shared CheckDevUpdates As _Byte, CheckUpdateDone As _Byte, CheckUpdateStartUpTrigger As _Byte
+Dim Shared LastKeyPress As Double
 Dim Shared UiEditorTitle$, Edited As _Byte, ZOrderingDialogOpen As _Byte
 Dim Shared OpenDialogOpen As _Byte
 Dim Shared PropertySent As _Byte, RevertEdit As _Byte, OldColor As _Unsigned Long
@@ -167,6 +164,7 @@ Dim Shared RecentMenuItem(1 To 9) As Long, RecentListBuilt As _Byte
 Dim Shared LoadedWithGifExtension As _Byte, AddGifExtension As _Byte
 Dim Shared TotalGifLoaded As Long, SetBindingDialogOpen As _Byte
 Dim Shared InitialControlSet As String
+DIM SHARED Answer AS LONG
 
 Type newInputBox
     ID As Long
@@ -206,12 +204,32 @@ Dim Shared AttemptToShowFontList As _Byte, BypassShowFontList As _Byte
 Dim Shared TotalFontsFound As Long
 ReDim Shared FontFile(0) As String
 
+DIM SHARED AS STRING QB64_EXE, QB64_DISPLAY
+
 $If WIN Then
     Const PathSep$ = "\"
-    Const QB64PE_EXE = "qb64pe.exe"
+    IF _FILEEXISTS(".." + PathSep$ + "qb64pe.exe") THEN
+        QB64_EXE = "qb64pe.exe"
+        QB64_DISPLAY = "QB64/PE"
+    ELSEIF _FILEEXISTS(".." + PathSep$ + "qb64.exe") THEN
+        QB64_EXE = "qb64.exe"
+        QB64_DISPLAY = "QB64"
+    ELSE
+        Answer = MessageBox("InForm aborted - Neither qb64pe.exe or qb64.exe executable found.", "", MsgBox_Ok + MsgBox_Critical)
+        SYSTEM 1
+    END IF
 $Else
-        CONST PathSep$ = "/"
-        Const QB64PE_EXE = "qb64pe"
+    CONST PathSep$ = "/"
+    IF _FILEEXISTS(".." + PathSep$ + "qb64pe") THEN
+        QB64_EXE = "qb64pe"
+        QB64_DISPLAY = "QB64/PE"
+    ELSEIF _FILEEXISTS(".." + PathSep$ + "qb64") THEN
+        QB64_EXE = "qb64"
+        QB64_DISPLAY = "QB64"
+    ELSE
+        Answer = MessageBox("InForm aborted - Neither qb64pe or qb64 executable found.", "", MsgBox_Ok + MsgBox_Critical)
+        SYSTEM 1
+    END IF
 $End If
 
 Dim Shared CurrentPath$, ThisFileName$
@@ -335,18 +353,6 @@ Sub __UI_Click (id As Long)
             AutoNameControls = Not AutoNameControls
             Control(id).Value = AutoNameControls
             SaveSettings
-        Case OptionsMenuCheckUpdates
-            CheckUpdates = Not CheckUpdates
-            Control(id).Value = CheckUpdates
-            SaveSettings
-        Case OptionsMenuDevChannel
-            CheckDevUpdates = Not CheckDevUpdates
-            Control(id).Value = CheckDevUpdates
-            SaveSettings
-        Case OptionsMenuCheckUpdatesNow
-            CheckUpdatesNow = True
-            CheckUpdateDone = False
-            CheckUpdateStartUpTrigger = False
         Case EditMenuConvertType
             b$ = MKI$(0)
             SendData b$, 225
@@ -461,9 +467,9 @@ Sub __UI_Click (id As Long)
             End If
         Case ViewMenuPreview
             $If WIN Then
-                Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
+                Shell _DontWait ".\UiEditorPreview.exe " + HostPort
             $Else
-                    SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+                    SHELL _DONTWAIT "./UiEditorPreview " + HostPort
             $End If
         Case ViewMenuLoadedFonts
             Dim Temp$
@@ -568,7 +574,7 @@ Sub __UI_Click (id As Long)
         Case HelpMenuAbout
             Dim isBeta$
             If __UI_VersionIsBeta Then isBeta$ = " Beta Version" Else isBeta$ = ""
-            Answer = MessageBox(UiEditorTitle$ + " " + __UI_Version + " (build" + Str$(__UI_VersionNumber) + isBeta$ + ")\nby Fellippe Heitor\n\nTwitter: @fellippeheitor\ne-mail: fellippe@qb64.org", "About", MsgBox_OkOnly + MsgBox_Information)
+			Answer = MessageBox("InForm GUI for QB64 - Created by Fellippe Heitor (2016-2021)\n\n" + UiEditorTitle$ + " " + __UI_Version + " (build" + Str$(__UI_VersionNumber) + isBeta$ + ")\nby George McGinn (gbytes58@gmail.com)\n   Samuel Gomes\n\nGitHub: https://github.com/a740g/InForm\n\nContact: gbytes58@gmail.com", "About", MsgBox_OkOnly + MsgBox_Information)
         Case HelpMenuHelp
             Answer = MessageBox("Design a form and export the resulting code to generate an event-driven QB64 program.", "What's all this?", MsgBox_OkOnly + MsgBox_Information)
         Case FileMenuExit
@@ -584,6 +590,11 @@ Sub __UI_Click (id As Long)
                     SaveForm False, False
                 End If
             End If
+            $IF WIN THEN 
+    	        IF _FileExists("..\UiEditorPreview.frmbin") THEN Kill "..\UiEditorPreview.frmbin"            
+            $ELSE 
+			    IF _FileExists("UiEditorPreview.frmbin") Then Kill "UiEditorPreview.frmbin"
+            $END IF
             System
         Case EditMenuZOrdering
             'Fill the list:
@@ -647,7 +658,7 @@ Sub __UI_Click (id As Long)
             Control(SetControlBinding).Left = 83: Control(SetControlBinding).Top = 169
             __UI_Focus = SourcePropertyList
             SetBindingDialogOpen = True
-            'CASE SwapBT
+        'CASE SwapBT
             '    SWAP Caption(SourceControlNameLB), Caption(TargetControlNameLB)
             '    SWAP Control(SourcePropertyList).Value, Control(TargetPropertyList).Value
         Case BindBT
@@ -1003,12 +1014,6 @@ Sub __UI_MouseEnter (id As Long)
             Caption(StatusBar) = "Automatically sets control names based on caption and type"
         Case OptionsMenuSwapButtons
             Caption(StatusBar) = "Toggles left/right mouse buttons."
-        Case OptionsMenuCheckUpdates
-            Caption(StatusBar) = "Allows InForm to automatically check for updates at start-up."
-        Case OptionsMenuDevChannel
-            Caption(StatusBar) = "Receive updates from the development channel, for beta testing new features (experimental)."
-        Case OptionsMenuCheckUpdatesNow
-            Caption(StatusBar) = "Connects to server and check for new updates."
         Case FontLB, FontListLB
             Control(FontLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
             Control(FontListLB).BackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
@@ -1111,11 +1116,11 @@ Sub AddToRecentList (FileName$)
 
     'Check if this FileName$ is already in the list; if so, delete it.
     For i = 1 To 9
-        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+        b$ = ReadSetting("InForm.ini", "Recent Projects", Str$(i))
         If b$ = FileName$ Then
             For j = i + 1 To 9
-                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(j))
-                WriteSetting "InForm/InForm.ini", "Recent Projects", Str$(j - 1), b$
+                b$ = ReadSetting("InForm.ini", "Recent Projects", Str$(j))
+                WriteSetting "InForm.ini", "Recent Projects", Str$(j - 1), b$
             Next
             Exit For
         End If
@@ -1124,11 +1129,11 @@ Sub AddToRecentList (FileName$)
     'Make room for FileName$ by shifting existing list by one;
     '1 is the most recent, 9 is the oldest;
     For i = 8 To 1 Step -1
-        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
-        WriteSetting "InForm/InForm.ini", "Recent Projects", Str$(i + 1), b$
+        b$ = ReadSetting("InForm.ini", "Recent Projects", Str$(i))
+        WriteSetting "InForm.ini", "Recent Projects", Str$(i + 1), b$
     Next
 
-    WriteSetting "InForm/InForm.ini", "Recent Projects", "1", FileName$
+    WriteSetting "InForm.ini", "Recent Projects", "1", FileName$
     RecentListBuilt = False
 End Sub
 
@@ -1137,13 +1142,13 @@ Sub RemoveFromRecentList (FileName$)
 
     'Check if this FileName$ is already in the list; if so, delete it.
     For i = 1 To 9
-        b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+        b$ = ReadSetting("InForm.ini", "Recent Projects", Str$(i))
         If b$ = FileName$ Then
             For j = i + 1 To 9
-                b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(j))
-                WriteSetting "InForm/InForm.ini", "Recent Projects", Str$(j - 1), b$
+                b$ = ReadSetting("InForm.ini", "Recent Projects", Str$(j))
+                WriteSetting "InForm.ini", "Recent Projects", Str$(j - 1), b$
             Next
-            WriteSetting "InForm/InForm.ini", "Recent Projects", "9", ""
+            WriteSetting "InForm.ini", "Recent Projects", "9", ""
             Exit For
         End If
     Next
@@ -1285,7 +1290,7 @@ Sub __UI_BeforeUpdateDisplay
         'Build list of recent projects
         RecentListBuilt = True
         For i = 1 To 9
-            b$ = ReadSetting("InForm/InForm.ini", "Recent Projects", Str$(i))
+            b$ = ReadSetting("InForm.ini", "Recent Projects", Str$(i))
             If Len(b$) Then
                 ToolTip(RecentMenuItem(i)) = b$
                 If InStr(b$, PathSep$) > 0 Then
@@ -1401,146 +1406,6 @@ Sub __UI_BeforeUpdateDisplay
             GoTo LoadNewInstanceForm
         End If
     Next
-
-    If CheckUpdatesNow Then
-        If CheckUpdateDone = False Then
-            Static ThisStep As Integer
-            Static serverVersion$, isBeta$, serverBeta$, serverBeta%%
-            Static updateDescription$, serverVersionString$
-            Static OverallDownloadStart!
-            Dim Result$, remoteFile$, start!
-            If ThisStep = 0 Then
-                '"Beginning update process"
-                ThisStep = 1
-                updateDescription$ = ""
-                serverVersion$ = ""
-                isBeta$ = ""
-                serverVersionString$ = ""
-                serverBeta%% = False
-                Result$ = Download$("", "", 10)
-                If _FileExists("InForm/InFormUpdate.ini") Then Kill "InForm/InFormUpdate.ini"
-                OverallDownloadStart! = Timer
-            End If
-
-            Caption(StatusBar) = "Contacting update server" + String$(Int(Timer - OverallDownloadStart!), ".")
-
-            Select EveryCase ThisStep
-                Case 1 'check availability
-                    '"Checking availability"
-                    start! = Timer
-
-                    If CheckDevUpdates Then
-                        remoteFile$ = "www.qb64.org/inform/update/latestdev.ini"
-                    Else
-                        remoteFile$ = "www.qb64.org/inform/update/latest.ini"
-                    End If
-
-                    '"Fetching " + remoteFile$
-                    Result$ = Download$(remoteFile$, "InForm/InFormUpdate.ini", 30)
-                    Select Case CVI(Left$(Result$, 2))
-                        Case 1 'Success
-                            ThisStep = 2
-                        Case 2, 3 'Can't reach server / Timeout
-                            ThisStep = 0
-                            If Timer - start! > 5 Then
-                                CheckUpdates = False 'disable auto-check if it times out
-                                SaveSettings
-                            End If
-                            If Not CheckUpdateStartUpTrigger Then
-                                b$ = "An error occurred. Make sure your computer is online."
-                                Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Exclamation)
-                                CheckUpdatesNow = False
-                                CheckUpdateStartUpTrigger = False
-                            End If
-                            CheckUpdateDone = True
-                            Caption(StatusBar) = "Ready."
-                    End Select
-                Case 2 'compare with current version
-                    Dim localVersionNumber!
-
-                    localVersionNumber! = __UI_VersionNumber
-
-                    '"Comparing versions"
-                    If __UI_VersionIsBeta Then isBeta$ = " Beta Version" Else isBeta$ = ""
-                    serverBeta$ = ReadSetting("InForm/InFormUpdate.ini", "", "beta")
-                    serverBeta%% = (serverBeta$ = "true")
-                    If serverBeta%% Then serverBeta$ = " Beta Version" Else serverBeta$ = ""
-                    serverVersion$ = ReadSetting("InForm/InFormUpdate.ini", "", "version")
-                    serverVersionString$ = ReadSetting("InForm/InFormUpdate.ini", "", "versionstring")
-                    updateDescription$ = ReadSetting("InForm/InFormUpdate.ini", "", "description")
-
-                    'STR$(serverBeta%%) + "," + serverVersion$ + "," + serverVersionString$ + "," + updateDescription$
-
-                    If serverBeta%% And CheckDevUpdates = False Then
-                        CheckUpdateDone = True
-                        If Not CheckUpdateStartUpTrigger Then
-                            If __UI_VersionIsBeta Then
-                                b$ = "You already have the latest version of InForm."
-                                If Val(serverVersion$) > localVersionNumber! Then
-                                    b$ = b$ + "\nThere is a new development build available. Reenable 'Receive development updates' in the Options menu and\ntry updating again if you wish to keep helping beta test the new experimental features."
-                                End If
-                            Else
-                                b$ = "You already have the latest stable version of InForm."
-                                If Val(serverVersion$) > localVersionNumber! Then
-                                    b$ = b$ + "\nThere is a development build available. Check 'Receive development updates' in the Options menu and\ntry updating again if you wish to help beta test the new experimental features."
-                                End If
-                            End If
-                            Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
-                            CheckUpdatesNow = False
-                            CheckUpdateStartUpTrigger = False
-                        End If
-                        ThisStep = 0
-                        Caption(StatusBar) = "Ready."
-                        Exit Sub
-                    End If
-
-                    If Val(serverVersion$) <= localVersionNumber! Then
-                        CheckUpdateDone = True
-                        If Not CheckUpdateStartUpTrigger Then
-                            b$ = "You already have the latest version of InForm."
-                            If __UI_VersionIsBeta Then
-                                b$ = b$ + "\nThis is a development build."
-                            End If
-                            Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
-                            CheckUpdatesNow = False
-                            CheckUpdateStartUpTrigger = False
-                        End If
-                        ThisStep = 0
-                        Caption(StatusBar) = "Ready."
-                        Exit Sub
-                    End If
-
-                    ThisStep = 3
-                    Exit Sub
-                Case 3 'An update is available.
-                    Result$ = Download$("", "", 30) 'close connection
-                    CheckUpdateDone = True
-                    Dim updaterPath$
-                    $If WIN Then
-                        updaterPath$ = ".\InForm\updater\InFormUpdater.exe"
-                    $Else
-                            updaterPath$ = "./InForm/updater/InFormUpdater"
-                    $End If
-                    If _FileExists(updaterPath$) Then
-                        _Delay .2
-                        If Len(updateDescription$) Then
-                            updateDescription$ = "\n" + Chr$(34) + updateDescription$ + Chr$(34) + "\n"
-                        End If
-                        Caption(StatusBar) = "New version available: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")"
-                        b$ = "A new version of InForm is available.\n\nCurrent version: " + __UI_Version + " (build" + Str$(__UI_VersionNumber) + isBeta$ + ")\n" + "New version: " + serverVersionString$ + " (build " + serverVersion$ + serverBeta$ + ")\n" + updateDescription$ + "\n" + "Update now?"
-                        Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
-                        If Answer = MsgBox_Yes Then
-                            Shell _DontWait updaterPath$
-                            System
-                        End If
-                        ThisStep = 0
-                    Else
-                        b$ = "A new version of InForm is available, but the updater is\ncurrently being recompiled.\nPlease check again in a few moments."
-                        Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
-                    End If
-            End Select
-        End If
-    End If
 
     CheckPreview
 
@@ -2733,33 +2598,33 @@ Sub SaveSettings
     If _DirExists("InForm") = 0 Then Exit Sub
 
     If PreviewAttached Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Keep preview window attached", value$
+    WriteSetting "InForm.ini", "InForm Settings", "Keep preview window attached", value$
 
     If AutoNameControls Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Auto-name controls", value$
+    WriteSetting "InForm.ini", "InForm Settings", "Auto-name controls", value$
 
     If __UI_SnapLines Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Snap to edges", value$
+    WriteSetting "InForm.ini", "InForm Settings", "Snap to edges", value$
 
     If __UI_ShowPositionAndSize Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", value$
+    WriteSetting "InForm.ini", "InForm Settings", "Show position and size", value$
 
     If __UI_ShowInvisibleControls Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", value$
+    WriteSetting "InForm.ini", "InForm Settings", "Show invisible controls", value$
 
-    If CheckUpdates Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
+    value$ = "False"  													' *** Removing the checking for update function 
+    WriteSetting "InForm.ini", "InForm Settings", "Check for updates", value$
 
-    If CheckDevUpdates Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", value$
+   value$ = "False"  													' *** Removing the checking for update function
+    WriteSetting "InForm.ini", "InForm Settings", "Receive development updates", value$
 
     If ShowFontList Then value$ = "True" Else value$ = "False"
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", value$
+    WriteSetting "InForm.ini", "InForm Settings", "Show font list", value$
 
     $If WIN Then
     $Else
-            IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
-            WriteSetting "InForm/InForm.ini", "InForm Settings", "Swap mouse buttons", value$
+        IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
+        WriteSetting "InForm.ini", "InForm Settings", "Swap mouse buttons", value$
     $End If
 End Sub
 
@@ -2818,7 +2683,7 @@ Sub __UI_OnLoad
 
     'Load splash image:
     Dim tempIcon As Long
-    tempIcon = _LoadImage("./InForm/resources/Application-icon-128.png", 32)
+    tempIcon = _LoadImage("resources/Application-icon-128.png", 32)
 
     GoSub ShowMessage
 
@@ -2869,7 +2734,6 @@ Sub __UI_OnLoad
 
     PreviewAttached = True
     AutoNameControls = True
-    CheckUpdates = True
     __UI_ShowPositionAndSize = True
     __UI_ShowInvisibleControls = True
     __UI_SnapLines = True
@@ -2889,88 +2753,68 @@ Sub __UI_OnLoad
     If _DirExists("InForm") = 0 Then MkDir "InForm"
 
     Dim value$
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Keep preview window attached")
+    value$ = ReadSetting("InForm.ini", "InForm Settings", "Keep preview window attached")
     If Len(value$) Then
         PreviewAttached = (value$ = "True")
     Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Keep preview window attached", "True"
+        WriteSetting "InForm.ini", "InForm Settings", "Keep preview window attached", "True"
         PreviewAttached = True
     End If
 
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Auto-name controls")
+    value$ = ReadSetting("InForm.ini", "InForm Settings", "Auto-name controls")
     If Len(value$) Then
         AutoNameControls = (value$ = "True")
     Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Auto-name controls", "True"
+        WriteSetting "InForm.ini", "InForm Settings", "Auto-name controls", "True"
         AutoNameControls = True
     End If
 
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Snap to edges")
+    value$ = ReadSetting("InForm.ini", "InForm Settings", "Snap to edges")
     If Len(value$) Then
         __UI_SnapLines = (value$ = "True")
     Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Snap to edges", "True"
+        WriteSetting "InForm.ini", "InForm Settings", "Snap to edges", "True"
         __UI_SnapLines = True
     End If
 
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show position and size")
+    value$ = ReadSetting("InForm.ini", "InForm Settings", "Show position and size")
     If Len(value$) Then
         __UI_ShowPositionAndSize = (value$ = "True")
     Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Show position and size", "True"
+        WriteSetting "InForm.ini", "InForm Settings", "Show position and size", "True"
         __UI_ShowPositionAndSize = True
     End If
 
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show invisible controls")
+    value$ = ReadSetting("InForm.ini", "InForm Settings", "Show invisible controls")
     If Len(value$) Then
         __UI_ShowInvisibleControls = (value$ = "True")
     Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", "True"
+        WriteSetting "InForm.ini", "InForm Settings", "Show invisible controls", "True"
         __UI_ShowInvisibleControls = True
     End If
 
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Check for updates")
-    If Len(value$) Then
-        CheckUpdates = (value$ = "True")
-    Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", "True"
-        CheckUpdates = True
-    End If
-    CheckUpdatesNow = CheckUpdates
-    If CheckUpdatesNow Then CheckUpdateStartUpTrigger = True
-
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Receive development updates")
-    If Len(value$) Then
-        CheckDevUpdates = (value$ = "True")
-    Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", "False"
-        CheckDevUpdates = False
-    End If
-
-    value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Show font list")
+    value$ = ReadSetting("InForm.ini", "InForm Settings", "Show font list")
     If Len(value$) Then
         ShowFontList = (value$ = "True")
     Else
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", "True"
+        WriteSetting "InForm.ini", "InForm Settings", "Show font list", "True"
         ShowFontList = True
     End If
 
     $If WIN Then
     $Else
-            value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Swap mouse buttons")
-            __UI_MouseButtonsSwap = (value$ = "True")
-            Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
+        value$ = ReadSetting("InForm.ini", "InForm Settings", "Swap mouse buttons")
+        __UI_MouseButtonsSwap = (value$ = "True")
+        Control(OptionsMenuSwapButtons).Value = __UI_MouseButtonsSwap
     $End If
 
     Control(ViewMenuPreviewDetach).Value = PreviewAttached
     Control(OptionsMenuAutoName).Value = AutoNameControls
-    Control(OptionsMenuCheckUpdates).Value = CheckUpdates
-    Control(OptionsMenuDevChannel).Value = CheckDevUpdates
     Control(OptionsMenuSnapLines).Value = __UI_SnapLines
     Control(ViewMenuShowPositionAndSize).Value = __UI_ShowPositionAndSize
     Control(ViewMenuShowInvisibleControls).Value = __UI_ShowInvisibleControls
 
-    If _FileExists("InForm/UiEditorPreview.frmbin") Then Kill "InForm/UiEditorPreview.frmbin"
+    If _FileExists("UiEditorPreview.frmbin") Then Kill "UiEditorPreview.frmbin"
 
     b$ = "Parsing command line..."
     GoSub ShowMessage
@@ -3054,7 +2898,7 @@ Sub __UI_OnLoad
             Get #FreeFileNum, 1, b$
             Close #FreeFileNum
 
-            Open "InForm/UiEditorPreview.frmbin" For Binary As #FreeFileNum
+            Open "UiEditorPreview.frmbin" For Binary As #FreeFileNum
             Put #FreeFileNum, 1, b$
             Close #FreeFileNum
             If LoadedWithGifExtension = False Then
@@ -3068,39 +2912,15 @@ Sub __UI_OnLoad
     End If
 
     b$ = "Checking Preview component..."
-    GoSub ShowMessage
-
-    Dim As _Byte JustRecompiledPreview
-    $If WIN Then
-        If _FileExists("InForm/UiEditorPreview.exe") = 0 Then
-            If _FileExists("InForm/UiEditorPreview.bas") = 0 Then
-                GoTo UiEditorPreviewNotFound
-            Else
-                b$ = "Compiling Preview component..."
-                GoSub ShowMessage
-                Shell _Hide QB64PE_EXE + " -s:exewithsource=true -x .\InForm\UiEditorPreview.bas"
-                If _FileExists("InForm/UiEditorPreview.exe") = 0 Then GoTo UiEditorPreviewNotFound
-                JustRecompiledPreview = True
-            End If
-        End If
-
-    $Else
-            IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN
-            IF _FILEEXISTS("./InForm/UiEditorPreview.bas") = 0 THEN
-            GOTO UiEditorPreviewNotFound
-            ELSE
-            b$ = "Compiling Preview component..."
-            GOSUB ShowMessage
-            SHELL _HIDE "./" + QB64PE_EXE + " -s:exewithsource=true -x ./InForm/UiEditorPreview.bas"
-            IF _FILEEXISTS("InForm/UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
-            JustRecompiledPreview = True
-            END IF
-            END IF
-    $End If
+    GOSUB ShowMessage
+    $IF WIN THEN              
+		IF _FileExists("UiEditorPreview.exe") = 0 THEN GOTO UiEditorPreviewNotFound
+    $ELSE
+        IF _FILEEXISTS("UiEditorPreview") = 0 THEN GOTO UiEditorPreviewNotFound
+    $END IF
 
     b$ = "Reading directory..."
     GoSub ShowMessage
-
     'Fill "open dialog" listboxes:
     '-------------------------------------------------
     Dim TotalFiles%
@@ -3257,9 +3077,9 @@ Sub __UI_OnLoad
     b$ = "Launching Preview component..."
     GoSub ShowMessage
     $If WIN Then
-        Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
+        Shell _DontWait ".\UiEditorPreview.exe " + HostPort
     $Else
-            SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+            SHELL _DONTWAIT "./UiEditorPreview " + HostPort
     $End If
 
     b$ = "Connecting to preview component..."
@@ -3275,37 +3095,6 @@ Sub __UI_OnLoad
     b$ = "Connected! Handshaking..."
     GoSub ShowMessage
     Handshake
-
-    Dim TriggerUpdaterRecompile As _Byte
-    TriggerUpdaterRecompile = False
-    If JustRecompiledPreview = False Then
-        value$ = ReadSetting("InForm/InForm.ini", "InForm Settings", "Recompile updater")
-        If value$ = "True" Then
-            TriggerUpdaterRecompile = True
-            WriteSetting "InForm/InForm.ini", "InForm Settings", "Recompile updater", "False"
-        Else
-            $If WIN Then
-                If _FileExists("InForm/updater/InFormUpdater.exe") = False Then
-                    TriggerUpdaterRecompile = True
-                End If
-            $Else
-                    IF _FILEEXISTS("InForm/updater/InFormUpdater") = False THEN
-                    TriggerUpdaterRecompile = True
-                    END IF
-            $End If
-        End If
-
-        If TriggerUpdaterRecompile Then
-            $If WIN Then
-                Shell _Hide _DontWait QB64PE_EXE + " -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
-            $Else
-                    SHELL _HIDE _DONTWAIT "./" + QB64PE_EXE + " -s:exewithsource=true -x InForm/updater/InFormUpdater.bas"
-            $End If
-        End If
-
-        If CheckUpdates Then b$ = "Checking for updates..." Else b$ = "InForm Designer"
-        GoSub ShowMessage
-    End If
 
     __UI_RefreshMenuBar
     __UI_ForceRedraw = True
@@ -4152,7 +3941,7 @@ Sub CheckPreview
 
                 __UI_UpdateDisplay
 
-                Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
+                Shell _DontWait ".\UiEditorPreview.exe " + HostPort
 
                 Do
                     Client = _OpenConnection(Host)
@@ -4191,7 +3980,7 @@ Sub CheckPreview
 
             __UI_UpdateDisplay
 
-            SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+            SHELL _DONTWAIT "./UiEditorPreview " + HostPort
 
             DO
             Client = _OPENCONNECTION(Host)
@@ -4843,7 +4632,7 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
                         If AddGifExtension = True And TotalGifLoaded > 0 Then
                             Print #TextFileNum,
                             Print #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
-                            Print #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
+                            Print #TextFileNum, "    'Please refer to the documentation in 'extensions/README - gifplay.txt'"
                             For Dummy = 1 To UBound(PreviewControls)
                                 If PreviewAnimatedGif(Dummy) Then
                                     Print #TextFileNum, "    UpdateGif " + RTrim$(PreviewControls(Dummy).Name)
@@ -4908,27 +4697,23 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
     b$ = b$ + "    " + Mid$(BaseOutputFileName, Len(CurrentPath$) + 2) + ".frm"
 
     If ExitToQB64 And Not SaveOnlyFrm Then
-        $If WIN Then
-            If _FileExists(QB64PE_EXE) Then
-                b$ = b$ + Chr$(10) + Chr$(10) + "Exit to QB64?"
-            Else
-                b$ = b$ + Chr$(10) + Chr$(10) + "Close the editor?"
-            End If
-        $Else
-                IF _FILEEXISTS("qb64") THEN
-                b$ = b$ + CHR$(10) + CHR$(10) + "Exit to QB64?"
-                ELSE
-                b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
-                END IF
-        $End If
-        Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
-        If Answer = MsgBox_No Then Edited = False: Exit Sub
-        $If WIN Then
-            If _FileExists(QB64PE_EXE) Then Shell _DontWait QB64PE_EXE + " " + QuotedFilename$(BaseOutputFileName + ".bas")
-        $Else
-                IF _FILEEXISTS(QB64PE_EXE) THEN SHELL _DONTWAIT "./" + QB64PE_EXE + "  " + QuotedFilename$(BaseOutputFileName + ".bas")
-        $End If
-        System
+        IF _FILEEXISTS(".." + PathSep$ + QB64_EXE) THEN
+            b$ = b$ + Chr$(10) + Chr$(10) + "Exit to " + QB64_DISPLAY + "?"
+            Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
+            If Answer = MsgBox_No Then Edited = False:EXIT SUB
+    	    IF _FileExists("UiEditorPreview.frmbin") THEN Kill "UiEditorPreview.frmbin"            
+            $IF WIN THEN 
+    	        IF _FileExists("..\UiEditorPreview.frmbin") THEN Kill "..\UiEditorPreview.frmbin"            
+                Shell _DontWait ".." + PathSep$ +  QB64_EXE + " " + QuotedFilename$(BaseOutputFileName + ".bas")
+            $ELSE 
+                SHELL _DONTWAIT ".." + PathSep$ +   + QB64_EXE + "  " + QuotedFilename$(BaseOutputFileName + ".bas")
+            $END IF
+            System
+        ELSE
+            b$ = b$ + Chr$(10) + Chr$(10) + "Close the editor?"
+            Answer = MessageBox(b$, "", MsgBox_YesNo + MsgBox_Question)
+            If Answer = MsgBox_No Then Edited = False: EXIT SUB
+        END IF 
     Else
         Answer = MessageBox(b$, "", MsgBox_OkOnly + MsgBox_Information)
         Edited = False
