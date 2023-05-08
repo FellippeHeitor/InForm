@@ -4607,7 +4607,7 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
                         If AddGifExtension = True And TotalGifLoaded > 0 Then
                             Print #TextFileNum,
                             Print #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
-                            Print #TextFileNum, "    'Please refer to the documentation in 'extensions/README - gifplay.txt'"
+                            Print #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
                             For Dummy = 1 To UBound(PreviewControls)
                                 If PreviewAnimatedGif(Dummy) Then
                                     Print #TextFileNum, "    UpdateGif " + RTrim$(PreviewControls(Dummy).Name)

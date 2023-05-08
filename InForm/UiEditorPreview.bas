@@ -3933,7 +3933,7 @@ Sub LoadDefaultFonts
         Control(__UI_FormID).Font = SetFont("/usr/share/fonts/TTF/arial.ttf", 12)
     End If
     If Control(__UI_FormID).Font = 8 Or Control(__UI_FormID).Font = 16 Then
-        Control(__UI_FormID).Font = SetFont("resources/NotoMono-Regular.ttf", 12)
+        Control(__UI_FormID).Font = SetFont("InForm/resources/NotoMono-Regular.ttf", 12)
     End If
 End Sub
 
