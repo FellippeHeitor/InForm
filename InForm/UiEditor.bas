@@ -2659,7 +2659,7 @@ SUB __UI_OnLoad
 
     'Load splash image:
     DIM tempIcon AS LONG
-    tempIcon = _LOADIMAGE("resources/Application-icon-128.png", 32)
+    tempIcon = _LOADIMAGE("InForm/resources/Application-icon-128.png", 32)
 
     GOSUB ShowMessage
 

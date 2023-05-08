@@ -4,10 +4,3 @@ Artist: Custom Icon Design (Available for custom work)
 Iconset: Flatastic 11 Icons (60 icons)
 License: Free for non-commercial use.
 Commercial usage: Buy commercial license here: http://www.customicondesign.com/free-icons/flatastic-icon-set/flatastic-part-11
-
-http://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Apps-system-software-update-icon.html
-"Apps system software update Icon"
-Artist: Oxygen Team
-Iconset: Oxygen Icons (883 icons)
-License: GNU Lesser General Public License
-Commercial usage: Allowed
