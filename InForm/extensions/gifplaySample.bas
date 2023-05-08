@@ -5,10 +5,10 @@
 '-----------------------------------------------------------
 
 ': Controls' IDs: ------------------------------------------------------------------
-Dim Shared gifplaySample As Long
-Dim Shared PictureBox1 As Long
-Dim Shared LoadBT As Long
-Dim Shared PlayBT As Long
+DIM SHARED gifplaySample AS LONG
+DIM SHARED PictureBox1 AS LONG
+DIM SHARED LoadBT AS LONG
+DIM SHARED PlayBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'gifplay.bi'
@@ -18,81 +18,81 @@ Dim Shared PlayBT As Long
 '$INCLUDE:'gifplay.bm'
 
 ': Event procedures: ---------------------------------------------------------------
-Sub __UI_BeforeInit
+SUB __UI_BeforeInit
 
-End Sub
+END SUB
 
-Sub __UI_OnLoad
+SUB __UI_OnLoad
     Control(PlayBT).Disabled = True
-End Sub
+END SUB
 
-Sub __UI_BeforeUpdateDisplay
+SUB __UI_BeforeUpdateDisplay
     UpdateGif PictureBox1
-End Sub
+END SUB
 
-Sub __UI_BeforeUnload
-End Sub
+SUB __UI_BeforeUnload
+END SUB
 
-Sub __UI_Click (id As Long)
-    Select Case id
-        Case LoadBT
+SUB __UI_Click (id AS LONG)
+    SELECT CASE id
+        CASE LoadBT
             'file 'globe.gif' comes from:
             'https://en.wikipedia.org/wiki/GIF#/media/File:Rotating_earth_(large).gif
-            If OpenGif(PictureBox1, "globe.gif") Then
+            IF OpenGif(PictureBox1, "globe.gif") THEN
                 Control(PlayBT).Disabled = False
-                If TotalFrames(PictureBox1) > 1 Then
+                IF TotalFrames(PictureBox1) > 1 THEN
                     Caption(PlayBT) = "Play"
-                Else
+                ELSE
                     Caption(PlayBT) = "Static gif"
                     Control(PlayBT).Disabled = True
-                End If
+                END IF
                 Caption(LoadBT) = "globe.gif loaded"
                 Control(LoadBT).Disabled = True
-            Else
-                _MessageBox "GIFPlay Sample", "File 'globe.gif' could not be found.", "error"
-            End If
-        Case PlayBT
-            If GifIsPlaying(PictureBox1) Then
+            ELSE
+                _MESSAGEBOX "GIFPlay Sample", "File 'globe.gif' could not be found.", "error"
+            END IF
+        CASE PlayBT
+            IF GifIsPlaying(PictureBox1) THEN
                 PauseGif PictureBox1
                 Caption(PlayBT) = "Play"
-            Else
+            ELSE
                 PlayGif PictureBox1
                 Caption(PlayBT) = "Pause"
-            End If
-        Case PictureBox1
+            END IF
+        CASE PictureBox1
             HideGifOverlay PictureBox1
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_MouseEnter (id As Long)
-End Sub
+SUB __UI_MouseEnter (id AS LONG)
+END SUB
 
-Sub __UI_MouseLeave (id As Long)
-End Sub
+SUB __UI_MouseLeave (id AS LONG)
+END SUB
 
-Sub __UI_FocusIn (id As Long)
-End Sub
+SUB __UI_FocusIn (id AS LONG)
+END SUB
 
-Sub __UI_FocusOut (id As Long)
-End Sub
+SUB __UI_FocusOut (id AS LONG)
+END SUB
 
-Sub __UI_MouseDown (id As Long)
-End Sub
+SUB __UI_MouseDown (id AS LONG)
+END SUB
 
-Sub __UI_MouseUp (id As Long)
-End Sub
+SUB __UI_MouseUp (id AS LONG)
+END SUB
 
-Sub __UI_KeyPress (id As Long)
-End Sub
+SUB __UI_KeyPress (id AS LONG)
+END SUB
 
-Sub __UI_TextChanged (id As Long)
-End Sub
+SUB __UI_TextChanged (id AS LONG)
+END SUB
 
-Sub __UI_ValueChanged (id As Long)
-End Sub
+SUB __UI_ValueChanged (id AS LONG)
+END SUB
 
-Sub __UI_FormResized
-End Sub
+SUB __UI_FormResized
+END SUB
 
 '$INCLUDE:'..\InForm.ui'
 

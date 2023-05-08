@@ -5,17 +5,17 @@
 'unless you intend to use OPTION _EXPLICIT
 
 'Global variables declaration
-Dim currentIniFileName$
-Dim currentIniFileLOF As _Unsigned Long
-Dim IniWholeFile$
-Dim IniSectionData$
-Dim IniPosition As _Unsigned Long
-Dim IniNewFile$
-Dim IniLastSection$
-Dim IniLastKey$
-Dim IniLF$
-Dim IniDisableAutoCommit
-Dim IniCODE
-Dim IniAllowBasicComments
-Dim IniForceReload
+DIM currentIniFileName$
+DIM currentIniFileLOF AS _UNSIGNED LONG
+DIM IniWholeFile$
+DIM IniSectionData$
+DIM IniPosition AS _UNSIGNED LONG
+DIM IniNewFile$
+DIM IniLastSection$
+DIM IniLastKey$
+DIM IniLF$
+DIM IniDisableAutoCommit
+DIM IniCODE
+DIM IniAllowBasicComments
+DIM IniForceReload
 
