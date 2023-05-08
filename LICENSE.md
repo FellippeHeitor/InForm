@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2022 Samuel Gomes
+Copyright (c) 2023 Samuel Gomes
 Copyright (c) 2016-2019 Fellippe Heitor
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

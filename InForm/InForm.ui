@@ -42,40 +42,6 @@ FUNCTION __UI_NumericWithBounds%%: __UI_NumericWithBounds%% = 2: END FUNCTION
 FUNCTION __UI_CheckMark%%: __UI_CheckMark%% = 0: END FUNCTION
 FUNCTION __UI_Bullet%%: __UI_Bullet%% = 1: END FUNCTION
 
-
-'Messagebox constants
-FUNCTION MsgBox_OkOnly%%: MsgBox_OkOnly%% = 0: END FUNCTION
-FUNCTION MsgBox_OkCancel%%: MsgBox_OkCancel%% = 1: END FUNCTION
-FUNCTION MsgBox_AbortRetryIgnore%%: MsgBox_AbortRetryIgnore%% = 2: END FUNCTION
-FUNCTION MsgBox_YesNoCancel%%: MsgBox_YesNoCancel%% = 3: END FUNCTION
-FUNCTION MsgBox_YesNo%%: MsgBox_YesNo%% = 4: END FUNCTION
-FUNCTION MsgBox_RetryCancel%%: MsgBox_RetryCancel%% = 5: END FUNCTION
-FUNCTION MsgBox_CancelTryagainContinue%%: MsgBox_CancelTryagainContinue%% = 6: END FUNCTION
-
-FUNCTION MsgBox_Critical%: MsgBox_Critical% = 16: END FUNCTION
-FUNCTION MsgBox_Question%: MsgBox_Question% = 32: END FUNCTION
-FUNCTION MsgBox_Exclamation%: MsgBox_Exclamation% = 48: END FUNCTION
-FUNCTION MsgBox_Information%: MsgBox_Information% = 64: END FUNCTION
-
-FUNCTION MsgBox_DefaultButton1%: MsgBox_DefaultButton1% = 0: END FUNCTION
-FUNCTION MsgBox_DefaultButton2%: MsgBox_DefaultButton2% = 256: END FUNCTION
-FUNCTION MsgBox_DefaultButton3%: MsgBox_DefaultButton3% = 512: END FUNCTION
-FUNCTION MsgBox_Defaultbutton4%: MsgBox_Defaultbutton4% = 768: END FUNCTION
-
-FUNCTION MsgBox_AppModal%%: MsgBox_AppModal%% = 0: END FUNCTION
-FUNCTION MsgBox_SystemModal%: MsgBox_SystemModal% = 4096: END FUNCTION
-FUNCTION MsgBox_SetForeground&: MsgBox_SetForeground& = 65536: END FUNCTION
-
-FUNCTION MsgBox_Ok%%: MsgBox_Ok%% = 1: END FUNCTION
-FUNCTION MsgBox_Cancel%%: MsgBox_Cancel%% = 2: END FUNCTION
-FUNCTION MsgBox_Abort%%: MsgBox_Abort%% = 3: END FUNCTION
-FUNCTION MsgBox_Retry%%: MsgBox_Retry%% = 4: END FUNCTION
-FUNCTION MsgBox_Ignore%%: MsgBox_Ignore%% = 5: END FUNCTION
-FUNCTION MsgBox_Yes%%: MsgBox_Yes%% = 6: END FUNCTION
-FUNCTION MsgBox_No%%: MsgBox_No%% = 7: END FUNCTION
-FUNCTION MsgBox_Tryagain%%: MsgBox_Tryagain%% = 10: END FUNCTION
-FUNCTION MsgBox_Continue%%: MsgBox_Continue%% = 11: END FUNCTION
-
 'General constants
 FUNCTION __UI_ToolTipTimeOut!: __UI_ToolTipTimeOut! = .8: END FUNCTION
 FUNCTION __UI_CantResizeV%%: __UI_CantResizeV%% = 1: END FUNCTION
@@ -83,8 +49,9 @@ FUNCTION __UI_CantResizeH%%: __UI_CantResizeH%% = 2: END FUNCTION
 FUNCTION __UI_CantResize%%: __UI_CantResize%% = 3: END FUNCTION
 
 '---------------------------------------------------------------------------------
+' a740g: Check if this has the expected behavior 'cause _UFONTHEIGHT actually returns the true font height for built-in fonts
 FUNCTION uspacing&
-    uspacing& = uheight + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)
+    uspacing& = _UFONTHEIGHT + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -717,7 +684,7 @@ SUB __UI_ProcessInput
             IF __UI_HasMenuBar = True THEN
                 'Add menubar div to main form's canvas
                 _FONT Control(__UI_FormID).Font
-                __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
+                __UI_MenuBarOffsetV = _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
                 LINE (0, __UI_MenuBarOffsetV - 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
                 LINE (0, __UI_MenuBarOffsetV)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
                 __UI_RefreshMenuBar
@@ -795,9 +762,9 @@ SUB __UI_UpdateDisplay
         CLS
         IF __UI_HasMenuBar THEN
             _FONT Control(__UI_FormID).Font
-            __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
-            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-            LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+            __UI_MenuBarOffsetV = _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
+            LINE (0, _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+            LINE (0, _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
         ELSE
             __UI_MenuBarOffsetV = 0
         END IF
@@ -834,7 +801,7 @@ SUB __UI_UpdateDisplay
                 _PRINTMODE _KEEPBACKGROUND
                 COLOR _RGBA32(0, 0, 0, 150)
                 _PRINTSTRING (Control(i).Left + 1, Control(i).Top + 1), RTRIM$(Control(i).Name)
-                _PRINTSTRING (Control(i).Left + 1, Control(i).Top + 1 + falcon_uspacing&), "(hidden)"
+                _PRINTSTRING (Control(i).Left + 1, Control(i).Top + 1 + _ulinespacing), "(hidden)"
                 GOTO BypassDisplay
             ELSEIF Control(i).Hidden = True THEN
                 GOTO BypassDisplay
@@ -1282,7 +1249,7 @@ SUB __UI_UpdateDisplay
             COLOR __UI_DefaultColor(__UI_Type_Form, 1)
 
             IF TotalLines = 1 THEN
-                __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - uheight& \ 2 - 1.75, TempCaption$
+                __UI_PrintString _WIDTH \ 2 - __UI_PrintWidth(TempCaption$) \ 2 - 1.75, _HEIGHT \ 2 - _ufontheight \ 2 - 1.75, TempCaption$
             ELSE
                 DO WHILE LEN(TempCaption$)
                     ThisLine% = ThisLine% + 1
@@ -1438,7 +1405,6 @@ SUB __UI_EventDispatcher
     STATIC __UI_JustOpenedMenu AS _BYTE
     STATIC OriginalDragX AS INTEGER, OriginalDragY AS INTEGER
     STATIC OriginalResizeRightSide AS INTEGER, OriginalResizeBottom AS INTEGER
-    STATIC PrevResizeSnapX AS INTEGER, PrevResizeSnapY AS INTEGER
     DIM i AS LONG, j AS LONG, ThisItem%, TempParent AS LONG
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
 
@@ -2097,7 +2063,7 @@ SUB __UI_EventDispatcher
                                 ThisLineLen = LEN(ThisLine$)
 
                                 'Print the text offscreen just to fill the right variables
-                                __UI_PrintString _WIDTH + 10, _HEIGHT + 10, ThisLine$
+                                __UI_CharPos ThisLine$
 
                                 'New cursor position:
                                 FOR i = 1 TO __UI_LastRenderedCharCount
@@ -2161,7 +2127,7 @@ SUB __UI_EventDispatcher
                                         __UI_FillSelectedText 0, 0
 
                                         'Print the text offscreen just to fill the right variables
-                                        __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+                                        __UI_CharPos Text(__UI_Focus)
 
                                         'Single-line textbox click
                                         FOR i = 1 TO __UI_LastRenderedCharCount
@@ -2261,7 +2227,7 @@ SUB __UI_EventDispatcher
                 _FONT (Control(__UI_IsSelectingTextOnID).Font)
                 IF NOT Control(__UI_IsSelectingTextOnID).Multiline THEN
                     'Print the text offscreen just to fill the right variables
-                    __UI_PrintString _WIDTH + 10, _HEIGHT + 10, Text(__UI_Focus)
+                    __UI_CharPos Text(__UI_Focus)
                     IF NOT WholeWordSelection THEN
                         'Single line selection, char by char
 
@@ -2318,7 +2284,7 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_IsSelectingTextOnID).CurrentLine = 0 THEN Control(__UI_IsSelectingTextOnID).CurrentLine = 1
                     ThisLine$ = __UI_GetTextBoxLine(__UI_IsSelectingTextOnID, Control(__UI_IsSelectingTextOnID).CurrentLine, ThisLineStart)
                     ThisLineLen = LEN(ThisLine$)
-                    __UI_PrintString _WIDTH + 10, _HEIGHT + 10, ThisLine$
+                    __UI_CharPos ThisLine$ ' print the text offscreen just to fill the right variables
 
                     'New cursor position:
                     FOR i = 1 TO __UI_LastRenderedCharCount
@@ -4761,7 +4727,7 @@ SUB __UI_AdjustNewMenuBarTopHeight (NextSlot AS LONG)
     END IF
 
     IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
-    Control(NextSlot).Height = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5
+    Control(NextSlot).Height = _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5
     Control(NextSlot).Top = 0
 
     IF TempCanvas <> 0 THEN
@@ -4778,9 +4744,9 @@ SUB __UI_AdjustNewMenuBarTopHeight (NextSlot AS LONG)
         COLOR Control(__UI_FormID).ForeColor, Control(__UI_FormID).BackColor
         CLS
         IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
-        __UI_MenuBarOffsetV = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
-        LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
-        LINE (0, falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
+        __UI_MenuBarOffsetV = _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2
+        LINE (0, _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 1)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 80)
+        LINE (0, _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 5 + 2)-STEP(Control(__UI_FormID).Width - 1, 0), Darken(Control(__UI_FormID).BackColor, 120)
         _DEST 0
     END IF
 END SUB
@@ -5699,6 +5665,7 @@ SUB __UI_ListBoxSearchItem (This AS __UI_ControlTYPE)
 END SUB
 
 '---------------------------------------------------------------------------------
+
 SUB __UI_PrintString(Left AS INTEGER, Top AS INTEGER, Text$)
     DIM Utf$
 
@@ -5712,14 +5679,42 @@ SUB __UI_PrintString(Left AS INTEGER, Top AS INTEGER, Text$)
         END IF
     END IF
 
+    DIM PM AS LONG: PM = _PRINTMODE
+    _PRINTMODE _KEEPBACKGROUND
+
+    _UPRINTSTRING (Left, Top), Utf$, , 8
+
+    SELECT CASE PM
+    CASE 1
+        _PRINTMODE _KEEPBACKGROUND
+    CASE 2
+        _PRINTMODE _ONLYBACKGROUND
+    CASE 3
+        _PRINTMODE _FILLBACKGROUND
+    END SELECT
+END SUB
+
+SUB __UI_CharPos(Text$)
+    DIM Utf$
+
+    IF LEFT$(Text$, 1) = CHR$(7) AND (_FONT = 8 OR _FONT = 16) THEN
+        Utf$ = Text$
+    ELSE
+        IF Control(__UI_FormID).Encoding = 1252 THEN
+            Utf$ = FromCP1252$(Text$)
+        ELSE 'Default to 437
+            Utf$ = FromCP437$(Text$)
+        END IF
+    END IF
+
     REDIM __UI_ThisLineChars(0 TO LEN(Utf$)) AS LONG
-    uprint_extra Left, Top, _OFFSET(Utf$), LEN(Utf$), True, True, __UI_LastRenderedLineWidth, _OFFSET(__UI_ThisLineChars()), __UI_LastRenderedCharCount, _DEFAULTCOLOR, 0
+    __UI_LastRenderedCharCount = _UCHARPOS(Utf$, __UI_ThisLineChars(), 8)
     REDIM _PRESERVE __UI_ThisLineChars(__UI_LastRenderedCharCount) AS LONG
 END SUB
 
 '---------------------------------------------------------------------------------
 FUNCTION __UI_PrintWidth&(Text$)
-    __UI_PrintWidth& = uprintwidth(Text$, LEN(Text$), 0)
+    __UI_PrintWidth& = _UPRINTWIDTH(Text$, 8)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -5869,23 +5864,6 @@ FUNCTION __UI_WordWrap$ (PassedText AS STRING, Width AS INTEGER, LongestLine AS 
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION MessageBox& (Message$, Title$, Setup AS LONG)
-    _DELAY .1 'So the interface can redraw before the messagebox kicks in
-
-    IF Title$ = "" THEN Title$ = __UI_CurrentTitle
-
-    $IF WIN THEN
-        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False, 0) + CHR$(0), Title$ + CHR$(0), Setup + MsgBox_SystemModal + MsgBox_SetForeground)
-    $ELSE
-        IF (Setup AND 4) THEN
-        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False, 0) + CHR$(0), Title$ + CHR$(0), 4)
-        ELSE
-        MessageBox& = __UI_MB(0, Replace(Message$, "\n", CHR$(10), False, 0) + CHR$(0), Title$ + CHR$(0), 0)
-        END IF
-    $END IF
-END FUNCTION
-
-'---------------------------------------------------------------------------------
 FUNCTION __UI_MAP! (value!, minRange!, maxRange!, newMinRange!, newMaxRange!)
     __UI_MAP! = ((value! - minRange!) / (maxRange! - minRange!)) * (newMaxRange! - newMinRange!) + newMinRange!
 END FUNCTION
@@ -5996,7 +5974,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 
         IF This.Type = __UI_Type_MenuBar THEN
             Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = This.Left
-            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+            Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Top = _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
             __UI_TopMenuBarItem = This.ID
         ELSEIF This.Type = __UI_Type_MenuItem THEN
             Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Left = Control(This.MenuPanelID).Left + Control(This.MenuPanelID).Width - __UI_MenuItemOffset / 4
@@ -6013,8 +5991,8 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         END IF
 
         'Calculate panel's width and position the menu items
-        ItemHeight = falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
-        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = (((_FONT = 8) * -1) * 3 + falcon_uspacing&) / 4
+        ItemHeight = _ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = (((_FONT = 8) * -1) * 3 + _ulinespacing) / 4
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = 0
         CurrentGroup = 1
         ComboSpacing = 0
@@ -6053,7 +6031,7 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
             END IF
         NEXT
 
-        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + (((((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + falcon_uspacing&) / 4)
+        Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height + (((((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + _ulinespacing) / 4)
 
         IF Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = 0 THEN Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = Control(__UI_FormID).Width / 4
 
@@ -6956,11 +6934,11 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         ELSE
             COLOR Darken(Control(__UI_FormID).BackColor, 80)
         END IF
-        __UI_PrintString (IconWidth / 2) + (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2), ((This.Height \ 2) - uheight& \ 2), TempCaption$
+        __UI_PrintString (IconWidth / 2) + (This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2), ((This.Height \ 2) - _ufontheight \ 2), TempCaption$
 
         'Hot key:
         IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
-            LINE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + uheight& \ 2))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
+            LINE ((This.Width \ 2 - __UI_PrintWidth&(TempCaption$) \ 2) + This.HotKeyOffset, ((This.Height \ 2) + _ufontheight \ 2))-STEP(__UI_PrintWidth&(CHR$(This.HotKey)) - 1, 0), This.ForeColor
         END IF
 
         'Focus outline:
@@ -7689,8 +7667,10 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState)
             IF ((__UI_Focus = This.ID) OR (This.ID = __UI_PreviousFocus AND __UI_ParentMenu(__UI_TotalActiveMenus) = This.ContextMenuID)) AND NOT This.Disabled THEN
                 IF LEN(Text(This.ID)) THEN
                     __UI_PrintString CaptionIndent - This.InputViewStart, ((This.Height \ 2) - uspacing& \ 2), ThisTempText$
+                    __UI_CharPos ThisTempText$
                 ELSE
                     __UI_PrintString CaptionIndent, ((This.Height \ 2) - uspacing& \ 2), TempCaption$
+                    __UI_CharPos TempCaption$
                 END IF
 
                 IF This.TextIsSelected THEN
@@ -8350,7 +8330,7 @@ SUB __UI_DrawFrame (This AS __UI_ControlTYPE)
                 'Hot key:
                 IF (This.HotKey > 0 AND (__UI_ShowHotKeys AND NOT This.Disabled)) OR (This.HotKey > 0 AND __UI_DesignMode) THEN
                     Temp& = __UI_PrintWidth(CHR$(This.HotKey))
-                    LINE (CaptionLeft + Temp& + This.HotKeyOffset, uheight&)-STEP(Temp& - 1, 0), This.ForeColor
+                    LINE (CaptionLeft + Temp& + This.HotKeyOffset, _ufontheight)-STEP(Temp& - 1, 0), This.ForeColor
                 END IF
             END IF
         END IF
@@ -8414,11 +8394,11 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             COLOR Darken(Control(__UI_FormID).BackColor, 80)
         END IF
 
-        __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), TempCaption$
+        __UI_PrintString __UI_MenuBarOffset, ((This.Height \ 2) - (_ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), TempCaption$
         IF This.HotKey > 0 AND (__UI_AltIsDown OR Control(__UI_Focus).Type = __UI_Type_MenuBar OR __UI_DesignMode) THEN
             'Has "hot-key"
             Temp& = __UI_PrintWidth(CHR$(This.HotKey))
-            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
+            LINE (__UI_MenuBarOffset + This.HotKeyOffset, ((This.Height \ 2) + (_ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2) - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
         END IF
 
         IF __UI_DesignMode THEN
@@ -8427,8 +8407,8 @@ SUB __UI_DrawMenuBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 _DEST Control(__UI_FormID).Canvas
                 COLOR Darken(Control(__UI_FormID).BackColor, 80)
                 _FONT (This.Font)
-                LINE (__UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2))-STEP(__UI_PrintWidth("Add new"),(falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset))), Control(__UI_FormID).BackColor, BF
-                __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (falcon_uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), "Add new"
+                LINE (__UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (_ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2))-STEP(__UI_PrintWidth("Add new"),(_ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset))), Control(__UI_FormID).BackColor, BF
+                __UI_PrintString __UI_NewMenuBarTextLeft + __UI_MenuBarOffset, ((This.Height \ 2) - (_ulinespacing + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)) \ 2), "Add new"
             END IF
         END IF
         '---
@@ -8516,9 +8496,9 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
                     CheckMarkIndex = 3
                 END IF
 
-                __UI_PrintString Control(i).Left + __UI_MenuItemOffset, Control(i).Top + Control(i).Height \ 2 - uheight& \ 2, TempCaption$
+                __UI_PrintString Control(i).Left + __UI_MenuItemOffset, Control(i).Top + Control(i).Height \ 2 - _ufontheight \ 2, TempCaption$
                 IF Control(i).KeyCombo > 0 THEN
-                    __UI_PrintString Control(i).Left + This.Width - __UI_MenuItemOffset - __UI_PrintWidth(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)), Control(i).Top + Control(i).Height \ 2 - uheight& \ 2, RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)
+                    __UI_PrintString Control(i).Left + This.Width - __UI_MenuItemOffset - __UI_PrintWidth(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)), Control(i).Top + Control(i).Height \ 2 - _ufontheight \ 2, RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)
                 END IF
 
                 IF Control(i).SubMenu THEN
@@ -8528,13 +8508,13 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
                 IF Control(i).HotKey > 0 THEN
                     'Has "hot-key"
                     Temp& = __UI_PrintWidth(CHR$(Control(i).HotKey))
-                    LINE (Control(i).Left + __UI_MenuItemOffset + Control(i).HotKeyOffset, Control(i).Top + Control(i).Height \ 2 + uheight& \ 2 - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
+                    LINE (Control(i).Left + __UI_MenuItemOffset + Control(i).HotKeyOffset, Control(i).Top + Control(i).Height \ 2 + _ufontheight \ 2 - 1)-STEP(Temp& - 1, 0), _DEFAULTCOLOR
                 END IF
 
                 IF Control(i).Value = True THEN
                     'Checked menu item
                     IF Control(i).BulletStyle = __UI_Bullet%% THEN
-                        __UI_PrintString __UI_MenuItemOffset \ 2 - __UI_PrintWidth(CHR$(7)) \ 2, Control(i).Top + Control(i).Height \ 2 - uheight \ 2, CHR$(7)
+                        __UI_PrintString __UI_MenuItemOffset \ 2 - __UI_PrintWidth(CHR$(7)) \ 2, Control(i).Top + Control(i).Height \ 2 - _ufontheight \ 2, CHR$(7)
                     ELSE
                         _PUTIMAGE (__UI_MenuItemOffset \ 2 - CheckMarkWidth \ 2, Control(i).Top + Control(i).Height \ 2 - CheckMarkHeight \ 2), ControlImage, , (0, CheckMarkIndex * CheckMarkHeight - CheckMarkHeight)-STEP(6, 6)
                     END IF
@@ -8578,7 +8558,7 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
 
         IF __UI_DesignMode AND LEFT$(This.Name, 5) <> "__UI_" THEN
             COLOR Darken(Control(__UI_FormID).BackColor, 80)
-            __UI_PrintString __UI_MenuItemOffset, This.Height - (uheight& + 6), "Add new"
+            __UI_PrintString __UI_MenuItemOffset, This.Height - (_ufontheight + 6), "Add new"
         END IF
         '---
 
@@ -8714,3 +8694,4 @@ SUB __UI_ShadowBox (bX AS INTEGER, bY AS INTEGER, bW AS INTEGER, bH AS INTEGER, 
 
     LINE (bX, bY)-STEP(bW, bH), C, BF
 END SUB
+

@@ -6,27 +6,31 @@
 '#######################################################################################
 'Adapted for use with InForm's PictureBox controls by @FellippeHeitor
 
-SUB UpdateGif (ID AS LONG)
-    DIM i AS LONG, newFrame AS LONG
-    STATIC GifOverlay AS LONG
+'$Include:'gifplay.bi'
 
-    i = GetGifIndex(ID)
+$IF GIFPLAY_BM = UNDEFINED THEN
+    $LET GIFPLAY_BM = TRUE
+    SUB UpdateGif (ID AS LONG)
+        DIM i AS LONG, newFrame AS LONG
+        STATIC GifOverlay AS LONG
 
-    IF i = 0 THEN EXIT SUB
+        i = GetGifIndex(ID)
 
-    IF GifOverlay = 0 THEN
-        GifOverlay = LoadOverlayImage&
-    END IF
+        IF i = 0 THEN EXIT SUB
 
-    IF GifData(i).IsPlaying OR GifData(i).LastFrameServed = 0 THEN
-        IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate < GifData(i).LastFrameDelay THEN
-            'Wait for the GIF's frame delay
-        ELSE
-            GifData(i).Frame = GifData(i).Frame + 1
-            GifData(i).LastFrameServed = GifData(i).Frame
-            GifData(i).LastFrameUpdate = TIMER
+        IF GifOverlay = 0 THEN
+            GifOverlay = LoadOverlayImage&
         END IF
-    END IF
+
+        IF GifData(i).IsPlaying OR GifData(i).LastFrameServed = 0 THEN
+            IF GifData(i).LastFrameUpdate > 0 AND TIMER - GifData(i).LastFrameUpdate < GifData(i).LastFrameDelay THEN
+                'Wait for the GIF's frame delay
+            ELSE
+                GifData(i).Frame = GifData(i).Frame + 1
+                GifData(i).LastFrameServed = GifData(i).Frame
+                GifData(i).LastFrameUpdate = TIMER
+            END IF
+        END IF
 
     BeginDraw ID
     newFrame = GetGifFrame&(i)
@@ -879,3 +883,5 @@ FUNCTION gifUnpack$ (PackedData$)
     gifUnpack$ = btemp$
 END FUNCTION
 '############################################################################################
+$endif
+

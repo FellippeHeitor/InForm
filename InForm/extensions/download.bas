@@ -1,63 +1,67 @@
-Function Download$ (url$, file$, timelimit) Static
-    'as seen on http://www.qb64.org/wiki/Downloading_Files
-    'adapted for use with InForm
+$IF DOWNLOAD_BAS = UNDEFINED THEN
+    $LET DOWNLOAD_BAS = TRUE
+    FUNCTION Download$ (url$, file$, timelimit) STATIC
+        'as seen on http://www.qb64.org/wiki/Downloading_Files
+        'adapted for use with InForm
 
-    Dim theClient As Long, l As Long
-    Dim prevUrl$, prevUrl2$, url2$, x As Long
-    Dim e$, url3$, x$, t!, a2$, a$, i As Long
-    Dim i2 As Long, i3 As Long, d$, fh As Long
+        DIM theClient AS LONG, l AS LONG
+        DIM prevUrl$, prevUrl2$, url2$, x AS LONG
+        DIM e$, url3$, x$, t!, a2$, a$, i AS LONG
+        DIM i2 AS LONG, i3 AS LONG, d$, fh AS LONG
 
-    If url$ <> prevUrl$ Or url$ = "" Then
-        prevUrl$ = url$
-        If url$ = "" Then
-            If theClient Then Close theClient: theClient = 0
-            Exit Function
-        End If
-        url2$ = url$
-        x = InStr(url2$, "/")
-        If x Then url2$ = Left$(url$, x - 1)
-        If url2$ <> prevUrl2$ Then
-            prevUrl2$ = url2$
-            If theClient Then Close theClient: theClient = 0
-            theClient = _OpenClient("TCP/IP:80:" + url2$)
-            If theClient = 0 Then Download = MKI$(2): prevUrl$ = "": Exit Function
-        End If
-        e$ = Chr$(13) + Chr$(10) ' end of line characters
-        url3$ = Right$(url$, Len(url$) - x + 1)
-        x$ = "GET " + url3$ + " HTTP/1.1" + e$
-        x$ = x$ + "Host: " + url2$ + e$ + e$
-        Put #theClient, , x$
-        t! = Timer ' start time
-    End If
+        IF url$ <> prevUrl$ OR url$ = "" THEN
+            prevUrl$ = url$
+            IF url$ = "" THEN
+                IF theClient THEN CLOSE theClient: theClient = 0
+                EXIT FUNCTION
+            END IF
+            url2$ = url$
+            x = INSTR(url2$, "/")
+            IF x THEN url2$ = LEFT$(url$, x - 1)
+            IF url2$ <> prevUrl2$ THEN
+                prevUrl2$ = url2$
+                IF theClient THEN CLOSE theClient: theClient = 0
+                theClient = _OPENCLIENT("TCP/IP:80:" + url2$)
+                IF theClient = 0 THEN Download = MKI$(2): prevUrl$ = "": EXIT FUNCTION
+            END IF
+            e$ = CHR$(13) + CHR$(10) ' end of line characters
+            url3$ = RIGHT$(url$, LEN(url$) - x + 1)
+            x$ = "GET " + url3$ + " HTTP/1.1" + e$
+            x$ = x$ + "Host: " + url2$ + e$ + e$
+            PUT #theClient, , x$
+            t! = TIMER ' start time
+        END IF
 
-    Get #theClient, , a2$
-    a$ = a$ + a2$
-    i = InStr(a$, "Content-Length:")
-    If i Then
-        i2 = InStr(i, a$, e$)
-        If i2 Then
-            l = Val(Mid$(a$, i + 15, i2 - i - 14))
-            i3 = InStr(i2, a$, e$ + e$)
-            If i3 Then
-                i3 = i3 + 4 'move i3 to start of data
-                If (Len(a$) - i3 + 1) = l Then
-                    d$ = Mid$(a$, i3, l)
-                    fh = FreeFile
-                    Open file$ For Output As #fh: Close #fh 'Warning! Clears data from existing file
-                    Open file$ For Binary As #fh
-                    Put #fh, , d$
-                    Close #fh
-                    Download = MKI$(1) + MKL$(l) 'indicates download was successful
-                    prevUrl$ = ""
-                    prevUrl2$ = ""
-                    a$ = ""
-                    Close theClient
-                    theClient = 0
-                    Exit Function
-                End If ' availabledata = l
-            End If ' i3
-        End If ' i2
-    End If ' i
-    If Timer > t! + timelimit Then Close theClient: theClient = 0: Download = MKI$(3): prevUrl$ = "": Exit Function
-    Download = MKI$(0) 'still working
-End Function
+        GET #theClient, , a2$
+        a$ = a$ + a2$
+        i = INSTR(a$, "Content-Length:")
+        IF i THEN
+            i2 = INSTR(i, a$, e$)
+            IF i2 THEN
+                l = VAL(MID$(a$, i + 15, i2 - i - 14))
+                i3 = INSTR(i2, a$, e$ + e$)
+                IF i3 THEN
+                    i3 = i3 + 4 'move i3 to start of data
+                    IF (LEN(a$) - i3 + 1) = l THEN
+                        d$ = MID$(a$, i3, l)
+                        fh = FREEFILE
+                        OPEN file$ FOR OUTPUT AS #fh: CLOSE #fh 'Warning! Clears data from existing file
+                        OPEN file$ FOR BINARY AS #fh
+                        PUT #fh, , d$
+                        CLOSE #fh
+                        Download = MKI$(1) + MKL$(l) 'indicates download was successful
+                        prevUrl$ = ""
+                        prevUrl2$ = ""
+                        a$ = ""
+                        CLOSE theClient
+                        theClient = 0
+                        EXIT FUNCTION
+                    END IF ' availabledata = l
+                END IF ' i3
+            END IF ' i2
+        END IF ' i
+        IF TIMER > t! + timelimit THEN CLOSE theClient: theClient = 0: Download = MKI$(3): prevUrl$ = "": EXIT FUNCTION
+        Download = MKI$(0) 'still working
+    END FUNCTION
+$END IF
+

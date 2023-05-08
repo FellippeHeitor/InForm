@@ -1,4 +1,4 @@
-# InForm
+# InForm-PE
 
 ![InForm logo](InForm/resources/Application-icon-128.png)
 
@@ -8,14 +8,14 @@ Wiki: <https://github.com/a740g/InForm/wiki>
 
 ## Event-driven QB64 programs
 
-InForm's main goal is to generate event-driven QB64 applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
+InForm-PE's main goal is to generate event-driven QB64-PE applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
 
 ## Workflow
 
-After your form looks the way you want it to, click File -> Save to export its contents and generate a .bas source file. Two files are output:
+After your form looks the way you want it to, click **File > Save** to export its contents and generate a **.bas** source file. Two files are output:
 
 * **.frm**
-the generated form in QB64 code. This can be loaded back into InForm's designer or manually edited in QB64 or any text editor later, if you want to adjust fine details.
+the generated form in QB64-PE code. This can be loaded back into InForm-PE's designer or manually edited in QB64-PE or any text editor later, if you want to adjust fine details.
 
 * **.bas**
 the actual program you will add your code to.

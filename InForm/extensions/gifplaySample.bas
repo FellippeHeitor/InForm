@@ -5,10 +5,10 @@
 '-----------------------------------------------------------
 
 ': Controls' IDs: ------------------------------------------------------------------
-Dim Shared gifplaySample As Long
-Dim Shared PictureBox1 As Long
-Dim Shared LoadBT As Long
-Dim Shared PlayBT As Long
+DIM SHARED gifplaySample AS LONG
+DIM SHARED PictureBox1 AS LONG
+DIM SHARED LoadBT AS LONG
+DIM SHARED PlayBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'gifplay.bi'
@@ -49,7 +49,7 @@ SUB __UI_Click (id AS LONG)
                 Caption(LoadBT) = "globe.gif loaded"
                 Control(LoadBT).Disabled = True
             ELSE
-                Answer = MessageBox("File 'globe.gif' could not be found.", "", MsgBox_Exclamation + MsgBox_OkOnly)
+                _MESSAGEBOX "GIFPlay Sample", "File 'globe.gif' could not be found.", "error"
             END IF
         CASE PlayBT
             IF GifIsPlaying(PictureBox1) THEN
