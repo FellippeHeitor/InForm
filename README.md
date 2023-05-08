@@ -6,7 +6,7 @@ A GUI engine and WYSIWYG interface designer for QB64-PE
 
 Wiki: <https://github.com/a740g/InForm/wiki>
 
-## Event-driven QB64 programs
+## Event-driven QB64-PE programs
 
 InForm-PE's main goal is to generate event-driven QB64-PE applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
 
@@ -37,3 +37,15 @@ the actual program you will add your code to.
 * *BeforeUpdateDisplay*, triggered everytime the form is about to be repainted.
 * *BeforeUnload*, triggered when the user tries to close the program, either via clicking the window's X button, right click in the task bar -> Close or with Alt+F4 (Windows only).
 * *FormResized*, triggered when a form with the CanResize property is resized at runtime.
+
+## Setup
+
+Install Inform-PE and QB64-PE side-by-side in their own directories. There is no need to copy InForm-PE files to the QB64-PE directory. The following directory setup is recommended.
+
+```text
+<some-drive-or-directory>
+    |
+    |-------<InForm-PE>
+    |
+    |-------<QB64pe>
+```
