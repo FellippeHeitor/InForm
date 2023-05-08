@@ -1,235 +1,235 @@
 'InForm - GUI library for QB64
 'Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 '
-DECLARE CUSTOMTYPE LIBRARY
-    FUNCTION __UI_GetPID ALIAS getpid ()
-    SUB __UI_MemCopy ALIAS memcpy (BYVAL dest AS _OFFSET, BYVAL source AS _OFFSET, BYVAL bytes AS LONG)
-END DECLARE
+Declare CustomType Library
+    Function __UI_GetPID Alias getpid ()
+    Sub __UI_MemCopy Alias memcpy (ByVal dest As _Offset, Byval source As _Offset, Byval bytes As Long)
+End Declare
 
-$IF WIN THEN
-    DECLARE LIBRARY
-        FUNCTION GetSystemMetrics& (BYVAL WhichMetric&)
-    END DECLARE
+$If WIN Then
+    Declare Library
+        Function GetSystemMetrics& (ByVal WhichMetric&)
+    End Declare
 
-    CONST __UI_SM_SWAPBUTTON = 23
-$END IF
+    Const __UI_SM_SWAPBUTTON = 23
+$End If
 
-$SCREENHIDE
-_CONTROLCHR OFF
+$ScreenHide
+_ControlChr Off
 
-TYPE __UI_ControlTYPE
-    ID AS LONG
-    ParentID AS LONG
-    PreviousParentID AS LONG
-    ContextMenuID AS LONG
-    Type AS INTEGER
-    Name AS STRING * 40
-    ParentName AS STRING * 40
-    SubMenu AS _BYTE
-    MenuPanelID AS LONG
-    SourceControl AS LONG
-    Top AS INTEGER
-    Left AS INTEGER
-    Width AS INTEGER
-    Height AS INTEGER
-    Canvas AS LONG
-    HelperCanvas AS LONG
-    TransparentColor AS _UNSIGNED LONG
-    Stretch AS _BYTE
-    PreviousStretch AS _BYTE
-    Font AS INTEGER
-    PreviousFont AS INTEGER
-    BackColor AS _UNSIGNED LONG
-    ForeColor AS _UNSIGNED LONG
-    SelectedForeColor AS _UNSIGNED LONG
-    SelectedBackColor AS _UNSIGNED LONG
-    BackStyle AS _BYTE
-    HasBorder AS _BYTE
-    BorderSize AS INTEGER
-    Padding AS INTEGER
-    Encoding AS LONG
-    Align AS _BYTE
-    PrevAlign AS _BYTE
-    VAlign AS _BYTE
-    PrevVAlign AS _BYTE
-    BorderColor AS _UNSIGNED LONG
-    Value AS _FLOAT
-    PreviousValue AS _FLOAT
-    Min AS _FLOAT
-    PrevMin AS _FLOAT
-    Max AS _FLOAT
-    PrevMax AS _FLOAT
-    Interval AS _FLOAT
-    PrevInterval AS _FLOAT
-    MinInterval AS _FLOAT
-    PrevMinInterval AS _FLOAT
-    HotKey AS INTEGER
-    HotKeyOffset AS INTEGER
-    HotKeyPosition AS INTEGER
-    ShowPercentage AS _BYTE
-    AutoScroll AS _BYTE
-    AutoSize AS _BYTE
-    InputViewStart AS LONG
-    PreviousInputViewStart AS LONG
-    LastVisibleItem AS INTEGER
-    ItemHeight AS INTEGER
-    HasVScrollbar AS _BYTE
-    VScrollbarButton2Top AS INTEGER
-    HoveringVScrollbarButton AS _BYTE
-    ThumbHeight AS INTEGER
-    ThumbTop AS INTEGER
-    VScrollbarRatio AS SINGLE
-    Cursor AS LONG
-    PasswordField AS _BYTE
-    PrevCursor AS LONG
-    FieldArea AS LONG
-    PreviousFieldArea AS LONG
-    TextIsSelected AS _BYTE
-    BypassSelectOnFocus AS _BYTE
-    Multiline AS _BYTE
-    NumericOnly AS _BYTE
-    FirstVisibleLine AS LONG
-    PrevFirstVisibleLine AS LONG
-    CurrentLine AS LONG
-    PrevCurrentLine AS LONG
-    VisibleCursor AS LONG
-    PrevVisibleCursor AS LONG
-    ControlIsSelected AS _BYTE
-    LeftOffsetFromFirstSelected AS INTEGER
-    TopOffsetFromFirstSelected AS INTEGER
-    SelectionLength AS LONG
-    SelectionStart AS LONG
-    WordWrap AS _BYTE
-    CanResize AS _BYTE
-    CanHaveFocus AS _BYTE
-    Disabled AS _BYTE
-    Hidden AS _BYTE
-    PreviouslyHidden AS _BYTE
-    CenteredWindow AS _BYTE
-    ControlState AS _BYTE
-    ChildrenRedrawn AS _BYTE
-    FocusState AS LONG
-    LastChange AS SINGLE
-    Redraw AS _BYTE
-    BulletStyle AS _BYTE
-    MenuItemGroup AS INTEGER
-    KeyCombo AS LONG
-    BoundTo AS LONG
-    BoundProperty AS LONG
-END TYPE
+Type __UI_ControlTYPE
+    ID As Long
+    ParentID As Long
+    PreviousParentID As Long
+    ContextMenuID As Long
+    Type As Integer
+    Name As String * 40
+    ParentName As String * 40
+    SubMenu As _Byte
+    MenuPanelID As Long
+    SourceControl As Long
+    Top As Integer
+    Left As Integer
+    Width As Integer
+    Height As Integer
+    Canvas As Long
+    HelperCanvas As Long
+    TransparentColor As _Unsigned Long
+    Stretch As _Byte
+    PreviousStretch As _Byte
+    Font As Integer
+    PreviousFont As Integer
+    BackColor As _Unsigned Long
+    ForeColor As _Unsigned Long
+    SelectedForeColor As _Unsigned Long
+    SelectedBackColor As _Unsigned Long
+    BackStyle As _Byte
+    HasBorder As _Byte
+    BorderSize As Integer
+    Padding As Integer
+    Encoding As Long
+    Align As _Byte
+    PrevAlign As _Byte
+    VAlign As _Byte
+    PrevVAlign As _Byte
+    BorderColor As _Unsigned Long
+    Value As _Float
+    PreviousValue As _Float
+    Min As _Float
+    PrevMin As _Float
+    Max As _Float
+    PrevMax As _Float
+    Interval As _Float
+    PrevInterval As _Float
+    MinInterval As _Float
+    PrevMinInterval As _Float
+    HotKey As Integer
+    HotKeyOffset As Integer
+    HotKeyPosition As Integer
+    ShowPercentage As _Byte
+    AutoScroll As _Byte
+    AutoSize As _Byte
+    InputViewStart As Long
+    PreviousInputViewStart As Long
+    LastVisibleItem As Integer
+    ItemHeight As Integer
+    HasVScrollbar As _Byte
+    VScrollbarButton2Top As Integer
+    HoveringVScrollbarButton As _Byte
+    ThumbHeight As Integer
+    ThumbTop As Integer
+    VScrollbarRatio As Single
+    Cursor As Long
+    PasswordField As _Byte
+    PrevCursor As Long
+    FieldArea As Long
+    PreviousFieldArea As Long
+    TextIsSelected As _Byte
+    BypassSelectOnFocus As _Byte
+    Multiline As _Byte
+    NumericOnly As _Byte
+    FirstVisibleLine As Long
+    PrevFirstVisibleLine As Long
+    CurrentLine As Long
+    PrevCurrentLine As Long
+    VisibleCursor As Long
+    PrevVisibleCursor As Long
+    ControlIsSelected As _Byte
+    LeftOffsetFromFirstSelected As Integer
+    TopOffsetFromFirstSelected As Integer
+    SelectionLength As Long
+    SelectionStart As Long
+    WordWrap As _Byte
+    CanResize As _Byte
+    CanHaveFocus As _Byte
+    Disabled As _Byte
+    Hidden As _Byte
+    PreviouslyHidden As _Byte
+    CenteredWindow As _Byte
+    ControlState As _Byte
+    ChildrenRedrawn As _Byte
+    FocusState As Long
+    LastChange As Single
+    Redraw As _Byte
+    BulletStyle As _Byte
+    MenuItemGroup As Integer
+    KeyCombo As Long
+    BoundTo As Long
+    BoundProperty As Long
+End Type
 
-TYPE __UI_Types
-    Name AS STRING * 16
-    Count AS LONG
-    TurnsInto AS INTEGER
-    DefaultHeight AS INTEGER
-    MinimumHeight AS INTEGER
-    DefaultWidth AS INTEGER
-    MinimumWidth AS INTEGER
-    RestrictResize AS _BYTE
-END TYPE
+Type __UI_Types
+    Name As String * 16
+    Count As Long
+    TurnsInto As Integer
+    DefaultHeight As Integer
+    MinimumHeight As Integer
+    DefaultWidth As Integer
+    MinimumWidth As Integer
+    RestrictResize As _Byte
+End Type
 
-TYPE __UI_ThemeImagesType
-    FileName AS STRING * 32
-    Handle AS LONG
-END TYPE
+Type __UI_ThemeImagesType
+    FileName As String * 32
+    Handle As Long
+End Type
 
-TYPE __UI_WordWrapHistoryType
-    StringSlot AS LONG
-    Width AS INTEGER
-    LongestLine AS INTEGER
-    Font AS LONG
-    TotalLines AS INTEGER
-END TYPE
+Type __UI_WordWrapHistoryType
+    StringSlot As Long
+    Width As Integer
+    LongestLine As Integer
+    Font As Long
+    TotalLines As Integer
+End Type
 
-TYPE __UI_KeyCombos
-    Combo AS STRING * 14 '         "CTRL+SHIFT+F12"
-    FriendlyCombo AS STRING * 14 ' "Ctrl+Shift+F12"
-    ControlID AS LONG
-END TYPE
+Type __UI_KeyCombos
+    Combo As String * 14 '         "CTRL+SHIFT+F12"
+    FriendlyCombo As String * 14 ' "Ctrl+Shift+F12"
+    ControlID As Long
+End Type
 
-REDIM SHARED Caption(0 TO 100) AS STRING
-REDIM SHARED __UI_TempCaptions(0 TO 100) AS STRING
-REDIM SHARED Text(0 TO 100) AS STRING
-REDIM SHARED __UI_TempTexts(0 TO 100) AS STRING
-REDIM SHARED Mask(0 TO 100) AS STRING
-REDIM SHARED __UI_TempMask(0 TO 100) AS STRING
-REDIM SHARED ToolTip(0 TO 100) AS STRING
-REDIM SHARED __UI_TempTips(0 TO 100) AS STRING
-REDIM SHARED Control(0 TO 100) AS __UI_ControlTYPE
-REDIM SHARED ControlDrawOrder(0) AS LONG
-REDIM SHARED __UI_ThemeImages(0 TO 100) AS __UI_ThemeImagesType
-REDIM SHARED __UI_WordWrapHistoryTexts(0 TO 100) AS STRING
-REDIM SHARED __UI_WordWrapHistoryResults(0 TO 100) AS STRING
-REDIM SHARED __UI_WordWrapHistory(0 TO 100) AS __UI_WordWrapHistoryType
-REDIM SHARED __UI_ThisLineChars(0) AS LONG, __UI_FocusedTextBoxChars(0) AS LONG
-REDIM SHARED __UI_ActiveMenu(0 TO 100) AS LONG, __UI_ParentMenu(0 TO 100) AS LONG
-REDIM SHARED __UI_KeyCombo(0 TO 100) AS __UI_KeyCombos
+ReDim Shared Caption(0 To 100) As String
+ReDim Shared __UI_TempCaptions(0 To 100) As String
+ReDim Shared Text(0 To 100) As String
+ReDim Shared __UI_TempTexts(0 To 100) As String
+ReDim Shared Mask(0 To 100) As String
+ReDim Shared __UI_TempMask(0 To 100) As String
+ReDim Shared ToolTip(0 To 100) As String
+ReDim Shared __UI_TempTips(0 To 100) As String
+ReDim Shared Control(0 To 100) As __UI_ControlTYPE
+ReDim Shared ControlDrawOrder(0) As Long
+ReDim Shared __UI_ThemeImages(0 To 100) As __UI_ThemeImagesType
+ReDim Shared __UI_WordWrapHistoryTexts(0 To 100) As String
+ReDim Shared __UI_WordWrapHistoryResults(0 To 100) As String
+ReDim Shared __UI_WordWrapHistory(0 To 100) As __UI_WordWrapHistoryType
+ReDim Shared __UI_ThisLineChars(0) As Long, __UI_FocusedTextBoxChars(0) As Long
+ReDim Shared __UI_ActiveMenu(0 To 100) As Long, __UI_ParentMenu(0 To 100) As Long
+ReDim Shared __UI_KeyCombo(0 To 100) As __UI_KeyCombos
 
-DIM SHARED __UI_TotalKeyCombos AS LONG, __UI_BypassKeyCombos AS _BYTE
-DIM SHARED table1252$(0 TO 255), table437$(0 TO 255)
-DIM SHARED __UI_MouseLeft AS INTEGER, __UI_MouseTop AS INTEGER
-DIM SHARED __UI_MouseWheel AS INTEGER, __UI_MouseButtonsSwap AS _BYTE
-DIM SHARED __UI_PrevMouseLeft AS INTEGER, __UI_PrevMouseTop AS INTEGER
-DIM SHARED __UI_MouseButton1 AS _BYTE, __UI_MouseButton2 AS _BYTE
-DIM SHARED __UI_MouseIsDown AS _BYTE, __UI_MouseDownOnID AS LONG
-DIM SHARED __UI_Mouse2IsDown AS _BYTE, __UI_Mouse2DownOnID AS LONG
-DIM SHARED __UI_PreviousMouseDownOnID AS LONG
-DIM SHARED __UI_KeyIsDown AS _BYTE, __UI_KeyDownOnID AS LONG
-DIM SHARED __UI_ShiftIsDown AS _BYTE, __UI_CtrlIsDown AS _BYTE
-DIM SHARED __UI_AltIsDown AS _BYTE, __UI_ShowHotKeys AS _BYTE, __UI_AltCombo$
-DIM SHARED __UI_LastMouseClick AS SINGLE, __UI_MouseDownOnScrollbar AS SINGLE
-DIM SHARED __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
-DIM SHARED __UI_DefaultButtonID AS LONG
-DIM SHARED __UI_KeyHit AS LONG, __UI_KeepFocus AS _BYTE
-DIM SHARED __UI_Focus AS LONG, __UI_PreviousFocus AS LONG, __UI_KeyboardFocus AS _BYTE
-DIM SHARED __UI_HoveringID AS LONG, __UI_LastHoveringID AS LONG, __UI_BelowHoveringID AS LONG
-DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
-DIM SHARED __UI_IsResizing AS _BYTE, __UI_ResizingID AS LONG
-DIM SHARED __UI_ResizeHandleHover AS _BYTE
-DIM SHARED __UI_IsSelectingText AS _BYTE, __UI_IsSelectingTextOnID AS LONG
-DIM SHARED __UI_SelectedText AS STRING, __UI_SelectionLength AS LONG
-DIM SHARED __UI_StateHasChanged AS _BYTE
-DIM SHARED __UI_DraggingThumb AS _BYTE, __UI_ThumbDragTop AS INTEGER
-DIM SHARED __UI_DraggingThumbOnID AS LONG
-DIM SHARED __UI_HasInput AS _BYTE, __UI_ProcessInputTimer AS SINGLE
-DIM SHARED __UI_UnloadSignal AS _BYTE, __UI_HasResized AS _BYTE
-DIM SHARED __UI_ExitTriggered AS _BYTE
-DIM SHARED __UI_Loaded AS _BYTE
-DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
-DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
-DIM SHARED __UI_TotalActiveMenus AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
-DIM SHARED __UI_SubMenuDelay AS SINGLE, __UI_HoveringSubMenu AS _BYTE
-DIM SHARED __UI_TopMenuBarItem AS LONG
-DIM SHARED __UI_ActiveTipID AS LONG, __UI_TipTimer AS SINGLE, __UI_PreviousTipID AS LONG
-DIM SHARED __UI_ActiveTipTop AS INTEGER, __UI_ActiveTipLeft AS INTEGER
-DIM SHARED __UI_FormID AS LONG, __UI_HasMenuBar AS LONG
-DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
-DIM SHARED __UI_MenuBarOffset AS INTEGER, __UI_MenuItemOffset AS INTEGER
-DIM SHARED __UI_NewMenuBarTextLeft AS INTEGER, __UI_DefaultCaptionIndent AS INTEGER
-DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
-DIM SHARED __UI_CurrentTitle AS STRING
-DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG
-DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
-DIM SHARED __UI_WaitMessageHandle AS LONG, __UI_EditorMode AS _BYTE
-DIM SHARED __UI_LastRenderedCharCount AS LONG
-DIM SHARED __UI_SelectionRectangleTop AS INTEGER, __UI_SelectionRectangleLeft AS INTEGER
-DIM SHARED __UI_SelectionRectangle AS _BYTE
-DIM SHARED __UI_CantShowContextMenu AS _BYTE, __UI_ShowPositionAndSize AS _BYTE
-DIM SHARED __UI_ShowInvisibleControls AS _BYTE, __UI_Snapped AS _BYTE
-DIM SHARED __UI_SnappedByProximityX AS _BYTE, __UI_SnappedByProximityY AS _BYTE
-DIM SHARED __UI_SnappedX AS INTEGER, __UI_SnappedY AS INTEGER
-DIM SHARED __UI_SnappedXID AS LONG, __UI_SnappedYID AS LONG
-DIM SHARED __UI_SnapLines AS _BYTE, __UI_SnapDistance AS INTEGER, __UI_SnapDistanceFromForm AS INTEGER
-DIM SHARED __UI_FrameRate AS SINGLE, __UI_Font8Offset AS INTEGER, __UI_Font16Offset AS INTEGER
-DIM SHARED __UI_ClipboardCheck$, __UI_MenuBarOffsetV AS INTEGER
-DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
-DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
-DIM SHARED __UI_ContextMenuSourceID AS LONG
-DIM SHARED __UI_FKey(1 TO 12) AS LONG
+Dim Shared __UI_TotalKeyCombos As Long, __UI_BypassKeyCombos As _Byte
+Dim Shared table1252$(0 To 255), table437$(0 To 255)
+Dim Shared __UI_MouseLeft As Integer, __UI_MouseTop As Integer
+Dim Shared __UI_MouseWheel As Integer, __UI_MouseButtonsSwap As _Byte
+Dim Shared __UI_PrevMouseLeft As Integer, __UI_PrevMouseTop As Integer
+Dim Shared __UI_MouseButton1 As _Byte, __UI_MouseButton2 As _Byte
+Dim Shared __UI_MouseIsDown As _Byte, __UI_MouseDownOnID As Long
+Dim Shared __UI_Mouse2IsDown As _Byte, __UI_Mouse2DownOnID As Long
+Dim Shared __UI_PreviousMouseDownOnID As Long
+Dim Shared __UI_KeyIsDown As _Byte, __UI_KeyDownOnID As Long
+Dim Shared __UI_ShiftIsDown As _Byte, __UI_CtrlIsDown As _Byte
+Dim Shared __UI_AltIsDown As _Byte, __UI_ShowHotKeys As _Byte, __UI_AltCombo$
+Dim Shared __UI_LastMouseClick As Single, __UI_MouseDownOnScrollbar As Single
+Dim Shared __UI_DragX As Integer, __UI_DragY As Integer
+Dim Shared __UI_DefaultButtonID As Long
+Dim Shared __UI_KeyHit As Long, __UI_KeepFocus As _Byte
+Dim Shared __UI_Focus As Long, __UI_PreviousFocus As Long, __UI_KeyboardFocus As _Byte
+Dim Shared __UI_HoveringID As Long, __UI_LastHoveringID As Long, __UI_BelowHoveringID As Long
+Dim Shared __UI_IsDragging As _Byte, __UI_DraggingID As Long
+Dim Shared __UI_IsResizing As _Byte, __UI_ResizingID As Long
+Dim Shared __UI_ResizeHandleHover As _Byte
+Dim Shared __UI_IsSelectingText As _Byte, __UI_IsSelectingTextOnID As Long
+Dim Shared __UI_SelectedText As String, __UI_SelectionLength As Long
+Dim Shared __UI_StateHasChanged As _Byte
+Dim Shared __UI_DraggingThumb As _Byte, __UI_ThumbDragTop As Integer
+Dim Shared __UI_DraggingThumbOnID As Long
+Dim Shared __UI_HasInput As _Byte, __UI_ProcessInputTimer As Single
+Dim Shared __UI_UnloadSignal As _Byte, __UI_HasResized As _Byte
+Dim Shared __UI_ExitTriggered As _Byte
+Dim Shared __UI_Loaded As _Byte
+Dim Shared __UI_EventsTimer As Integer, __UI_RefreshTimer As Integer
+Dim Shared __UI_ActiveDropdownList As Long, __UI_ParentDropdownList As Long
+Dim Shared __UI_TotalActiveMenus As Long, __UI_ActiveMenuIsContextMenu As _Byte
+Dim Shared __UI_SubMenuDelay As Single, __UI_HoveringSubMenu As _Byte
+Dim Shared __UI_TopMenuBarItem As Long
+Dim Shared __UI_ActiveTipID As Long, __UI_TipTimer As Single, __UI_PreviousTipID As Long
+Dim Shared __UI_ActiveTipTop As Integer, __UI_ActiveTipLeft As Integer
+Dim Shared __UI_FormID As Long, __UI_HasMenuBar As Long
+Dim Shared __UI_ScrollbarWidth As Integer, __UI_ScrollbarButtonHeight As Integer
+Dim Shared __UI_MenuBarOffset As Integer, __UI_MenuItemOffset As Integer
+Dim Shared __UI_NewMenuBarTextLeft As Integer, __UI_DefaultCaptionIndent As Integer
+Dim Shared __UI_ForceRedraw As _Byte, __UI_AutoRefresh As _Byte
+Dim Shared __UI_CurrentTitle As String
+Dim Shared __UI_DesignMode As _Byte, __UI_FirstSelectedID As Long
+Dim Shared __UI_WaitMessage As String, __UI_TotalSelectedControls As Long
+Dim Shared __UI_WaitMessageHandle As Long, __UI_EditorMode As _Byte
+Dim Shared __UI_LastRenderedCharCount As Long
+Dim Shared __UI_SelectionRectangleTop As Integer, __UI_SelectionRectangleLeft As Integer
+Dim Shared __UI_SelectionRectangle As _Byte
+Dim Shared __UI_CantShowContextMenu As _Byte, __UI_ShowPositionAndSize As _Byte
+Dim Shared __UI_ShowInvisibleControls As _Byte, __UI_Snapped As _Byte
+Dim Shared __UI_SnappedByProximityX As _Byte, __UI_SnappedByProximityY As _Byte
+Dim Shared __UI_SnappedX As Integer, __UI_SnappedY As Integer
+Dim Shared __UI_SnappedXID As Long, __UI_SnappedYID As Long
+Dim Shared __UI_SnapLines As _Byte, __UI_SnapDistance As Integer, __UI_SnapDistanceFromForm As Integer
+Dim Shared __UI_FrameRate As Single, __UI_Font8Offset As Integer, __UI_Font16Offset As Integer
+Dim Shared __UI_ClipboardCheck$, __UI_MenuBarOffsetV As Integer
+Dim Shared __UI_KeepScreenHidden As _Byte, __UI_MaxBorderSize As Integer
+Dim Shared __UI_InternalContextMenus As Long, __UI_DidClick As _Byte
+Dim Shared __UI_ContextMenuSourceID As Long
+Dim Shared __UI_FKey(1 To 12) As Long
 
 'Control types: -----------------------------------------------
-DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
+Dim Shared __UI_Type(0 To 18) As __UI_Types
 __UI_Type(__UI_Type_Form).Name = "Form"
 
 __UI_Type(__UI_Type_Frame).Name = "Frame"

@@ -1,48 +1,48 @@
-OPTION _EXPLICIT
+Option _Explicit
 
 '$INCLUDE:'InFormVersion.bas'
 
-PRINT "InForm - GUI system for QB64 - "; __UI_Version
-PRINT "VBDOS to InForm form conversion utility"
-PRINT "-------------------------------------------------"
+Print "InForm - GUI system for QB64 - "; __UI_Version
+Print "VBDOS to InForm form conversion utility"
+Print "-------------------------------------------------"
 
-DIM lf AS STRING * 1, q AS STRING * 1
-DIM theFile$
+Dim lf As String * 1, q As String * 1
+Dim theFile$
 
-lf = CHR$(10)
-q = CHR$(34)
+lf = Chr$(10)
+q = Chr$(34)
 
-IF LEN(COMMAND$) > 0 THEN
-    IF _FILEEXISTS(COMMAND$) = 0 THEN PRINT "File not found.": END
-    theFile$ = COMMAND$
-ELSE
-    DO
-        INPUT "File to convert (.frm):", theFile$
-        IF LEN(theFile$) = 0 THEN END
-        IF UCASE$(RIGHT$(theFile$, 4)) <> ".FRM" THEN theFile$ = theFile$ + ".FRM"
-        IF _FILEEXISTS(theFile$) = 0 THEN PRINT "File "; theFile$; " not found." ELSE EXIT DO
-    LOOP
-END IF
+If Len(Command$) > 0 Then
+    If _FileExists(Command$) = 0 Then Print "File not found.": End
+    theFile$ = Command$
+Else
+    Do
+        Input "File to convert (.frm):", theFile$
+        If Len(theFile$) = 0 Then End
+        If UCase$(Right$(theFile$, 4)) <> ".FRM" Then theFile$ = theFile$ + ".FRM"
+        If _FileExists(theFile$) = 0 Then Print "File "; theFile$; " not found." Else Exit Do
+    Loop
+End If
 
-OPEN theFile$ FOR BINARY AS #1
+Open theFile$ For Binary As #1
 
-DIM a$
+Dim a$
 
-LINE INPUT #1, a$
-IF a$ <> "Version 1.00" THEN
-    PRINT "Expected VBDOS text form file. Exiting."
-    END
-END IF
+Line Input #1, a$
+If a$ <> "Version 1.00" Then
+    Print "Expected VBDOS text form file. Exiting."
+    End
+End If
 
-LINE INPUT #1, a$
-IF LEFT$(a$, 11) <> "BEGIN Form " THEN
-    PRINT "Invalid VBDOS text form file. Exiting."
-    END
-END IF
+Line Input #1, a$
+If Left$(a$, 11) <> "BEGIN Form " Then
+    Print "Invalid VBDOS text form file. Exiting."
+    End
+End If
 
-DIM FormName$: FormName$ = MID$(a$, 12)
+Dim FormName$: FormName$ = Mid$(a$, 12)
 
-DIM o$: o$ = "'InForm - GUI system for QB64 - " + __UI_Version
+Dim o$: o$ = "'InForm - GUI system for QB64 - " + __UI_Version
 o$ = o$ + lf + "'Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @FellippeHeitor"
 o$ = o$ + lf + "'-----------------------------------------------------------"
 o$ = o$ + lf + "SUB __UI_LoadForm"
@@ -51,231 +51,231 @@ o$ = o$ + lf + "    DIM __UI_NewID AS LONG"
 o$ = o$ + lf
 o$ = o$ + lf + "    __UI_NewID = __UI_NewControl(__UI_Type_Form, " + q + FormName$ + q + ", "
 
-DIM row AS LONG: row = CSRLIN
+Dim row As Long: row = CsrLin
 
-DIM percentage%, eq AS LONG, i AS LONG
-DIM property$, value$, width$, height$, backColor$, foreColor$, caption$, text$
-DIM leftSide$, top$, disabled$, hidden$, controlType$, control$, controlName$, i$
-DIM controlList$, caseAll$, caseFocus$, caseList$, caseTextBox$, assignIDs$
-DIM controlIDsDIM$, Frame$
+Dim percentage%, eq As Long, i As Long
+Dim property$, value$, width$, height$, backColor$, foreColor$, caption$, text$
+Dim leftSide$, top$, disabled$, hidden$, controlType$, control$, controlName$, i$
+Dim controlList$, caseAll$, caseFocus$, caseList$, caseTextBox$, assignIDs$
+Dim controlIDsDIM$, Frame$
 
-DO
-    IF EOF(1) THEN EXIT DO
-    LINE INPUT #1, a$
-    DO WHILE LEFT$(a$, 1) = CHR$(9)
-        a$ = MID$(a$, 2)
-    LOOP
-    percentage% = (SEEK(1) / LOF(1)) * 100
-    LOCATE row, 1: COLOR 7: PRINT STRING$(80, 176);
-    LOCATE row, 1: COLOR 11: PRINT STRING$((80 * percentage%) / 100, 219);
-    COLOR 8
-    LOCATE row + 1, 1: PRINT SPACE$(80);
-    LOCATE row + 1, 1: PRINT a$;
-    COLOR 7
-    eq = INSTR(a$, "=")
-    IF eq THEN
-        property$ = RTRIM$(LEFT$(a$, eq - 1))
-        value$ = LTRIM$(RTRIM$(MID$(a$, eq + 1)))
-        SELECT CASE property$
-            CASE "Width"
-                IF LEFT$(value$, 5) = "Char(" THEN width$ = STR$(VAL(MID$(value$, 6)) * _FONTWIDTH + 5)
-            CASE "Height"
-                IF LEFT$(value$, 5) = "Char(" THEN height$ = STR$(VAL(MID$(value$, 6)) * _FONTHEIGHT + 15)
-            CASE "BackColor"
-                IF LEFT$(value$, 8) = "QBColor(" THEN backColor$ = QBColor2QB64$(VAL(MID$(value$, 9)))
-            CASE "ForeColor"
-                IF LEFT$(value$, 8) = "QBColor(" THEN foreColor$ = QBColor2QB64$(VAL(MID$(value$, 9)))
-            CASE "Caption"
+Do
+    If EOF(1) Then Exit Do
+    Line Input #1, a$
+    Do While Left$(a$, 1) = Chr$(9)
+        a$ = Mid$(a$, 2)
+    Loop
+    percentage% = (Seek(1) / LOF(1)) * 100
+    Locate row, 1: Color 7: Print String$(80, 176);
+    Locate row, 1: Color 11: Print String$((80 * percentage%) / 100, 219);
+    Color 8
+    Locate row + 1, 1: Print Space$(80);
+    Locate row + 1, 1: Print a$;
+    Color 7
+    eq = InStr(a$, "=")
+    If eq Then
+        property$ = RTrim$(Left$(a$, eq - 1))
+        value$ = LTrim$(RTrim$(Mid$(a$, eq + 1)))
+        Select Case property$
+            Case "Width"
+                If Left$(value$, 5) = "Char(" Then width$ = Str$(Val(Mid$(value$, 6)) * _FontWidth + 5)
+            Case "Height"
+                If Left$(value$, 5) = "Char(" Then height$ = Str$(Val(Mid$(value$, 6)) * _FontHeight + 15)
+            Case "BackColor"
+                If Left$(value$, 8) = "QBColor(" Then backColor$ = QBColor2QB64$(Val(Mid$(value$, 9)))
+            Case "ForeColor"
+                If Left$(value$, 8) = "QBColor(" Then foreColor$ = QBColor2QB64$(Val(Mid$(value$, 9)))
+            Case "Caption"
                 caption$ = value$
-            CASE "Text"
+            Case "Text"
                 text$ = value$
-            CASE "Left"
-                IF LEFT$(value$, 5) = "Char(" THEN leftSide$ = STR$(VAL(MID$(value$, 6)) * _FONTWIDTH + 5)
-            CASE "Top"
-                IF LEFT$(value$, 5) = "Char(" THEN top$ = STR$(VAL(MID$(value$, 6)) * _FONTHEIGHT + 15)
-            CASE "Enabled"
-                IF value$ = "0" THEN disabled$ = "True"
-            CASE "Visible"
-                IF value$ = "0" THEN hidden$ = "True"
-        END SELECT
-    ELSE
-        COLOR 15
-        IF LEFT$(a$, 6) = "BEGIN " THEN
-            IF LEN(FormName$) THEN
+            Case "Left"
+                If Left$(value$, 5) = "Char(" Then leftSide$ = Str$(Val(Mid$(value$, 6)) * _FontWidth + 5)
+            Case "Top"
+                If Left$(value$, 5) = "Char(" Then top$ = Str$(Val(Mid$(value$, 6)) * _FontHeight + 15)
+            Case "Enabled"
+                If value$ = "0" Then disabled$ = "True"
+            Case "Visible"
+                If value$ = "0" Then hidden$ = "True"
+        End Select
+    Else
+        Color 15
+        If Left$(a$, 6) = "BEGIN " Then
+            If Len(FormName$) Then
                 FormName$ = ""
                 o$ = o$ + width$ + "," + height$ + ", 0, 0, 0)"
                 o$ = o$ + lf + "    Control(__UI_NewID).Font = SetFont(" + q + q + ", 16, " + q + q + ")"
-                GOSUB AddProperties
-            ELSEIF controlType$ = "__UI_Type_Frame" THEN
-                GOSUB FinishFrame
-            END IF
-            control$ = MID$(a$, 7)
-            controlType$ = LEFT$(control$, INSTR(control$, " ") - 1)
-            controlName$ = MID$(control$, INSTR(control$, " ") + 1)
+                GoSub AddProperties
+            ElseIf controlType$ = "__UI_Type_Frame" Then
+                GoSub FinishFrame
+            End If
+            control$ = Mid$(a$, 7)
+            controlType$ = Left$(control$, InStr(control$, " ") - 1)
+            controlName$ = Mid$(control$, InStr(control$, " ") + 1)
             i = 1: i$ = ""
-            DO WHILE INSTR(controlList$, "$" + controlName$ + i$ + "$") > 0
-                i = i + 1: i$ = LTRIM$(STR$(i))
-            LOOP
+            Do While InStr(controlList$, "$" + controlName$ + i$ + "$") > 0
+                i = i + 1: i$ = LTrim$(Str$(i))
+            Loop
             controlName$ = controlName$ + i$
             controlList$ = controlList$ + "$" + controlName$ + "$"
             caseAll$ = caseAll$ + "        CASE " + controlName$ + lf + lf
-            SELECT CASE controlType$
-                CASE "Label"
+            Select Case controlType$
+                Case "Label"
                     controlType$ = "__UI_Type_Label"
-                CASE "ComboBox", "DriveListBox"
+                Case "ComboBox", "DriveListBox"
                     controlType$ = "__UI_Type_DropdownList"
                     caseFocus$ = caseFocus$ + "        CASE " + controlName$ + lf + lf
-                CASE "CommandButton"
+                Case "CommandButton"
                     controlType$ = "__UI_Type_Button"
                     caseFocus$ = caseFocus$ + "        CASE " + controlName$ + lf + lf
-                CASE "ListBox", "DirListBox", "FileListBox"
+                Case "ListBox", "DirListBox", "FileListBox"
                     controlType$ = "__UI_Type_ListBox"
                     caseFocus$ = caseFocus$ + "        CASE " + controlName$ + lf + lf
                     caseList$ = caseList$ + "        CASE " + controlName$ + lf + lf
-                CASE "Frame"
+                Case "Frame"
                     controlType$ = "__UI_Type_Frame"
-                CASE "CheckBox"
+                Case "CheckBox"
                     controlType$ = "__UI_Type_CheckBox"
                     caseFocus$ = caseFocus$ + "        CASE " + controlName$ + lf + lf
-                CASE "OptionButton"
+                Case "OptionButton"
                     controlType$ = "__UI_Type_RadioButton"
                     caseFocus$ = caseFocus$ + "        CASE " + controlName$ + lf + lf
-                CASE "PictureBox"
+                Case "PictureBox"
                     controlType$ = "__UI_Type_PictureBox"
-                CASE "TextBox"
+                Case "TextBox"
                     controlType$ = "__UI_Type_TextBox"
                     caseFocus$ = caseFocus$ + "        CASE " + controlName$ + lf + lf
                     caseTextBox$ = caseTextBox$ + "        CASE " + controlName$ + lf + lf
-                CASE ELSE
+                Case Else
                     controlType$ = "__UI_Type_PictureBox"
-            END SELECT
+            End Select
             assignIDs$ = assignIDs$ + lf + "    " + controlName$ + " = __UI_GetID(" + q + controlName$ + q + ")"
             controlIDsDIM$ = controlIDsDIM$ + lf + "DIM SHARED " + controlName$ + " AS LONG"
-            IF controlType$ = "__UI_Type_Frame" THEN
+            If controlType$ = "__UI_Type_Frame" Then
                 Frame$ = controlName$
                 control$ = ""
-            END IF
-        ELSEIF a$ = "END" THEN
-            IF LEN(control$) > 0 THEN
+            End If
+        ElseIf a$ = "END" Then
+            If Len(control$) > 0 Then
                 FinishFrame:
                 o$ = o$ + lf + "    __UI_NewID = __UI_NewControl(" + controlType$ + ", " + q + controlName$ + q + ", "
                 o$ = o$ + width$ + "," + height$ + ", " + leftSide$ + ", " + top$ + ", "
-                IF LEN(Frame$) > 0 AND controlType$ <> "__UI_Type_Frame" THEN
+                If Len(Frame$) > 0 And controlType$ <> "__UI_Type_Frame" Then
                     o$ = o$ + "__UI_GetID(" + q + Frame$ + q + "))"
-                ELSE
+                Else
                     o$ = o$ + "0)"
-                END IF
-                GOSUB AddProperties
+                End If
+                GoSub AddProperties
                 control$ = ""
-                IF controlType$ = "__UI_Type_Frame" THEN RETURN
-            ELSE
-                IF LEN(Frame$) THEN
+                If controlType$ = "__UI_Type_Frame" Then Return
+            Else
+                If Len(Frame$) Then
                     Frame$ = ""
-                ELSE
-                    EXIT DO
-                END IF
-            END IF
-        END IF
-    END IF
-    _LIMIT 500
-LOOP
+                Else
+                    Exit Do
+                End If
+            End If
+        End If
+    End If
+    _Limit 500
+Loop
 o$ = o$ + lf + "END SUB"
 o$ = o$ + lf
 o$ = o$ + lf + "SUB __UI_AssignIDs"
 o$ = o$ + assignIDs$
 o$ = o$ + lf + "END SUB"
 
-DIM newFile$: newFile$ = LEFT$(theFile$, INSTR(theFile$, ".") - 1) + "_InForm.frm"
-CLOSE
-OPEN newFile$ FOR BINARY AS #1
-PUT #1, , o$
-CLOSE
-DIM TextFileNum AS LONG: TextFileNum = FREEFILE
-DIM newTextFile$: newTextFile$ = LEFT$(theFile$, INSTR(theFile$, ".") - 1) + "_InForm.bas"
-OPEN newTextFile$ FOR OUTPUT AS #TextFileNum
-PRINT #TextFileNum, "': This program was generated by"
-PRINT #TextFileNum, "': InForm - GUI system for QB64 - "; __UI_Version
-PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
-PRINT #TextFileNum, "'-----------------------------------------------------------"
-PRINT #TextFileNum,
-PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------";
-PRINT #TextFileNum, controlIDsDIM$
-PRINT #TextFileNum,
-PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
-PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
-PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
-PRINT #TextFileNum, "'$INCLUDE:'" + newFile$ + "'"
-PRINT #TextFileNum,
-PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
-FOR i = 0 TO 14
-    SELECT EVERYCASE i
-        CASE 0: PRINT #TextFileNum, "SUB __UI_BeforeInit"
-        CASE 1: PRINT #TextFileNum, "SUB __UI_OnLoad"
-        CASE 2: PRINT #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
-        CASE 3: PRINT #TextFileNum, "SUB __UI_BeforeUnload"
-        CASE 4: PRINT #TextFileNum, "SUB __UI_Click (id AS LONG)"
-        CASE 5: PRINT #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
-        CASE 6: PRINT #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
-        CASE 7: PRINT #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
-        CASE 8: PRINT #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
-        CASE 9: PRINT #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
-        CASE 10: PRINT #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
-        CASE 11: PRINT #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
-        CASE 12: PRINT #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
-        CASE 13: PRINT #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
-        CASE 14: PRINT #TextFileNum, "SUB __UI_FormResized"
+Dim newFile$: newFile$ = Left$(theFile$, InStr(theFile$, ".") - 1) + "_InForm.frm"
+Close
+Open newFile$ For Binary As #1
+Put #1, , o$
+Close
+Dim TextFileNum As Long: TextFileNum = FreeFile
+Dim newTextFile$: newTextFile$ = Left$(theFile$, InStr(theFile$, ".") - 1) + "_InForm.bas"
+Open newTextFile$ For Output As #TextFileNum
+Print #TextFileNum, "': This program was generated by"
+Print #TextFileNum, "': InForm - GUI system for QB64 - "; __UI_Version
+Print #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
+Print #TextFileNum, "'-----------------------------------------------------------"
+Print #TextFileNum,
+Print #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------";
+Print #TextFileNum, controlIDsDIM$
+Print #TextFileNum,
+Print #TextFileNum, "': External modules: ---------------------------------------------------------------"
+Print #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
+Print #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
+Print #TextFileNum, "'$INCLUDE:'" + newFile$ + "'"
+Print #TextFileNum,
+Print #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
+For i = 0 To 14
+    Select EveryCase i
+        Case 0: Print #TextFileNum, "SUB __UI_BeforeInit"
+        Case 1: Print #TextFileNum, "SUB __UI_OnLoad"
+        Case 2: Print #TextFileNum, "SUB __UI_BeforeUpdateDisplay"
+        Case 3: Print #TextFileNum, "SUB __UI_BeforeUnload"
+        Case 4: Print #TextFileNum, "SUB __UI_Click (id AS LONG)"
+        Case 5: Print #TextFileNum, "SUB __UI_MouseEnter (id AS LONG)"
+        Case 6: Print #TextFileNum, "SUB __UI_MouseLeave (id AS LONG)"
+        Case 7: Print #TextFileNum, "SUB __UI_FocusIn (id AS LONG)"
+        Case 8: Print #TextFileNum, "SUB __UI_FocusOut (id AS LONG)"
+        Case 9: Print #TextFileNum, "SUB __UI_MouseDown (id AS LONG)"
+        Case 10: Print #TextFileNum, "SUB __UI_MouseUp (id AS LONG)"
+        Case 11: Print #TextFileNum, "SUB __UI_KeyPress (id AS LONG)"
+        Case 12: Print #TextFileNum, "SUB __UI_TextChanged (id AS LONG)"
+        Case 13: Print #TextFileNum, "SUB __UI_ValueChanged (id AS LONG)"
+        Case 14: Print #TextFileNum, "SUB __UI_FormResized"
 
-        CASE 0 TO 3, 14
-            PRINT #TextFileNum,
+        Case 0 To 3, 14
+            Print #TextFileNum,
 
-        CASE 4 TO 6, 9, 10 'All controls except for Menu panels, and internal context menus
-            PRINT #TextFileNum, "    SELECT CASE id"
-            PRINT #TextFileNum, caseAll$;
-            PRINT #TextFileNum, "    END SELECT"
+        Case 4 To 6, 9, 10 'All controls except for Menu panels, and internal context menus
+            Print #TextFileNum, "    SELECT CASE id"
+            Print #TextFileNum, caseAll$;
+            Print #TextFileNum, "    END SELECT"
 
-        CASE 7, 8, 11 'Controls that can have focus only
-            PRINT #TextFileNum, "    SELECT CASE id"
-            PRINT #TextFileNum, caseFocus$;
-            PRINT #TextFileNum, "    END SELECT"
+        Case 7, 8, 11 'Controls that can have focus only
+            Print #TextFileNum, "    SELECT CASE id"
+            Print #TextFileNum, caseFocus$;
+            Print #TextFileNum, "    END SELECT"
 
-        CASE 12 'Text boxes
-            PRINT #TextFileNum, "    SELECT CASE id"
-            PRINT #TextFileNum, caseTextBox$;
-            PRINT #TextFileNum, "    END SELECT"
+        Case 12 'Text boxes
+            Print #TextFileNum, "    SELECT CASE id"
+            Print #TextFileNum, caseTextBox$;
+            Print #TextFileNum, "    END SELECT"
 
-        CASE 13 'Dropdown list, List box and Track bar
-            PRINT #TextFileNum, "    SELECT CASE id"
-            PRINT #TextFileNum, caseList$;
-            PRINT #TextFileNum, "    END SELECT"
-    END SELECT
-    PRINT #TextFileNum, "END SUB"
-    PRINT #TextFileNum,
-NEXT
-CLOSE #TextFileNum
-LOCATE row, 1: COLOR 11: PRINT STRING$(80, 219);
-COLOR 15
-PRINT
-PRINT "Conversion finished. Files output:"
-PRINT "    "; newFile$
-PRINT "    "; newTextFile$
-END
+        Case 13 'Dropdown list, List box and Track bar
+            Print #TextFileNum, "    SELECT CASE id"
+            Print #TextFileNum, caseList$;
+            Print #TextFileNum, "    END SELECT"
+    End Select
+    Print #TextFileNum, "END SUB"
+    Print #TextFileNum,
+Next
+Close #TextFileNum
+Locate row, 1: Color 11: Print String$(80, 219);
+Color 15
+Print
+Print "Conversion finished. Files output:"
+Print "    "; newFile$
+Print "    "; newTextFile$
+End
 
 AddProperties:
-IF LEN(caption$) THEN o$ = o$ + lf + "    SetCaption __UI_NewID, " + caption$: caption$ = ""
-DIM formBackColor$, formForeColor$
-IF LEN(FormName$) = 0 THEN
-    IF backColor$ = formBackColor$ THEN backColor$ = ""
-    IF foreColor$ = formForeColor$ THEN foreColor$ = ""
-END IF
-IF LEN(backColor$) THEN o$ = o$ + lf + "    Control(__UI_NewID).BackColor = " + backColor$: IF control$ = "" THEN formBackColor$ = backColor$: backColor$ = ""
-IF LEN(foreColor$) THEN o$ = o$ + lf + "    Control(__UI_NewID).ForeColor = " + foreColor$: IF control$ = "" THEN formForeColor$ = foreColor$: foreColor$ = ""
-IF LEN(text$) THEN o$ = o$ + lf + "    Text(__UI_NewID) = " + text$: text$ = ""
-IF LEN(disabled$) THEN o$ = o$ + lf + "    Control(__UI_NewID).Disabled = True": disabled$ = ""
-IF LEN(hidden$) THEN o$ = o$ + lf + "    Control(__UI_NewID).Hidden = True": hidden$ = ""
+If Len(caption$) Then o$ = o$ + lf + "    SetCaption __UI_NewID, " + caption$: caption$ = ""
+Dim formBackColor$, formForeColor$
+If Len(FormName$) = 0 Then
+    If backColor$ = formBackColor$ Then backColor$ = ""
+    If foreColor$ = formForeColor$ Then foreColor$ = ""
+End If
+If Len(backColor$) Then o$ = o$ + lf + "    Control(__UI_NewID).BackColor = " + backColor$: If control$ = "" Then formBackColor$ = backColor$: backColor$ = ""
+If Len(foreColor$) Then o$ = o$ + lf + "    Control(__UI_NewID).ForeColor = " + foreColor$: If control$ = "" Then formForeColor$ = foreColor$: foreColor$ = ""
+If Len(text$) Then o$ = o$ + lf + "    Text(__UI_NewID) = " + text$: text$ = ""
+If Len(disabled$) Then o$ = o$ + lf + "    Control(__UI_NewID).Disabled = True": disabled$ = ""
+If Len(hidden$) Then o$ = o$ + lf + "    Control(__UI_NewID).Hidden = True": hidden$ = ""
 o$ = o$ + lf
-RETURN
+Return
 
-FUNCTION QBColor2QB64$ (index AS _BYTE)
-    QBColor2QB64$ = "_RGB32(" + LTRIM$(STR$(_RED(index))) + ", " + LTRIM$(STR$(_GREEN(index))) + ", " + LTRIM$(STR$(_BLUE(index))) + ")"
-END FUNCTION
+Function QBColor2QB64$ (index As _Byte)
+    QBColor2QB64$ = "_RGB32(" + LTrim$(Str$(_Red(index))) + ", " + LTrim$(Str$(_Green(index))) + ", " + LTrim$(Str$(_Blue(index))) + ")"
+End Function
 
