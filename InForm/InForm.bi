@@ -1,8 +1,11 @@
 'InForm - GUI library for QB64
 'Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 '
-Declare CustomType Library
+Declare Library
     Function __UI_GetPID Alias getpid ()
+End Declare
+
+Declare CustomType Library
     Sub __UI_MemCopy Alias memcpy (ByVal dest As _Offset, Byval source As _Offset, Byval bytes As Long)
 End Declare
 

@@ -347,10 +347,10 @@ Sub __UI_Click (id As Long)
         Case AlignMenuAlignCenterH: Dummy = 208
         Case AlignMenuDistributeV: Dummy = 209
         Case AlignMenuDistributeH: Dummy = 210
-        CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops, _
-             AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH, _
-             AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV, _
-             AlignMenuDistributeH
+CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops, _
+AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH, _
+AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV, _
+AlignMenuDistributeH
             b$ = MKI$(0)
             SendData b$, Dummy
         Case OptionsMenuAutoName
@@ -397,10 +397,10 @@ Sub __UI_Click (id As Long)
         Case AddPictureBox: Dummy = __UI_Type_PictureBox
         Case AddFrame: Dummy = __UI_Type_Frame
         Case AddToggleSwitch: Dummy = __UI_Type_ToggleSwitch
-        CASE AddButton, AddLabel, AddTextBox, AddCheckBox, _
-             AddRadioButton, AddListBox, AddDropdownList, _
-             AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
-             AddToggleSwitch
+CASE AddButton, AddLabel, AddTextBox, AddCheckBox, _
+AddRadioButton, AddListBox, AddDropdownList, _
+AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
+AddToggleSwitch
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
             Send Client, b$
         Case AddNumericBox
@@ -749,9 +749,9 @@ Sub __UI_Click (id As Long)
 
             __UI_Focus = 0
             __UI_ForceRedraw = True
-        CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, _
-             FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, _
-             FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
+CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, _
+FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, _
+FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
             Dim RecentToOpen$
             RecentToOpen$ = ToolTip(id)
             If _FileExists(RecentToOpen$) Then
@@ -1148,9 +1148,9 @@ Sub SendNewRGB
 End Sub
 
 Function PropertyFullySelected%% (id As Long)
-    PropertyFullySelected%% = Control(id).TextIsSelected AND _
-                              Control(id).SelectionStart = 0 AND _
-                              Control(id).Cursor = LEN(Text(id))
+PropertyFullySelected%% = Control(id).TextIsSelected AND _
+Control(id).SelectionStart = 0 AND _
+Control(id).Cursor = LEN(Text(id))
 End Function
 
 Sub SelectPropertyFully (id As Long)
@@ -1305,8 +1305,8 @@ Sub __UI_BeforeUpdateDisplay
         If Caption(StatusBar) = "" Then Caption(StatusBar) = "Ready."
     End If
 
-    IF __UI_MouseDownOnID = Red OR __UI_MouseDownOnID = Green OR __UI_MouseDownOnID = Blue OR _
-       __UI_PreviousMouseDownOnID = Red OR __UI_PreviousMouseDownOnID = Green OR __UI_PreviousMouseDownOnID = Blue THEN
+IF __UI_MouseDownOnID = Red OR __UI_MouseDownOnID = Green OR __UI_MouseDownOnID = Blue OR _
+__UI_PreviousMouseDownOnID = Red OR __UI_PreviousMouseDownOnID = Green OR __UI_PreviousMouseDownOnID = Blue THEN
 
         Select Case __UI_MouseDownOnID + __UI_PreviousMouseDownOnID
             Case Red
@@ -1545,8 +1545,8 @@ Sub __UI_BeforeUpdateDisplay
     Control(EditMenuRestoreDimensions).Disabled = True
     SetCaption EditMenuRestoreDimensions, "Restore &image dimensions"
     If TotalSelected = 1 And PreviewControls(FirstSelected).Type = __UI_Type_PictureBox And OriginalImageWidth > 0 And OriginalImageHeight > 0 Then
-        IF PreviewControls(FirstSelected).Height - (PreviewControls(FirstSelected).BorderSize * ABS(PreviewControls(FirstSelected).HasBorder)) <> OriginalImageHeight OR _
-           PreviewControls(FirstSelected).Width - (PreviewControls(FirstSelected).BorderSize * ABS(PreviewControls(FirstSelected).HasBorder)) <> OriginalImageWidth THEN
+IF PreviewControls(FirstSelected).Height - (PreviewControls(FirstSelected).BorderSize * ABS(PreviewControls(FirstSelected).HasBorder)) <> OriginalImageHeight OR _
+PreviewControls(FirstSelected).Width - (PreviewControls(FirstSelected).BorderSize * ABS(PreviewControls(FirstSelected).HasBorder)) <> OriginalImageWidth THEN
             Control(EditMenuRestoreDimensions).Disabled = False
             SetCaption EditMenuRestoreDimensions, "Restore &image dimensions (" + LTrim$(Str$(OriginalImageWidth)) + "x" + LTrim$(Str$(OriginalImageHeight)) + ")"
         End If
@@ -1871,8 +1871,8 @@ Sub __UI_BeforeUpdateDisplay
         ElseIf __UI_Focus = TextTB Then
             Control(TextTB).NumericOnly = PreviewControls(FirstSelected).NumericOnly
             If PropertyFullySelected(TextTB) Then
-                IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)) OR _
-                   ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
+IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(13), "\n", False, 0)) OR _
+((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
                 Else
                     If Timer - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay Then
@@ -2418,9 +2418,9 @@ Sub __UI_BeforeUpdateDisplay
         Control(FontList).Disabled = True
     End If
 
-    IF PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR _
-       PreviewControls(FirstSelected).Type = __UI_Type_MenuBar OR _
-        PreviewControls(FirstSelected).Type = __UI_Type_MenuItem THEN
+IF PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR _
+PreviewControls(FirstSelected).Type = __UI_Type_MenuBar OR _
+PreviewControls(FirstSelected).Type = __UI_Type_MenuItem THEN
         Control(ContextMenuControlsList).Disabled = True
     Else
         Control(ContextMenuControlsList).Disabled = False
@@ -2812,8 +2812,8 @@ Sub __UI_OnLoad
                     Line Input #FreeFileNum, b$
                     b$ = LTrim$(RTrim$(b$))
                     uB$ = UCase$(b$)
-                    IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
-                    INSTR(uB$, "$INCLUDE") > 0 THEN
+IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
+INSTR(uB$, "$INCLUDE") > 0 THEN
                         Dim FirstMark As Integer, SecondMark As Integer
                         FirstMark = InStr(InStr(uB$, "$INCLUDE") + 8, uB$, "'")
                         If FirstMark > 0 Then
@@ -3051,10 +3051,13 @@ Sub __UI_OnLoad
 
     b$ = "Launching Preview component..."
     GoSub ShowMessage
+
+    _MessageBox UiEditorTitle$, "PID =" + Str$(__UI_GetPID) ' a740g: test
+
     $If WIN Then
         Shell _DontWait ".\InForm\UiEditorPreview.exe " + HostPort
     $Else
-            SHELL _DONTWAIT "./InForm/UiEditorPreview " + HostPort
+            Shell _DontWait "./InForm/UiEditorPreview " + HostPort
     $End If
 
     b$ = "Connecting to preview component..."
@@ -3205,8 +3208,8 @@ Sub __UI_KeyPress (id As Long)
                     ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
                     SendData MKI$(0), 43
                     __UI_ForceRedraw = True
-                CASE __UI_FKey(1), __UI_FKey(2), __UI_FKey(3), __UI_FKey(4), __UI_FKey(5), __UI_FKey(6), _
-                     __UI_FKey(7), __UI_FKey(8), __UI_FKey(9), __UI_FKey(10), __UI_FKey(11), __UI_FKey(12)
+    CASE __UI_FKey(1), __UI_FKey(2), __UI_FKey(3), __UI_FKey(4), __UI_FKey(5), __UI_FKey(6), _
+        __UI_FKey(7), __UI_FKey(8), __UI_FKey(9), __UI_FKey(10), __UI_FKey(11), __UI_FKey(12)
                     For i = 1 To 12
                         If __UI_FKey(i) = __UI_KeyHit Then
                             Combo$ = Combo$ + "F" + LTrim$(Str$(i))
@@ -3235,7 +3238,7 @@ Sub ConfirmEdits (id As Long)
     Dim b$, TempValue As Long
 
     IF InputBoxText(GetInputBoxFromID(id)) <> Text(id) AND _
-       InputBox(GetInputBoxFromID(id)).Sent = False THEN
+        InputBox(GetInputBoxFromID(id)).Sent = False THEN
         Select Case InputBox(GetInputBoxFromID(id)).DataType
             Case DT_Text
                 b$ = MKL$(Len(Text(id))) + Text(id)
@@ -4133,10 +4136,10 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
 
                 If Len(PreviewCaptions(i)) > 0 Then
                     Select Case PreviewControls(i).Type
-                        CASE __UI_Type_Form, __UI_Type_Frame, __UI_Type_Button, _
-                             __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton, _
-                             __UI_Type_TextBox, __UI_Type_ProgressBar, __UI_Type_MenuBar, _
-                             __UI_Type_MenuItem
+    CASE __UI_Type_Form, __UI_Type_Frame, __UI_Type_Button, _
+    __UI_Type_Label, __UI_Type_CheckBox, __UI_Type_RadioButton, _
+        __UI_Type_TextBox, __UI_Type_ProgressBar, __UI_Type_MenuBar, _
+        __UI_Type_MenuItem
                             a$ = "    SetCaption __UI_NewID, " + SpecialCharsToEscapeCode$(PreviewCaptions(i))
                             Print #TextFileNum, a$
                     End Select
@@ -4255,8 +4258,8 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
                     Print #TextFileNum, "    Control(__UI_NewID).Min = " + LTrim$(Str$(PreviewControls(i).Min))
                 End If
                 If PreviewControls(i).Max <> 0 Then
-                    IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
-                    PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
+    IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
+        PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
                         Print #TextFileNum, "    Control(__UI_NewID).Max = " + LTrim$(Str$(PreviewControls(i).Max))
                     End If
                 End If
@@ -4511,15 +4514,15 @@ Sub SaveForm (ExitToQB64 As _Byte, SaveOnlyFrm As _Byte)
                             For Dummy = 1 To UBound(PreviewControls)
                                 GoSub checkCondition
                                 If checkConditionResult Then
-                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND _
-                                       INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
+    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND _
+        INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
                                         addedItems$ = addedItems$ + Space$(indenting) + "CASE " + RTrim$(PreviewControls(Dummy).Name) + Chr$(10) + Chr$(10)
                                     ElseIf InStr(thisBlock$, " CASE " + RTrim$(PreviewControls(Dummy).Name) + " '<-- " + Chr$(34) + RTrim$(PreviewControls(Dummy).Name) + Chr$(34) + " deleted from Form on ") > 0 Then
-                                        thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
-                                        " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + _
-                                        MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
-                                        " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + _
-                                        " deleted from Form on "), thisBlock$, CHR$(10)))
+    thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
+    " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + _
+    MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
+        " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + _
+        " deleted from Form on "), thisBlock$, CHR$(10)))
                                     End If
                                 End If
                             Next
