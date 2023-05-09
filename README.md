@@ -45,7 +45,11 @@ Install Inform-PE and QB64-PE side-by-side in their own directories. There is no
 ```text
 <some-drive-or-directory>
     |
-    |-------<InForm-PE>
+    |-------InForm-PE>
+    |           |
+    |           |-------<UiEditor.exe>
     |
     |-------<QB64pe>
+                |
+                |-------<qb64pe.exe>
 ```
