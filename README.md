@@ -4,7 +4,7 @@
 
 A GUI engine and WYSIWYG interface designer for QB64-PE
 
-Wiki: <https://github.com/a740g/InForm/wiki>
+Wiki: <https://github.com/a740g/InForm-PE/wiki>
 
 ## Event-driven QB64-PE programs
 
