@@ -49,7 +49,7 @@ SUB __UI_Click (id AS LONG)
                 Caption(LoadBT) = "globe.gif loaded"
                 Control(LoadBT).Disabled = True
             ELSE
-                _DELAY 0.1: _MESSAGEBOX "GIFPlay Sample", "File 'globe.gif' could not be found.", "error"
+                _DELAY 0.2: _MESSAGEBOX "GIFPlay Sample", "File 'globe.gif' could not be found.", "error"
             END IF
         CASE PlayBT
             IF GifIsPlaying(PictureBox1) THEN

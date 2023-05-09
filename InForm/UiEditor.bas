@@ -461,7 +461,7 @@ AddToggleSwitch
             SendData b$, 44
         CASE AddGifExtensionToggle
             IF Control(AddGifExtensionToggle).Value = False AND TotalGifLoaded > 0 THEN
-                _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Removing the GIF extension will load the existing animations as static frames. Proceed?", "yesno", "question", 0)
+                _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Removing the GIF extension will load the existing animations as static frames. Proceed?", "yesno", "question", 0)
                 IF Answer = 0 THEN
                     Control(AddGifExtensionToggle).Value = True
                 ELSE
@@ -485,13 +485,13 @@ AddToggleSwitch
                 END IF
             NEXT
             IF LEN(Temp$) THEN
-                _DELAY 0.1: _MESSAGEBOX UiEditorTitle$ + " - Loaded fonts", Temp$, "info"
+                _DELAY 0.2: _MESSAGEBOX UiEditorTitle$ + " - Loaded fonts", Temp$, "info"
             ELSE
-                _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "There are no fonts loaded.", "error"
+                _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "There are no fonts loaded.", "error"
             END IF
         CASE FileMenuNew
             IF Edited THEN
-                _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancle", "question", 1)
+                _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                 IF Answer = 0 THEN
                     EXIT SUB
                 ELSEIF Answer = 1 THEN
@@ -574,12 +574,12 @@ AddToggleSwitch
         CASE HelpMenuAbout
             DIM isBeta$
             IF __UI_VersionIsBeta THEN isBeta$ = " Beta Version" ELSE isBeta$ = ""
-            _DELAY 0.1: _MESSAGEBOX UiEditorTitle$ + " - About", "InForm GUI for QB64-PE - Created by Fellippe Heitor (2016-2021)" + STRING$(2, 13) + UiEditorTitle$ + " " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")" + STRING$(2, 13) + "Updates by George McGinn (gbytes58@gmail.com)" + STRING$(2, 13) + "QB64-PE port by Samuel Gomes (a740g)" + STRING$(2, 13) + "GitHub: https://github.com/a740g/InForm-PE", "info"
+            _DELAY 0.2: _MESSAGEBOX UiEditorTitle$ + " - About", "InForm GUI for QB64-PE - Created by Fellippe Heitor (2016-2021)" + STRING$(2, 13) + UiEditorTitle$ + " " + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")" + STRING$(2, 13) + "Updates by George McGinn (gbytes58@gmail.com)" + STRING$(2, 13) + "QB64-PE port by Samuel Gomes (a740g)" + STRING$(2, 13) + "GitHub: https://github.com/a740g/InForm-PE", "info"
         CASE HelpMenuHelp
-            _DELAY 0.1: _MESSAGEBOX UiEditorTitle$ + " - What's all this?", "Design a form and export the resulting code to generate an event-driven QB64-PE program.", "info"
+            _DELAY 0.2: _MESSAGEBOX UiEditorTitle$ + " - What's all this?", "Design a form and export the resulting code to generate an event-driven QB64-PE program.", "info"
         CASE FileMenuExit
             IF Edited THEN
-                _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
+                _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
                 IF Answer = 0 THEN
                     EXIT SUB
                 ELSEIF Answer = 1 THEN
@@ -705,7 +705,7 @@ AddToggleSwitch
             __UI_ValueChanged ControlList
         CASE FileMenuOpen
             IF Edited THEN
-                _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancle", "question", 1)
+                _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                 IF Answer = 0 THEN
                     EXIT SUB
                 ELSEIF Answer = 1 THEN
@@ -766,7 +766,7 @@ FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
                 END IF
 
                 IF Edited THEN
-                    _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancle", "question", 1)
+                    _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                     IF Answer = 0 THEN
                         EXIT SUB
                     ELSEIF Answer = 1 THEN
@@ -778,7 +778,7 @@ FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
                 OpenDialogOpen = True
                 __UI_Click OpenBT
             ELSE
-                _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "File not found.", "error"
+                _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "File not found.", "error"
                 RemoveFromRecentList RecentToOpen$
             END IF
         CASE OpenBT
@@ -833,7 +833,7 @@ FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
                     FormDataReceived = False
                     InitialControlSet = ""
                 ELSE
-                    _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "File not found.", "error"
+                    _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "File not found.", "error"
                     Control(FileList).Value = 0
                 END IF
             END IF
@@ -1200,7 +1200,7 @@ SUB SelectFontInList (FontSetup$)
     BypassShowFontList = True
     IF AttemptToShowFontList THEN
         AttemptToShowFontList = False
-        _DELAY 0.1: i = _MESSAGEBOX(UiEditorTitle$, "The current font isn't a system font.\nReset this control to the built-in font?", "yesno", "question", 1)
+        _DELAY 0.2: i = _MESSAGEBOX(UiEditorTitle$, "The current font isn't a system font.\nReset this control to the built-in font?", "yesno", "question", 1)
         IF i = 1 THEN
             thisFile$ = ",16"
             thisFile$ = MKL$(LEN(thisFile$)) + thisFile$
@@ -1354,7 +1354,7 @@ __UI_PreviousMouseDownOnID = Red OR __UI_PreviousMouseDownOnID = Green OR __UI_P
                     END IF
 
                     IF Edited THEN
-                        _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancle", "question", 1)
+                        _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                         IF Answer = 0 THEN
                             CLOSE InstanceClient
                             InstanceClient = 0
@@ -1581,7 +1581,7 @@ PreviewControls(FirstSelected).Width - (PreviewControls(FirstSelected).BorderSiz
             __UI_ForceRedraw = True
         ELSEIF CVI(b$) = -4 THEN
             'User attempted to load an icon file that couldn't be previewed
-            _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "Icon couldn't be previewed. Make sure it's a valid icon file.", "warning"
+            _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "Icon couldn't be previewed. Make sure it's a valid icon file.", "warning"
         ELSEIF CVI(b$) = -5 THEN
             'Context menu was successfully shown on the preview
             IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
@@ -1589,7 +1589,7 @@ PreviewControls(FirstSelected).Width - (PreviewControls(FirstSelected).BorderSiz
             __UI_ForceRedraw = True
         ELSEIF CVI(b$) = -6 THEN
             'User attempted to load an invalid icon file
-            _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "Only .ico files are accepted.", "warning"
+            _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "Only .ico files are accepted.", "warning"
         ELSEIF CVI(b$) = -7 THEN
             'A new empty form has just been created or a file has just finished loading from disk
             Edited = False
@@ -2555,7 +2555,7 @@ END SUB
 SUB __UI_BeforeUnload
     DIM Answer AS _BYTE
     IF Edited THEN
-        _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
+        _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
         IF Answer = 0 THEN
             __UI_UnloadSignal = False
         ELSEIF Answer = 1 THEN
@@ -2645,7 +2645,7 @@ SUB Handshake
     LOOP UNTIL TIMER - start! > TIMEOUT
 
     IF UiPreviewPID = 0 THEN
-        _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "UiEditorPreview component not found or failed to load.", "error"
+        _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "UiEditorPreview component not found or failed to load.", "error"
         SYSTEM
     END IF
 END SUB
@@ -2703,7 +2703,7 @@ SUB __UI_OnLoad
     LOOP UNTIL Host <> 0 OR HostAttempts > 1000
 
     IF Host = 0 THEN
-        _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "Unable to open communication port.", "error"
+        _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "Unable to open communication port.", "error"
         SYSTEM
     END IF
 
@@ -3080,7 +3080,7 @@ INSTR(uB$, "$INCLUDE") > 0 THEN
 
     EXIT SUB
     UiEditorPreviewNotFound:
-    _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, "UiEditorPreview component not found or failed to load.", "error"
+    _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, "UiEditorPreview component not found or failed to load.", "error"
     SYSTEM
 
     ShowMessage:
@@ -3823,7 +3823,7 @@ SUB LoadPreview
     IF LoadedWithGifExtension = 1 THEN LoadedWithGifExtension = False
     IF PrevTotalGifLoaded <> TotalGifLoaded THEN
         IF PrevTotalGifLoaded = 0 AND LoadedWithGifExtension = False THEN
-            _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "You loaded an animated GIF file.\nDo you want to include the GIF extension?", "yesno", "question", 1)
+            _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "You loaded an animated GIF file.\nDo you want to include the GIF extension?", "yesno", "question", 1)
             IF Answer = 1 THEN
                 Control(AddGifExtensionToggle).Value = True
             ELSE
@@ -4015,14 +4015,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
 
     IF LEN(b$) > 0 THEN
-        _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
+        _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
         IF Answer = 0 THEN EXIT SUB
     END IF
 
     AddGifExtension = Control(AddGifExtensionToggle).Value
 
     IF (AddGifExtension OR Control(AddGifExtensionToggle).Value) AND LoadedWithGifExtension = False AND TotalGifLoaded = 0 THEN
-        _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, "Are you sure you want to include the GIF extension?\n(no animated GIFs have been added to this form)", "yesno", "question", 0)
+        _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, "Are you sure you want to include the GIF extension?\n(no animated GIFs have been added to this form)", "yesno", "question", 0)
         AddGifExtension = (Answer = 1)
     END IF
 
@@ -4675,18 +4675,18 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF ExitToQB64 AND NOT SaveOnlyFrm THEN
         IF _FILEEXISTS(QB64_EXE_PATH) THEN
             b$ = b$ + CHR$(10) + CHR$(10) + "Exit to " + QB64_DISPLAY + "?"
-            _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
+            _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
             IF Answer = 0 THEN Edited = False: EXIT SUB
             IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
             SHELL _DONTWAIT QB64_EXE_PATH + " " + QuotedFilename$(BaseOutputFileName + ".bas")
             SYSTEM
         ELSE
             b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
-            _DELAY 0.1: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
+            _DELAY 0.2: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
             IF Answer = 0 THEN Edited = False: EXIT SUB
         END IF
     ELSE
-        _DELAY 0.1: _MESSAGEBOX UiEditorTitle$, b$, "info"
+        _DELAY 0.2: _MESSAGEBOX UiEditorTitle$, b$, "info"
         Edited = False
     END IF
 
