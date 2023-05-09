@@ -397,7 +397,7 @@ SUB __UI_BeforeUpdateDisplay
             IF EditorWasActive = False THEN
                 'Preview was launched by user
                 _SCREENHIDE
-                _MESSAGEBOX "InForm Preview", "__UI_BeforeUpdateDisplay: InForm Designer is not running. Please run the main program.", "error"
+                _DELAY 0.1: _MESSAGEBOX "InForm Preview", "__UI_BeforeUpdateDisplay: InForm Designer is not running. Please run the main program.", "error"
             END IF
             IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
             SYSTEM
@@ -1705,7 +1705,7 @@ SUB __UI_OnLoad
     IF VAL(HostPort) < 60000 THEN
         ForceQuit:
         _SCREENHIDE
-        _MESSAGEBOX "InForm Preview", "__UI_OnLoad: InForm Designer is not running. Please run the main program.", "error"
+        _DELAY 0.1: _MESSAGEBOX "InForm Preview", "__UI_OnLoad: InForm Designer is not running. Please run the main program.", "error"
         SYSTEM
     END IF
 
