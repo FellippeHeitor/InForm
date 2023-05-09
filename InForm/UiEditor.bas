@@ -327,7 +327,6 @@ $END IF
 '$include:'xp.uitheme'
 '$include:'UiEditor.frm'
 '$include:'ini.bm'
-'$include:'extensions/download.bas'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
