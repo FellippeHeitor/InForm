@@ -8,3 +8,5 @@
 *.exe
 # Ignore all ini files
 *.ini
+# Other temp files
+*.frmbin
