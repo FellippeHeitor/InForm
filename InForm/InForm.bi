@@ -1,6 +1,11 @@
 'InForm - GUI library for QB64
 'Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 '
+
+$If VERSION < 3.7 Then
+    $Error This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
+$End If
+
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
 END DECLARE
