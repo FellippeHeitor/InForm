@@ -57,6 +57,15 @@ Assuming your setup is like the above, do the following:
 - *BeforeUnload*, triggered when the user tries to close the program, either via clicking the window's X button, right click in the task bar -> Close or with Alt+F4 (Windows only).
 - *FormResized*, triggered when a form with the CanResize property is resized at runtime.
 
+# EXAMPLES
+
+- Calculator by Terry Ritchie
+- Fireworks by Fellippe Heitor
+- TicTacToe by Fellippe Heitor
+- TicTacToe2 by Fellippe Heitor
+- Stopwatch by Fellippe Heitor
+- WordClock by Fellippe Heitor
+
 ## NOTES
 
-- This requires the latest version of [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases). More accurately, it only works with development version of QB64-PE or with v3.7.1 or v3.8.0 (whenever those are released)
+- This requires the latest version of [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases). More accurately, it only works with QB64-PE v3.8.0 or above.
