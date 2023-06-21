@@ -1,5 +1,5 @@
-'INI Manager - Beta 4
-'Fellippe Heitor, 2017 - fellippe@qb64.org - @fellippeheitor
+'INI Manager v1.01
+'Fellippe Heitor, 2017-2021 - fellippe@qb64.org - @fellippeheitor
 
 SUB IniSortSection (file$, __section$)
     SHARED IniCODE, IniLastKey$, IniWholeFile$
@@ -78,7 +78,8 @@ SUB IniDeleteKey (file$, __section$, __key$)
     SHARED IniLF$, IniWholeFile$, IniSectionData$
     SHARED IniLastSection$, IniLastKey$, IniNewFile$
 
-    DIM tempValue$, section$, key$
+    DIM tempValue$
+    DIM section$, key$
     DIM FoundLF AS _UNSIGNED LONG
 
     IniCODE = 0
@@ -127,6 +128,7 @@ END SUB
 SUB IniCommit
     SHARED currentIniFileName$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
     SHARED IniNewFile$, IniDisableAutoCommit, IniCODE
+    SHARED LoadedFiles$
 
     IF currentIniFileName$ = "" THEN IniCODE = 18: EXIT SUB
 
@@ -134,8 +136,17 @@ SUB IniCommit
     currentIniFileLOF = LEN(IniNewFile$)
 
     IF NOT IniDisableAutoCommit THEN
-        DIM fileNum AS INTEGER
-        fileNum = FREEFILE
+        DIM fileNum AS INTEGER, findFile AS INTEGER
+
+        'search LoadedFiles$, so we use the same file handle every time
+        findFile = INSTR(LoadedFiles$, "@" + currentIniFileName$ + "@")
+        IF findFile = 0 THEN
+            fileNum = FREEFILE
+            LoadedFiles$ = LoadedFiles$ + "@" + MKI$(fileNum) + "@" + currentIniFileName$ + "@"
+        ELSE
+            fileNum = CVI(MID$(LoadedFiles$, findFile - 2, 2))
+            CLOSE fileNum
+        END IF
 
         OPEN currentIniFileName$ FOR BINARY AS #fileNum
 
@@ -146,7 +157,8 @@ SUB IniCommit
         END IF
 
         PUT #fileNum, 1, IniNewFile$
-        CLOSE #fileNum
+        CLOSE #fileNum 'flush
+        OPEN currentIniFileName$ FOR BINARY AS #fileNum 'keep open
     END IF
 END SUB
 
@@ -495,12 +507,12 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
                 'add values to the end of the specified section$
                 IniNewFile$ = LEFT$(IniWholeFile$, endSection - 1)
                 IniNewFile$ = IniNewFile$ + key$ + "=" + value$ + IniLF$
-                IF MID$(IniWholeFile$, endSection, 2) <> IniLF$ THEN IniNewFile$ = IniNewFile$ + IniLF$
+                IF MID$(IniWholeFile$, endSection, LEN(IniLF$)) <> IniLF$ THEN IniNewFile$ = IniNewFile$ + IniLF$
                 IniNewFile$ = IniNewFile$ + MID$(IniWholeFile$, endSection)
             ELSE
                 'add values to the end of the file
                 IniNewFile$ = IniWholeFile$
-                IF RIGHT$(IniNewFile$, 2) = IniLF$ THEN
+                IF RIGHT$(IniNewFile$, LEN(IniLF$)) = IniLF$ THEN
                     IniNewFile$ = IniNewFile$ + key$ + "=" + value$
                 ELSE
                     IniNewFile$ = IniNewFile$ + IniLF$ + key$ + "=" + value$
@@ -516,9 +528,9 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
             IniNewFile$ = IniWholeFile$
             IF section$ = "[]" THEN GOTO WriteAtTop
 
-            IF RIGHT$(IniNewFile$, 4) = IniLF$ + IniLF$ THEN
+            IF RIGHT$(IniNewFile$, LEN(IniLF$) * 2) = IniLF$ + IniLF$ THEN
                 IniNewFile$ = IniNewFile$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
-            ELSEIF RIGHT$(IniNewFile$, 2) = IniLF$ THEN
+            ELSEIF RIGHT$(IniNewFile$, LEN(IniLF$)) = IniLF$ THEN
                 IniNewFile$ = IniNewFile$ + IniLF$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
             ELSE
                 IniNewFile$ = IniNewFile$ + IniLF$ + IniLF$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
@@ -553,6 +565,20 @@ END SUB
 
 SUB IniClose
     SHARED IniDisableAutoCommit, currentIniFileName$
+    SHARED LoadedFiles$
+    DIM findFile AS INTEGER, fileNum AS INTEGER
+
+    IF currentIniFileName$ = "" THEN EXIT SUB
+
+    'search LoadedFiles$, so we use the same file handle every time
+    findFile = INSTR(LoadedFiles$, "@" + currentIniFileName$ + "@")
+    IF findFile = 0 THEN
+        'not open; nothing to close
+        EXIT SUB
+    ELSE
+        fileNum = CVI(MID$(LoadedFiles$, findFile - 2, 2))
+        CLOSE fileNum
+    END IF
 
     IniDisableAutoCommit = 0
     IniCommit
@@ -564,8 +590,8 @@ SUB IniLoad (file$)
     SHARED IniCODE, currentIniFileName$, IniLF$, IniWholeFile$
     SHARED currentIniFileLOF AS _UNSIGNED LONG
     SHARED IniForceReload
-
-    DIM fileNum AS INTEGER
+    SHARED LoadedFiles$
+    DIM fileNum AS INTEGER, findFile AS INTEGER
 
     'Error messages are returned with IniCODE
     'Error descriptions can be fetched with function IniINFO$
@@ -585,18 +611,24 @@ SUB IniLoad (file$)
         IF _FILEEXISTS(file$) THEN
             currentIniFileName$ = file$
 
+            'add to LoadedFiles$, so we use the same file handle every time
+            findFile = INSTR(LoadedFiles$, "@" + file$ + "@")
+            IF findFile = 0 THEN
+                fileNum = FREEFILE
+                LoadedFiles$ = LoadedFiles$ + "@" + MKI$(fileNum) + "@" + file$ + "@"
+            ELSE
+                fileNum = CVI(MID$(LoadedFiles$, findFile - 2, 2))
+            END IF
+
             'Load file into memory
-            fileNum = FREEFILE
+            CLOSE fileNum
             OPEN currentIniFileName$ FOR BINARY AS #fileNum
             currentIniFileLOF = LOF(fileNum)
             IniWholeFile$ = SPACE$(currentIniFileLOF)
             GET #fileNum, 1, IniWholeFile$
-            CLOSE #fileNum
 
             'Check if this ini file uses CRLF or LF
             IF INSTR(IniWholeFile$, CHR$(13)) THEN IniLF$ = CHR$(13) + CHR$(10) ELSE IniLF$ = CHR$(10)
-
-            'IF RIGHT$(IniWholeFile$, 2) <> IniLF$ THEN IniWholeFile$ = IniWholeFile$ + IniLF$
         ELSE
             IniFileNotFound:
             IniCODE = 1
@@ -637,14 +669,17 @@ FUNCTION IniNextKey$
 
     tempKey$ = LTRIM$(RTRIM$(MID$(IniSectionData$ + tempLF$, position + 1, Equal - position - 1)))
 
-    IF INSTR(tempKey$, CHR$(10)) > 0 THEN tempKey$ = MID$(tempKey$, INSTR(tempKey$, CHR$(10)) + 1)
+    IF INSTR(tempKey$, CHR$(10)) > 0 THEN
+        position = position + INSTR(tempKey$, CHR$(10)) + 1
+        tempKey$ = MID$(tempKey$, INSTR(tempKey$, CHR$(10)) + 1)
+    END IF
 
     DO WHILE LEFT$(tempKey$, LEN(IniLF$)) = IniLF$
         tempKey$ = MID$(tempKey$, LEN(IniLF$) + 1)
         position = position + LEN(IniLF$)
     LOOP
 
-    position = INSTR(position, IniSectionData$ + tempLF$, IniLF$) + 1
+    position = INSTR(position + 1, IniSectionData$ + tempLF$, IniLF$)
 
     IF LEFT$(tempKey$, 1) = ";" OR LEFT$(tempKey$, 1) = "'" OR INSTR(tempKey$, "[") > 0 OR INSTR(tempKey$, "]") > 0 OR INSTR(tempKey$, "=") > 0 THEN
         GOTO FindKey
@@ -754,4 +789,3 @@ FUNCTION IniArraySort%% (arr() AS STRING)
     'Returns -1 (true) if any changes were made
     IniArraySort%% = moves& > 0
 END FUNCTION
-

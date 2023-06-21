@@ -218,23 +218,29 @@ $END IF
 
 UiEditorTitle$ = "InForm Designer"
 
-' Get the location of QB64-PE
-' First look in obvious places
-IF _FILEEXISTS("." + PathSep$ + QB64_EXE_NAME) THEN
-    QB64_EXE_PATH = "." + PathSep$ + QB64_EXE_NAME
-ELSEIF _FILEEXISTS(".." + PathSep$ + QB64_EXE_NAME) THEN
-    QB64_EXE_PATH = ".." + PathSep$ + QB64_EXE_NAME
-ELSEIF _FILEEXISTS(".." + PathSep$ + "QB64pe" + PathSep$ + QB64_EXE_NAME) THEN
-    QB64_EXE_PATH = ".." + PathSep$ + "QB64pe" + PathSep$ + QB64_EXE_NAME
-ELSEIF _FILEEXISTS(".." + PathSep$ + "qb64pe" + PathSep$ + QB64_EXE_NAME) THEN
-    QB64_EXE_PATH = ".." + PathSep$ + "qb64pe" + PathSep$ + QB64_EXE_NAME
-ELSE
-    QB64_EXE_PATH = _SELECTFOLDERDIALOG$("Select QB64-PE directory:")
-    IF _FILEEXISTS(QB64_EXE_PATH + PathSep$ + QB64_EXE_NAME) THEN
-        QB64_EXE_PATH = QB64_EXE_PATH + PathSep$ + QB64_EXE_NAME
+QB64_EXE_PATH = ReadSetting("InForm/InForm.ini", "InForm Settings", "QB64PE path") ' read the compiler path name from the INI
+
+IF NOT _FILEEXISTS(QB64_EXE_PATH) THEN ' if the compiler is missing then look for it in obvious places
+    IF _FILEEXISTS("." + PathSep$ + QB64_EXE_NAME) THEN
+        QB64_EXE_PATH = "." + PathSep$ + QB64_EXE_NAME
+    ELSEIF _FILEEXISTS(".." + PathSep$ + QB64_EXE_NAME) THEN
+        QB64_EXE_PATH = ".." + PathSep$ + QB64_EXE_NAME
+    ELSEIF _FILEEXISTS(".." + PathSep$ + "QB64pe" + PathSep$ + QB64_EXE_NAME) THEN
+        QB64_EXE_PATH = ".." + PathSep$ + "QB64pe" + PathSep$ + QB64_EXE_NAME
+    ELSEIF _FILEEXISTS(".." + PathSep$ + "qb64pe" + PathSep$ + QB64_EXE_NAME) THEN
+        QB64_EXE_PATH = ".." + PathSep$ + "qb64pe" + PathSep$ + QB64_EXE_NAME
     ELSE
-        _MESSAGEBOX UiEditorTitle$, QB64_DISPLAY + " executable not found.", "error"
-        SYSTEM 1
+        QB64_EXE_PATH = _SELECTFOLDERDIALOG$("Select QB64-PE directory:")
+
+        IF _FILEEXISTS(QB64_EXE_PATH + PathSep$ + QB64_EXE_NAME) THEN
+            QB64_EXE_PATH = QB64_EXE_PATH + PathSep$ + QB64_EXE_NAME
+        ELSE
+            _MESSAGEBOX UiEditorTitle$, QB64_DISPLAY + " executable not found.", "error"
+
+            SYSTEM 1
+        END IF
+
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "QB64PE path", QB64_EXE_PATH  ' save the complete path name to the INI
     END IF
 END IF
 
