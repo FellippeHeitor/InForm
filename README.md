@@ -2,7 +2,9 @@
 
 ![InForm logo](InForm/resources/Application-icon-128.png)
 
-InForm-PE is a GUI engine and WYSIWYG interface designer for [QB64-PE](https://github.com/a740g/QB64pe). It's main goal is to generate *event-driven* QB64-PE applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
+[InForm-PE](https://github.com/a740g/InForm-PE) is a GUI engine and WYSIWYG interface designer for [QB64-PE](https://github.com/a740g/QB64pe). It is a fork of [InForm](https://github.com/FellippeHeitor/InForm), authored by [Fellippe Heitor](https://github.com/FellippeHeitor).
+
+InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This means that you design a graphical user interface with interactive controls and then write the code to respond to such controls once they are manipulated.
 
 Wiki: <https://github.com/a740g/InForm-PE/wiki>
 
