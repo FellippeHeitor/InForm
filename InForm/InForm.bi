@@ -2,9 +2,9 @@
 'Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 '
 
-$If VERSION < 3.8 Then
-    $Error This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
-$End If
+$IF VERSION < 3.8 THEN
+        $Error This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
+$END IF
 
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()
@@ -341,4 +341,3 @@ SYSTEM
 
 __UI_ErrorHandler:
 RESUME NEXT
-

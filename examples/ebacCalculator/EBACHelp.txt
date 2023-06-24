@@ -1,0 +1,91 @@
+HOW TO USE THE PROGRAM:
+
+EBAC Calculator takes in basic information (SEX, WEIGHT(lbs), #DRINKS & 
+TIME ELAPSED) and calculates the estimated Blood Alcohol Content (BAC), 
+the amount of time needed to pass before you can drive, and the amount 
+of time until you are sober.
+
+Remember, this is only a rough estimate, as the program uses the average 
+metabolism rate, and does not include many other factors (listed below 
+in the ABOUT section) that affect your BAC.
+
+The program will do basic checks (right values for SEX, numeric checks 
+for the other fields), but if you put in the wrong values, you can 
+repeat the process.
+
+Any popup box labeled "Warning" or "Info" will not stop the program. Any
+popup that is labeled "Error" will terminate execution.
+ 
+The program buttons funtions as follows:
+    [OK] - Processes the values from the form and displays the results.
+    [CANCEL] - Clears/resets all fields and switches.
+    [HELP] - Displays this screen.
+    [QUIT] - Terminates the program
+    
+The [AGREE] and the agreement checkbox work in tandem. When you process
+and get results from a calculation, you must agree to the terms before
+either quitting the program or continuing on with processing.
+
+When you check the agreement box, the [QUIT] and [AGREE] buttons will
+become available. This is done only to make sure that you understand
+that the results cannot be used in a court of law, and is only provided
+as a guide to help you make better choices regarding drinking, either
+by you or a friend or house guest.  
+
+
+ABOUT THE ESTIMATED BLOOD ALCOHOL CONTENT CALCULATIONS:
+This blood alcohol content or BAC, for short, calculator can estimate 
+your blood alcohol levels. Metabolism, body fat percentage and 
+medication are some of the other factors that can affect the rate of  
+absorption by the body, and these are not considered in this calculation.
+
+Blood alcohol content (BAC) can be estimated by a method developed by 
+Swedish professor Erik Widmark in the 1920s.
+
+Gives the estimated BAC (EBAC), algorhithm reduced as:
+    EBAC=A/(r*Wt)*1.055-B*T 
+Where:
+    EBAC: Estimated Blood Alcohol Content (%)
+       A: Alcohol consumed (in ounces to grams) or FLoz
+       r: Ratio of body water to total weight (men: .68, women: .55)
+      Wt: Body weight (in pounds to kilograms)
+       B: Rate alcohol metabolized (men: .019/hr, women: .017/hr)
+       T: Time alcohol in blood or time since consumption began
+   1.055: Constant value of density of blood
+
+ The formula can also be reduced as follows (called the 8/10 formula):
+    For Men:   EBAC = 7.97*A/Wt-B*T
+    For Women: EBAC = 9.86*A/Wt-B*T 
+
+Blood alcohol content (BAC) or blood alcohol level is the concentration 
+of alcohol in the bloodstream. It is usually measured as mass per 
+volume. For example, a Blood alcohol content BAC of 0.04% means 0.4% 
+(permille) or 0.04 grams of alcohol per 100 grams of individuals blood. 
+Use this BAC Calculator for informational purposes only, and not to 
+drink and drive or drink and work.
+
+Important Note: There is no BAC calculator that is 100% accurate. This 
+is due to the number of factors that come into play regarding the 
+consumption and alcohol processing rates of different people. Factors 
+include the gender of the drinker (biologic, not identity), their 
+differing metabolism rates, various health issues, and the combination 
+of medications and supplements that might be taken by the drinker, 
+drinking frequency, amount of food in the stomach and small intestine 
+and when it was eaten, elapsed time, and other factors. The best that 
+can be done is a rough estimation of the bloodstreams alcohol content 
+or the BAC level based on known inputs.
+
+Every state in the U.S. has a legal Blood Alcohol (BAC) limit of 0.05% 
+or 0.08%, (depending on the state you are driving in). Most 'states 
+also have lower legal BAC limits for young and inexperienced drivers, 
+professional drivers and commercial drivers. Sentences for drunk 
+driving include imprisonment, large fines, lengthy drivers license 
+suspension and/or revocation, house arrest, community service, DUI 
+schools, alcohol treatment programs, vehicle forfeiture and ignition 
+interlock restrictions. 
+
+
+
+
+
+

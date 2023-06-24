@@ -15,7 +15,9 @@ Wiki: <https://github.com/a740g/InForm-PE/wiki>
 
 ## USAGE
 
-Install InForm-PE and QB64-PE side-by-side in their own directories. There is no need to copy InForm-PE files to the QB64-PE directory. The following directory setup is recommended.
+Install InForm-PE and QB64-PE side-by-side in their own directories. There is no need to copy InForm-PE files to the QB64-PE directory.
+
+> The following directory setup is recommended
 
 ```text
 <some-drive-or-directory>
@@ -57,15 +59,63 @@ Assuming your setup is like the above, do the following:
 - *BeforeUnload*, triggered when the user tries to close the program, either via clicking the window's X button, right click in the task bar -> Close or with Alt+F4 (Windows only).
 - *FormResized*, triggered when a form with the CanResize property is resized at runtime.
 
-# EXAMPLES
+***The following files need to be copied to your project directory for it to compile.***
 
-- Calculator by Terry Ritchie
-- Fireworks by Fellippe Heitor
-- TicTacToe by Fellippe Heitor
-- TicTacToe2 by Fellippe Heitor
-- Stopwatch by Fellippe Heitor
-- WordClock by Fellippe Heitor
+> Required
+
+```text
+InForm/InFormVersion.bas
+InForm/InForm.bi
+InForm/InForm.ui
+InForm/xp.uitheme
+```
+
+> Required only when GIF picturebox is used
+
+```text
+InForm/extensions/gifplay.bi
+InForm/extensions/gifplay.bm
+```
+
+> Required only when using legacy InForm MessageBox routines (use [QB64-PE's native common dialog functions](https://qb64phoenix.com/qb64wiki/index.php/Keyword_Reference_-_By_usage#Window_and_Desktop) when writing new code)
+
+```text
+InForm/extensions/MessageBox.bi
+InForm/extensions/MessageBox.bas
+```
+
+## EXAMPLES
+
+| Name | Author |
+|------|-------------|
+| Bin2Include | SpriggsySpriggs |
+| Calculator | Terry Ritchie |
+| ClickTheVoid | Fellippe Heitor |
+| ClockPatience | Richard Notley |
+| DuckShoot | Richard Notley |
+| ebacCalculator | George McGinn |
+| Fahrenheit-Celsius | Richard Notley |
+| Fireworks2 | Fellippe Heitor |
+| GIFPlaySample | Fellippe Heitor |
+| GravitationSimulation | Richard Notley |
+| InFormPaint | Fellippe Heitor |
+| InsideOutsideTriangle |  Richard Notley |
+| Lander1 | B+ |
+| Lander2 | B+ |
+| Mahjong | Richard Notley |
+| MasterMindGuessTheSequence | TempodiBasic |
+| Pelmanism | Richard Notley |
+| PictureGrid | Richard Notley |
+| PlayFX | Samuel Gomes |
+| RockPaperScissorsSpockLizard | TempodiBasic |
+| Stopwatch | Fellippe Heitor |
+| TextFetch | B+ |
+| TicTacToe | Fellippe Heitor |
+| TicTacToe2 | Fellippe Heitor |
+| Trackword | Richard Notley |
+| WordClock | Fellippe Heitor |
+| wordSearch | George McGinn |
 
 ## NOTES
 
-- This requires the latest version of [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases). More accurately, it only works with QB64-PE v3.8.0 or above.
+- This requires the latest version of [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest). More accurately, it only works with QB64-PE v3.8.0 or above.

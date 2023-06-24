@@ -3993,4 +3993,3 @@ FUNCTION LoadEditorImage& (FileName$)
 END FUNCTION
 
 '$include:'InForm.ui'
-

@@ -43,19 +43,19 @@ FUNCTION GifIsPlaying%% (ID AS LONG)
     GifIsPlaying%% = GifData(i).IsPlaying
 END FUNCTION
 
-FUNCTION GifWidth%(ID AS LONG)
+FUNCTION GifWidth% (ID AS LONG)
     DIM i AS LONG
     i = GetGifIndex(ID)
     GifWidth% = GifData(i).width
 END FUNCTION
 
-FUNCTION GifHeight%(ID AS LONG)
+FUNCTION GifHeight% (ID AS LONG)
     DIM i AS LONG
     i = GetGifIndex(ID)
     GifHeight% = GifData(i).height
 END FUNCTION
 
-FUNCTION TotalFrames&(ID AS LONG)
+FUNCTION TotalFrames& (ID AS LONG)
     DIM i AS LONG
     i = GetGifIndex(ID)
     TotalFrames& = GifData(i).totalFrames
@@ -86,7 +86,7 @@ SUB StopGif (ID AS LONG)
     GifData(i).Frame = 1
 END SUB
 
-FUNCTION OpenGif%%(ID AS LONG, filename$)
+FUNCTION OpenGif%% (ID AS LONG, filename$)
     DIM i AS LONG, Index AS LONG
     DIM byte~%%, palette$, delay~%
 
@@ -104,7 +104,7 @@ FUNCTION OpenGif%%(ID AS LONG, filename$)
 
     GifData(Index).ID = ID
     GifData(Index).file = FREEFILE
-    IF _FILEEXISTS(filename$) = 0 THEN EXIT FUNCTION
+    IF NOT _FILEEXISTS(filename$) THEN EXIT FUNCTION
     OPEN filename$ FOR BINARY AS GifData(Index).file
 
     GET GifData(Index).file, , GifData(Index).sigver
@@ -206,7 +206,7 @@ FUNCTION OpenGif%%(ID AS LONG, filename$)
     REDIM _PRESERVE GifFrameData(0 TO TotalGIFFrames) AS FRAMEDATA
 
     GifData(Index).IsPlaying = False
-    OpenGif%% = True
+    OpenGif = True
     EXIT FUNCTION
 
     LoadError:
@@ -865,18 +865,26 @@ FUNCTION gifUnpack$ (PackedData$)
 
     A$ = PackedData$
 
-    FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
+    FOR i& = 1 TO LEN(A$) STEP 4
+        B$ = MID$(A$, i&, 4)
         IF INSTR(1, B$, "%") THEN
-            FOR C% = 1 TO LEN(B$): F$ = MID$(B$, C%, 1)
+            FOR C% = 1 TO LEN(B$)
+                F$ = MID$(B$, C%, 1)
                 IF F$ <> "%" THEN C$ = C$ + F$
-            NEXT: B$ = C$
-            END IF: FOR t% = LEN(B$) TO 1 STEP -1
+            NEXT
+            B$ = C$
+        END IF
+        FOR t% = LEN(B$) TO 1 STEP -1
             B& = B& * 64 + ASC(MID$(B$, t%)) - 48
-            NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
-            X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
-    NEXT: btemp$ = btemp$ + X$: NEXT
+        NEXT
+        X$ = ""
+        FOR t% = 1 TO LEN(B$) - 1
+            X$ = X$ + CHR$(B& AND 255)
+            B& = B& \ 256
+        NEXT
+        btemp$ = btemp$ + X$
+    NEXT
 
     gifUnpack$ = btemp$
 END FUNCTION
 '############################################################################################
-

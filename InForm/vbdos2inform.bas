@@ -279,4 +279,3 @@ RETURN
 FUNCTION QBColor2QB64$ (index AS _BYTE)
     QBColor2QB64$ = "_RGB32(" + LTRIM$(STR$(_RED(index))) + ", " + LTRIM$(STR$(_GREEN(index))) + ", " + LTRIM$(STR$(_BLUE(index))) + ")"
 END FUNCTION
-

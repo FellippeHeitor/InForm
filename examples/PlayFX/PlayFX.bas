@@ -4,59 +4,58 @@
 ': https://github.com/FellippeHeitor/InForm
 '-----------------------------------------------------------
 
-Option _Explicit
+OPTION _EXPLICIT
 
-Type WaveformType
-    active As Long
-    waveform As Long
-    note As Long
-    length As Long
-    lengthType As Long
-    tempo As Long
-    volume As Long
-    volRamp As Long
-End Type
+TYPE WaveformType
+    active AS LONG
+    waveform AS LONG
+    note AS LONG
+    length AS LONG
+    lengthType AS LONG
+    tempo AS LONG
+    volume AS LONG
+    volRamp AS LONG
+END TYPE
 
-Dim Shared Waveform(1 To 5) As WaveformType, currentWaveform As Long, currentControl As Long
+DIM SHARED Waveform(1 TO 5) AS WaveformType, currentWaveform AS LONG, currentControl AS LONG
 
 ': Controls' IDs: ------------------------------------------------------------------
-Dim Shared PlayFXDesigner As Long
-Dim Shared Waveforms As Long
-Dim Shared ConfigureWaveform As Long
-Dim Shared PlayFX As Long
-Dim Shared Waveform1TB As Long
-Dim Shared Waveform2TB As Long
-Dim Shared Waveform3TB As Long
-Dim Shared Waveform4TB As Long
-Dim Shared Waveform5TB As Long
-Dim Shared WaveformLB As Long
-Dim Shared WaveformSlider As Long
-Dim Shared WaveformNameLB As Long
-Dim Shared NoteLB As Long
-Dim Shared NoteSlider As Long
-Dim Shared LengthLB As Long
-Dim Shared LengthSlider As Long
-Dim Shared LengthEffectsDL As Long
-Dim Shared TempoLB As Long
-Dim Shared TempoSlider As Long
-Dim Shared VolumeLB As Long
-Dim Shared VolumeSlider As Long
-Dim Shared VolRampLB As Long
-Dim Shared VolRampSlider As Long
-Dim Shared PlayFXTB As Long
-Dim Shared PlayBT As Long
+DIM SHARED PlayFXDesigner AS LONG
+DIM SHARED Waveforms AS LONG
+DIM SHARED ConfigureWaveform AS LONG
+DIM SHARED PlayFX AS LONG
+DIM SHARED Waveform1TB AS LONG
+DIM SHARED Waveform2TB AS LONG
+DIM SHARED Waveform3TB AS LONG
+DIM SHARED Waveform4TB AS LONG
+DIM SHARED Waveform5TB AS LONG
+DIM SHARED WaveformLB AS LONG
+DIM SHARED WaveformSlider AS LONG
+DIM SHARED WaveformNameLB AS LONG
+DIM SHARED NoteLB AS LONG
+DIM SHARED NoteSlider AS LONG
+DIM SHARED LengthLB AS LONG
+DIM SHARED LengthSlider AS LONG
+DIM SHARED LengthEffectsDL AS LONG
+DIM SHARED TempoLB AS LONG
+DIM SHARED TempoSlider AS LONG
+DIM SHARED VolumeLB AS LONG
+DIM SHARED VolumeSlider AS LONG
+DIM SHARED VolRampLB AS LONG
+DIM SHARED VolRampSlider AS LONG
+DIM SHARED PlayFXTB AS LONG
+DIM SHARED PlayBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'InForm\InForm.bi'
-'$INCLUDE:'InForm\xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'PlayFX.frm'
 
 ': Custom procedures: --------------------------------------------------------------
-Function IsDifferentWaveform%% (w1 As WaveformType, w2 As WaveformType)
-    IsDifferentWaveform = w1.waveform <> w2.waveform Or w1.note <> w2.note Or w1.length <> w2.length Or w1.lengthType <> w2.lengthType Or w1.tempo <> w2.tempo Or w1.volume <> w2.volume Or w1.volRamp <> w2.volRamp
-End Function
+FUNCTION IsDifferentWaveform%% (w1 AS WaveformType, w2 AS WaveformType)
+    IsDifferentWaveform = w1.waveform <> w2.waveform OR w1.note <> w2.note OR w1.length <> w2.length OR w1.lengthType <> w2.lengthType OR w1.tempo <> w2.tempo OR w1.volume <> w2.volume OR w1.volRamp <> w2.volRamp
+END FUNCTION
 
-Sub SetConfigControls (id As Long, curCtrl As Long)
+SUB SetConfigControls (id AS LONG, curCtrl AS LONG)
     Control(WaveformSlider).Value = Waveform(id).waveform
     Control(NoteSlider).Value = Waveform(id).note
     Control(LengthSlider).Value = Waveform(id).length
@@ -67,9 +66,9 @@ Sub SetConfigControls (id As Long, curCtrl As Long)
 
     currentWaveform = id
     currentControl = curCtrl
-End Sub
+END SUB
 
-Sub ClearWaveform (id As Long)
+SUB ClearWaveform (id AS LONG)
     Waveform(id).active = False ' set not in use
     Waveform(id).waveform = 3 ' triangle
     Waveform(id).note = 42 ' half-way through the scale
@@ -78,513 +77,513 @@ Sub ClearWaveform (id As Long)
     Waveform(id).tempo = 120 ' 120
     Waveform(id).volume = 100 ' max
     Waveform(id).volRamp = 10 ' 10 ms
-End Sub
+END SUB
 
-Sub MakePlayString
-    Dim s As String
+SUB MakePlayString
+    DIM s AS STRING
 
-    If Waveform(currentWaveform).active Then
-        s = "T" + LTrim$(Str$(Waveform(currentWaveform).tempo)) + "L" + LTrim$(Str$(Waveform(currentWaveform).length))
+    IF Waveform(currentWaveform).active THEN
+        s = "T" + LTRIM$(STR$(Waveform(currentWaveform).tempo)) + "L" + LTRIM$(STR$(Waveform(currentWaveform).length))
 
-        Select Case Waveform(currentWaveform).lengthType
-            Case 1
+        SELECT CASE Waveform(currentWaveform).lengthType
+            CASE 1
                 s = s + "MN"
 
-            Case 2
+            CASE 2
                 s = s + "ML"
 
-            Case 3
+            CASE 3
                 s = s + "MS"
-        End Select
+        END SELECT
 
-        s = s + "V" + LTrim$(Str$(Waveform(currentWaveform).volume)) + "Q" + LTrim$(Str$(Waveform(currentWaveform).volRamp))
-        s = s + "@" + LTrim$(Str$(Waveform(currentWaveform).waveform)) + "N" + LTrim$(Str$(Waveform(currentWaveform).note))
-    End If
+        s = s + "V" + LTRIM$(STR$(Waveform(currentWaveform).volume)) + "Q" + LTRIM$(STR$(Waveform(currentWaveform).volRamp))
+        s = s + "@" + LTRIM$(STR$(Waveform(currentWaveform).waveform)) + "N" + LTRIM$(STR$(Waveform(currentWaveform).note))
+    END IF
 
     Text(currentControl) = s
-End Sub
+END SUB
 
-Sub MakePlayFXString
+SUB MakePlayFXString
     Text(PlayFXTB) = "MB"
 
-    If Text(Waveform1TB) <> "" Then
+    IF Text(Waveform1TB) <> "" THEN
         Text(PlayFXTB) = Text(PlayFXTB) + Text(Waveform1TB)
-    End If
+    END IF
 
-    If Text(Waveform2TB) <> "" Then
+    IF Text(Waveform2TB) <> "" THEN
         Text(PlayFXTB) = Text(PlayFXTB) + "," + Text(Waveform2TB)
-    End If
+    END IF
 
-    If Text(Waveform3TB) <> "" Then
+    IF Text(Waveform3TB) <> "" THEN
         Text(PlayFXTB) = Text(PlayFXTB) + "," + Text(Waveform3TB)
-    End If
+    END IF
 
-    If Text(Waveform4TB) <> "" Then
+    IF Text(Waveform4TB) <> "" THEN
         Text(PlayFXTB) = Text(PlayFXTB) + "," + Text(Waveform4TB)
-    End If
+    END IF
 
-    If Text(Waveform5TB) <> "" Then
+    IF Text(Waveform5TB) <> "" THEN
         Text(PlayFXTB) = Text(PlayFXTB) + "," + Text(Waveform5TB)
-    End If
-End Sub
+    END IF
+END SUB
 
 ': Event procedures: ---------------------------------------------------------------
-Sub __UI_BeforeInit
+SUB __UI_BeforeInit
 
-End Sub
+END SUB
 
-Sub __UI_OnLoad
-    Dim i As Long
-    For i = 1 To 5
+SUB __UI_OnLoad
+    DIM i AS LONG
+    FOR i = 1 TO 5
         ClearWaveform i
-    Next
+    NEXT
 
     SetConfigControls 1, Waveform1TB
     SetFocus Waveform1TB
-End Sub
+END SUB
 
-Sub __UI_BeforeUpdateDisplay
+SUB __UI_BeforeUpdateDisplay
     'This event occurs at approximately 60 frames per second.
     'You can change the update frequency by calling SetFrameRate DesiredRate%
 
-End Sub
+END SUB
 
-Sub __UI_BeforeUnload
+SUB __UI_BeforeUnload
     'If you set __UI_UnloadSignal = False here you can
     'cancel the user's request to close.
 
-End Sub
+END SUB
 
-Sub __UI_Click (id As Long)
-    Select Case id
-        Case PlayFX
+SUB __UI_Click (id AS LONG)
+    SELECT CASE id
+        CASE PlayFX
 
-        Case PlayFXTB
+        CASE PlayFXTB
 
-        Case PlayBT
-            Play Text(PlayFXTB)
+        CASE PlayBT
+            PLAY Text(PlayFXTB)
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case WaveformNameLB
+        CASE WaveformNameLB
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case NoteLB
+        CASE NoteLB
 
-        Case LengthLB
+        CASE LengthLB
 
-        Case TempoLB
+        CASE TempoLB
 
-        Case VolumeLB
+        CASE VolumeLB
 
-        Case WaveformLB
+        CASE WaveformLB
 
-        Case PlayFXDesigner
+        CASE PlayFXDesigner
 
-        Case Waveforms
+        CASE Waveforms
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-        Case ConfigureWaveform
+        CASE ConfigureWaveform
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_MouseEnter (id As Long)
-    Select Case id
-        Case PlayFX
+SUB __UI_MouseEnter (id AS LONG)
+    SELECT CASE id
+        CASE PlayFX
 
-        Case PlayFXTB
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case WaveformNameLB
+        CASE WaveformNameLB
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case NoteLB
+        CASE NoteLB
 
-        Case LengthLB
+        CASE LengthLB
 
-        Case TempoLB
+        CASE TempoLB
 
-        Case VolumeLB
+        CASE VolumeLB
 
-        Case WaveformLB
+        CASE WaveformLB
 
-        Case PlayFXDesigner
+        CASE PlayFXDesigner
 
-        Case Waveforms
+        CASE Waveforms
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-        Case ConfigureWaveform
+        CASE ConfigureWaveform
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_MouseLeave (id As Long)
-    Select Case id
-        Case PlayFX
+SUB __UI_MouseLeave (id AS LONG)
+    SELECT CASE id
+        CASE PlayFX
 
-        Case PlayFXTB
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case WaveformNameLB
+        CASE WaveformNameLB
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case NoteLB
+        CASE NoteLB
 
-        Case LengthLB
+        CASE LengthLB
 
-        Case TempoLB
+        CASE TempoLB
 
-        Case VolumeLB
+        CASE VolumeLB
 
-        Case WaveformLB
+        CASE WaveformLB
 
-        Case PlayFXDesigner
+        CASE PlayFXDesigner
 
-        Case Waveforms
+        CASE Waveforms
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-        Case ConfigureWaveform
+        CASE ConfigureWaveform
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_FocusIn (id As Long)
-    Select Case id
-        Case PlayFXTB
+SUB __UI_FocusIn (id AS LONG)
+    SELECT CASE id
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case Waveform1TB
+        CASE Waveform1TB
             SetConfigControls 1, Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
             SetConfigControls 2, Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
             SetConfigControls 3, Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
             SetConfigControls 4, Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
             SetConfigControls 5, Waveform5TB
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_FocusOut (id As Long)
+SUB __UI_FocusOut (id AS LONG)
     'This event occurs right before a control loses focus.
     'To prevent a control from losing focus, set __UI_KeepFocus = True below.
-    Select Case id
-        Case PlayFXTB
+    SELECT CASE id
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_MouseDown (id As Long)
-    Select Case id
-        Case PlayFX
+SUB __UI_MouseDown (id AS LONG)
+    SELECT CASE id
+        CASE PlayFX
 
-        Case PlayFXTB
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case WaveformNameLB
+        CASE WaveformNameLB
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case NoteLB
+        CASE NoteLB
 
-        Case LengthLB
+        CASE LengthLB
 
-        Case TempoLB
+        CASE TempoLB
 
-        Case VolumeLB
+        CASE VolumeLB
 
-        Case WaveformLB
+        CASE WaveformLB
 
-        Case PlayFXDesigner
+        CASE PlayFXDesigner
 
-        Case Waveforms
+        CASE Waveforms
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-        Case ConfigureWaveform
+        CASE ConfigureWaveform
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_MouseUp (id As Long)
-    Select Case id
-        Case PlayFX
+SUB __UI_MouseUp (id AS LONG)
+    SELECT CASE id
+        CASE PlayFX
 
-        Case PlayFXTB
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case WaveformNameLB
+        CASE WaveformNameLB
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case NoteLB
+        CASE NoteLB
 
-        Case LengthLB
+        CASE LengthLB
 
-        Case TempoLB
+        CASE TempoLB
 
-        Case VolumeLB
+        CASE VolumeLB
 
-        Case WaveformLB
+        CASE WaveformLB
 
-        Case PlayFXDesigner
+        CASE PlayFXDesigner
 
-        Case Waveforms
+        CASE Waveforms
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-        Case ConfigureWaveform
+        CASE ConfigureWaveform
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_KeyPress (id As Long)
+SUB __UI_KeyPress (id AS LONG)
     'When this event is fired, __UI_KeyHit will contain the code of the key hit.
     'You can change it and even cancel it by making it = 0
-    Select Case id
-        Case PlayFXTB
+    SELECT CASE id
+        CASE PlayFXTB
 
-        Case PlayBT
+        CASE PlayBT
 
-        Case WaveformSlider
+        CASE WaveformSlider
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case Waveform1TB
+        CASE Waveform1TB
 
-        Case Waveform2TB
+        CASE Waveform2TB
 
-        Case Waveform3TB
+        CASE Waveform3TB
 
-        Case Waveform4TB
+        CASE Waveform4TB
 
-        Case Waveform5TB
+        CASE Waveform5TB
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_TextChanged (id As Long)
-    Select Case id
-        Case PlayFXTB
+SUB __UI_TextChanged (id AS LONG)
+    SELECT CASE id
+        CASE PlayFXTB
 
-        Case Waveform1TB
-            If Text(id) = "" Then
+        CASE Waveform1TB
+            IF Text(id) = "" THEN
                 ClearWaveform 1
                 SetConfigControls 1, Waveform1TB
-            End If
+            END IF
 
-        Case Waveform2TB
-            If Text(id) = "" Then
+        CASE Waveform2TB
+            IF Text(id) = "" THEN
                 ClearWaveform 2
                 SetConfigControls 2, Waveform2TB
-            End If
+            END IF
 
-        Case Waveform3TB
-            If Text(id) = "" Then
+        CASE Waveform3TB
+            IF Text(id) = "" THEN
                 ClearWaveform 3
                 SetConfigControls 3, Waveform3TB
-            End If
+            END IF
 
-        Case Waveform4TB
-            If Text(id) = "" Then
+        CASE Waveform4TB
+            IF Text(id) = "" THEN
                 ClearWaveform 4
                 SetConfigControls 4, Waveform4TB
-            End If
+            END IF
 
-        Case Waveform5TB
-            If Text(id) = "" Then
+        CASE Waveform5TB
+            IF Text(id) = "" THEN
                 ClearWaveform 5
                 SetConfigControls 5, Waveform5TB
-            End If
+            END IF
 
-    End Select
-End Sub
+    END SELECT
+END SUB
 
-Sub __UI_ValueChanged (id As Long)
-    Select Case id
-        Case WaveformSlider
-            Select Case Control(id).Value
-                Case 1
+SUB __UI_ValueChanged (id AS LONG)
+    SELECT CASE id
+        CASE WaveformSlider
+            SELECT CASE Control(id).Value
+                CASE 1
                     SetCaption WaveformNameLB, "Square"
 
-                Case 2
+                CASE 2
                     SetCaption WaveformNameLB, "Sawtooth"
 
-                Case 3
+                CASE 3
                     SetCaption WaveformNameLB, "Triangle"
 
-                Case 4
+                CASE 4
                     SetCaption WaveformNameLB, "Sine"
 
-                Case 5
+                CASE 5
                     SetCaption WaveformNameLB, "Noise"
-            End Select
+            END SELECT
 
-        Case NoteSlider
+        CASE NoteSlider
 
-        Case LengthSlider
+        CASE LengthSlider
 
-        Case LengthEffectsDL
+        CASE LengthEffectsDL
 
-        Case TempoSlider
+        CASE TempoSlider
 
-        Case VolumeSlider
+        CASE VolumeSlider
 
-        Case VolRampSlider
+        CASE VolRampSlider
 
-    End Select
+    END SELECT
 
-    Dim temp As WaveformType
+    DIM temp AS WaveformType
     temp.waveform = Control(WaveformSlider).Value
     temp.note = Control(NoteSlider).Value
     temp.length = Control(LengthSlider).Value
@@ -593,17 +592,18 @@ Sub __UI_ValueChanged (id As Long)
     temp.volume = Control(VolumeSlider).Value
     temp.volRamp = Control(VolRampSlider).Value
 
-    If IsDifferentWaveform(temp, Waveform(currentWaveform)) Then
+    IF IsDifferentWaveform(temp, Waveform(currentWaveform)) THEN
         Waveform(currentWaveform) = temp
         Waveform(currentWaveform).active = True
-    End If
+    END IF
 
     MakePlayString
     MakePlayFXString
-End Sub
+END SUB
 
-Sub __UI_FormResized
+SUB __UI_FormResized
 
-End Sub
+END SUB
 
-'$INCLUDE:'InForm\InForm.ui'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/xp.uitheme'

@@ -240,7 +240,7 @@ IF NOT _FILEEXISTS(QB64_EXE_PATH) THEN ' if the compiler is missing then look fo
             SYSTEM 1
         END IF
 
-        WriteSetting "InForm/InForm.ini", "InForm Settings", "QB64PE path", QB64_EXE_PATH  ' save the complete path name to the INI
+        WriteSetting "InForm/InForm.ini", "InForm Settings", "QB64PE path", QB64_EXE_PATH ' save the complete path name to the INI
     END IF
 END IF
 
@@ -5116,4 +5116,3 @@ FUNCTION OutsideQuotes%% (text$, position AS LONG)
 END FUNCTION
 
 '$include:'InForm.ui'
-
