@@ -24,7 +24,7 @@ Install InForm-PE and QB64-PE side-by-side in their own directories. There is no
 ```text
 <some-drive-or-directory>
     |
-    |-------InForm-PE>
+    |-------<InForm-PE>
     |           |
     |           |-------<UiEditor[.exe]>
     |
@@ -90,7 +90,7 @@ InForm/extensions/MessageBox.bas
 
 | Name | Author |
 |------|-------------|
-| Bin2Include | SpriggsySpriggs |
+| Bin2Include | Zachary Spriggs |
 | Calculator | Terry Ritchie |
 | ClickTheVoid | Fellippe Heitor |
 | ClockPatience | Richard Notley |
