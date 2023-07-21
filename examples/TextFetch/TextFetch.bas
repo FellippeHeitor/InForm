@@ -9,8 +9,6 @@
 
 OPTION _EXPLICIT
 
-REDIM SHARED Dir(1 TO 1) AS STRING, File(1 TO 1) AS STRING
-
 ': Controls' IDs: ------------------------------------------------------------------
 DIM SHARED frmTextFetch AS LONG
 DIM SHARED lbCWD AS LONG
@@ -31,15 +29,29 @@ DIM SHARED lbEnd AS LONG
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'TextFetch.frm'
 
+' --- DIRENTRY STUFF ---
+
 DECLARE LIBRARY "direntry"
-    FUNCTION __load_dir%% ALIAS load_dir (s AS STRING)
-    FUNCTION get_next_entry$ (flags AS LONG, file_size AS LONG)
+    ' This opens a directly for reading it's contents
+    ' IMPORTANT: Call the open_dir() wrapper instead of calling this directly. open_dir() properly null-terminates the directory string
+    FUNCTION __open_dir%% (dirName AS STRING)
+
+    ' This reads a single directory entry. You can call this repeatedly
+    ' It will return an empty string once all entries have been read
+    ' "flags" and "fileSize" are output parameters (i.e. use a variable)
+    ' If "flag" is 1 then it is a directory and 2 if it is a file
+    FUNCTION read_dir$ (flags AS LONG, fileSize AS LONG)
+
+    ' Close the directory. This must be called before open_dir() or read_dir$() can be used again
     SUB close_dir
 END DECLARE
 
-FUNCTION load_dir%% (s AS STRING)
-    load_dir = __load_dir(s + CHR$(0))
+' This properly null-terminates the directory name before passing it to __load_dir()
+FUNCTION open_dir%% (dirName AS STRING)
+    open_dir = __open_dir(dirName + CHR$(0))
 END FUNCTION
+
+' --- DIRENTRY STUFF ---
 
 SUB loadText
     DIM i AS INTEGER, b$, clip$
@@ -58,7 +70,7 @@ SUB loadDirsFilesList
 
     Caption(lbCWD) = "Current Directory: " + _CWD$
 
-    REDIM Dir(1 TO 1), File(1 TO 1)
+    REDIM AS STRING Dir(0 TO 0), File(0 TO 0)
     nDirs = GetCurDirLists(Dir(), File())
 
     IF nDirs > 0 THEN
@@ -77,33 +89,33 @@ END SUB
 FUNCTION GetCurDirLists& (DirList() AS STRING, FileList() AS STRING)
     CONST RESIZE_BLOCK_SIZE = 64
 
-    REDIM DirList(1 TO RESIZE_BLOCK_SIZE), FileList(1 TO RESIZE_BLOCK_SIZE) ' resize the file and dir list arrays (and toss contents)
+    REDIM AS STRING DirList(0 TO RESIZE_BLOCK_SIZE), FileList(0 TO RESIZE_BLOCK_SIZE) ' resize the file and dir list arrays (and toss contents)
 
     DIM dirName AS STRING: dirName = _CWD$ ' we'll enumerate the current directory contents
     DIM AS LONG dirCount, fileCount, flags, fileSize
     DIM entryName AS STRING
 
-    IF load_dir(dirName) THEN
+    IF open_dir(dirName) THEN
         DO
-            entryName = get_next_entry(flags, fileSize)
+            entryName = read_dir(flags, fileSize)
             IF entryName <> "" THEN
                 SELECT CASE flags
                     CASE 1
-                        dirCount = dirCount + 1
-                        IF dirCount > UBOUND(DirList) THEN REDIM _PRESERVE DirList(1 TO UBOUND(DirList) + RESIZE_BLOCK_SIZE)
+                        IF dirCount > UBOUND(DirList) THEN REDIM _PRESERVE DirList(0 TO UBOUND(DirList) + RESIZE_BLOCK_SIZE) AS STRING
                         DirList(dirCount) = entryName
+                        dirCount = dirCount + 1
                     CASE 2
-                        fileCount = fileCount + 1
-                        IF fileCount > UBOUND(FileList) THEN REDIM _PRESERVE FileList(1 TO UBOUND(FileList) + RESIZE_BLOCK_SIZE)
+                        IF fileCount > UBOUND(FileList) THEN REDIM _PRESERVE FileList(0 TO UBOUND(FileList) + RESIZE_BLOCK_SIZE) AS STRING
                         FileList(fileCount) = entryName
+                        fileCount = fileCount + 1
                 END SELECT
             END IF
         LOOP UNTIL entryName = ""
         close_dir
     END IF
 
-    REDIM _PRESERVE DirList(1 TO dirCount)
-    REDIM _PRESERVE FileList(1 TO fileCount)
+    REDIM _PRESERVE DirList(0 TO dirCount) AS STRING
+    REDIM _PRESERVE FileList(0 TO fileCount) AS STRING
 
     GetCurDirLists = dirCount + fileCount ' return total count of items
 END FUNCTION
@@ -125,16 +137,14 @@ SUB Split (SplitMeString AS STRING, delim AS STRING, loadMeArray() AS STRING)
     REDIM _PRESERVE loadMeArray(LBOUND(loadMeArray) TO arrpos) AS STRING 'get the ubound correct
 END SUB
 
-FUNCTION fileStr$ (txtFile$)
-    DIM rtn$
-    IF _FILEEXISTS(txtFile$) THEN
-        OPEN txtFile$ FOR BINARY AS #1
-        rtn$ = SPACE$(LOF(1))
-        GET #1, , rtn$
-        CLOSE #1
-        fileStr$ = rtn$
+FUNCTION fileStr$ (txtFile AS STRING)
+    IF _FILEEXISTS(txtFile) THEN
+        DIM ff AS LONG: ff = FREEFILE
+        OPEN txtFile FOR BINARY AS ff
+        fileStr$ = INPUT$(LOF(ff), ff)
+        CLOSE ff
     END IF
-END FUNCTION 'last line 317 + CRLF always added at end of .bas files
+END FUNCTION
 
 FUNCTION rightOf$ (source$, of$)
     IF INSTR(source$, of$) > 0 THEN rightOf$ = MID$(source$, INSTR(source$, of$) + LEN(of$))
@@ -162,7 +172,9 @@ SUB __UI_BeforeUnload
 END SUB
 
 SUB __UI_Click (id AS LONG)
-    DIM dir$, fi$, fs$, i AS INTEGER, value AS INTEGER
+    DIM AS LONG value, i
+    DIM AS STRING dir, fi, fs, fa(0)
+
     SELECT CASE id
         CASE frmTextFetch
 
@@ -184,11 +196,10 @@ SUB __UI_Click (id AS LONG)
             fi$ = GetItem$(ListFiles, Control(ListFiles).Value)
             IF _FILEEXISTS(fi$) THEN
                 fs$ = fileStr$(fi$)
-                REDIM fa$(0)
-                Split fs$, CHR$(13) + CHR$(10), fa$()
+                Split fs$, CHR$(13) + CHR$(10), fa()
                 ResetList ListFile
-                FOR i = LBOUND(fa$) TO UBOUND(fa$)
-                    AddItem ListFile, fa$(i)
+                FOR i = LBOUND(fa) TO UBOUND(fa)
+                    AddItem ListFile, fa(i)
                 NEXT
                 'clear
                 Caption(lbStart) = "Line Start"
@@ -414,6 +425,7 @@ SUB __UI_TextChanged (id AS LONG)
 END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
+
     SELECT CASE id
         CASE ListDirs
 
