@@ -10,3 +10,6 @@
 *.ini
 # Other temp files
 *.frmbin
+#Ignore macOS stuff
+*.command
+!setup_inform_osx.command
