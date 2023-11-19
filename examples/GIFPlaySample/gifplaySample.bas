@@ -12,8 +12,8 @@ DIM SHARED PlayBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
-'$INCLUDE:'../../InForm/extensions/gifplay.bi'
-'$INCLUDE:'gifplaySample.frm'
+'$INCLUDE:'../../InForm/extensions/GIFPlay.bi'
+'$INCLUDE:'GIFPlaySample.frm'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -96,4 +96,4 @@ END SUB
 
 '$INCLUDE:'../../InForm/InForm.ui'
 '$INCLUDE:'../../InForm/xp.uitheme'
-'$INCLUDE:'../../InForm/extensions/gifplay.bm'
+'$INCLUDE:'../../InForm/extensions/GIFPlay.bas'

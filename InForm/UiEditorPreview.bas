@@ -91,11 +91,11 @@ $END IF
 ContextMenuIcon = LoadEditorImage("contextmenu.bmp")
 __UI_ClearColor ContextMenuIcon, 0, 0
 
-'$include:'extensions/gifplay.bi'
+'$include:'extensions/GIFPlay.bi'
 '$include:'InForm.bi'
 '$include:'xp.uitheme'
 '$include:'UiEditorPreview.frm'
-'$include:'extensions/gifplay.bm'
+'$include:'extensions/GIFPlay.bm'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)

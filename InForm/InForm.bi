@@ -2,9 +2,12 @@
 'Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 '
 
-$IF VERSION < 3.8 THEN
+$IF VERSION < 3.9.1 THEN
         $Error This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
 $END IF
+
+' TODO: Re-factor this file to use include guards. For now, we will just set the preprocessor variable
+$LET INFORM_BI = TRUE
 
 DECLARE LIBRARY
     FUNCTION __UI_GetPID ALIAS getpid ()

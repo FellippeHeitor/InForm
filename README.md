@@ -75,8 +75,8 @@ InForm/xp.uitheme
 > Required only when GIF picturebox is used
 
 ```text
-InForm/extensions/gifplay.bi
-InForm/extensions/gifplay.bm
+InForm/extensions/GIFPlay.bi
+InForm/extensions/GIFPlay.bas
 ```
 
 > Required only when using legacy InForm MessageBox routines (use [QB64-PE's native common dialog functions](https://qb64phoenix.com/qb64wiki/index.php/Keyword_Reference_-_By_usage#Window_and_Desktop) when writing new code)

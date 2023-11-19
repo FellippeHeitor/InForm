@@ -2,6 +2,10 @@
 'Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 
 '------------------------------------------------------------------------------
+
+' TODO: Re-factor this file to use include guards. For now, we will just set the preprocessor variable
+$LET INFORM_UI = TRUE
+
 'Control types:
 FUNCTION __UI_Type_Form%%:__UI_Type_Form%% = 1: END FUNCTION
 FUNCTION __UI_Type_Frame%%: __UI_Type_Frame%% = 2: END FUNCTION
@@ -49,7 +53,7 @@ FUNCTION __UI_CantResizeH%%: __UI_CantResizeH%% = 2: END FUNCTION
 FUNCTION __UI_CantResize%%: __UI_CantResize%% = 3: END FUNCTION
 
 '---------------------------------------------------------------------------------
-' a740g: Check if this has the expected behavior 'cause _UFONTHEIGHT actually returns the true font height for built-in fonts
+' TODO: Check if this has the expected behavior 'cause _UFONTHEIGHT actually returns the true font height for built-in fonts
 FUNCTION uspacing&
     uspacing& = _UFONTHEIGHT + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset)
 END FUNCTION

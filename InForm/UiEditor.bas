@@ -798,7 +798,7 @@ FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
                         b$ = SPACE$(LOF(FreeFileNum))
                         GET #FreeFileNum, 1, b$
                         CLOSE #FreeFileNum
-                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\GIFPlay.bas'") > 0 THEN
                             LoadedWithGifExtension = True
                         END IF
                     END IF
@@ -2809,7 +2809,7 @@ SUB __UI_OnLoad
                 b$ = SPACE$(LOF(FreeFileNum))
                 GET #FreeFileNum, 1, b$
                 SEEK #FreeFileNum, 1
-                IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\GIFPlay.bas'") > 0 THEN
                     LoadedWithGifExtension = True
                 END IF
                 DO
@@ -2853,7 +2853,7 @@ INSTR(uB$, "$INCLUDE") > 0 THEN
                         b$ = SPACE$(LOF(FreeFileNum))
                         GET #FreeFileNum, 1, b$
                         CLOSE #FreeFileNum
-                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\gifplay.bm'") > 0 THEN
+                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm\extensions\GIFPlay.bas'") > 0 THEN
                             LoadedWithGifExtension = True
                         END IF
                     END IF
@@ -4559,13 +4559,13 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             PRINT #TextFileNum,
             PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
             IF AddGifExtension THEN
-                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bi'"
+                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\GIFPlay.bi'"
             END IF
             PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.bi'"
             PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
             PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 2) + ".frm'"
             IF AddGifExtension THEN
-                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\gifplay.bm'"
+                PRINT #TextFileNum, "'$INCLUDE:'InForm\extensions\GIFPlay.bas'"
             END IF
             PRINT #TextFileNum,
             PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
@@ -4613,7 +4613,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         IF AddGifExtension = True AND TotalGifLoaded > 0 THEN
                             PRINT #TextFileNum,
                             PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
-                            PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/extensions/README - gifplay.txt'"
+                            PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/docs/README - GIFPlay.txt'"
                             FOR Dummy = 1 TO UBOUND(PreviewControls)
                                 IF PreviewAnimatedGif(Dummy) THEN
                                     PRINT #TextFileNum, "    UpdateGif " + RTRIM$(PreviewControls(Dummy).Name)

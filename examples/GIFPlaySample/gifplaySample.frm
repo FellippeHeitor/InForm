@@ -10,7 +10,7 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "gifplaySample", 300, 281, 0, 0, 0)
     __UI_RegisterResult = 0
-    SetCaption __UI_NewID, "gifplay Sample"
+    SetCaption __UI_NewID, "GIFPlay Sample"
     Control(__UI_NewID).Font = SetFont("arial.ttf", 12)
     Control(__UI_NewID).HasBorder = False
 
