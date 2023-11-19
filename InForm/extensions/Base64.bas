@@ -147,6 +147,18 @@ $IF BASE64_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' This function loads a resource directly from a string variable or constant (like the ones made by Bin2Data)
+    FUNCTION Base64_LoadResourceString$ (src AS STRING, ogSize AS _UNSIGNED LONG, isComp AS _BYTE)
+        ' Decode the data
+        DIM buffer AS STRING: buffer = Base64_Decode(src)
+
+        ' Expand the data if needed
+        IF isComp THEN buffer = _INFLATE$(buffer, ogSize)
+
+        Base64_LoadResourceString = buffer
+    END FUNCTION
+
+
     ' Loads a binary file encoded with Bin2Data
     ' Usage:
     '   1. Encode the binary file with Bin2Data
@@ -155,16 +167,15 @@ $IF BASE64_BAS = UNDEFINED THEN
     '       Restore label_generated_by_bin2data
     '       Dim buffer As String
     '       buffer = LoadResource   ' buffer will now hold the contents of the file
-    FUNCTION Base64_LoadResource$
-        DIM ogSize AS LONG, resize AS LONG, isComp AS _BYTE
-        DIM buffer AS STRING, chunk AS STRING, i AS LONG
-
+    FUNCTION Base64_LoadResourceData$
+        DIM ogSize AS _UNSIGNED LONG, resize AS _UNSIGNED LONG, isComp AS _BYTE
         READ ogSize, resize, isComp ' read the header
-        buffer = SPACE$(resize) ' preallocate complete buffer
+
+        DIM buffer AS STRING: buffer = SPACE$(resize) ' preallocate complete buffer
 
         ' Read the whole resource data
-        DO WHILE i < resize
-            READ chunk
+        DIM i AS _UNSIGNED LONG: DO WHILE i < resize
+            DIM chunk AS STRING: READ chunk
             MID$(buffer, i + 1) = chunk
             i = i + LEN(chunk)
         LOOP
@@ -175,7 +186,7 @@ $IF BASE64_BAS = UNDEFINED THEN
         ' Expand the data if needed
         IF isComp THEN buffer = _INFLATE$(buffer, ogSize)
 
-        Base64_LoadResource = buffer
+        Base64_LoadResourceData = buffer
     END FUNCTION
 
 $END IF
