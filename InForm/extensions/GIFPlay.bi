@@ -15,7 +15,7 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         CONST FALSE = 0, TRUE = NOT FALSE
     $END IF
 
-    TYPE GIFDATA
+    TYPE __GIFDataType
         ID AS LONG
         file AS INTEGER
         sigver AS STRING * 6
@@ -41,7 +41,7 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         HideOverlay AS _BYTE
     END TYPE
 
-    TYPE FRAMEDATA
+    TYPE __GIFFrameDataType
         ID AS LONG
         thisFrame AS LONG
         addr AS LONG
@@ -61,8 +61,8 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         transColor AS _UNSIGNED _BYTE
     END TYPE
 
-    REDIM GIFData(0) AS GIFDATA
-    REDIM GIFFrameData(0) AS FRAMEDATA
-    DIM TotalGIFLoaded AS LONG, TotalGIFFrames AS LONG
+    REDIM __GIFData(1 TO 1) AS __GIFDataType
+    REDIM __GIFFrameData(0 TO 0) AS __GIFFrameDataType
+    DIM __TotalGIFLoaded AS LONG, __TotalGIFFrames AS LONG
 
 $END IF

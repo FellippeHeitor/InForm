@@ -13,7 +13,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     '$INCLUDE:'GIFPlay.bi'
 
     SUB UpdateGif (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         STATIC GifOverlay AS LONG
 
@@ -24,16 +24,16 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         IF i = 0 THEN EXIT SUB
 
         IF GifOverlay = 0 THEN
-            GifOverlay = LoadOverlayImage&
+            GifOverlay = LoadGIFOverlayImage
         END IF
 
-        IF GIFData(i).IsPlaying OR GIFData(i).LastFrameServed = 0 THEN
-            IF GIFData(i).LastFrameUpdate > 0 AND TIMER - GIFData(i).LastFrameUpdate < GIFData(i).LastFrameDelay THEN
+        IF __GIFData(i).IsPlaying OR __GIFData(i).LastFrameServed = 0 THEN
+            IF __GIFData(i).LastFrameUpdate > 0 AND TIMER - __GIFData(i).LastFrameUpdate < __GIFData(i).LastFrameDelay THEN
                 'Wait for the GIF's frame delay
             ELSE
-                GIFData(i).Frame = GIFData(i).Frame + 1
-                GIFData(i).LastFrameServed = GIFData(i).Frame
-                GIFData(i).LastFrameUpdate = TIMER
+                __GIFData(i).Frame = __GIFData(i).Frame + 1
+                __GIFData(i).LastFrameServed = __GIFData(i).Frame
+                __GIFData(i).LastFrameUpdate = TIMER
             END IF
         END IF
 
@@ -43,7 +43,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         newFrame = GetGifFrame&(i)
         IF newFrame THEN _PUTIMAGE , newFrame
-        IF GIFData(i).IsPlaying = FALSE AND GIFData(i).HideOverlay = FALSE AND GIFData(i).totalFrames > 1 THEN
+        IF __GIFData(i).IsPlaying = FALSE AND __GIFData(i).HideOverlay = FALSE AND __GIFData(i).totalFrames > 1 THEN
             _PUTIMAGE (_WIDTH / 2 - _WIDTH(GifOverlay) / 2, _HEIGHT / 2 - _HEIGHT(GifOverlay) / 2), GifOverlay
         END IF
 
@@ -54,81 +54,81 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
 
     FUNCTION GifIsPlaying%% (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GifIsPlaying = GIFData(i).IsPlaying
+        GifIsPlaying = __GIFData(i).IsPlaying
     END FUNCTION
 
 
     FUNCTION GifWidth% (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GifWidth = GIFData(i).width
+        GifWidth = __GIFData(i).width
     END FUNCTION
 
 
     FUNCTION GifHeight% (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GifHeight = GIFData(i).height
+        GifHeight = __GIFData(i).height
     END FUNCTION
 
 
     FUNCTION TotalFrames& (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
-        TotalFrames = GIFData(i).totalFrames
+        TotalFrames = __GIFData(i).totalFrames
     END FUNCTION
 
 
     SUB HideGifOverlay (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GIFData(i).HideOverlay = TRUE
+        __GIFData(i).HideOverlay = TRUE
     END SUB
 
 
     SUB PlayGif (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GIFData(i).IsPlaying = TRUE
+        __GIFData(i).IsPlaying = TRUE
     END SUB
 
 
     SUB PauseGif (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GIFData(i).IsPlaying = FALSE
+        __GIFData(i).IsPlaying = FALSE
     END SUB
 
 
     SUB StopGif (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
+        SHARED __GIFData() AS __GIFDataType
 
         DIM i AS LONG: i = GetGifIndex(ID)
 
-        GIFData(i).IsPlaying = FALSE
-        GIFData(i).Frame = 1
+        __GIFData(i).IsPlaying = FALSE
+        __GIFData(i).Frame = 1
     END SUB
 
 
     FUNCTION OpenGif%% (ID AS LONG, filename$)
-        SHARED GIFData() AS GIFDATA
-        SHARED GIFFrameData() AS FRAMEDATA
-        SHARED TotalGIFLoaded AS LONG, TotalGIFFrames AS LONG
+        SHARED __GIFData() AS __GIFDataType
+        SHARED __GIFFrameData() AS __GIFFrameDataType
+        SHARED __TotalGIFLoaded AS LONG, __TotalGIFFrames AS LONG
 
         DIM i AS LONG, Index AS LONG
         DIM byte~%%, palette$, delay~%
@@ -140,104 +140,104 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         Index = GetGifIndex&(ID)
 
         IF Index = 0 THEN
-            TotalGIFLoaded = TotalGIFLoaded + 1
-            Index = TotalGIFLoaded
-            REDIM _PRESERVE GIFData(1 TO TotalGIFLoaded) AS GIFDATA
+            __TotalGIFLoaded = __TotalGIFLoaded + 1
+            Index = __TotalGIFLoaded
+            REDIM _PRESERVE __GIFData(1 TO __TotalGIFLoaded) AS __GIFDataType
         ELSE
             CloseGif ID
         END IF
 
-        GIFData(Index).ID = ID
-        GIFData(Index).file = FREEFILE
+        __GIFData(Index).ID = ID
+        __GIFData(Index).file = FREEFILE
         IF NOT _FILEEXISTS(filename$) THEN EXIT FUNCTION
-        OPEN filename$ FOR BINARY AS GIFData(Index).file
+        OPEN filename$ FOR BINARY AS __GIFData(Index).file
 
-        GET GIFData(Index).file, , GIFData(Index).sigver
-        GET GIFData(Index).file, , GIFData(Index).width
-        GET GIFData(Index).file, , GIFData(Index).height
-        GET GIFData(Index).file, , byte~%%
-        GIFData(Index).bpp = (byte~%% AND 7) + 1
-        GIFData(Index).sortFlag = (byte~%% AND 8) > 0
-        GIFData(Index).colorRes = (byte~%% \ 16 AND 7) + 1
-        GIFData(Index).colorTableFlag = (byte~%% AND 128) > 0
-        GIFData(Index).numColors = 2 ^ GIFData(Index).bpp
-        GET GIFData(Index).file, , GIFData(Index).bgColor
-        GET GIFData(Index).file, , byte~%%
-        IF byte~%% = 0 THEN GIFData(Index).aspect = 0 ELSE GIFData(Index).aspect = (byte~%% + 15) / 64
+        GET __GIFData(Index).file, , __GIFData(Index).sigver
+        GET __GIFData(Index).file, , __GIFData(Index).width
+        GET __GIFData(Index).file, , __GIFData(Index).height
+        GET __GIFData(Index).file, , byte~%%
+        __GIFData(Index).bpp = (byte~%% AND 7) + 1
+        __GIFData(Index).sortFlag = (byte~%% AND 8) > 0
+        __GIFData(Index).colorRes = (byte~%% \ 16 AND 7) + 1
+        __GIFData(Index).colorTableFlag = (byte~%% AND 128) > 0
+        __GIFData(Index).numColors = 2 ^ __GIFData(Index).bpp
+        GET __GIFData(Index).file, , __GIFData(Index).bgColor
+        GET __GIFData(Index).file, , byte~%%
+        IF byte~%% = 0 THEN __GIFData(Index).aspect = 0 ELSE __GIFData(Index).aspect = (byte~%% + 15) / 64
 
-        IF GIFData(Index).sigver <> "GIF87a" AND GIFData(Index).sigver <> "GIF89a" THEN
+        IF __GIFData(Index).sigver <> "GIF87a" AND __GIFData(Index).sigver <> "GIF89a" THEN
             'Invalid version
             GOTO LoadError
         END IF
 
-        IF NOT GIFData(Index).colorTableFlag THEN
+        IF NOT __GIFData(Index).colorTableFlag THEN
             'No Color Table
             GOTO LoadError
         END IF
 
-        palette$ = SPACE$(3 * GIFData(Index).numColors)
-        GET GIFData(Index).file, , palette$
-        GIFData(Index).palette = palette$
+        palette$ = SPACE$(3 * __GIFData(Index).numColors)
+        GET __GIFData(Index).file, , palette$
+        __GIFData(Index).palette = palette$
         DO
-            GET GIFData(Index).file, , byte~%%
+            GET __GIFData(Index).file, , byte~%%
             SELECT CASE byte~%%
                 CASE &H2C ' Image Descriptor
-                    TotalGIFFrames = TotalGIFFrames + 1
-                    GIFData(Index).totalFrames = GIFData(Index).totalFrames + 1
+                    __TotalGIFFrames = __TotalGIFFrames + 1
+                    __GIFData(Index).totalFrames = __GIFData(Index).totalFrames + 1
 
-                    IF GIFData(Index).firstFrame = 0 THEN
-                        GIFData(Index).firstFrame = TotalGIFFrames
+                    IF __GIFData(Index).firstFrame = 0 THEN
+                        __GIFData(Index).firstFrame = __TotalGIFFrames
                     END IF
 
-                    IF TotalGIFFrames > UBOUND(GIFFrameData) THEN
-                        REDIM _PRESERVE GIFFrameData(0 TO TotalGIFFrames * 2) AS FRAMEDATA
+                    IF __TotalGIFFrames > UBOUND(__GIFFrameData) THEN
+                        REDIM _PRESERVE __GIFFrameData(0 TO __TotalGIFFrames * 2) AS __GIFFrameDataType
                     END IF
 
-                    GIFFrameData(TotalGIFFrames).ID = ID
-                    GIFFrameData(TotalGIFFrames).thisFrame = GIFData(Index).totalFrames
+                    __GIFFrameData(__TotalGIFFrames).ID = ID
+                    __GIFFrameData(__TotalGIFFrames).thisFrame = __GIFData(Index).totalFrames
 
-                    GET GIFData(Index).file, , GIFFrameData(TotalGIFFrames).left
-                    GET GIFData(Index).file, , GIFFrameData(TotalGIFFrames).top
-                    GET GIFData(Index).file, , GIFFrameData(TotalGIFFrames).width
-                    GET GIFData(Index).file, , GIFFrameData(TotalGIFFrames).height
-                    GET GIFData(Index).file, , byte~%%
-                    GIFFrameData(TotalGIFFrames).localColorTableFlag = (byte~%% AND 128) > 0
-                    GIFFrameData(TotalGIFFrames).interlacedFlag = (byte~%% AND 64) > 0
-                    GIFFrameData(TotalGIFFrames).sortFlag = (byte~%% AND 32) > 0
-                    GIFFrameData(TotalGIFFrames).palBPP = (byte~%% AND 7) + 1
-                    GIFFrameData(TotalGIFFrames).addr = LOC(GIFData(Index).file) + 1
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).left
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).top
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).width
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).height
+                    GET __GIFData(Index).file, , byte~%%
+                    __GIFFrameData(__TotalGIFFrames).localColorTableFlag = (byte~%% AND 128) > 0
+                    __GIFFrameData(__TotalGIFFrames).interlacedFlag = (byte~%% AND 64) > 0
+                    __GIFFrameData(__TotalGIFFrames).sortFlag = (byte~%% AND 32) > 0
+                    __GIFFrameData(__TotalGIFFrames).palBPP = (byte~%% AND 7) + 1
+                    __GIFFrameData(__TotalGIFFrames).addr = LOC(__GIFData(Index).file) + 1
 
-                    IF GIFFrameData(TotalGIFFrames).localColorTableFlag THEN
-                        SEEK GIFData(Index).file, LOC(GIFData(Index).file) + 3 * 2 ^ GIFFrameData(TotalGIFFrames).palBPP + 1
+                    IF __GIFFrameData(__TotalGIFFrames).localColorTableFlag THEN
+                        SEEK __GIFData(Index).file, LOC(__GIFData(Index).file) + 3 * 2 ^ __GIFFrameData(__TotalGIFFrames).palBPP + 1
                     END IF
-                    GET GIFData(Index).file, , GIFFrameData(TotalGIFFrames).minimumCodeSize
-                    IF GIFFrameData(TotalGIFFrames).disposalMethod > 2 THEN
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).minimumCodeSize
+                    IF __GIFFrameData(__TotalGIFFrames).disposalMethod > 2 THEN
                         'Unsupported disposalMethod
                         GOTO LoadError
                     END IF
-                    SkipGIFBlocks GIFData(Index).file
+                    SkipGIFBlocks __GIFData(Index).file
                 CASE &H3B ' Trailer
                     EXIT DO
                 CASE &H21 ' Extension Introducer
-                    GET GIFData(Index).file, , byte~%% ' Extension Label
+                    GET __GIFData(Index).file, , byte~%% ' Extension Label
                     SELECT CASE byte~%%
                         CASE &HFF, &HFE ' Application Extension, Comment Extension
-                            SkipGIFBlocks GIFData(Index).file
+                            SkipGIFBlocks __GIFData(Index).file
                         CASE &HF9
-                            IF TotalGIFFrames > UBOUND(GIFFrameData) THEN
-                                REDIM _PRESERVE GIFFrameData(0 TO TotalGIFFrames * 2) AS FRAMEDATA
+                            IF __TotalGIFFrames > UBOUND(__GIFFrameData) THEN
+                                REDIM _PRESERVE __GIFFrameData(0 TO __TotalGIFFrames * 2) AS __GIFFrameDataType
                             END IF
-                            GIFFrameData(TotalGIFFrames).ID = ID
+                            __GIFFrameData(__TotalGIFFrames).ID = ID
 
-                            GET GIFData(Index).file, , byte~%% ' Block Size (always 4)
-                            GET GIFData(Index).file, , byte~%%
-                            GIFFrameData(TotalGIFFrames).transparentFlag = (byte~%% AND 1) > 0
-                            GIFFrameData(TotalGIFFrames).userInput = (byte~%% AND 2) > 0
-                            GIFFrameData(TotalGIFFrames).disposalMethod = byte~%% \ 4 AND 7
-                            GET GIFData(Index).file, , delay~%
-                            IF delay~% = 0 THEN GIFFrameData(TotalGIFFrames).delay = 0.1 ELSE GIFFrameData(TotalGIFFrames).delay = delay~% / 100
-                            GET GIFData(Index).file, , GIFFrameData(TotalGIFFrames).transColor
-                            SkipGIFBlocks GIFData(Index).file
+                            GET __GIFData(Index).file, , byte~%% ' Block Size (always 4)
+                            GET __GIFData(Index).file, , byte~%%
+                            __GIFFrameData(__TotalGIFFrames).transparentFlag = (byte~%% AND 1) > 0
+                            __GIFFrameData(__TotalGIFFrames).userInput = (byte~%% AND 2) > 0
+                            __GIFFrameData(__TotalGIFFrames).disposalMethod = byte~%% \ 4 AND 7
+                            GET __GIFData(Index).file, , delay~%
+                            IF delay~% = 0 THEN __GIFFrameData(__TotalGIFFrames).delay = 0.1 ELSE __GIFFrameData(__TotalGIFFrames).delay = delay~% / 100
+                            GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).transColor
+                            SkipGIFBlocks __GIFData(Index).file
                         CASE ELSE
                             'Unsupported extension Label
                             GOTO LoadError
@@ -248,29 +248,29 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             END SELECT
         LOOP
 
-        REDIM _PRESERVE GIFFrameData(0 TO TotalGIFFrames) AS FRAMEDATA
+        REDIM _PRESERVE __GIFFrameData(0 TO __TotalGIFFrames) AS __GIFFrameDataType
 
-        GIFData(Index).IsPlaying = FALSE
+        __GIFData(Index).IsPlaying = FALSE
         OpenGif = TRUE
         EXIT FUNCTION
 
         LoadError:
-        GIFData(Index).ID = 0
-        CLOSE GIFData(Index).file
-        FOR i = 1 TO TotalGIFFrames
-            IF GIFFrameData(i).ID = ID THEN
-                GIFFrameData(i).ID = 0
+        __GIFData(Index).ID = 0
+        CLOSE __GIFData(Index).file
+        FOR i = 1 TO __TotalGIFFrames
+            IF __GIFFrameData(i).ID = ID THEN
+                __GIFFrameData(i).ID = 0
             END IF
         NEXT
     END FUNCTION
 
 
     FUNCTION GetGifIndex& (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
-        SHARED TotalGIFLoaded AS LONG
+        SHARED __GIFData() AS __GIFDataType
+        SHARED __TotalGIFLoaded AS LONG
 
-        DIM i AS LONG: FOR i = 1 TO TotalGIFLoaded
-            IF GIFData(i).ID = ID THEN
+        DIM i AS LONG: FOR i = 1 TO __TotalGIFLoaded
+            IF __GIFData(i).ID = ID THEN
                 GetGifIndex = i
                 EXIT FOR
             END IF
@@ -279,8 +279,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
 
     SUB CloseGif (ID AS LONG)
-        SHARED GIFData() AS GIFDATA
-        SHARED GIFFrameData() AS FRAMEDATA
+        SHARED __GIFData() AS __GIFDataType
+        SHARED __GIFFrameData() AS __GIFFrameDataType
 
         DIM i AS LONG, Index AS LONG
 
@@ -288,18 +288,18 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         IF Index = 0 THEN EXIT SUB
 
-        FOR i = 0 TO UBOUND(GIFFrameData)
-            IF GIFFrameData(i).ID = ID THEN
-                GIFFrameData(i).ID = 0
-                IF GIFFrameData(i).addr < -1 THEN
-                    _FREEIMAGE GIFFrameData(i).addr
+        FOR i = 0 TO UBOUND(__GIFFrameData)
+            IF __GIFFrameData(i).ID = ID THEN
+                __GIFFrameData(i).ID = 0
+                IF __GIFFrameData(i).addr < -1 THEN
+                    _FREEIMAGE __GIFFrameData(i).addr
                 END IF
             END IF
         NEXT
 
-        CLOSE GIFData(Index).file
-        GIFData(Index).ID = 0
-        GIFData(Index).firstFrame = 0
+        CLOSE __GIFData(Index).file
+        __GIFData(Index).ID = 0
+        __GIFData(Index).firstFrame = 0
     END SUB
 
 
@@ -313,8 +313,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
 
     FUNCTION GetGifFrame& (Index AS LONG)
-        SHARED GIFData() AS GIFDATA
-        SHARED GIFFrameData() AS FRAMEDATA
+        SHARED __GIFData() AS __GIFDataType
+        SHARED __GIFFrameData() AS __GIFFrameDataType
 
         DIM i AS LONG
         DIM frame AS LONG, previousFrame AS LONG
@@ -322,69 +322,69 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         DIM img&, actualFrame&
         DIM prevDest AS LONG
 
-        IF GIFData(Index).Frame > GIFData(Index).totalFrames THEN
-            GIFData(Index).Frame = 1
+        IF __GIFData(Index).Frame > __GIFData(Index).totalFrames THEN
+            __GIFData(Index).Frame = 1
         END IF
 
-        FOR i = 1 TO UBOUND(GIFFrameData)
-            IF GIFFrameData(i).ID = GIFData(Index).ID AND GIFFrameData(i).thisFrame = GIFData(Index).Frame THEN
+        FOR i = 1 TO UBOUND(__GIFFrameData)
+            IF __GIFFrameData(i).ID = __GIFData(Index).ID AND __GIFFrameData(i).thisFrame = __GIFData(Index).Frame THEN
                 frame = i
                 EXIT FOR
-            ELSEIF GIFFrameData(i).ID = GIFData(Index).ID AND GIFFrameData(i).thisFrame < GIFData(Index).Frame THEN
+            ELSEIF __GIFFrameData(i).ID = __GIFData(Index).ID AND __GIFFrameData(i).thisFrame < __GIFData(Index).Frame THEN
                 previousFrame = i
             END IF
         NEXT
 
-        GIFData(Index).LastFrameDelay = GIFFrameData(frame).delay - (GIFFrameData(frame).delay / 10)
+        __GIFData(Index).LastFrameDelay = __GIFFrameData(frame).delay - (__GIFFrameData(frame).delay / 10)
 
-        IF GIFFrameData(frame).addr > 0 THEN
+        IF __GIFFrameData(frame).addr > 0 THEN
             prevDest = _DEST
-            w = GIFFrameData(frame).width
-            h = GIFFrameData(frame).height
+            w = __GIFFrameData(frame).width
+            h = __GIFFrameData(frame).height
             img& = _NEWIMAGE(w, h, 256)
-            actualFrame& = _NEWIMAGE(GIFData(Index).width, GIFData(Index).height, 256)
+            actualFrame& = _NEWIMAGE(__GIFData(Index).width, __GIFData(Index).height, 256)
 
             _DEST img&
-            DecodeFrame GIFData(Index), GIFFrameData(frame)
+            DecodeFrame __GIFData(Index), __GIFFrameData(frame)
 
             _DEST actualFrame&
-            IF GIFFrameData(frame).localColorTableFlag THEN
+            IF __GIFFrameData(frame).localColorTableFlag THEN
                 _COPYPALETTE img&
             ELSE
-                FOR i = 0 TO GIFData(Index).numColors - 1
-                    _PALETTECOLOR i, _RGB32(ASC(GIFData(Index).palette, i * 3 + 1), ASC(GIFData(Index).palette, i * 3 + 2), ASC(GIFData(Index).palette, i * 3 + 3))
+                FOR i = 0 TO __GIFData(Index).numColors - 1
+                    _PALETTECOLOR i, _RGB32(ASC(__GIFData(Index).palette, i * 3 + 1), ASC(__GIFData(Index).palette, i * 3 + 2), ASC(__GIFData(Index).palette, i * 3 + 3))
                 NEXT
             END IF
 
-            IF GIFData(Index).Frame > 1 THEN
-                SELECT CASE GIFFrameData(previousFrame).disposalMethod
+            IF __GIFData(Index).Frame > 1 THEN
+                SELECT CASE __GIFFrameData(previousFrame).disposalMethod
                     CASE 0, 1
-                        _PUTIMAGE , GIFFrameData(previousFrame).addr
+                        _PUTIMAGE , __GIFFrameData(previousFrame).addr
                     CASE 2
-                        CLS , GIFData(Index).bgColor
-                        _CLEARCOLOR GIFData(Index).bgColor
+                        CLS , __GIFData(Index).bgColor
+                        _CLEARCOLOR __GIFData(Index).bgColor
                 END SELECT
             ELSE
-                CLS , GIFData(Index).bgColor
+                CLS , __GIFData(Index).bgColor
             END IF
 
-            IF GIFFrameData(frame).transparentFlag THEN
-                _CLEARCOLOR GIFFrameData(frame).transColor, img&
+            IF __GIFFrameData(frame).transparentFlag THEN
+                _CLEARCOLOR __GIFFrameData(frame).transColor, img&
             END IF
-            _PUTIMAGE (GIFFrameData(frame).left, GIFFrameData(frame).top), img&
+            _PUTIMAGE (__GIFFrameData(frame).left, __GIFFrameData(frame).top), img&
             _FREEIMAGE img&
 
-            GIFFrameData(frame).addr = actualFrame&
-            GIFData(Index).LoadedFrames = GIFData(Index).LoadedFrames + 1
-            GIFData(Index).GifLoadComplete = (GIFData(Index).LoadedFrames = GIFData(Index).totalFrames)
+            __GIFFrameData(frame).addr = actualFrame&
+            __GIFData(Index).LoadedFrames = __GIFData(Index).LoadedFrames + 1
+            __GIFData(Index).GifLoadComplete = (__GIFData(Index).LoadedFrames = __GIFData(Index).totalFrames)
             _DEST prevDest
         END IF
 
-        GetGifFrame& = GIFFrameData(frame).addr
+        GetGifFrame& = __GIFFrameData(frame).addr
     END FUNCTION
 
 
-    SUB DecodeFrame (gifdata AS GIFDATA, GifFrameData AS FRAMEDATA)
+    SUB DecodeFrame (gifdata AS __GIFDataType, __GIfFRAMEDATA AS __GIFFrameDataType)
         DIM byte AS _UNSIGNED _BYTE
         DIM prefix(4095), suffix(4095), colorStack(4095)
         DIM startCodeSize AS INTEGER, clearCode AS INTEGER
@@ -407,7 +407,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         codeSize = startCodeSize
         maxCode = startMaxCode
 
-        IF GifFrameData.interlacedFlag THEN interlacedPass = 0: interlacedStep = 8
+        IF __GIfFRAMEDATA.interlacedFlag THEN interlacedPass = 0: interlacedStep = 8
         bitPointer = 0
         blockSize = 0
         blockPointer = 0
@@ -415,10 +415,10 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         y = 0
 
         file = gifdata.file
-        SEEK file, GifFrameData.addr
+        SEEK file, __GIfFRAMEDATA.addr
 
-        IF GifFrameData.localColorTableFlag THEN
-            palette$ = SPACE$(3 * 2 ^ GifFrameData.palBPP)
+        IF __GIfFRAMEDATA.localColorTableFlag THEN
+            palette$ = SPACE$(3 * 2 ^ __GIfFRAMEDATA.palBPP)
             GET file, , palette$
 
             FOR i = 0 TO gifdata.numColors - 1
@@ -475,11 +475,11 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             FOR i = stackPointer - 1 TO 0 STEP -1
                 PSET (x, y), colorStack(i)
                 x = x + 1
-                IF x = GifFrameData.width THEN
+                IF x = __GIfFRAMEDATA.width THEN
                     x = 0
-                    IF GifFrameData.interlacedFlag THEN
+                    IF __GIfFRAMEDATA.interlacedFlag THEN
                         y = y + interlacedStep
-                        IF y >= GifFrameData.height THEN
+                        IF y >= __GIfFRAMEDATA.height THEN
                             SELECT CASE interlacedPass
                                 CASE 0: interlacedPass = 1: y = 4
                                 CASE 1: interlacedPass = 2: y = 2
@@ -523,24 +523,24 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END SUB
 
 
-    FUNCTION LoadOverlayImage&
+    FUNCTION LoadGIFOverlayImage&
         CONST SIZE_GIFOVERLAYIMAGE_BMP_16506 = 16506
         CONST COMP_GIFOVERLAYIMAGE_BMP_16506 = -1
         CONST DATA_GIFOVERLAYIMAGE_BMP_16506 = _
-                "eNpy8q1yYACDKiDOAWIHKGZkUGBgZsAF/kMQjDM4gRSgfbsGjt+I4jgexj+2YU57nd27H0Nl6htD6wkzJ31hqFyFWkMVZmZm5rzjMyjfzcwLvEKj" + _
-                "tXTnFbyZjxn0O60WBBjDdVjDU/gAP0LwK77CW3gKa7gOY+B3c1k13Ic3ICm9gftQQ8h1BIt4GdInL2MRRxBKHcd1+BIyIF/iehzHYdWpmMXnkEPy" + _
-                "OWZxKgZZV2AbEohtXI5B1Di+hQTmW4z3ub3fBQncXX04Hs7CKiQnVnFWhtkfh+TM4zgrgza/AsmplZTHwh2QnLszRT8vheA/LlyObyAF8Q0u9zjm" + _
-                "tyEFs52wL5iFFNRsgrXMZ5CC+gwnY/JfBym462LW719BCu4rHIGtRUhJLNo+H29ASuINMxYMQ1JooIUOekYHLTQgFpromJ8V1NFGV7+HOiQjw9C6" + _
-                "L0VumzlOB02TvWehhTZ6VoavwX3QehXixWz7ysrK7rPPPrsXmXJfc98zGdqoa8bNzc2/f++tt97a19dJ9/tPP/20H1EPPfSQ/o0mJAOvwdVFabK7" + _
-                "bFHCeuSRR/ZMWxh4fuMiTBygzff+u9267XY/X3vttT33Nc3gyn08NTW1474fQP4J3ATx0LH7/eabbzbt24D7mUajEWmWQPLfhHXffT8yMrJjs6Nr" + _
-                "+3k00LZZAsq/jqcgCbX+u+8/++yzfc2OOgR1bSNWgPmfwoe+bd/ljig93tGCOLrd/ctvwM4dPLyL7yAJ9Rxt+/Pz8ztmnzTRc1+PYirT/Ibna/AF" + _
-                "5KD56Qc0f72v+ROU+V1J6JeM89v2Hy+A/Inav8mm45ht/7b/i9FBPZD2n0X/107ye0YnhP4vzfjnti3BuqShc0FdC7iPQxn/fOc/msX2ZTr/Qd2u" + _
-                "be2cIaD5/3oW81/tByzl5vsRZecM2R//3ucJbsLYQdc/bnv/u8616wCX2635Isrse6eRYX6r67H+uRDiqYWeo/mSjE8cN6aPzm78i5mTxbkIrl5J" + _
-                "8xroOlfHBbvmN+2iAwkg/6vQuhfixfRvCWj/KN7nv/x1Pc9/DfX5/GcD9ZTnP5Fp/zdkzn+/Xsrz39X1D63z8SWk4L7Eker6Z2mvfx9HXM2U+P4H" + _
-                "HQu2IAVDJrIlq8uKd/8TmfxqrMT3v2ndBsm526v7X6v7n6v736vnH6rnX6rnnzI+HmYCeP5tBqeW8PnH63A8wOdfX4L0yUvm+ddQq4a78QokpVdw" + _
-                "N2rIY+nz70tYxZN431x3/g7v40msYmlQz7//BcxY2A4="
+            "eNpy8q1yYACDKiDOAWIHKGZkUGBgZsAF/kMQjDM4gRSgfbsGjt+I4jgexj+2YU57nd27H0Nl6htD6wkzJ31hqFyFWkMVZmZm5rzjMyjfzcwLvEKj" + _
+            "tXTnFbyZjxn0O60WBBjDdVjDU/gAP0LwK77CW3gKa7gOY+B3c1k13Ic3ICm9gftQQ8h1BIt4GdInL2MRRxBKHcd1+BIyIF/iehzHYdWpmMXnkEPy" + _
+            "OWZxKgZZV2AbEohtXI5B1Di+hQTmW4z3ub3fBQncXX04Hs7CKiQnVnFWhtkfh+TM4zgrgza/AsmplZTHwh2QnLszRT8vheA/LlyObyAF8Q0u9zjm" + _
+            "tyEFs52wL5iFFNRsgrXMZ5CC+gwnY/JfBym462LW719BCu4rHIGtRUhJLNo+H29ASuINMxYMQ1JooIUOekYHLTQgFpromJ8V1NFGV7+HOiQjw9C6" + _
+            "L0VumzlOB02TvWehhTZ6VoavwX3QehXixWz7ysrK7rPPPrsXmXJfc98zGdqoa8bNzc2/f++tt97a19dJ9/tPP/20H1EPPfSQ/o0mJAOvwdVFabK7" + _
+            "bFHCeuSRR/ZMWxh4fuMiTBygzff+u9267XY/X3vttT33Nc3gyn08NTW1474fQP4J3ATx0LH7/eabbzbt24D7mUajEWmWQPLfhHXffT8yMrJjs6Nr" + _
+            "+3k00LZZAsq/jqcgCbX+u+8/++yzfc2OOgR1bSNWgPmfwoe+bd/ljig93tGCOLrd/ctvwM4dPLyL7yAJ9Rxt+/Pz8ztmnzTRc1+PYirT/Ibna/AF" + _
+            "5KD56Qc0f72v+ROU+V1J6JeM89v2Hy+A/Inav8mm45ht/7b/i9FBPZD2n0X/107ye0YnhP4vzfjnti3BuqShc0FdC7iPQxn/fOc/msX2ZTr/Qd2u" + _
+            "be2cIaD5/3oW81/tByzl5vsRZecM2R//3ucJbsLYQdc/bnv/u8616wCX2635Isrse6eRYX6r67H+uRDiqYWeo/mSjE8cN6aPzm78i5mTxbkIrl5J" + _
+            "8xroOlfHBbvmN+2iAwkg/6vQuhfixfRvCWj/KN7nv/x1Pc9/DfX5/GcD9ZTnP5Fp/zdkzn+/Xsrz39X1D63z8SWk4L7Eker6Z2mvfx9HXM2U+P4H" + _
+            "HQu2IAVDJrIlq8uKd/8TmfxqrMT3v2ndBsm526v7X6v7n6v736vnH6rnX6rnnzI+HmYCeP5tBqeW8PnH63A8wOdfX4L0yUvm+ddQq4a78QokpVdw" + _
+            "N2rIY+nz70tYxZN431x3/g7v40msYmlQz7//BcxY2A4="
 
-        LoadOverlayImage = _LOADIMAGE(Base64_LoadResourceString(DATA_GIFOVERLAYIMAGE_BMP_16506, SIZE_GIFOVERLAYIMAGE_BMP_16506, COMP_GIFOVERLAYIMAGE_BMP_16506), 32, "memory")
+        LoadGIFOverlayImage = _LOADIMAGE(Base64_LoadResourceString(DATA_GIFOVERLAYIMAGE_BMP_16506, SIZE_GIFOVERLAYIMAGE_BMP_16506, COMP_GIFOVERLAYIMAGE_BMP_16506), 32, "memory")
     END FUNCTION
 
     '$INCLUDE:'Base64.bas'
