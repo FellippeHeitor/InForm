@@ -72,15 +72,15 @@ $IF MESSAGEBOX_BAS = UNDEFINED THEN
         DIM __caption AS STRING: __caption = caption
 
         $IF INFORM_BI = DEFINED THEN
-            IF __UI_CurrentTitle <> "" THEN
+            IF LEN(__UI_CurrentTitle) > 0 THEN
                 __caption = __UI_CurrentTitle
-            ELSEIF _TITLE$ <> "" THEN
+            ELSEIF LEN(_TITLE$) > 0 THEN
                 __caption = _TITLE$
             ELSE
                 __caption = COMMAND$(0)
             END IF
         $ELSE
-            IF _TITLE$ <> "" THEN
+            IF LEN(_TITLE$) > 0 THEN
                 __caption = _TITLE$
             ELSE
                 __caption = COMMAND$(0)

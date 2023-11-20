@@ -39,21 +39,26 @@ SUB __UI_Click (id AS LONG)
         CASE gifplaySample
 
         CASE LoadBT
-            'file 'globe.gif' comes from:
-            'https://en.wikipedia.org/wiki/GIF#/media/File:Rotating_earth_(large).gif
-            IF GIF_Open(PictureBox1, "globe.gif") THEN
-                Control(PlayBT).Disabled = False
-                IF GIF_GetTotalFrames(PictureBox1) > 1 THEN
-                    Caption(PlayBT) = "Play"
+            DIM fileName AS STRING: fileName = _OPENFILEDIALOG$(Caption(gifplaySample), , "*.gif|*.GIF|*.Gif", "GIF Files")
+
+            IF LEN(fileName) > 0 THEN
+                GIF_Close PictureBox1 ' close any previously opened GIF
+
+                IF GIF_Open(PictureBox1, fileName) THEN
+
+                    Control(PlayBT).Disabled = False
+
+                    IF GIF_GetTotalFrames(PictureBox1) > 1 THEN
+                        Caption(PlayBT) = "Play"
+                    ELSE
+                        Control(PlayBT).Disabled = True
+                    END IF
                 ELSE
-                    Caption(PlayBT) = "Static gif"
                     Control(PlayBT).Disabled = True
+                    MessageBox fileName + " failed to load!", "", MsgBox_Exclamation
                 END IF
-                Caption(LoadBT) = "globe.gif loaded"
-                Control(LoadBT).Disabled = True
-            ELSE
-                MessageBox "File 'globe.gif' could not be found.", "", MsgBox_Exclamation
             END IF
+
         CASE PlayBT
             IF GIF_IsPlaying(PictureBox1) THEN
                 GIF_Pause PictureBox1
@@ -62,6 +67,7 @@ SUB __UI_Click (id AS LONG)
                 GIF_Play PictureBox1
                 Caption(PlayBT) = "Pause"
             END IF
+
         CASE PictureBox1
             GIF_HideOverlay PictureBox1
     END SELECT

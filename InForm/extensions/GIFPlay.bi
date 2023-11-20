@@ -7,7 +7,7 @@
 '
 ' Adapted for use with InForm's PictureBox controls by @FellippeHeitor
 '
-' Refactored and enhanced by a740g to use include guards, conditional compiles and cleaner API
+' Fixed, refactored and enhanced by @a740g
 
 $IF GIFPLAY_BI = UNDEFINED THEN
     $LET GIFPLAY_BI = TRUE
@@ -22,8 +22,8 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         ID AS LONG
         file AS INTEGER
         sigver AS STRING * 6
-        width AS _UNSIGNED INTEGER
-        height AS _UNSIGNED INTEGER
+        W AS _UNSIGNED INTEGER ' width
+        H AS _UNSIGNED INTEGER ' height
         bpp AS _UNSIGNED _BYTE
         sortFlag AS _BYTE ' Unused
         colorRes AS _UNSIGNED _BYTE
@@ -31,27 +31,27 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         bgColor AS _UNSIGNED _BYTE
         aspect AS SINGLE ' Unused
         numColors AS _UNSIGNED INTEGER
-        palette AS STRING * 768
+        pal AS STRING * 768         ' global palette
         firstFrame AS LONG
         totalFrames AS _UNSIGNED LONG
-        IsPlaying AS _BYTE
-        Frame AS LONG
-        LoadedFrames AS LONG
-        GifLoadComplete AS _BYTE
-        LastFrameServed AS LONG
-        LastFrameUpdate AS SINGLE
-        LastFrameDelay AS SINGLE
-        HideOverlay AS _BYTE
+        isPlaying AS _BYTE
+        frame AS LONG
+        loadedFrames AS LONG
+        isLoadComplete AS _BYTE
+        lastFrameServed AS LONG
+        lastFrameUpdate AS SINGLE
+        lastFrameDelay AS SINGLE
+        hideOverlay AS _BYTE
     END TYPE
 
     TYPE __GIFFrameDataType
         ID AS LONG
         thisFrame AS LONG
         addr AS LONG
-        left AS _UNSIGNED INTEGER
-        top AS _UNSIGNED INTEGER
-        width AS _UNSIGNED INTEGER
-        height AS _UNSIGNED INTEGER
+        L AS _UNSIGNED INTEGER ' left
+        T AS _UNSIGNED INTEGER ' top
+        W AS _UNSIGNED INTEGER ' width
+        H AS _UNSIGNED INTEGER ' height
         localColorTableFlag AS _BYTE
         interlacedFlag AS _BYTE
         sortFlag AS _BYTE ' Unused

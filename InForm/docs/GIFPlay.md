@@ -2,9 +2,9 @@
 
 ***By Zom-B*** ([QB64-PE Wiki](https://qb64phoenix.com/qb64wiki/index.php/GIF_Images))
 
-*Adapted for use with InForm's PictureBox controls by @FellippeHeitor*
+***Adapted for use with InForm's PictureBox controls by @FellippeHeitor***
 
-*Refactored and enhanced by a740g to use include guards, conditional compiles and cleaner API*
+***Fixed, refactored and enhanced by @a740g***
 
 ## Usage instructions
 
@@ -74,3 +74,9 @@ FUNCTION GIF_GetWidth~% (ID AS LONG)
 ```
 
 Returns the width of the GIF in pixels.
+
+```vb
+SUB GIF_HideOverlay (ID AS LONG)
+```
+
+Hides the **GIF** overlay image when the GIF is not playing or paused.

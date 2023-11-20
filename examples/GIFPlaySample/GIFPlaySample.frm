@@ -3,7 +3,6 @@
 ': Fellippe Heitor, 2016-2023 - fellippe@qb64.org - @fellippeheitor
 ': https://github.com/FellippeHeitor/InForm
 '-----------------------------------------------------------
-
 SUB __UI_LoadForm
 
     DIM __UI_NewID AS LONG, __UI_RegisterResult AS LONG
@@ -24,13 +23,13 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "LoadBT", 123, 23, 36, 247, 0)
     __UI_RegisterResult = 0
-    SetCaption __UI_NewID, "Load globe.gif"
+    SetCaption __UI_NewID, "&Load"
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "PlayBT", 80, 23, 186, 247, 0)
     __UI_RegisterResult = 0
-    SetCaption __UI_NewID, "Play"
+    SetCaption __UI_NewID, "&Play"
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).CanHaveFocus = True
 

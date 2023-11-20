@@ -7,7 +7,7 @@
 '
 ' Adapted for use with InForm's PictureBox controls by @FellippeHeitor
 '
-' Refactored and enhanced by a740g to use include guards, conditional compiles and cleaner API
+' Fixed, refactored and enhanced by @a740g
 
 $IF GIFPLAY_BAS = UNDEFINED THEN
     $LET GIFPLAY_BAS = TRUE
@@ -29,13 +29,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             GifOverlay = __GIF_LoadOverlayImage
         END IF
 
-        IF __GIFData(i).IsPlaying OR __GIFData(i).LastFrameServed = 0 THEN
-            IF __GIFData(i).LastFrameUpdate > 0 AND TIMER - __GIFData(i).LastFrameUpdate < __GIFData(i).LastFrameDelay THEN
+        IF __GIFData(i).isPlaying OR __GIFData(i).lastFrameServed = 0 THEN
+            IF __GIFData(i).lastFrameUpdate > 0 AND TIMER - __GIFData(i).lastFrameUpdate < __GIFData(i).lastFrameDelay THEN
                 'Wait for the GIF's frame delay
             ELSE
-                __GIFData(i).Frame = __GIFData(i).Frame + 1
-                __GIFData(i).LastFrameServed = __GIFData(i).Frame
-                __GIFData(i).LastFrameUpdate = TIMER
+                __GIFData(i).frame = __GIFData(i).frame + 1
+                __GIFData(i).lastFrameServed = __GIFData(i).frame
+                __GIFData(i).lastFrameUpdate = TIMER
             END IF
         END IF
 
@@ -45,7 +45,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         newFrame = __GIF_GetFrame(i)
         IF newFrame THEN _PUTIMAGE , newFrame
-        IF __GIFData(i).IsPlaying = FALSE AND __GIFData(i).HideOverlay = FALSE AND __GIFData(i).totalFrames > 1 THEN
+        IF __GIFData(i).isPlaying = FALSE AND __GIFData(i).hideOverlay = FALSE AND __GIFData(i).totalFrames > 1 THEN
             _PUTIMAGE (_WIDTH / 2 - _WIDTH(GifOverlay) / 2, _HEIGHT / 2 - _HEIGHT(GifOverlay) / 2), GifOverlay
         END IF
 
@@ -60,7 +60,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        GIF_IsPlaying = __GIFData(i).IsPlaying
+        GIF_IsPlaying = __GIFData(i).isPlaying
     END FUNCTION
 
 
@@ -69,7 +69,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        GIF_GetWidth = __GIFData(i).width
+        GIF_GetWidth = __GIFData(i).W
     END FUNCTION
 
 
@@ -78,7 +78,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        GIF_GetHeight = __GIFData(i).height
+        GIF_GetHeight = __GIFData(i).H
     END FUNCTION
 
 
@@ -95,7 +95,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        __GIFData(i).HideOverlay = TRUE
+        __GIFData(i).hideOverlay = TRUE
     END SUB
 
 
@@ -104,7 +104,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        __GIFData(i).IsPlaying = TRUE
+        __GIFData(i).isPlaying = TRUE
     END SUB
 
 
@@ -113,7 +113,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        __GIFData(i).IsPlaying = FALSE
+        __GIFData(i).isPlaying = FALSE
     END SUB
 
 
@@ -122,8 +122,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        __GIFData(i).IsPlaying = FALSE
-        __GIFData(i).Frame = 1
+        __GIFData(i).isPlaying = FALSE
+        __GIFData(i).frame = 1
     END SUB
 
 
@@ -155,8 +155,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         OPEN filename$ FOR BINARY AS __GIFData(Index).file
 
         GET __GIFData(Index).file, , __GIFData(Index).sigver
-        GET __GIFData(Index).file, , __GIFData(Index).width
-        GET __GIFData(Index).file, , __GIFData(Index).height
+        GET __GIFData(Index).file, , __GIFData(Index).W
+        GET __GIFData(Index).file, , __GIFData(Index).H
         GET __GIFData(Index).file, , byte~%%
         __GIFData(Index).bpp = (byte~%% AND 7) + 1
         __GIFData(Index).sortFlag = (byte~%% AND 8) > 0
@@ -179,7 +179,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         palette$ = SPACE$(3 * __GIFData(Index).numColors)
         GET __GIFData(Index).file, , palette$
-        __GIFData(Index).palette = palette$
+        __GIFData(Index).pal = palette$
         DO
             GET __GIFData(Index).file, , byte~%%
             SELECT CASE byte~%%
@@ -198,10 +198,10 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                     __GIFFrameData(__TotalGIFFrames).ID = ID
                     __GIFFrameData(__TotalGIFFrames).thisFrame = __GIFData(Index).totalFrames
 
-                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).left
-                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).top
-                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).width
-                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).height
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).L
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).T
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).W
+                    GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).H
                     GET __GIFData(Index).file, , byte~%%
                     __GIFFrameData(__TotalGIFFrames).localColorTableFlag = (byte~%% AND 128) > 0
                     __GIFFrameData(__TotalGIFFrames).interlacedFlag = (byte~%% AND 64) > 0
@@ -252,7 +252,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         REDIM _PRESERVE __GIFFrameData(0 TO __TotalGIFFrames) AS __GIFFrameDataType
 
-        __GIFData(Index).IsPlaying = FALSE
+        __GIFData(Index).isPlaying = FALSE
         GIF_Open = TRUE
         EXIT FUNCTION
 
@@ -324,27 +324,27 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         DIM img&, actualFrame&
         DIM prevDest AS LONG
 
-        IF __GIFData(Index).Frame > __GIFData(Index).totalFrames THEN
-            __GIFData(Index).Frame = 1
+        IF __GIFData(Index).frame > __GIFData(Index).totalFrames THEN
+            __GIFData(Index).frame = 1
         END IF
 
         FOR i = 1 TO UBOUND(__GIFFrameData)
-            IF __GIFFrameData(i).ID = __GIFData(Index).ID AND __GIFFrameData(i).thisFrame = __GIFData(Index).Frame THEN
+            IF __GIFFrameData(i).ID = __GIFData(Index).ID AND __GIFFrameData(i).thisFrame = __GIFData(Index).frame THEN
                 frame = i
                 EXIT FOR
-            ELSEIF __GIFFrameData(i).ID = __GIFData(Index).ID AND __GIFFrameData(i).thisFrame < __GIFData(Index).Frame THEN
+            ELSEIF __GIFFrameData(i).ID = __GIFData(Index).ID AND __GIFFrameData(i).thisFrame < __GIFData(Index).frame THEN
                 previousFrame = i
             END IF
         NEXT
 
-        __GIFData(Index).LastFrameDelay = __GIFFrameData(frame).delay - (__GIFFrameData(frame).delay / 10)
+        __GIFData(Index).lastFrameDelay = __GIFFrameData(frame).delay - (__GIFFrameData(frame).delay / 10)
 
         IF __GIFFrameData(frame).addr > 0 THEN
             prevDest = _DEST
-            w = __GIFFrameData(frame).width
-            h = __GIFFrameData(frame).height
+            w = __GIFFrameData(frame).W
+            h = __GIFFrameData(frame).H
             img& = _NEWIMAGE(w, h, 256)
-            actualFrame& = _NEWIMAGE(__GIFData(Index).width, __GIFData(Index).height, 256)
+            actualFrame& = _NEWIMAGE(__GIFData(Index).W, __GIFData(Index).H, 256)
 
             _DEST img&
             __GIF_DecodeFrame __GIFData(Index), __GIFFrameData(frame)
@@ -354,11 +354,11 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                 _COPYPALETTE img&
             ELSE
                 FOR i = 0 TO __GIFData(Index).numColors - 1
-                    _PALETTECOLOR i, _RGB32(ASC(__GIFData(Index).palette, i * 3 + 1), ASC(__GIFData(Index).palette, i * 3 + 2), ASC(__GIFData(Index).palette, i * 3 + 3))
+                    _PALETTECOLOR i, _RGB32(ASC(__GIFData(Index).pal, i * 3 + 1), ASC(__GIFData(Index).pal, i * 3 + 2), ASC(__GIFData(Index).pal, i * 3 + 3))
                 NEXT
             END IF
 
-            IF __GIFData(Index).Frame > 1 THEN
+            IF __GIFData(Index).frame > 1 THEN
                 SELECT CASE __GIFFrameData(previousFrame).disposalMethod
                     CASE 0, 1
                         _PUTIMAGE , __GIFFrameData(previousFrame).addr
@@ -373,12 +373,12 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             IF __GIFFrameData(frame).transparentFlag THEN
                 _CLEARCOLOR __GIFFrameData(frame).transColor, img&
             END IF
-            _PUTIMAGE (__GIFFrameData(frame).left, __GIFFrameData(frame).top), img&
+            _PUTIMAGE (__GIFFrameData(frame).L, __GIFFrameData(frame).T), img&
             _FREEIMAGE img&
 
             __GIFFrameData(frame).addr = actualFrame&
-            __GIFData(Index).LoadedFrames = __GIFData(Index).LoadedFrames + 1
-            __GIFData(Index).GifLoadComplete = (__GIFData(Index).LoadedFrames = __GIFData(Index).totalFrames)
+            __GIFData(Index).loadedFrames = __GIFData(Index).loadedFrames + 1
+            __GIFData(Index).isLoadComplete = (__GIFData(Index).loadedFrames = __GIFData(Index).totalFrames)
             _DEST prevDest
         END IF
 
@@ -477,11 +477,11 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             FOR i = stackPointer - 1 TO 0 STEP -1
                 PSET (x, y), colorStack(i)
                 x = x + 1
-                IF x = __GIfFRAMEDATA.width THEN
+                IF x = __GIfFRAMEDATA.W THEN
                     x = 0
                     IF __GIfFRAMEDATA.interlacedFlag THEN
                         y = y + interlacedStep
-                        IF y >= __GIfFRAMEDATA.height THEN
+                        IF y >= __GIfFRAMEDATA.H THEN
                             SELECT CASE interlacedPass
                                 CASE 0: interlacedPass = 1: y = 4
                                 CASE 1: interlacedPass = 2: y = 2
