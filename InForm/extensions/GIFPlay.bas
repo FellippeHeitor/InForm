@@ -4,27 +4,29 @@
 '#                                                                                     #
 '# https://qb64phoenix.com/qb64wiki/index.php/GIF_Images                               #
 '#######################################################################################
+'
 ' Adapted for use with InForm's PictureBox controls by @FellippeHeitor
-' Refactored by a740g to use include guards and conditional compiles
+'
+' Refactored and enhanced by a740g to use include guards, conditional compiles and cleaner API
 
 $IF GIFPLAY_BAS = UNDEFINED THEN
     $LET GIFPLAY_BAS = TRUE
 
     '$INCLUDE:'GIFPlay.bi'
 
-    SUB UpdateGif (ID AS LONG)
+    SUB GIF_Update (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
         STATIC GifOverlay AS LONG
 
         DIM i AS LONG, newFrame AS LONG
 
-        i = GetGifIndex(ID)
+        i = __GIF_GetIndex(ID)
 
         IF i = 0 THEN EXIT SUB
 
         IF GifOverlay = 0 THEN
-            GifOverlay = LoadGIFOverlayImage
+            GifOverlay = __GIF_LoadOverlayImage
         END IF
 
         IF __GIFData(i).IsPlaying OR __GIFData(i).LastFrameServed = 0 THEN
@@ -41,7 +43,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                 BeginDraw ID
         $END IF
 
-        newFrame = GetGifFrame&(i)
+        newFrame = __GIF_GetFrame(i)
         IF newFrame THEN _PUTIMAGE , newFrame
         IF __GIFData(i).IsPlaying = FALSE AND __GIFData(i).HideOverlay = FALSE AND __GIFData(i).totalFrames > 1 THEN
             _PUTIMAGE (_WIDTH / 2 - _WIDTH(GifOverlay) / 2, _HEIGHT / 2 - _HEIGHT(GifOverlay) / 2), GifOverlay
@@ -53,79 +55,79 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END SUB
 
 
-    FUNCTION GifIsPlaying%% (ID AS LONG)
+    FUNCTION GIF_IsPlaying%% (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        GifIsPlaying = __GIFData(i).IsPlaying
+        GIF_IsPlaying = __GIFData(i).IsPlaying
     END FUNCTION
 
 
-    FUNCTION GifWidth% (ID AS LONG)
+    FUNCTION GIF_GetWidth~% (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        GifWidth = __GIFData(i).width
+        GIF_GetWidth = __GIFData(i).width
     END FUNCTION
 
 
-    FUNCTION GifHeight% (ID AS LONG)
+    FUNCTION GIF_GetHeight~% (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
-        GifHeight = __GIFData(i).height
+        GIF_GetHeight = __GIFData(i).height
     END FUNCTION
 
 
-    FUNCTION TotalFrames& (ID AS LONG)
+    FUNCTION GIF_GetTotalFrames~& (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
-        TotalFrames = __GIFData(i).totalFrames
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
+        GIF_GetTotalFrames = __GIFData(i).totalFrames
     END FUNCTION
 
 
-    SUB HideGifOverlay (ID AS LONG)
+    SUB GIF_HideOverlay (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
         __GIFData(i).HideOverlay = TRUE
     END SUB
 
 
-    SUB PlayGif (ID AS LONG)
+    SUB GIF_Play (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
         __GIFData(i).IsPlaying = TRUE
     END SUB
 
 
-    SUB PauseGif (ID AS LONG)
+    SUB GIF_Pause (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
         __GIFData(i).IsPlaying = FALSE
     END SUB
 
 
-    SUB StopGif (ID AS LONG)
+    SUB GIF_Stop (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
 
-        DIM i AS LONG: i = GetGifIndex(ID)
+        DIM i AS LONG: i = __GIF_GetIndex(ID)
 
         __GIFData(i).IsPlaying = FALSE
         __GIFData(i).Frame = 1
     END SUB
 
 
-    FUNCTION OpenGif%% (ID AS LONG, filename$)
+    FUNCTION GIF_Open%% (ID AS LONG, filename$)
         SHARED __GIFData() AS __GIFDataType
         SHARED __GIFFrameData() AS __GIFFrameDataType
         SHARED __TotalGIFLoaded AS LONG, __TotalGIFFrames AS LONG
@@ -137,14 +139,14 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                 IF Control(ID).Type <> __UI_Type_PictureBox THEN ERROR 5: EXIT FUNCTION
         $END IF
 
-        Index = GetGifIndex&(ID)
+        Index = __GIF_GetIndex(ID)
 
         IF Index = 0 THEN
             __TotalGIFLoaded = __TotalGIFLoaded + 1
             Index = __TotalGIFLoaded
             REDIM _PRESERVE __GIFData(1 TO __TotalGIFLoaded) AS __GIFDataType
         ELSE
-            CloseGif ID
+            GIF_Close ID
         END IF
 
         __GIFData(Index).ID = ID
@@ -215,14 +217,14 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                         'Unsupported disposalMethod
                         GOTO LoadError
                     END IF
-                    SkipGIFBlocks __GIFData(Index).file
+                    __GIF_SkipBlocks __GIFData(Index).file
                 CASE &H3B ' Trailer
                     EXIT DO
                 CASE &H21 ' Extension Introducer
                     GET __GIFData(Index).file, , byte~%% ' Extension Label
                     SELECT CASE byte~%%
                         CASE &HFF, &HFE ' Application Extension, Comment Extension
-                            SkipGIFBlocks __GIFData(Index).file
+                            __GIF_SkipBlocks __GIFData(Index).file
                         CASE &HF9
                             IF __TotalGIFFrames > UBOUND(__GIFFrameData) THEN
                                 REDIM _PRESERVE __GIFFrameData(0 TO __TotalGIFFrames * 2) AS __GIFFrameDataType
@@ -237,7 +239,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                             GET __GIFData(Index).file, , delay~%
                             IF delay~% = 0 THEN __GIFFrameData(__TotalGIFFrames).delay = 0.1 ELSE __GIFFrameData(__TotalGIFFrames).delay = delay~% / 100
                             GET __GIFData(Index).file, , __GIFFrameData(__TotalGIFFrames).transColor
-                            SkipGIFBlocks __GIFData(Index).file
+                            __GIF_SkipBlocks __GIFData(Index).file
                         CASE ELSE
                             'Unsupported extension Label
                             GOTO LoadError
@@ -251,7 +253,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         REDIM _PRESERVE __GIFFrameData(0 TO __TotalGIFFrames) AS __GIFFrameDataType
 
         __GIFData(Index).IsPlaying = FALSE
-        OpenGif = TRUE
+        GIF_Open = TRUE
         EXIT FUNCTION
 
         LoadError:
@@ -265,26 +267,26 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    FUNCTION GetGifIndex& (ID AS LONG)
+    FUNCTION __GIF_GetIndex& (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
         SHARED __TotalGIFLoaded AS LONG
 
         DIM i AS LONG: FOR i = 1 TO __TotalGIFLoaded
             IF __GIFData(i).ID = ID THEN
-                GetGifIndex = i
+                __GIF_GetIndex = i
                 EXIT FOR
             END IF
         NEXT i
     END FUNCTION
 
 
-    SUB CloseGif (ID AS LONG)
+    SUB GIF_Close (ID AS LONG)
         SHARED __GIFData() AS __GIFDataType
         SHARED __GIFFrameData() AS __GIFFrameDataType
 
         DIM i AS LONG, Index AS LONG
 
-        Index = GetGifIndex(ID)
+        Index = __GIF_GetIndex(ID)
 
         IF Index = 0 THEN EXIT SUB
 
@@ -303,7 +305,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END SUB
 
 
-    SUB SkipGIFBlocks (file AS INTEGER)
+    SUB __GIF_SkipBlocks (file AS INTEGER)
         DIM byte~%%
         DO
             GET file, , byte~%% ' Block Size
@@ -312,7 +314,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END SUB
 
 
-    FUNCTION GetGifFrame& (Index AS LONG)
+    FUNCTION __GIF_GetFrame& (Index AS LONG)
         SHARED __GIFData() AS __GIFDataType
         SHARED __GIFFrameData() AS __GIFFrameDataType
 
@@ -345,7 +347,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             actualFrame& = _NEWIMAGE(__GIFData(Index).width, __GIFData(Index).height, 256)
 
             _DEST img&
-            DecodeFrame __GIFData(Index), __GIFFrameData(frame)
+            __GIF_DecodeFrame __GIFData(Index), __GIFFrameData(frame)
 
             _DEST actualFrame&
             IF __GIFFrameData(frame).localColorTableFlag THEN
@@ -380,11 +382,11 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             _DEST prevDest
         END IF
 
-        GetGifFrame& = __GIFFrameData(frame).addr
+        __GIF_GetFrame = __GIFFrameData(frame).addr
     END FUNCTION
 
 
-    SUB DecodeFrame (gifdata AS __GIFDataType, __GIfFRAMEDATA AS __GIFFrameDataType)
+    SUB __GIF_DecodeFrame (gifdata AS __GIFDataType, __GIfFRAMEDATA AS __GIFFrameDataType)
         DIM byte AS _UNSIGNED _BYTE
         DIM prefix(4095), suffix(4095), colorStack(4095)
         DIM startCodeSize AS INTEGER, clearCode AS INTEGER
@@ -523,7 +525,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END SUB
 
 
-    FUNCTION LoadGIFOverlayImage&
+    FUNCTION __GIF_LoadOverlayImage&
         CONST SIZE_GIFOVERLAYIMAGE_BMP_16506 = 16506
         CONST COMP_GIFOVERLAYIMAGE_BMP_16506 = -1
         CONST DATA_GIFOVERLAYIMAGE_BMP_16506 = _
@@ -540,7 +542,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             "HQu2IAVDJrIlq8uKd/8TmfxqrMT3v2ndBsm526v7X6v7n6v736vnH6rnX6rnnzI+HmYCeP5tBqeW8PnH63A8wOdfX4L0yUvm+ddQq4a78QokpVdw" + _
             "N2rIY+nz70tYxZN431x3/g7v40msYmlQz7//BcxY2A4="
 
-        LoadGIFOverlayImage = _LOADIMAGE(Base64_LoadResourceString(DATA_GIFOVERLAYIMAGE_BMP_16506, SIZE_GIFOVERLAYIMAGE_BMP_16506, COMP_GIFOVERLAYIMAGE_BMP_16506), 32, "memory")
+        __GIF_LoadOverlayImage = _LOADIMAGE(Base64_LoadResourceString(DATA_GIFOVERLAYIMAGE_BMP_16506, SIZE_GIFOVERLAYIMAGE_BMP_16506, COMP_GIFOVERLAYIMAGE_BMP_16506), 32, "memory")
     END FUNCTION
 
     '$INCLUDE:'Base64.bas'

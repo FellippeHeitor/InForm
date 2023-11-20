@@ -2,9 +2,12 @@
 '# Animated GIF decoder v1.0                                                           #
 '# By Zom-B                                                                            #
 '#                                                                                     #
-'# http://www.qb64.org/wiki/GIF_Images                                                 #
+'# https://qb64phoenix.com/qb64wiki/index.php/GIF_Images                               #
 '#######################################################################################
-'Adapted for use with InForm's PictureBox controls by @FellippeHeitor
+'
+' Adapted for use with InForm's PictureBox controls by @FellippeHeitor
+'
+' Refactored and enhanced by a740g to use include guards, conditional compiles and cleaner API
 
 $IF GIFPLAY_BI = UNDEFINED THEN
     $LET GIFPLAY_BI = TRUE
@@ -30,7 +33,7 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         numColors AS _UNSIGNED INTEGER
         palette AS STRING * 768
         firstFrame AS LONG
-        totalFrames AS LONG
+        totalFrames AS _UNSIGNED LONG
         IsPlaying AS _BYTE
         Frame AS LONG
         LoadedFrames AS LONG

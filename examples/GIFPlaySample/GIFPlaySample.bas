@@ -4,6 +4,9 @@
 ': https://github.com/FellippeHeitor/InForm
 '-----------------------------------------------------------
 
+DEFLNG A-Z
+OPTION _EXPLICIT
+
 ': Controls' IDs: ------------------------------------------------------------------
 DIM SHARED gifplaySample AS LONG
 DIM SHARED PictureBox1 AS LONG
@@ -13,11 +16,11 @@ DIM SHARED PlayBT AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/GIFPlay.bi'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'GIFPlaySample.frm'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
-
 END SUB
 
 SUB __UI_OnLoad
@@ -25,7 +28,7 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    UpdateGif PictureBox1
+    GIF_Update PictureBox1
 END SUB
 
 SUB __UI_BeforeUnload
@@ -38,9 +41,9 @@ SUB __UI_Click (id AS LONG)
         CASE LoadBT
             'file 'globe.gif' comes from:
             'https://en.wikipedia.org/wiki/GIF#/media/File:Rotating_earth_(large).gif
-            IF OpenGif(PictureBox1, "globe.gif") THEN
+            IF GIF_Open(PictureBox1, "globe.gif") THEN
                 Control(PlayBT).Disabled = False
-                IF TotalFrames(PictureBox1) > 1 THEN
+                IF GIF_GetTotalFrames(PictureBox1) > 1 THEN
                     Caption(PlayBT) = "Play"
                 ELSE
                     Caption(PlayBT) = "Static gif"
@@ -49,18 +52,18 @@ SUB __UI_Click (id AS LONG)
                 Caption(LoadBT) = "globe.gif loaded"
                 Control(LoadBT).Disabled = True
             ELSE
-                _DELAY 0.2: _MESSAGEBOX "GIFPlay Sample", "File 'globe.gif' could not be found.", "error"
+                MessageBox "File 'globe.gif' could not be found.", "", MsgBox_Exclamation
             END IF
         CASE PlayBT
-            IF GifIsPlaying(PictureBox1) THEN
-                PauseGif PictureBox1
+            IF GIF_IsPlaying(PictureBox1) THEN
+                GIF_Pause PictureBox1
                 Caption(PlayBT) = "Play"
             ELSE
-                PlayGif PictureBox1
+                GIF_Play PictureBox1
                 Caption(PlayBT) = "Pause"
             END IF
         CASE PictureBox1
-            HideGifOverlay PictureBox1
+            GIF_HideOverlay PictureBox1
     END SELECT
 END SUB
 
@@ -97,3 +100,4 @@ END SUB
 '$INCLUDE:'../../InForm/InForm.ui'
 '$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/extensions/GIFPlay.bas'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'

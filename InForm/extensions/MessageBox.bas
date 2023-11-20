@@ -2,10 +2,10 @@
 ' These basically emulate the legacy InForm MessageBox routines
 ' All it does is calls the new QB64-PE _MESSAGEBOX$ function
 
-'$INCLUDE:'MessageBox.bi'
-
 $IF MESSAGEBOX_BAS = UNDEFINED THEN
     $LET MESSAGEBOX_BAS = TRUE
+
+    '$INCLUDE:'MessageBox.bi'
 
     FUNCTION MessageBox& (message AS STRING, caption AS STRING, setup AS LONG)
         DIM dialogType AS STRING
@@ -69,9 +69,9 @@ $IF MESSAGEBOX_BAS = UNDEFINED THEN
             END SELECT
         END IF
 
-        DIM __caption AS STRING
+        DIM __caption AS STRING: __caption = caption
 
-        IF caption = "" THEN
+        $IF INFORM_BI = DEFINED THEN
             IF __UI_CurrentTitle <> "" THEN
                 __caption = __UI_CurrentTitle
             ELSEIF _TITLE$ <> "" THEN
@@ -79,9 +79,13 @@ $IF MESSAGEBOX_BAS = UNDEFINED THEN
             ELSE
                 __caption = COMMAND$(0)
             END IF
-        ELSE
-            __caption = caption
-        END IF
+        $ELSE
+            IF _TITLE$ <> "" THEN
+                __caption = _TITLE$
+            ELSE
+                __caption = COMMAND$(0)
+            END IF
+        $END IF
 
         _DELAY 0.2 ' delay a bit so that the interface can redraw before the messagebox kicks in
         DIM returnValue AS LONG: returnValue = _MESSAGEBOX(__caption, message, dialogType, iconType, defaultButton)
