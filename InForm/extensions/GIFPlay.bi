@@ -1,71 +1,46 @@
-'#######################################################################################
-'# Animated GIF decoder v1.0                                                           #
-'# By Zom-B                                                                            #
-'#                                                                                     #
-'# https://qb64phoenix.com/qb64wiki/index.php/GIF_Images                               #
-'#######################################################################################
-'
-' Adapted for use with InForm's PictureBox controls by @FellippeHeitor
-'
-' Fixed, refactored and enhanced by @a740g
+'-----------------------------------------------------------------------------------------------------------------------
+' Animated GIF Player library
+' Copyright (c) 2023 Samuel Gomes
+'-----------------------------------------------------------------------------------------------------------------------
 
 $IF GIFPLAY_BI = UNDEFINED THEN
     $LET GIFPLAY_BI = TRUE
 
     $IF INFORM_BI = UNDEFINED THEN
+        DEFLNG A-Z
         OPTION _EXPLICIT
 
         CONST FALSE = 0, TRUE = NOT FALSE
     $END IF
 
-    TYPE __GIFDataType
-        ID AS LONG
-        file AS INTEGER
-        sigver AS STRING * 6
-        W AS _UNSIGNED INTEGER ' width
-        H AS _UNSIGNED INTEGER ' height
-        bpp AS _UNSIGNED _BYTE
-        sortFlag AS _BYTE ' Unused
-        colorRes AS _UNSIGNED _BYTE
-        colorTableFlag AS _BYTE
-        bgColor AS _UNSIGNED _BYTE
-        aspect AS SINGLE ' Unused
-        numColors AS _UNSIGNED INTEGER
-        pal AS STRING * 768         ' global palette
-        firstFrame AS LONG
-        totalFrames AS _UNSIGNED LONG
-        isPlaying AS _BYTE
-        frame AS LONG
-        loadedFrames AS LONG
-        isLoadComplete AS _BYTE
-        lastFrameServed AS LONG
-        lastFrameUpdate AS SINGLE
-        lastFrameDelay AS SINGLE
-        hideOverlay AS _BYTE
+    '$INCLUDE:'HashTable.bi'
+    '$INCLUDE:'StringFile.bi'
+
+    TYPE __GIFPlayType
+        id AS LONG ' handle supplied by the user (do we need this?)
+        W AS _UNSIGNED INTEGER ' GIF global width (this needs to be 16-bit)
+        H AS _UNSIGNED INTEGER ' GIF global height (this needs to be 16-bit)
+        bgColor AS _UNSIGNED _BYTE ' background color
+        pal AS STRING * 768 ' global palette - 256 colors * 3 components
+        frame AS LONG ' index of the first frame in the frame data array
+        frames AS LONG ' total frames in the animation
+        hideOverlay AS _BYTE ' should the "GIF" overlay be hidden when it is not playing
     END TYPE
 
-    TYPE __GIFFrameDataType
-        ID AS LONG
-        thisFrame AS LONG
-        addr AS LONG
-        L AS _UNSIGNED INTEGER ' left
-        T AS _UNSIGNED INTEGER ' top
-        W AS _UNSIGNED INTEGER ' width
-        H AS _UNSIGNED INTEGER ' height
-        localColorTableFlag AS _BYTE
-        interlacedFlag AS _BYTE
-        sortFlag AS _BYTE ' Unused
-        palBPP AS _UNSIGNED _BYTE
-        minimumCodeSize AS _UNSIGNED _BYTE
-        transparentFlag AS _BYTE 'GIF89a-specific (animation) values
-        userInput AS _BYTE ' Unused
-        disposalMethod AS _UNSIGNED _BYTE
-        delay AS SINGLE
-        transColor AS _UNSIGNED _BYTE
+    TYPE __GIFPlayFrameType
+        id AS LONG ' which GIF handle does this belong to?
+        image AS LONG ' QB64 image handle
+        L AS _UNSIGNED INTEGER ' frame left (this needs to be 16-bit) (do we need these?)
+        T AS _UNSIGNED INTEGER ' frame top (this needs to be 16-bit)
+        W AS _UNSIGNED INTEGER ' frame width (this needs to be 16-bit)
+        H AS _UNSIGNED INTEGER ' frame height (this needs to be 16-bit)
+        pre AS LONG ' previous frame (this will link back to the last frame if this is the first one)
+        nxt AS LONG ' next frame (this will link back to the first frame if this is the last one)
+        delayMs AS SINGLE ' frame delay time
+        direction AS _BYTE ' playback direction
     END TYPE
 
-    REDIM __GIFData(1 TO 1) AS __GIFDataType
-    REDIM __GIFFrameData(0 TO 0) AS __GIFFrameDataType
-    DIM __TotalGIFLoaded AS LONG, __TotalGIFFrames AS LONG
-
+    REDIM __GIFPlayHashTable(0 TO 0) AS HashTableType
+    REDIM __GIFPlay(0 TO 0) AS __GIFPlayType
+    REDIM __GIFPlayFrame(0 TO 0) AS __GIFPlayFrameType
 $END IF

@@ -42,8 +42,6 @@ SUB __UI_Click (id AS LONG)
             DIM fileName AS STRING: fileName = _OPENFILEDIALOG$(Caption(gifplaySample), , "*.gif|*.GIF|*.Gif", "GIF Files")
 
             IF LEN(fileName) > 0 THEN
-                GIF_Close PictureBox1 ' close any previously opened GIF
-
                 IF GIF_Open(PictureBox1, fileName) THEN
 
                     Control(PlayBT).Disabled = False

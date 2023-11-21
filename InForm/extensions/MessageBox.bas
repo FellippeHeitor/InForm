@@ -1,6 +1,7 @@
 ' MessageBox compatibility functions
 ' These basically emulate the legacy InForm MessageBox routines
 ' All it does is calls the new QB64-PE _MESSAGEBOX$ function
+' Copyright (c) 2023 Samuel Gomes
 
 $IF MESSAGEBOX_BAS = UNDEFINED THEN
     $LET MESSAGEBOX_BAS = TRUE
@@ -72,13 +73,13 @@ $IF MESSAGEBOX_BAS = UNDEFINED THEN
         DIM __caption AS STRING: __caption = caption
 
         $IF INFORM_BI = DEFINED THEN
-            IF LEN(__UI_CurrentTitle) > 0 THEN
+                IF LEN(__UI_CurrentTitle) > 0 THEN
                 __caption = __UI_CurrentTitle
-            ELSEIF LEN(_TITLE$) > 0 THEN
+                ELSEIF LEN(_TITLE$) > 0 THEN
                 __caption = _TITLE$
-            ELSE
+                ELSE
                 __caption = COMMAND$(0)
-            END IF
+                END IF
         $ELSE
             IF LEN(_TITLE$) > 0 THEN
                 __caption = _TITLE$
@@ -127,7 +128,9 @@ $IF MESSAGEBOX_BAS = UNDEFINED THEN
         END SELECT
     END FUNCTION
 
+
     SUB MessageBox (message AS STRING, caption AS STRING, setup AS LONG)
         DIM returnValue AS LONG: returnValue = MessageBox(message, caption, setup)
     END SUB
+
 $END IF

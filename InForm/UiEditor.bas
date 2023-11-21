@@ -328,11 +328,10 @@ $ELSE
         END DECLARE
 $END IF
 
-'$include:'ini.bi'
-'$include:'InForm.bi'
-'$include:'xp.uitheme'
-'$include:'UiEditor.frm'
-'$include:'ini.bm'
+'$INCLUDE:'InForm.bi'
+'$INCLUDE:'extensions/Ini.bi'
+'$INCLUDE:'xp.uitheme'
+'$INCLUDE:'UiEditor.frm'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
@@ -5115,4 +5114,5 @@ FUNCTION OutsideQuotes%% (text$, position AS LONG)
     OutsideQuotes%% = NOT quote%%
 END FUNCTION
 
-'$include:'InForm.ui'
+'$INCLUDE:'extensions/Ini.bas'
+'$INCLUDE:'InForm.ui'

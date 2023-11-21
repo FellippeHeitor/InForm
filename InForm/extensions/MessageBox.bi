@@ -1,9 +1,17 @@
 ' MessageBox compatibility functions
 ' These basically emulate the legacy InForm MessageBox routines
 ' All it does is calls the new QB64-PE _MESSAGEBOX$ function
+' Copyright (c) 2023 Samuel Gomes
 
 $IF MESSAGEBOX_BI = UNDEFINED THEN
     $LET MESSAGEBOX_BI = TRUE
+
+    $IF INFORM_BI = UNDEFINED THEN
+        DEFLNG A-Z
+        OPTION _EXPLICIT
+
+        CONST FALSE = 0, TRUE = NOT FALSE
+    $END IF
 
     'Messagebox constants
     CONST MsgBox_OkOnly = 1
