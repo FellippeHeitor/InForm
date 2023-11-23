@@ -6,13 +6,6 @@
 $IF MESSAGEBOX_BI = UNDEFINED THEN
     $LET MESSAGEBOX_BI = TRUE
 
-    $IF INFORM_BI = UNDEFINED THEN
-        DEFLNG A-Z
-        OPTION _EXPLICIT
-
-        CONST FALSE = 0, TRUE = NOT FALSE
-    $END IF
-
     'Messagebox constants
     CONST MsgBox_OkOnly = 1
     CONST MsgBox_OkCancel = 2

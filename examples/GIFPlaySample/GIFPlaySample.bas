@@ -14,8 +14,8 @@ DIM SHARED LoadBT AS LONG
 DIM SHARED PlayBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/GIFPlay.bi'
+'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'GIFPlaySample.frm'
 
@@ -28,7 +28,7 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    GIF_Update PictureBox1
+    GIF_Draw PictureBox1, True
 END SUB
 
 SUB __UI_BeforeUnload
@@ -42,7 +42,7 @@ SUB __UI_Click (id AS LONG)
             DIM fileName AS STRING: fileName = _OPENFILEDIALOG$(Caption(gifplaySample), , "*.gif|*.GIF|*.Gif", "GIF Files")
 
             IF LEN(fileName) > 0 THEN
-                IF GIF_Open(PictureBox1, fileName) THEN
+                IF GIF_LoadFromFile(PictureBox1, fileName) THEN
 
                     Control(PlayBT).Disabled = False
 
@@ -67,7 +67,7 @@ SUB __UI_Click (id AS LONG)
             END IF
 
         CASE PictureBox1
-            GIF_HideOverlay PictureBox1
+            GIF_EnableOverlay PictureBox1, False
     END SELECT
 END SUB
 

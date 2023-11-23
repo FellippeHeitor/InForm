@@ -91,8 +91,8 @@ $END IF
 ContextMenuIcon = LoadEditorImage("contextmenu.bmp")
 __UI_ClearColor ContextMenuIcon, 0, 0
 
-'$INCLUDE:'InForm.bi'
 '$INCLUDE:'extensions/GIFPlay.bi'
+'$INCLUDE:'InForm.bi'
 '$INCLUDE:'xp.uitheme'
 '$INCLUDE:'UiEditorPreview.frm'
 
@@ -165,7 +165,7 @@ SUB __UI_BeforeUpdateDisplay
     END IF
 
     FOR i = 1 TO UBOUND(AutoPlayGif)
-        IF AutoPlayGif(i) THEN GIF_Draw i
+        IF AutoPlayGif(i) THEN GIF_Draw i, True
     NEXT
 
     STATIC prevDefaultButton AS LONG, prevMenuPanelActive AS INTEGER
@@ -2218,7 +2218,7 @@ SUB DeleteSelectedControls
             IF __UI_TotalActiveMenus > 0 AND __UI_ParentMenu(__UI_TotalActiveMenus) = Control(i).ID THEN
                 __UI_CloseAllMenus
             END IF
-            GIF_Close i
+            GIF_Free i
             __UI_DestroyControl Control(i)
             IF MustRefreshMenuBar THEN __UI_RefreshMenuBar
             IF MustRefreshContextMenus THEN RefreshContextMenus
@@ -2388,7 +2388,7 @@ SUB LoadPreview (Destination AS _BYTE)
     IF Disk THEN
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
-                GIF_Close i
+                GIF_Free i
                 __UI_DestroyControl Control(i)
             END IF
         NEXT
@@ -2407,7 +2407,7 @@ SUB LoadPreview (Destination AS _BYTE)
     ELSEIF UndoBuffer THEN
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
-                GIF_Close i
+                GIF_Free i
                 __UI_DestroyControl Control(i)
             END IF
         NEXT
@@ -2764,7 +2764,7 @@ SUB LoadPreview (Destination AS _BYTE)
         IF NOT CorruptedData THEN
             __UI_FirstSelectedID = FirstToBeSelected
         ELSE
-            GIF_Close TempValue
+            GIF_Free TempValue
             __UI_DestroyControl Control(TempValue)
             __UI_TotalSelectedControls = __UI_TotalSelectedControls - 1
         END IF
@@ -2810,7 +2810,7 @@ SUB LoadPreviewText
         __UI_AutoRefresh = False
         FOR i = UBOUND(Control) TO 1 STEP -1
             IF LEFT$(Control(i).Name, 5) <> "__UI_" THEN
-                GIF_Close i
+                GIF_Free i
                 __UI_DestroyControl Control(i)
             END IF
         NEXT
@@ -3062,7 +3062,7 @@ SUB LoadPreviewText
                     DIM RegisterResult AS _BYTE
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
-                    RegisterResult = GIF_OpenFile(TempValue, DummyText$)
+                    RegisterResult = GIF_LoadFromFile(TempValue, DummyText$)
                     IF RegisterResult THEN
                         IF LogFileLoad THEN PRINT #LogFileNum, "LOAD SUCCESSFUL"
                         Text(TempValue) = DummyText$ 'indicates image loaded successfully
@@ -3070,7 +3070,7 @@ SUB LoadPreviewText
                             _FREEIMAGE Control(TempValue).HelperCanvas
                         END IF
                         Control(TempValue).HelperCanvas = _NEWIMAGE(GIF_GetWidth(TempValue), GIF_GetHeight(TempValue), 32)
-                        GIF_Draw TempValue
+                        GIF_Draw TempValue, True
                     END IF
                 ELSEIF b$ = "IF __UI_RegisterResult THEN PlayGif __UI_NewID" OR LEFT$(b$, 8) = "PlayGif " THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "AUTOPLAY GIF"
@@ -3159,11 +3159,11 @@ END SUB
 SUB PreviewLoadImage (This AS __UI_ControlTYPE, fileName$)
     IF LCASE$(RIGHT$(fileName$, 4)) = ".gif" THEN
         DIM tryGif AS _BYTE
-        GIF_Close This.ID
-        tryGif = GIF_OpenFile(This.ID, fileName$)
+        GIF_Free This.ID
+        tryGif = GIF_LoadFromFile(This.ID, fileName$)
         IF tryGif THEN
             IF GIF_GetTotalFrames(This.ID) = 1 THEN
-                GIF_Close This.ID
+                GIF_Free This.ID
             ELSE
                 Text(This.ID) = fileName$ 'indicates image loaded successfully
                 IF This.HelperCanvas < -1 THEN
@@ -3171,12 +3171,12 @@ SUB PreviewLoadImage (This AS __UI_ControlTYPE, fileName$)
                 END IF
                 This.HelperCanvas = _NEWIMAGE(GIF_GetWidth(This.ID), GIF_GetHeight(This.ID), 32)
                 AutoPlayGif(This.ID) = False
-                GIF_Draw This.ID
+                GIF_Draw This.ID, True
                 EXIT SUB
             END IF
         END IF
     END IF
-    GIF_Close This.ID
+    GIF_Free This.ID
     LoadImage This, fileName$
 END SUB
 
@@ -3581,7 +3581,7 @@ SUB SavePreview (Destination AS _BYTE)
                     b$ = MKI$(-44) + MKI$(LEN(RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo))) + RTRIM$(__UI_KeyCombo(Control(i).KeyCombo).FriendlyCombo)
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
-                IF GIF_GetIndex(i) > 0 THEN
+                IF GIF_IsLoaded(i) THEN
                     'PictureBox has an animated GIF loaded
                     b$ = MKI$(-45)
                     IF Disk THEN

@@ -6,13 +6,6 @@
 $IF STRINGFILE_BI = UNDEFINED THEN
     $LET STRINGFILE_BI = TRUE
 
-    $IF INFORM_BI = UNDEFINED THEN
-        DEFLNG A-Z
-        OPTION _EXPLICIT
-
-        CONST FALSE = 0, TRUE = NOT FALSE
-    $END IF
-
     ' Simplified QB64-only memory-file
     TYPE StringFileType
         buffer AS STRING

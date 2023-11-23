@@ -90,25 +90,33 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
     'PRINT "Value for key 7:"; HashTable_LookupLong(MyHashTable(), 7)
     'PRINT "Value for key 21:"; HashTable_LookupLong(MyHashTable(), 21)
 
+    'PRINT HashTable_IsKeyPresent(MyHashTable(), 100)
+
     'END
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Simple hash function: k is the 32-bit key and l is the upper bound of the array
     FUNCTION __HashTable_GetHash~& (k AS _UNSIGNED LONG, l AS _UNSIGNED LONG)
-        __HashTable_GetHash = k MOD (l + 1) ' + 1 is needed for 0 based arrays
+        $CHECKING:OFF
+        ' Actually this should be k MOD (l + 1)
+        ' However, we can get away using AND because our arrays size always doubles in multiples of 2
+        ' So, if l = 255, then (k MOD (l + 1)) = (k AND l)
+        ' Another nice thing here is that we do not need to do the addition :)
+        __HashTable_GetHash = k AND l
+        $CHECKING:ON
     END FUNCTION
 
 
     ' Subroutine to resize and rehash the elements in a hash table
     SUB __HashTable_ResizeAndRehash (hashTable() AS HashTableType)
-        DIM UB AS _UNSIGNED LONG: UB = UBOUND(hashTable)
+        DIM uB AS _UNSIGNED LONG: uB = UBOUND(hashTable)
 
         ' Resize the array to double its size while preserving contents
-        DIM newUB AS _UNSIGNED LONG: newUB = _SHL(UB + 1, 1) - 1
+        DIM newUB AS _UNSIGNED LONG: newUB = _SHL(uB + 1, 1) - 1
         REDIM _PRESERVE hashTable(0 TO newUB) AS HashTableType
 
         ' Rehash and swap all the elements
-        DIM i AS _UNSIGNED LONG: FOR i = 0 TO UB
+        DIM i AS _UNSIGNED LONG: FOR i = 0 TO uB
             IF hashTable(i).U THEN SWAP hashTable(i), hashTable(__HashTable_GetHash(hashTable(i).K, newUB))
         NEXT i
     END SUB
@@ -117,8 +125,8 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
     ' This returns an array index in hashTable where k can be inserted
     ' If there is a collision it will grow the array, re-hash and copy all elements
     FUNCTION __HashTable_GetInsertIndex& (hashTable() AS HashTableType, k AS _UNSIGNED LONG)
-        DIM ub AS _UNSIGNED LONG: ub = UBOUND(hashTable)
-        DIM idx AS _UNSIGNED LONG: idx = __HashTable_GetHash(k, ub)
+        DIM uB AS _UNSIGNED LONG: uB = UBOUND(hashTable)
+        DIM idx AS _UNSIGNED LONG: idx = __HashTable_GetHash(k, uB)
 
         IF hashTable(idx).U THEN
             ' Used slot
@@ -139,8 +147,8 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
 
     ' This function returns the index from hashTable for the key k if k is in use
     FUNCTION __HashTable_GetLookupIndex& (hashTable() AS HashTableType, k AS _UNSIGNED LONG)
-        DIM ub AS _UNSIGNED LONG: ub = UBOUND(hashTable)
-        DIM idx AS _UNSIGNED LONG: idx = __HashTable_GetHash(k, ub)
+        DIM uB AS _UNSIGNED LONG: uB = UBOUND(hashTable)
+        DIM idx AS _UNSIGNED LONG: idx = __HashTable_GetHash(k, uB)
 
         IF hashTable(idx).U THEN
             ' Used slot
@@ -155,6 +163,12 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
             ' Unknown key
             __HashTable_GetLookupIndex = __HASHTABLE_KEY_UNAVAILABLE
         END IF
+    END FUNCTION
+
+
+    ' Return TRUE if k is available in the hash table
+    FUNCTION HashTable_IsKeyPresent%% (hashTable() AS HashTableType, k AS _UNSIGNED LONG)
+        HashTable_IsKeyPresent = (__HashTable_GetLookupIndex(hashTable(), k) >= 0)
     END FUNCTION
 
 
