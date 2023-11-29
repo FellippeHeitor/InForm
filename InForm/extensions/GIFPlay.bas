@@ -621,7 +621,6 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         rawFrame.globalPalette = STRING$(768, 0)
         rawFrame.localPalette = STRING$(768, 0)
         rawFrame.transparentColor = -1 ' no transparent color
-        rawFrame.duration = 10 ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
 
         ' Global color table?
         IF _READBIT(i, 7) THEN rawFrame.globalColors = _SHL(1, ((i AND 7) + 1))
@@ -715,6 +714,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                     END IF
                     __GIFPlay(idx).lastFrame = frameIdx ' make the last frame to point to this
                     __GIFPlayFrame(frameIdx).disposalMethod = rawFrame.disposalMethod
+                    IF rawFrame.duration = 0 THEN rawFrame.duration = 10 ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
                     __GIFPlayFrame(frameIdx).duration = rawFrame.duration * 10 ' convert to ticks (ms)
                     __GIFPlay(idx).duration = __GIFPlay(idx).duration + __GIFPlayFrame(frameIdx).duration ' add the frame duration to the global duration
                     __GIFPlay(idx).frameCount = __GIFPlay(idx).frameCount + 1
@@ -724,7 +724,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                     rawFrame.localPalette = STRING$(768, 0)
                     rawFrame.disposalMethod = 0
                     rawFrame.transparentColor = -1 ' no transparent color
-                    rawFrame.duration = 10 ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
+                    rawFrame.duration = 0
 
                 CASE &H21 ' extension introducer
                     DIM j AS _UNSIGNED _BYTE: j = StringFile_ReadByte(sf) ' extension type
