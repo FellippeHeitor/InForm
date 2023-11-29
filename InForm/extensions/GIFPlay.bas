@@ -600,7 +600,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         __GIFPlay(idx).frame = -1
         __GIFPlay(idx).frameCount = 0
         __GIFPlay(idx).frameNumber = 0
-        __GIFPlay(idx).isPlaying = TRUE ' we'll set this to true to render the first frame
+        __GIFPlay(idx).isPlaying = FALSE
         __GIFPlay(idx).loops = 0
         __GIFPlay(idx).loopCounter = 0
         __GIFPlay(idx).duration = 0
@@ -778,6 +778,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         '__GIF_PrintDebugInfo idx
 
         ' Render the first frame and then pause
+        __GIFPlay(idx).isPlaying = TRUE
         __GIFPlay(idx).lastTick = __GIF_GetTicks
         DIM dummy AS LONG: dummy = GIF_GetFrame(Id)
         __GIFPlay(idx).isPlaying = FALSE
