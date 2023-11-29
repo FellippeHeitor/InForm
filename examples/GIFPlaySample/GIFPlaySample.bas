@@ -24,11 +24,11 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    Control(PlayBT).Disabled = True
+    Control(PlayBT).Disabled = TRUE
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    GIF_Draw PictureBox1, True
+    IF GIF_IsLoaded(PictureBox1) THEN GIF_Draw PictureBox1
 END SUB
 
 SUB __UI_BeforeUnload
@@ -44,15 +44,15 @@ SUB __UI_Click (id AS LONG)
             IF LEN(fileName) > 0 THEN
                 IF GIF_LoadFromFile(PictureBox1, fileName) THEN
 
-                    Control(PlayBT).Disabled = False
+                    Control(PlayBT).Disabled = FALSE
 
                     IF GIF_GetTotalFrames(PictureBox1) > 1 THEN
                         Caption(PlayBT) = "Play"
                     ELSE
-                        Control(PlayBT).Disabled = True
+                        Control(PlayBT).Disabled = TRUE
                     END IF
                 ELSE
-                    Control(PlayBT).Disabled = True
+                    Control(PlayBT).Disabled = TRUE
                     MessageBox fileName + " failed to load!", "", MsgBox_Exclamation
                 END IF
             END IF
@@ -67,7 +67,7 @@ SUB __UI_Click (id AS LONG)
             END IF
 
         CASE PictureBox1
-            GIF_EnableOverlay PictureBox1, False
+            GIF_EnableOverlay PictureBox1, FALSE
     END SELECT
 END SUB
 

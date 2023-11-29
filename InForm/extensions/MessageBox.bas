@@ -1,5 +1,5 @@
 ' MessageBox compatibility functions
-' These basically emulate the legacy InForm MessageBox routines
+' These basically emulates the legacy InForm MessageBox routines
 ' All it does is calls the new QB64-PE _MESSAGEBOX$ function
 ' Copyright (c) 2023 Samuel Gomes
 

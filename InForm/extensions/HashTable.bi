@@ -6,8 +6,8 @@
 $IF HASHTABLE_BI = UNDEFINED THEN
     $LET HASHTABLE_BI = TRUE
 
-    CONST __HASHTABLE_KEY_EXISTS = -1
-    CONST __HASHTABLE_KEY_UNAVAILABLE = -2
+    CONST __HASHTABLE_KEY_EXISTS& = -1&
+    CONST __HASHTABLE_KEY_UNAVAILABLE& = -2&
 
     ' Hash table entry type
     ' To extended supported data types, add other value types after V and then write

@@ -78,7 +78,7 @@ $IF STRINGFILE_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
 
     ' Creates a new StringFile object
-    ' StringFile APIs are a simple way of dealing with file that are completly loaded in memory
+    ' StringFile APIs are a simple way of dealing with file that are completely loaded in memory
     ' Since it uses a QB string as a backing buffer, no explicit memory management (i.e. freeing) is required
     SUB StringFile_Create (stringFile AS StringFileType, buffer AS STRING)
         stringFile.buffer = buffer

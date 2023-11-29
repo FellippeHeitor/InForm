@@ -8,13 +8,61 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     '$INCLUDE:'GIFPlay.bi'
 
-    ' This is an internal loading function common for both memory and file loaders
-    FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
-    END FUNCTION
+    '-------------------------------------------------------------------------------------------------------------------
+    ' Test code for debugging the library
+    '-------------------------------------------------------------------------------------------------------------------
+    '$RESIZE:SMOOTH
+    '$CONSOLE
+
+    'DEFLNG A-Z
+    'OPTION _EXPLICIT
+    'CONST FALSE = 0, TRUE = NOT FALSE
+
+    'CONST GIF_ID = 1
+
+    'DO
+    '    DIM gifFileName AS STRING: gifFileName = _OPENFILEDIALOG$("Open GIF", , "*.gif|*.GIF|*.Gif", "GIF Files")
+    '    IF LEN(gifFileName) = 0 THEN EXIT DO
+
+    '    IF GIF_LoadFromFile(GIF_ID, gifFileName) THEN
+    '        DIM surface AS LONG: surface = _NEWIMAGE(GIF_GetWidth(GIF_ID), GIF_GetHeight(GIF_ID), 32)
+    '        SCREEN surface
+    '        _ALLOWFULLSCREEN _SQUAREPIXELS , _SMOOTH
+
+    '        GIF_Play GIF_ID
+
+    '        DO
+    '            DIM k AS LONG: k = _KEYHIT
+
+    '            IF k = 32 THEN
+    '                IF GIF_IsPlaying(GIF_ID) THEN GIF_Pause (GIF_ID) ELSE GIF_Play (GIF_ID)
+    '            END IF
+
+    '            CLS
+    '            GIF_Draw GIF_ID
+    '            _DISPLAY
+
+    '            _LIMIT 30
+    '        LOOP UNTIL k = 27
+
+    '        GIF_Free GIF_ID
+
+    '        SCREEN 0
+    '        _FREEIMAGE surface
+    '    END IF
+    'LOOP
+
+    'END
+    '-------------------------------------------------------------------------------------------------------------------
 
     ' Opens a GIF file from a buffer in memory
     FUNCTION GIF_LoadFromMemory%% (Id AS LONG, buffer AS STRING)
-        _MESSAGEBOX , "GIF_LoadFromMemory%%"
+        $IF INFORM_BI = DEFINED THEN
+                IF Control(ID).Type <> __UI_Type_PictureBox THEN
+                ERROR 5
+                EXIT FUNCTION
+                END IF
+        $END IF
 
         DIM sf AS StringFileType
 
@@ -26,7 +74,12 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     ' Opens a GIF file from a file on disk
     FUNCTION GIF_LoadFromFile%% (Id AS LONG, fileName AS STRING)
-        _MESSAGEBOX STR$(Id), "GIF_LoadFromFile%%"
+        $IF INFORM_BI = DEFINED THEN
+                IF Control(ID).Type <> __UI_Type_PictureBox THEN
+                ERROR 5
+                EXIT FUNCTION
+                END IF
+        $END IF
 
         DIM sf AS StringFileType
 
@@ -38,91 +91,104 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     ' Free a GIF and all associated resources
     SUB GIF_Free (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_Free"
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+        SHARED __GIFPlayFrame() AS __GIFPlayFrameType
+        SHARED __GIF_FirstFreeFrame AS LONG
+
+        ' Get the slot we need to free
+        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+
+        ' Walk the whole animation chain to free all the frames and associated data
+        __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame
+
+        DO
+            ' Free the image being held by the frame
+            IF __GIFPlayFrame(__GIFPlay(idx).frame).image < -1 THEN
+                _FREEIMAGE __GIFPlayFrame(__GIFPlay(idx).frame).image
+                __GIFPlayFrame(__GIFPlay(idx).frame).image = 0
+            END IF
+
+            ' Mark the frame slot as unused so that it can be reused
+            __GIFPlayFrame(__GIFPlay(idx).frame).isUsed = FALSE
+
+            ' Note the lowest free frame
+            IF __GIF_FirstFreeFrame > __GIFPlay(idx).frame THEN __GIF_FirstFreeFrame = __GIFPlay(idx).frame
+
+            ' Move to the next frame
+            __GIFPlay(idx).frame = __GIFPlayFrame(__GIFPlay(idx).frame).nextFrame
+        LOOP UNTIL __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame ' loop until we come back to the first frame
+
+        ' Free the rendered image
+        IF __GIFPlay(idx).image < -1 THEN
+            _FREEIMAGE __GIFPlay(idx).image
+            __GIFPlay(idx).image = 0
+        END IF
+
+        ' Free the saved rendered image
+        IF __GIFPlay(idx).savedImage < -1 THEN
+            _FREEIMAGE __GIFPlay(idx).savedImage
+            __GIFPlay(idx).savedImage = 0
+        END IF
+
+        ' Finally mark the GIF slot as unused so that it can be reused
+        __GIFPlay(idx).isUsed = FALSE
+
+        ' Remove Id from the hash table
+        HashTable_Remove __GIFPlayHashTable(), Id
     END SUB
 
 
     ' Returns the width of the animation in pixels
-    FUNCTION GIF_GetWidth~% (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_LoadFromFile%%"
-
+    FUNCTION GIF_GetWidth~& (Id AS LONG)
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
-        GIF_GetWidth = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).W
+        GIF_GetWidth = _WIDTH(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).image)
     END FUNCTION
 
 
     ' Returns the height of the animation in pixels
-    FUNCTION GIF_GetHeight~% (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_GetHeight~%"
-
+    FUNCTION GIF_GetHeight~& (Id AS LONG)
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
-        GIF_GetHeight = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).H
+        GIF_GetHeight = _HEIGHT(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).image)
     END FUNCTION
 
 
     ' Returns the number of currently playing frame
-    FUNCTION GIF_GetCurrentFrame~& (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_GetCurrentFrame~&"
-
+    FUNCTION GIF_GetFrameNumber~& (Id AS LONG)
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
-        GIF_GetCurrentFrame = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).currentFrameNumber
+        GIF_GetFrameNumber = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frameNumber
     END FUNCTION
 
 
     ' Returns the total frames in the GIF. If this is 1 then it is a static image
     FUNCTION GIF_GetTotalFrames~& (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_GetTotalFrames~&"
-
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
-        GIF_GetTotalFrames = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).totalFrames
-    END FUNCTION
-
-
-    ' Sets the playback direction. direction should be -1 or 1
-    SUB GIF_SetPlaybackDirection (Id AS LONG, direction AS _BYTE)
-        _MESSAGEBOX STR$(Id), "GIF_SetPlaybackDirection"
-
-        SHARED __GIFPlayHashTable() AS HashTableType
-        SHARED __GIFPlay() AS __GIFPlayType
-
-        IF direction <> 0 THEN __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).direction = SGN(direction)
-    END SUB
-
-
-    ' Gets the current playback direction. This can be -1 or 1
-    FUNCTION GIF_GetPlaybackDirection%% (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_GetPlaybackDirection%%"
-
-        SHARED __GIFPlayHashTable() AS HashTableType
-        SHARED __GIFPlay() AS __GIFPlayType
-
-        GIF_GetPlaybackDirection = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).direction
+        GIF_GetTotalFrames = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frameCount
     END FUNCTION
 
 
     ' Resume or starts playback
     SUB GIF_Play (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_Play"
-
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
-        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isPlaying = TRUE
+        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+
+        __GIFPlay(idx).isPlaying = TRUE
+        __GIFPlay(idx).lastTick = __GIF_GetTicks
     END SUB
 
 
     ' Pauses playback. That same frame is served as long as playback is paused
     SUB GIF_Pause (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_Pause"
-
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
@@ -132,22 +198,20 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     ' Stops playing the GIF and resets the cursor to the first frame
     SUB GIF_Stop (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_Stop"
-
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
         DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
 
         __GIFPlay(idx).isPlaying = FALSE
-        __GIFPlay(idx).currentFrame = __GIFPlay(idx).firstFrame
+        __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame
+        __GIFPlay(idx).frameNumber = 0
+        __GIFPlay(idx).loopCounter = 0
     END SUB
 
 
     ' Return True if GIF is currently playing
     FUNCTION GIF_IsPlaying%% (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_IsPlaying%%"
-
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
@@ -157,31 +221,147 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     ' This draws the current frame on the destination surface @ (0, 0) (stretching the frame if needed)
     ' This will also draw the overlay if the playback is stopped / paused
-    SUB GIF_Draw (Id AS LONG, shouldStretch AS _BYTE)
-        ' TODO
+    SUB GIF_Draw (Id AS LONG)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+
+        $IF INFORM_BI = DEFINED THEN
+                BeginDraw ID
+        $END IF
+
+        ' Get the rendered image handle
+        DIM renderedFrame AS LONG: renderedFrame = GIF_GetFrame(Id)
+
+        ' Blit the rendered frame
+        _PUTIMAGE , renderedFrame
+
+        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+
+        ' Render the overlay if needed
+        IF NOT __GIFPlay(idx).isPlaying AND __GIFPlay(idx).overlayEnabled AND __GIFPlay(idx).frameCount > 1 THEN
+            DIM overlayImage AS LONG: overlayImage = __GIF_GetOverlayImage
+
+            _PUTIMAGE (_SHR(_WIDTH, 1) - _SHR(_WIDTH(overlayImage), 1), _SHR(_HEIGHT, 1) - _SHR(_HEIGHT(overlayImage), 1)), overlayImage
+        END IF
+
+        $IF INFORM_BI = DEFINED THEN
+                EndDraw ID
+        $END IF
     END SUB
 
 
-    ' This draws the current frame at the specified x, y location on the destination surface (preserving aspect ratio)
-    ' This will also draw the overlay if the playback is stopped / paused
-    SUB GIF_DrawAt (Id AS LONG, x AS LONG, y AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_DrawAt"
-    END SUB
-
-
-    ' This returns the current frame (QB64 image) to be played
-    ' Playback is time sensitive so frames may be skipped or the last frame maybe returned
-    ' Only use this if you want to do your own rendering
+    ' This returns the current rendered frame (QB64 image) to be played
+    ' Playback is time sensitive so frames may be skipped or the last frame may be returned
+    ' Use this if you want to do your own rendering
     ' Also do not free the image. The library will do that when it is no longer needed
     FUNCTION GIF_GetFrame& (Id AS LONG)
-        _MESSAGEBOX STR$(Id), "GIF_GetFrame&"
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+        SHARED __GIFPlayFrame() AS __GIFPlayFrameType
+
+        ' Cache the GIF index because we'll be using this a lot
+        DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+
+        ' Always return the rendered image handle (since this does not change during the GIFs lifetime)
+        GIF_GetFrame = __GIFPlay(idx).image
+
+        ' Exit if we are paused
+        IF NOT __GIFPlay(idx).isPlaying THEN EXIT FUNCTION
+
+        ' Exit if we finished a single or the specified number of loops
+        IF __GIFPlay(idx).loops <> 0 AND (__GIFPlay(idx).loopCounter < 0 OR __GIFPlay(idx).loopCounter >= __GIFPlay(idx).loops) THEN EXIT FUNCTION
+
+        ' Fetch and store the current tick
+        DIM currentTick AS _UNSIGNED _INTEGER64: currentTick = __GIF_GetTicks
+
+        ' Remember the last frame index
+        DIM lastFrameRendered AS LONG: lastFrameRendered = __GIFPlay(idx).frame
+
+        ' Walk through the animation chain and find the frame we have to render based on the tick we recorded the last time
+        DO UNTIL currentTick < __GIFPlay(idx).lastTick + __GIFPlayFrame(__GIFPlay(idx).frame).duration
+            ' Add the current frame duration to the lastTick so that we can do frame skips if needed
+            __GIFPlay(idx).lastTick = __GIFPlay(idx).lastTick + __GIFPlayFrame(__GIFPlay(idx).frame).duration
+            ' We cross the duration of the current frame, so move to the next one
+            __GIFPlay(idx).frame = __GIFPlayFrame(__GIFPlay(idx).frame).nextFrame ' this should correctly loop back to the first frame
+            ' Increment the frame counter and loop back to 0 if needed
+            __GIFPlay(idx).frameNumber = __GIFPlay(idx).frameNumber + 1
+            IF __GIFPlay(idx).frameNumber >= __GIFPlay(idx).frameCount THEN
+                __GIFPlay(idx).frameNumber = 0
+                __GIFPlay(idx).loopCounter = __GIFPlay(idx).loopCounter + 1
+
+                IF __GIFPlay(idx).loops < 0 THEN __GIFPlay(idx).loopCounter = -1 ' single-shot animation
+            END IF
+        LOOP
+
+        ' If the last frame rendered is the same as the current frame then just return the previously rendered frame image
+        IF __GIFPlay(idx).frame = __GIFPlay(idx).lastFrameRendered THEN EXIT FUNCTION
+
+        ' We now have the frame to display, so save the currentTick and update lastFrameRendered
+        __GIFPlay(idx).lastTick = currentTick
+        __GIFPlay(idx).lastFrameRendered = lastFrameRendered
+
+        ' Take appropriate action based on the disposal method of the previous frame
+        IF __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame THEN
+            ' If this is the first frame, then we do not have any previous disposal method
+            CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image ' clear the render image using the BG color
+        ELSE
+            SELECT CASE __GIFPlayFrame(__GIFPlayFrame(__GIFPlay(idx).frame).prevFrame).disposalMethod
+                CASE 2 ' Restore to background color
+                    CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image
+                    _CLEARCOLOR __GIFPlay(idx).bgColor, __GIFPlay(idx).image
+
+                CASE 3 ' Restore to previous
+                    IF __GIFPlay(idx).hasSavedImage THEN
+                        ' Copy back the saved image and unset the flag
+                        _PUTIMAGE , __GIFPlay(idx).savedImage, __GIFPlay(idx).image
+                        __GIFPlay(idx).hasSavedImage = FALSE
+                    END IF
+
+                    ' All other disposal methods do not require any action
+            END SELECT
+        END IF
+
+        ' If the current frame's disposal method is 3 (restore to previous) then save the current rendered frame and set the flag
+        IF __GIFPlayFrame(__GIFPlay(idx).frame).disposalMethod = 3 THEN
+            _PUTIMAGE , __GIFPlay(idx).image, __GIFPlay(idx).savedImage
+            __GIFPlay(idx).hasSavedImage = TRUE
+        END IF
+
+        ' Render the frame at the correct (x, y) offset on the final image
+        _PUTIMAGE (__GIFPlayFrame(__GIFPlay(idx).frame).L, __GIFPlayFrame(__GIFPlay(idx).frame).T), __GIFPlayFrame(__GIFPlay(idx).frame).image, __GIFPlay(idx).image
     END FUNCTION
+
+
+    ' Returns the total runtime of the animation in ms
+    FUNCTION GIF_GetTotalDuration~&& (Id AS LONG)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+
+        GIF_GetTotalDuration = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).duration
+    END FUNCTION
+
+
+    ' Returns the total runtime of the current frame in ms
+    FUNCTION GIF_GetFrameDuration~&& (Id AS LONG)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+        SHARED __GIFPlayFrame() AS __GIFPlayFrameType
+
+        GIF_GetFrameDuration = __GIFPlayFrame(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frame).duration
+    END FUNCTION
+
+
+    ' Set the looping behavior
+    SUB GIF_SetLoop (Id AS LONG, loops AS LONG)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+
+        __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).loops = loops
+    END SUB
 
 
     ' Sets the GIF overlay to enable / disable
     SUB GIF_EnableOverlay (Id AS LONG, isEnabled AS _BYTE)
-        _MESSAGEBOX STR$(Id), "GIF_EnableOverlay"
-
         SHARED __GIFPlayHashTable() AS HashTableType
         SHARED __GIFPlay() AS __GIFPlayType
 
@@ -197,56 +377,44 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    SUB __GIF_CreateBitmap (bmp AS __GIFBitmapType, w AS LONG, h AS LONG)
-        bmp.W = w
-        bmp.H = h
-        bmp.pixels = STRING$(w * h, 0)
-    END SUB
+    ' Deinterlaces a raw GIF frame
+    SUB __GIF_DeinterlaceFrameImage (bmp AS LONG)
+        DIM W AS LONG: W = _WIDTH(bmp)
+        DIM H AS LONG: H = _HEIGHT(bmp)
+        DIM MX AS LONG: MX = W - 1
+        DIM n AS LONG: n = _NEWIMAGE(W, H, 256)
 
+        DIM AS LONG y, i
 
-    SUB __GIF_BlitBitmap (src AS __GIFBitmapType, dst AS __GIFBitmapType, srcX AS LONG, srcY AS LONG, dstX AS LONG, dstY AS LONG, bW AS LONG, bH AS LONG)
-        IF bW <= 0 OR bH <= 0 THEN EXIT SUB
+        WHILE y < H
+            _PUTIMAGE (0, y), bmp, n, (0, i)-(MX, i)
+            i = i + 1
+            y = y + 8
+        WEND
 
-        DIM AS LONG w, xs, xd: w = bW: xs = srcX: xd = dstX
-        DIM AS LONG h, ys, yd: h = bH: ys = srcY: yd = dstY
+        y = 4
+        WHILE y < H
+            _PUTIMAGE (0, y), bmp, n, (0, i)-(MX, i)
+            i = i + 1
+            y = y + 8
+        WEND
 
-        IF xs < 0 THEN
-            w = w + xs
-            xd = xd - xs
-            xs = 0
-        END IF
-        IF ys < 0 THEN
-            h = h + ys
-            yd = yd - ys
-            ys = 0
-        END IF
+        y = 2
+        WHILE y < H
+            _PUTIMAGE (0, y), bmp, n, (0, i)-(MX, i)
+            i = i + 1
+            y = y + 4
+        WEND
 
-        IF xs + w > src.W THEN w = src.W - xs
-        IF ys + h > src.H THEN h = src.H - ys
+        y = 1
+        WHILE y < H
+            _PUTIMAGE (0, y), bmp, n, (0, i)-(MX, i)
+            i = i + 1
+            y = y + 2
+        WEND
 
-        IF xd < 0 THEN
-            w = w + xd
-            xs = xs - xd
-            xd = 0
-        END IF
-        IF yd < 0 THEN
-            h = h + yd
-            ys = ys - yd
-            yd = 0
-        END IF
-
-        IF xd + w > dst.W THEN w = dst.W - xd
-        IF yd + h > dst.H THEN h = dst.H - yd
-
-        IF w <= 0 OR h <= 0 THEN EXIT SUB
-
-        DIM ps AS LONG: ps = 1 + ys * src.W
-        DIM pd AS LONG: pd = 1 + yd * dst.W
-        DIM i AS LONG: FOR i = 1 TO h
-            MID$(dst.pixels, pd + xd, w) = MID$(src.pixels, ps + xs, w)
-            ps = ps + src.W
-            pd = pd + dst.W
-        NEXT i
+        _PUTIMAGE , n, bmp
+        _FREEIMAGE n
     END SUB
 
 
@@ -280,14 +448,14 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    FUNCTION __GIF_DecodeLZW& (sf AS StringFileType, bmp AS __GIFBitmapType)
+    FUNCTION __GIF_DecodeLZW%% (sf AS StringFileType, bmpMem AS _MEM)
         TYPE __LZWCodeType
             prefix AS LONG
             c AS LONG
             ln AS LONG
         END TYPE
 
-        DIM codes(0 TO 4095) AS __LZWCodeType
+        DIM codes(0 TO 4095) AS __LZWCodeType ' maximum bit size is 12
 
         DIM origBitSize AS LONG: origBitSize = StringFile_ReadByte(sf)
         DIM n AS LONG: n = 2 + _SHL(1, origBitSize)
@@ -305,18 +473,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         DIM bitSize AS LONG: bitSize = origBitSize + 1
         DIM bitPos AS LONG
 
+        ' Expect to read clear code as first code here
         DIM prev AS LONG: prev = __GIF_ReadLZWCode(sf, buffer, bitPos, bitSize)
-        IF prev = -1 THEN
-            __GIF_DecodeLZW = -1
-            EXIT FUNCTION
-        END IF
+        IF prev = -1 THEN EXIT FUNCTION
 
         DO
             DIM code AS LONG: code = __GIF_ReadLZWCode(sf, buffer, bitPos, bitSize)
-            IF code = -1 THEN
-                __GIF_DecodeLZW = -1
-                EXIT FUNCTION
-            END IF
+            IF code = -1 THEN EXIT FUNCTION
 
             IF code = clearMarker THEN
                 bitSize = origBitSize
@@ -329,13 +492,15 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
             IF code = endMarker THEN EXIT DO
 
+            ' Known code: ok. Else: must be doubled char
             DIM c AS LONG: IF code < n THEN c = code ELSE c = prev
 
+            ' Output the code
             DIM outPos AS LONG: outPos = outPos + codes(c).ln
             i = 0
 
             DO
-                ASC(bmp.pixels, 1 + outPos - i) = codes(c).c
+                _MEMPUT bmpMem, bmpMem.OFFSET + outPos - i, codes(c).c AS _UNSIGNED _BYTE
 
                 IF codes(c).ln THEN
                     c = codes(c).prefix
@@ -348,11 +513,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
             outPos = outPos + 1
 
+            ' Unknown code -> must be double char
             IF code >= n THEN
-                ASC(bmp.pixels, 1 + outPos) = codes(c).c
+                _MEMPUT bmpMem, bmpMem.OFFSET + outPos, codes(c).c AS _UNSIGNED _BYTE
                 outPos = outPos + 1
             END IF
 
+            ' Except after clear marker, build new code
             IF prev <> clearMarker THEN
                 codes(n).prefix = prev
                 codes(n).ln = codes(prev).ln + 1
@@ -360,17 +527,315 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                 n = n + 1
             END IF
 
+            ' Out of bits? Increase
             IF _SHL(1, bitSize) = n THEN
                 IF bitSize < 12 THEN bitSize = bitSize + 1
             END IF
 
             prev = code
         LOOP
+
+        __GIF_DecodeLZW = TRUE
     END FUNCTION
 
 
-    ' This load the GIF overload image
-    FUNCTION __GIF_LoadOverlayImage&
+    ' This applies the palette and transparency to a raw GIF frame image
+    ' info - the GIF global and local frame data needed to prepare the frame image
+    ' bmp - the raw frame image
+    SUB __GIF_PrepareFrameImage (info AS __GIFFrameType, bmp AS LONG)
+        ' Set the 8-bit image palette
+        DIM AS LONG x, y
+        IF info.localColors = 0 THEN
+            ' No local palette, so use the global one
+            WHILE y < info.globalColors
+                x = y * 3
+                _PALETTECOLOR y, _RGB32(ASC(info.globalPalette, x + 1), ASC(info.globalPalette, x + 2), ASC(info.globalPalette, x + 3)), bmp
+                y = y + 1
+            WEND
+        ELSE
+            ' Use the local palette
+            WHILE y < info.localColors
+                x = y * 3
+                _PALETTECOLOR y, _RGB32(ASC(info.localPalette, x + 1), ASC(info.localPalette, x + 2), ASC(info.localPalette, x + 3)), bmp
+                y = y + 1
+            WEND
+        END IF
+
+        ' Set the transparent color
+        IF info.transparentColor >= 0 THEN _CLEARCOLOR info.transparentColor, bmp
+    END SUB
+
+
+    ' This is an internal loading function common for both memory and file loaders
+    FUNCTION __GIF_Load%% (Id AS LONG, sf AS StringFileType)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+        SHARED __GIFPlayFrame() AS __GIFPlayFrameType
+        SHARED __GIF_FirstFreeFrame AS LONG
+
+        ' Check if Id already exists and if so free it
+        IF GIF_IsLoaded(Id) THEN GIF_Free Id
+
+        ' Check if we can read the signature at a minimum
+        IF StringFile_GetSize(sf) < 6 THEN EXIT FUNCTION
+
+        ' Check the file signature before proceeding further
+        DIM buffer AS STRING: buffer = StringFile_ReadString(sf, 6)
+        IF buffer <> "GIF87a" AND buffer <> "GIF89a" THEN EXIT FUNCTION
+
+        ' Ok, so it is a GIF. Allocate resources to load the rest of the file
+        DIM idx AS LONG: FOR idx = 0 TO UBOUND(__GIFPlay)
+            IF NOT __GIFPlay(idx).isUsed THEN EXIT FOR
+        NEXT idx
+
+        ' No free GIF slots?
+        IF idx > UBOUND(__GIFPlay) THEN REDIM _PRESERVE __GIFPlay(0 TO idx) AS __GIFPlayType
+
+        __GIFPlay(idx).isUsed = TRUE ' occupy the slot
+        HashTable_InsertLong __GIFPlayHashTable(), Id, idx ' add it to the hash table
+
+        ' Reset some stuff
+        __GIFPlay(idx).firstFrame = -1
+        __GIFPlay(idx).lastFrame = -1
+        __GIFPlay(idx).frame = -1
+        __GIFPlay(idx).frameCount = 0
+        __GIFPlay(idx).frameNumber = 0
+        __GIFPlay(idx).isPlaying = TRUE ' we'll set this to true to render the first frame
+        __GIFPlay(idx).loops = 0
+        __GIFPlay(idx).loopCounter = 0
+        __GIFPlay(idx).duration = 0
+        __GIFPlay(idx).lastTick = 0
+        __GIFPlay(idx).lastFrameRendered = -1
+        __GIFPlay(idx).hasSavedImage = FALSE
+        __GIFPlay(idx).overlayEnabled = TRUE
+
+        ' Get width and height
+        DIM W AS _UNSIGNED INTEGER: W = StringFile_ReadInteger(sf)
+        DIM H AS _UNSIGNED INTEGER: H = StringFile_ReadInteger(sf)
+
+        ' Create the 32bpp rendered image using the width and height we got above
+        __GIFPlay(idx).image = _NEWIMAGE(W, H, 32)
+        __GIFPlay(idx).savedImage = _NEWIMAGE(W, H, 32)
+        IF __GIFPlay(idx).image >= -1 OR __GIFPlay(idx).savedImage >= -1 THEN GOTO gif_load_error
+
+        DIM i AS _UNSIGNED _BYTE: i = StringFile_ReadByte(sf)
+
+        DIM rawFrame AS __GIFFrameType
+        rawFrame.globalPalette = STRING$(768, 0)
+        rawFrame.localPalette = STRING$(768, 0)
+        rawFrame.transparentColor = -1 ' no transparent color
+        rawFrame.duration = 10 ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
+
+        ' Global color table?
+        IF _READBIT(i, 7) THEN rawFrame.globalColors = _SHL(1, ((i AND 7) + 1))
+
+        ' Background color is only valid with a global palette
+        __GIFPlay(idx).bgColor = StringFile_ReadByte(sf)
+
+        ' Skip aspect ratio
+        StringFile_Seek sf, StringFile_GetPosition(sf) + 1
+
+        ' Read the global palette data
+        IF rawFrame.globalColors > 0 THEN MID$(rawFrame.globalPalette, 1, 3 * rawFrame.globalColors) = StringFile_ReadString(sf, 3 * rawFrame.globalColors)
+
+        DIM frameIdx AS LONG: frameIdx = -1
+
+        DO
+            i = StringFile_ReadByte(sf)
+
+            SELECT CASE i
+                CASE &H2C ' image descriptor
+                    ' Look for a free slot from the last lowest freed index
+                    FOR frameIdx = __GIF_FirstFreeFrame TO UBOUND(__GIFPlayFrame)
+                        IF NOT __GIFPlayFrame(frameIdx).isUsed THEN
+                            __GIF_FirstFreeFrame = frameIdx + 1
+                            EXIT FOR
+                        END IF
+                    NEXT
+
+                    IF frameIdx > UBOUND(__GIFPlayFrame) THEN
+                        ' Search from the beginning
+                        FOR frameIdx = 0 TO UBOUND(__GIFPlayFrame)
+                            IF NOT __GIFPlayFrame(frameIdx).isUsed THEN EXIT FOR
+                        NEXT
+                    END IF
+
+                    ' If still no free frame slot then allocate one
+                    IF frameIdx > UBOUND(__GIFPlayFrame) THEN REDIM _PRESERVE __GIFPlayFrame(0 TO frameIdx) AS __GIFPlayFrameType
+
+                    ' Occupy the slot
+                    __GIFPlayFrame(frameIdx).isUsed = TRUE
+
+                    ' Read frame size and offset
+                    __GIFPlayFrame(frameIdx).L = StringFile_ReadInteger(sf)
+                    __GIFPlayFrame(frameIdx).T = StringFile_ReadInteger(sf)
+                    W = StringFile_ReadInteger(sf)
+                    H = StringFile_ReadInteger(sf)
+
+                    ' Create a raw frame image from the width and height we got above
+                    __GIFPlayFrame(frameIdx).image = _NEWIMAGE(W, H, 256)
+                    IF __GIFPlayFrame(frameIdx).image >= -1 THEN GOTO gif_load_error
+
+                    i = StringFile_ReadByte(sf)
+
+                    ' Local palette?
+                    IF _READBIT(i, 7) THEN
+                        rawFrame.localColors = _SHL(1, ((i AND 7) + 1))
+                        MID$(rawFrame.localPalette, 1, 3 * rawFrame.localColors) = StringFile_ReadString(sf, 3 * rawFrame.localColors)
+                    END IF
+
+                    ' Decode the frame bitmap data
+                    DIM mI AS _MEM: mI = _MEMIMAGE(__GIFPlayFrame(frameIdx).image)
+                    IF NOT __GIF_DecodeLZW(sf, mI) THEN
+                        _MEMFREE mI
+                        GOTO gif_load_error
+                    END IF
+                    _MEMFREE mI
+
+                    ' De-interlace the bitmap if it is interlaced
+                    IF _READBIT(i, 6) THEN __GIF_DeinterlaceFrameImage __GIFPlayFrame(frameIdx).image
+
+                    ' Apply palette and transparency
+                    __GIF_PrepareFrameImage rawFrame, __GIFPlayFrame(frameIdx).image
+
+                    ' Update GIF properties
+                    IF __GIFPlay(idx).firstFrame = -1 THEN
+                        ' This is the first frame of the animation
+                        __GIFPlay(idx).firstFrame = frameIdx
+                        __GIFPlay(idx).frame = frameIdx ' the starting frame
+                        __GIFPlayFrame(frameIdx).prevFrame = frameIdx ' make previous frame to point to this
+                        __GIFPlayFrame(frameIdx).nextFrame = frameIdx ' make next frame to point to this
+                    ELSE
+                        ' This is not the first frame
+                        __GIFPlayFrame(__GIFPlay(idx).firstFrame).prevFrame = frameIdx ' update first frame's previous frame
+                        __GIFPlayFrame(__GIFPlay(idx).lastFrame).nextFrame = frameIdx ' udpate last frames's next frame
+                        __GIFPlayFrame(frameIdx).prevFrame = __GIFPlay(idx).lastFrame ' previous frame is the last frame
+                        __GIFPlayFrame(frameIdx).nextFrame = __GIFPlay(idx).firstFrame ' next frame is the the first frame
+
+                    END IF
+                    __GIFPlay(idx).lastFrame = frameIdx ' make the last frame to point to this
+                    __GIFPlayFrame(frameIdx).disposalMethod = rawFrame.disposalMethod
+                    __GIFPlayFrame(frameIdx).duration = rawFrame.duration * 10 ' convert to ticks (ms)
+                    __GIFPlay(idx).duration = __GIFPlay(idx).duration + __GIFPlayFrame(frameIdx).duration ' add the frame duration to the global duration
+                    __GIFPlay(idx).frameCount = __GIFPlay(idx).frameCount + 1
+
+                    ' Prepare for next frame
+                    rawFrame.localColors = 0
+                    rawFrame.localPalette = STRING$(768, 0)
+                    rawFrame.disposalMethod = 0
+                    rawFrame.transparentColor = -1 ' no transparent color
+                    rawFrame.duration = 10 ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
+
+                CASE &H21 ' extension introducer
+                    DIM j AS _UNSIGNED _BYTE: j = StringFile_ReadByte(sf) ' extension type
+                    i = StringFile_ReadByte(sf) ' size
+
+                    IF j = &HF9 THEN ' graphic control extension
+                        ' Size must be 4
+                        IF i <> 4 THEN GOTO gif_load_error
+
+                        i = StringFile_ReadByte(sf)
+
+                        rawFrame.disposalMethod = _SHR(i, 2) AND 7
+                        rawFrame.duration = StringFile_ReadInteger(sf)
+
+                        IF _READBIT(i, 0) THEN ' transparency?
+                            rawFrame.transparentColor = StringFile_ReadByte(sf)
+                        ELSE
+                            StringFile_Seek sf, StringFile_GetPosition(sf) + 1
+                        END IF
+
+                        i = StringFile_ReadByte(sf) ' size
+                    ELSEIF j = &HFF THEN ' application extension
+                        IF i = 11 THEN
+                            buffer = StringFile_ReadString(sf, 11)
+                            i = StringFile_ReadByte(sf) ' size
+                            IF _STRCMP(buffer, "NETSCAPE2.0") = 0 THEN
+                                IF i = 3 THEN
+                                    j = StringFile_ReadByte(sf)
+                                    __GIFPlay(idx).loops = StringFile_ReadInteger(sf)
+                                    IF j <> 1 THEN __GIFPlay(idx).loops = 0
+                                    i = StringFile_ReadByte(sf) ' size
+                                END IF
+                            END IF
+                        END IF
+                    END IF
+
+                    ' Possibly more blocks until terminator block (0)
+                    WHILE i > 0
+                        StringFile_Seek sf, StringFile_GetPosition(sf) + i
+                        i = StringFile_ReadByte(sf)
+                    WEND
+
+                CASE &H3B ' GIF trailer
+                    EXIT DO
+            END SELECT
+        LOOP WHILE NOT StringFile_IsEOF(sf)
+
+        ' Bad / corrupt GIF?
+        IF __GIFPlay(idx).frameCount = 0 THEN GOTO gif_load_error
+
+        '__GIF_PrintDebugInfo idx
+
+        ' Render the first frame and then pause
+        __GIFPlay(idx).lastTick = __GIF_GetTicks
+        DIM dummy AS LONG: dummy = GIF_GetFrame(Id)
+        __GIFPlay(idx).isPlaying = FALSE
+
+        __GIF_Load = TRUE
+        EXIT FUNCTION
+
+        gif_load_error:
+        GIF_Free Id ' use GIF_Free() to cleanup if we encountered any error
+    END FUNCTION
+
+
+    'SUB __GIF_PrintDebugInfo (index AS LONG)
+    '    SHARED __GIFPlay() AS __GIFPlayType
+    '    SHARED __GIFPlayFrame() AS __GIFPlayFrameType
+
+    '    _ECHO "Dump for GIF:" + STR$(index) + CHR$(10)
+
+    '    _ECHO "isUsed =" + STR$(__GIFPlay(index).isUsed)
+    '    _ECHO "image =" + STR$(__GIFPlay(index).image)
+    '    _ECHO "bgColor =" + STR$(__GIFPlay(index).bgColor)
+    '    _ECHO "firstFrame =" + STR$(__GIFPlay(index).firstFrame)
+    '    _ECHO "lastFrame =" + STR$(__GIFPlay(index).lastFrame)
+    '    _ECHO "frame =" + STR$(__GIFPlay(index).frame)
+    '    _ECHO "frameCount =" + STR$(__GIFPlay(index).frameCount)
+    '    _ECHO "frameNumber =" + STR$(__GIFPlay(index).frameNumber)
+    '    _ECHO "isPlaying =" + STR$(__GIFPlay(index).isPlaying)
+    '    _ECHO "loops =" + STR$(__GIFPlay(index).loops)
+    '    _ECHO "loopCounter =" + STR$(__GIFPlay(index).loopCounter)
+    '    _ECHO "duration =" + STR$(__GIFPlay(index).duration)
+    '    _ECHO "lastTick =" + STR$(__GIFPlay(index).lastTick)
+    '    _ECHO "lastFrameRendered =" + STR$(__GIFPlay(index).lastFrameRendered)
+    '    _ECHO "savedImage =" + STR$(__GIFPlay(index).savedImage)
+    '    _ECHO "hasSavedImage =" + STR$(__GIFPlay(index).hasSavedImage)
+    '    _ECHO "overlayEnabled =" + STR$(__GIFPlay(index).overlayEnabled)
+
+    '    _ECHO CHR$(10) + "Walking animation chain..." + CHR$(10)
+
+    '    DO
+    '        _ECHO "Dump for frame:" + STR$(__GIFPlay(index).frame) + CHR$(10)
+
+    '        _ECHO "isUsed =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).isUsed)
+    '        _ECHO "prevFrame =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).prevFrame)
+    '        _ECHO "nextFrame =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).nextFrame)
+    '        _ECHO "image =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).image)
+    '        _ECHO "L =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).L)
+    '        _ECHO "T =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).T)
+    '        _ECHO "disposalMethod =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).disposalMethod)
+    '        _ECHO "duration =" + STR$(__GIFPlayFrame(__GIFPlay(index).frame).duration)
+
+    '        _ECHO CHR$(10) + "Changing to next frame..."
+    '        __GIFPlay(index).frame = __GIFPlayFrame(__GIFPlay(index).frame).nextFrame
+    '    LOOP UNTIL __GIFPlay(index).frame = __GIFPlay(index).firstFrame
+    'END SUB
+
+
+    ' This gets the GIF overlay image (real loading only happens once)
+    FUNCTION __GIF_GetOverlayImage&
         CONST SIZE_GIFOVERLAYIMAGE_BMP_16506 = 16506
         CONST COMP_GIFOVERLAYIMAGE_BMP_16506 = -1
         CONST DATA_GIFOVERLAYIMAGE_BMP_16506 = _
@@ -394,7 +859,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             overlayImage = _LOADIMAGE(Base64_LoadResourceString(DATA_GIFOVERLAYIMAGE_BMP_16506, SIZE_GIFOVERLAYIMAGE_BMP_16506, COMP_GIFOVERLAYIMAGE_BMP_16506), 32, "memory")
         END IF
 
-        __GIF_LoadOverlayImage = overlayImage
+        __GIF_GetOverlayImage = overlayImage
     END FUNCTION
 
     '$INCLUDE:'HashTable.bas'

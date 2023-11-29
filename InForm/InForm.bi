@@ -318,7 +318,7 @@ __UI_Type(__UI_Type_ToggleSwitch).RestrictResize = __UI_CantResize
 
 __UI_RestoreFKeys
 
-CONST False = 0, True = Not False
+CONST FALSE = 0, TRUE = Not FALSE
 
 '$INCLUDE:'InFormVersion.bas'
 __UI_SubMenuDelay = .4
