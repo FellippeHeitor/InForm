@@ -234,7 +234,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         CLS
 
         ' Blit the rendered frame
-        _PUTIMAGE , renderedFrame
+        _PUTIMAGE , renderedFrame, , , _SMOOTH
 
         DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
 
@@ -419,6 +419,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END SUB
 
 
+    ' https://commandlinefanatic.com/cgi-bin/showarticle.cgi?article=art011
     FUNCTION __GIF_ReadLZWCode& (sf AS StringFileType, buffer AS STRING, bitPos AS LONG, bitSize AS LONG)
         DIM AS LONG code, p: p = 1
 
@@ -449,6 +450,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' https://stackoverflow.com/questions/26894809/gif-lzw-decompression
     FUNCTION __GIF_DecodeLZW%% (sf AS StringFileType, bmpMem AS _MEM)
         TYPE __LZWCodeType
             c AS LONG
@@ -520,7 +522,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             END IF
 
             ' Except after clear marker, build new code
-            IF prev <> clearMarker THEN
+            IF prev <> clearMarker AND n < 4096 THEN
                 codes(n).prefix = prev
                 codes(n).length = codes(prev).length + 1
                 codes(n).c = codes(c).c
