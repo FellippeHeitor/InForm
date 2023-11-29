@@ -230,6 +230,9 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         ' Get the rendered image handle
         DIM renderedFrame AS LONG: renderedFrame = GIF_GetFrame(Id)
 
+        ' Clear the surface
+        CLS
+
         ' Blit the rendered frame
         _PUTIMAGE , renderedFrame
 
