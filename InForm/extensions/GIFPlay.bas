@@ -45,8 +45,6 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     '            _LIMIT 30
     '        LOOP UNTIL k = 27
 
-    '        GIF_Free GIF_ID
-
     '        SCREEN 0
     '        _FREEIMAGE surface
     '    END IF
@@ -419,7 +417,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
 
     FUNCTION __GIF_ReadLZWCode& (sf AS StringFileType, buffer AS STRING, bitPos AS LONG, bitSize AS LONG)
-        DIM code AS LONG, p AS LONG: p = 1
+        DIM AS LONG code, p: p = 1
 
         DIM i AS LONG: FOR i = 1 TO bitSize
             DIM bytePos AS LONG: bytePos = _SHR(bitPos, 3) AND 255
@@ -432,13 +430,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                     EXIT FUNCTION
                 END IF
 
-                MID$(buffer, 257 - dataLen) = StringFile_ReadString(sf, dataLen)
+                MID$(buffer, 257 - dataLen, dataLen) = StringFile_ReadString(sf, dataLen)
 
                 bytePos = 256 - dataLen
                 bitPos = _SHL(bytePos, 3)
             END IF
 
-            IF ASC(buffer, 1 + bytePos) AND _SHL(1, (bitPos AND 7)) THEN code = code + p
+            IF ASC(buffer, 1 + bytePos) AND _SHL(1, bitPos AND 7) THEN code = code + p
 
             p = p + p
             bitPos = bitPos + 1
@@ -450,9 +448,9 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     FUNCTION __GIF_DecodeLZW%% (sf AS StringFileType, bmpMem AS _MEM)
         TYPE __LZWCodeType
-            prefix AS LONG
             c AS LONG
-            ln AS LONG
+            prefix AS LONG
+            length AS LONG
         END TYPE
 
         DIM codes(0 TO 4095) AS __LZWCodeType ' maximum bit size is 12
@@ -462,7 +460,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         DIM i AS LONG: WHILE i < n
             codes(i).c = i
-            codes(i).ln = 0
+            codes(i).length = 0
             i = i + 1
         WEND
 
@@ -483,8 +481,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
             IF code = clearMarker THEN
                 bitSize = origBitSize
-                n = _SHL(1, bitSize)
-                n = n + 2
+                n = _SHL(1, bitSize) + 2
                 bitSize = bitSize + 1
                 prev = code
                 _CONTINUE
@@ -496,13 +493,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             DIM c AS LONG: IF code < n THEN c = code ELSE c = prev
 
             ' Output the code
-            DIM outPos AS LONG: outPos = outPos + codes(c).ln
-            i = 0
+            DIM outPos AS LONG: outPos = outPos + codes(c).length
 
+            i = 0
             DO
                 _MEMPUT bmpMem, bmpMem.OFFSET + outPos - i, codes(c).c AS _UNSIGNED _BYTE
 
-                IF codes(c).ln THEN
+                IF codes(c).length <> 0 THEN
                     c = codes(c).prefix
                 ELSE
                     EXIT DO
@@ -522,7 +519,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             ' Except after clear marker, build new code
             IF prev <> clearMarker THEN
                 codes(n).prefix = prev
-                codes(n).ln = codes(prev).ln + 1
+                codes(n).length = codes(prev).length + 1
                 codes(n).c = codes(c).c
                 n = n + 1
             END IF
@@ -686,10 +683,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
                     ' Decode the frame bitmap data
                     DIM mI AS _MEM: mI = _MEMIMAGE(__GIFPlayFrame(frameIdx).image)
+                    IF mI.SIZE = 0 THEN GOTO gif_load_error
+
                     IF NOT __GIF_DecodeLZW(sf, mI) THEN
                         _MEMFREE mI
                         GOTO gif_load_error
                     END IF
+
                     _MEMFREE mI
 
                     ' De-interlace the bitmap if it is interlaced
@@ -837,8 +837,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
     ' This gets the GIF overlay image (real loading only happens once)
     FUNCTION __GIF_GetOverlayImage&
-        CONST SIZE_GIFOVERLAYIMAGE_BMP_16506 = 16506
-        CONST COMP_GIFOVERLAYIMAGE_BMP_16506 = -1
+        CONST SIZE_GIFOVERLAYIMAGE_BMP_16506~& = 16506~&
+        CONST COMP_GIFOVERLAYIMAGE_BMP_16506%% = -1%%
         CONST DATA_GIFOVERLAYIMAGE_BMP_16506 = _
             "eNpy8q1yYACDKiDOAWIHKGZkUGBgZsAF/kMQjDM4gRSgfbsGjt+I4jgexj+2YU57nd27H0Nl6htD6wkzJ31hqFyFWkMVZmZm5rzjMyjfzcwLvEKj" + _
             "tXTnFbyZjxn0O60WBBjDdVjDU/gAP0LwK77CW3gKa7gOY+B3c1k13Ic3ICm9gftQQ8h1BIt4GdInL2MRRxBKHcd1+BIyIF/iehzHYdWpmMXnkEPy" + _
