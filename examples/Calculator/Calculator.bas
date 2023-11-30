@@ -3,7 +3,7 @@
 ': ||__|||__|||__|||__|||__|||__|||__|||__|||__|||__||
 ': |/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|/__\|
 ':
-': QB64 Calculator V1.0
+': QB64 Calculator V1.1
 ': Terry Ritchie - 08/29/18
 ':
 ': Built as a clone of the Windows 7 standard calculator
@@ -80,8 +80,12 @@ DIM SHARED memory AS DOUBLE '               value stored in memory
 DIM SHARED nohistory AS INTEGER
 
 ': External modules: --------------------------------------------------------------------------------------------------
+'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Calculator.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Program procedures: ------------------------------------------------------------------------------------------------
 
@@ -134,7 +138,7 @@ SUB UPDATEOPERAND (n$) '                                                        
 
     IF resetoperand THEN '                                              new operand input?
         operand$ = "" '                                                 yes, reset operand
-        resetoperand = False '                                          reset trigger
+        resetoperand = FALSE '                                          reset trigger
     END IF
     IF n$ = "." THEN '                                                  adding decimal point?
         IF INSTR(operand$, ".") = 0 THEN '                              yes, already a decimal point?
@@ -192,7 +196,7 @@ SUB COMMITOPERAND () '                                                          
     END IF
     operand1 = VAL(operand$) '                                          move current total to previous value
     previousoperator = operator '                                       move current operator to previous operator
-    resetoperand = True '                                               trigger an operand reset
+    resetoperand = TRUE '                                               trigger an operand reset
 
 END SUB
 
@@ -270,7 +274,7 @@ SUB ADDHISTORY (h$) '                                                           
     '------------------------------------------------------------------------------------------------------------------
 
     IF nohistory THEN
-        nohistory = False
+        nohistory = FALSE
     ELSE
         history$ = history$ + h$
     END IF
@@ -341,20 +345,20 @@ SUB __UI_Click (id AS LONG)
         CASE butMR '                                                    memory recall clicked
             IF memory THEN '                                            memory available?
                 operand$ = CLEAN$(memory) '                             Yes, make it the current operand
-                resetoperand = True '                                   trigger an operand reset
+                resetoperand = TRUE '                                   trigger an operand reset
             END IF
 
         CASE butMS '                                                    memory store clicked
             memory = VAL(operand$) '                                    overwrite memory with current operand
-            resetoperand = True '                                       trigger an operand reset
+            resetoperand = TRUE '                                       trigger an operand reset
 
         CASE butMplus '                                                 memory addition clicked
             memory = memory + VAL(operand$) '                           add current operand to memory
-            resetoperand = True '                                       trigger an operand reset
+            resetoperand = TRUE '                                       trigger an operand reset
 
         CASE butMminus '                                                memory subtraction clicked
             memory = memory - VAL(operand$) '                           subtract current operand from memory
-            resetoperand = True '                                       trigger an operand reset
+            resetoperand = TRUE '                                       trigger an operand reset
 
             ': clear buttons: -----------------------------------------------------------------------------------------
 
@@ -380,7 +384,7 @@ SUB __UI_Click (id AS LONG)
             IF VAL(operand$) THEN '                                     dividing by zero?
 
                 ADDHISTORY (operator$(previousoperator) + "Reciproc(" + operand$ + ")")
-                nohistory = True '                                      skip operand history next time
+                nohistory = TRUE '                                      skip operand history next time
                 operator = EQUATE
 
                 operand$ = CLEAN$(1 / VAL(operand$)) '                  no, calculate reciprocate
@@ -388,13 +392,13 @@ SUB __UI_Click (id AS LONG)
                 ALERT '                                                 get user's attention
                 operand$ = "Can't divide by zero!" '                    report error to user
             END IF
-            resetoperand = True '                                       trigger an operand reset
+            resetoperand = TRUE '                                       trigger an operand reset
 
         CASE butSQR '                                                   square root clicked
             IF VAL(operand$) >= 0 THEN '                                positive value?
 
                 ADDHISTORY (operator$(previousoperator) + "SQRT(" + operand$ + ")")
-                nohistory = True '                                      skip operand history next time
+                nohistory = TRUE '                                      skip operand history next time
                 operator = EQUATE
 
                 operand$ = CLEAN$(SQR(VAL(operand$))) '                 yes, calculate square root
@@ -402,11 +406,11 @@ SUB __UI_Click (id AS LONG)
                 ALERT '                                                 get user's attention
                 operand$ = "Invalid input!" '                           nice try buddy
             END IF
-            resetoperand = True '                                       trigger an operand reset
+            resetoperand = TRUE '                                       trigger an operand reset
 
         CASE butPercent '                                               percent clicked
             operand$ = CLEAN$(operand1 * VAL(operand$) / 100) '         calculate percentage of previous operand
-            resetoperand = True
+            resetoperand = TRUE
 
         CASE butSign '                                                  sign clicked
             IF VAL(operand$) THEN '                                     value equal to zero?
@@ -493,7 +497,7 @@ SUB __UI_Click (id AS LONG)
         CASE mnuPaste
 
         CASE mnuAbout
-            _DELAY 0.2: _MESSAGEBOX "Calculator", "InForm Calculator 1.0", "info"
+            MessageBox "InForm Calculator v1.1" + STRING$(2, 10) + "Terry Ritchie - 08/29/18", Caption(Calculator), MsgBox_Information
 
         CASE lblAnswer
 
@@ -1028,6 +1032,3 @@ END SUB
 
 SUB __UI_FormResized
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

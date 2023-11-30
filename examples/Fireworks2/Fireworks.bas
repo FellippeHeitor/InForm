@@ -55,6 +55,8 @@ DIM SHARED HappyNewYearLB AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Fireworks.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -82,28 +84,28 @@ SUB __UI_BeforeUpdateDisplay
     _DEST Control(Canvas).HelperCanvas
 
     IF JustExploded THEN
-        JustExploded = False
+        JustExploded = FALSE
         CLS , _RGB32(0, 0, 50)
     ELSE
         CLS
     END IF
-    IF _CEIL(RND * 20) < 2 OR (Initial = False AND TIMER - lastInitial# > .1) THEN
+    IF _CEIL(RND * 20) < 2 OR (Initial = FALSE AND TIMER - lastInitial# > .1) THEN
         'Create a new particle
         FOR j = 1 TO UBOUND(Firework)
-            IF Firework(j).Visible = False THEN
+            IF Firework(j).Visible = FALSE THEN
                 Firework(j).Vel.y = InitialVel
                 Firework(j).Vel.x = 3 - _CEIL(RND * 6)
-                IF Initial = True THEN
+                IF Initial = TRUE THEN
                     Firework(j).Pos.x = _CEIL(RND * Control(Canvas).Width)
                 ELSE
                     Firework(j).Pos.x = InitialX * (Control(Canvas).Width / 15)
                     InitialX = InitialX + 1
                     lastInitial# = TIMER
-                    IF InitialX > 15 THEN Initial = True
+                    IF InitialX > 15 THEN Initial = TRUE
                 END IF
                 Firework(j).Pos.y = Control(Canvas).Height + _CEIL(RND * StartPointLimit)
-                Firework(j).Visible = True
-                Firework(j).Exploded = False
+                Firework(j).Visible = TRUE
+                Firework(j).Exploded = FALSE
                 Firework(j).ExplosionStep = 0
                 Firework(j).Size = _CEIL(RND * 2)
                 IF Firework(j).Size = 1 THEN
@@ -135,7 +137,7 @@ SUB __UI_BeforeUpdateDisplay
     FOR i = 1 TO UBOUND(Firework)
         'Update trail particles
 
-        IF Firework(i).Visible = True AND Firework(i).Exploded = False AND NOT Pause THEN
+        IF Firework(i).Visible = TRUE AND Firework(i).Exploded = FALSE AND NOT Pause THEN
             t = t + 1: IF t > UBOUND(Trail) THEN t = 1
             Trail(t).Pos.x = Firework(i).Pos.x
             Trail(t).Pos.y = Firework(i).Pos.y
@@ -149,9 +151,9 @@ SUB __UI_BeforeUpdateDisplay
 
         'Explode the particle if it reaches max height
         IF Firework(i).Vel.y > 0 THEN
-            IF Firework(i).Exploded = False THEN
-                Firework(i).Exploded = True
-                JustExploded = True
+            IF Firework(i).Exploded = FALSE THEN
+                Firework(i).Exploded = TRUE
+                JustExploded = TRUE
 
                 IF Firework(1).Size = 1 THEN
                     IF distant THEN _SNDPLAYCOPY distant, .5
@@ -180,7 +182,7 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         'Show particle
-        IF Firework(i).Exploded = False THEN
+        IF Firework(i).Exploded = FALSE THEN
             IF Firework(i).Size = 1 THEN
                 PSET (Firework(i).Pos.x, Firework(i).Pos.y), _RGB32(255, 255, 255)
             ELSE
@@ -223,7 +225,7 @@ SUB __UI_BeforeUpdateDisplay
                     Boom(i * 2, j).Pos.y = Boom(i * 2, j).Pos.y + Boom(i * 2, j).Vel.y
                 END IF
             NEXT
-            IF Firework(i).ExplosionStep > Firework(i).ExplosionMax THEN Firework(i).Visible = False
+            IF Firework(i).ExplosionStep > Firework(i).ExplosionMax THEN Firework(i).Visible = FALSE
         END IF
     NEXT
 
@@ -419,6 +421,3 @@ END SUB
 
 SUB __UI_FormResized
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

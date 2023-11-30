@@ -20,9 +20,12 @@ DIM SHARED AS STRING contents, originalcontents
 
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/MessageBox.bi'
+'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'wordSearch.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -35,15 +38,15 @@ SUB __UI_BeforeUpdateDisplay
     'This event occurs at approximately 30 frames per second.
     'You can change the update frequency by calling SetFrameRate DesiredRate%
     IF _FILEEXISTS(Text(FileTB)) THEN
-        Control(LoadBT).Disabled = False
+        Control(LoadBT).Disabled = FALSE
     ELSE
-        Control(LoadBT).Disabled = True
+        Control(LoadBT).Disabled = TRUE
     END IF
 
     IF LEN(Text(WordTB)) > 0 THEN
-        Control(SearchBT).Disabled = False
+        Control(SearchBT).Disabled = FALSE
     ELSE
-        Control(SearchBT).Disabled = True
+        Control(SearchBT).Disabled = TRUE
     END IF
 
 END SUB
@@ -146,9 +149,7 @@ END SUB
 SUB __UI_FormResized
 END SUB
 
-
 ': User modules: ---------------------------------------------------------------
-
 
 FUNCTION strFormat$ (text AS STRING, template AS STRING)
     '-----------------------------------------------------------------------------
@@ -166,7 +167,3 @@ FUNCTION strFormat$ (text AS STRING, template AS STRING)
     _DEST d: _SOURCE s
     _FREEIMAGE n
 END FUNCTION
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'

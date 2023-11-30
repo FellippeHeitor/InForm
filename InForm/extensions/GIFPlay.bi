@@ -9,6 +9,8 @@ $IF GIFPLAY_BI = UNDEFINED THEN
     '$INCLUDE:'HashTable.bi'
     '$INCLUDE:'StringFile.bi'
 
+    CONST __GIF_FALSE%% = 0%%, __GIF_TRUE%% = NOT __GIF_FALSE
+
     ' This is the master animation type that holds info about a complete animation
     TYPE __GIFPlayType
         isUsed AS _BYTE ' is this slot being used (this is only here to assist slot allocation)

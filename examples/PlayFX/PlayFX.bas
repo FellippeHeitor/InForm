@@ -49,6 +49,8 @@ DIM SHARED PlayBT AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'PlayFX.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Custom procedures: --------------------------------------------------------------
 FUNCTION IsDifferentWaveform%% (w1 AS WaveformType, w2 AS WaveformType)
@@ -69,7 +71,7 @@ SUB SetConfigControls (id AS LONG, curCtrl AS LONG)
 END SUB
 
 SUB ClearWaveform (id AS LONG)
-    Waveform(id).active = False ' set not in use
+    Waveform(id).active = FALSE ' set not in use
     Waveform(id).waveform = 3 ' triangle
     Waveform(id).note = 42 ' half-way through the scale
     Waveform(id).length = 4 ' quarter
@@ -594,7 +596,7 @@ SUB __UI_ValueChanged (id AS LONG)
 
     IF IsDifferentWaveform(temp, Waveform(currentWaveform)) THEN
         Waveform(currentWaveform) = temp
-        Waveform(currentWaveform).active = True
+        Waveform(currentWaveform).active = TRUE
     END IF
 
     MakePlayString
@@ -604,6 +606,3 @@ END SUB
 SUB __UI_FormResized
 
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

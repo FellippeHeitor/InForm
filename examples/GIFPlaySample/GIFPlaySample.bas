@@ -19,6 +19,10 @@ DIM SHARED PlayBT AS LONG
 '$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'GIFPlaySample.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
+'$INCLUDE:'../../InForm/extensions/GIFPlay.bas'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -29,7 +33,7 @@ SUB __UI_OnLoad
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    IF GIF_IsLoaded(PictureBox1) THEN GIF_Draw PictureBox1
+    GIF_Draw PictureBox1
 END SUB
 
 SUB __UI_BeforeUnload
@@ -107,8 +111,3 @@ END SUB
 
 SUB __UI_FormResized
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
-'$INCLUDE:'../../InForm/extensions/GIFPlay.bas'

@@ -1,5 +1,5 @@
 ' Text Fetch.bas started b+ 2019-11-12 from other work with Dirs and Files loading
-' Changes and updates by a740g (24-June-2023). Also simplified direntry.h
+' Changes and updates by a740g (1-Dec-2023). Also simplified direntry.h
 '
 ': This program uses
 ': InForm - GUI library for QB64 - v1.0
@@ -28,6 +28,8 @@ DIM SHARED lbEnd AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'TextFetch.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ' --- DIRENTRY STUFF ---
 
@@ -59,7 +61,7 @@ SUB loadText
     FOR i = VAL(Caption(lbStart)) TO VAL(Caption(lbEnd))
         b$ = GetItem$(ListFile, i)
         AddItem ListTxt, GetItem$(ListFile, i)
-        IF clip$ = "" THEN clip$ = b$ ELSE clip$ = clip$ + CHR$(13) + CHR$(10) + b$
+        IF LEN(clip$) = 0 THEN clip$ = b$ ELSE clip$ = clip$ + CHR$(13) + CHR$(10) + b$
     NEXT
     _CLIPBOARD$ = clip$
     Caption(lbTxt) = "Selected Text (in Clipboard):"
@@ -93,24 +95,29 @@ FUNCTION GetCurDirLists& (DirList() AS STRING, FileList() AS STRING)
 
     DIM dirName AS STRING: dirName = _CWD$ ' we'll enumerate the current directory contents
     DIM AS LONG dirCount, fileCount, flags, fileSize
-    DIM entryName AS STRING
+    DIM entryName AS STRING, ext AS STRING
 
     IF open_dir(dirName) THEN
         DO
             entryName = read_dir(flags, fileSize)
-            IF entryName <> "" THEN
+            IF LEN(entryName) <> 0 THEN
                 SELECT CASE flags
                     CASE 1
                         IF dirCount > UBOUND(DirList) THEN REDIM _PRESERVE DirList(0 TO UBOUND(DirList) + RESIZE_BLOCK_SIZE) AS STRING
                         DirList(dirCount) = entryName
                         dirCount = dirCount + 1
                     CASE 2
-                        IF fileCount > UBOUND(FileList) THEN REDIM _PRESERVE FileList(0 TO UBOUND(FileList) + RESIZE_BLOCK_SIZE) AS STRING
-                        FileList(fileCount) = entryName
-                        fileCount = fileCount + 1
+                        ext = LCASE$(MID$(entryName, 1 + _INSTRREV(entryName, ".")))
+
+                        SELECT CASE ext
+                            CASE "", "txt", "log", "md", "lst", "bas", "bi", "bm", "frm", "vb", "cls", "c", "cpp", "h", "cc", "cxx", "c++", "hh", "hpp", "hxx", "h++", "cppm", "ixx"
+                                IF fileCount > UBOUND(FileList) THEN REDIM _PRESERVE FileList(0 TO UBOUND(FileList) + RESIZE_BLOCK_SIZE) AS STRING
+                                FileList(fileCount) = entryName
+                                fileCount = fileCount + 1
+                        END SELECT
                 END SELECT
             END IF
-        LOOP UNTIL entryName = ""
+        LOOP UNTIL LEN(entryName) = 0
         close_dir
     END IF
 
@@ -441,6 +448,3 @@ END SUB
 SUB __UI_FormResized
 
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

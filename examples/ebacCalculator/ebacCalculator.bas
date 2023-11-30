@@ -1,5 +1,3 @@
-'$TITLE: ebacCalculator.bas Version 1.0  04/01/2021 - Last Update: 10/14/2021
-_TITLE "Estimated Blood-Alcohol Content Calculator"
 ' ebacCalculator.bas    Version 2.0  10/14/2021
 '-----------------------------------------------------------------------------------
 '       PROGRAM: ebacCalculator.bas
@@ -73,12 +71,13 @@ DIM SHARED AS SINGLE B, OZ, Wt, EBAC
 DIM SHARED AS STRING helpcontents, prt_text
 
 
-
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/MessageBox.bi'
+'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'ebacCalculator.frm'
-
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -95,7 +94,7 @@ SUB __UI_OnLoad
     I = 0
     Bdl = 1.055
     OZ = .5
-    SOBER = False: legalToDrive = False
+    SOBER = FALSE: legalToDrive = FALSE
     HELPFile = "EBACHelp.txt"
     displayDisclaimer
 
@@ -148,8 +147,8 @@ SUB __UI_Click (id AS LONG)
         CASE AGREEBT
             Answer = MessageBox("Do you want to perform another calculation?             ", "", MsgBox_YesNo + MsgBox_Question)
             IF Answer = MsgBox_Yes THEN
-                Control(AgreeCB).Value = False
-                Control(AGREEBT).Disabled = True
+                Control(AgreeCB).Value = FALSE
+                Control(AGREEBT).Disabled = TRUE
             ELSE
                 Answer = MessageBox("Thank You for using EBAC Calculator. Please Don't Drink and Drive.", "", MsgBox_Ok + MsgBox_Information)
                 SYSTEM
@@ -159,7 +158,7 @@ SUB __UI_Click (id AS LONG)
             ResetForm
 
         CASE OKBT
-            IF Control(maleRB).Value = False AND Control(femaleRB).Value = False THEN
+            IF Control(maleRB).Value = FALSE AND Control(femaleRB).Value = FALSE THEN
                 Answer = MessageBox("Invalid: You must select either M (male) or F (female). Please Correct.", "", MsgBox_Ok + MsgBox_Information)
                 EXIT SUB
             END IF
@@ -167,7 +166,7 @@ SUB __UI_Click (id AS LONG)
             Wt = Control(WeightTB).Value
             T = Control(TimeTB).Value
             calcEBAC
-            Control(QUITBT).Disabled = True
+            Control(QUITBT).Disabled = TRUE
             ResetList displayResults
             Text(displayResults) = prt_text
 
@@ -227,16 +226,16 @@ SUB __UI_TextChanged (id AS LONG)
     SELECT CASE id
 
         CASE WeightTB
-            Control(AgreeCB).Value = False
-            Control(AGREEBT).Disabled = True
+            Control(AgreeCB).Value = FALSE
+            Control(AGREEBT).Disabled = TRUE
 
         CASE nbrDrinksTB
-            Control(AgreeCB).Value = False
-            Control(AGREEBT).Disabled = True
+            Control(AgreeCB).Value = FALSE
+            Control(AGREEBT).Disabled = TRUE
 
         CASE TimeTB
-            Control(AgreeCB).Value = False
-            Control(AGREEBT).Disabled = True
+            Control(AgreeCB).Value = FALSE
+            Control(AGREEBT).Disabled = TRUE
 
     END SELECT
 END SUB
@@ -247,20 +246,20 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE displayResults
 
         CASE maleRB
-            Control(AgreeCB).Value = False
-            Control(AGREEBT).Disabled = True
+            Control(AgreeCB).Value = FALSE
+            Control(AGREEBT).Disabled = TRUE
 
         CASE femaleRB
-            Control(AgreeCB).Value = False
-            Control(AGREEBT).Disabled = True
+            Control(AgreeCB).Value = FALSE
+            Control(AGREEBT).Disabled = TRUE
 
         CASE AgreeCB
-            IF Control(AgreeCB).Value = True THEN
-                Control(AGREEBT).Disabled = False
-                Control(QUITBT).Disabled = False
+            IF Control(AgreeCB).Value = TRUE THEN
+                Control(AGREEBT).Disabled = FALSE
+                Control(QUITBT).Disabled = FALSE
             ELSE
-                Control(AGREEBT).Disabled = True
-                Control(QUITBT).Disabled = True
+                Control(AGREEBT).Disabled = TRUE
+                Control(QUITBT).Disabled = TRUE
             END IF
 
     END SELECT
@@ -312,10 +311,10 @@ SUB ResetForm
     Control(nbrDrinksTB).Value = 0
     Control(WeightTB).Value = 0
     Control(TimeTB).Value = 0
-    Control(AgreeCB).Value = False
-    Control(AGREEBT).Disabled = True
-    Control(maleRB).Value = False
-    Control(femaleRB).Value = False
+    Control(AgreeCB).Value = FALSE
+    Control(AGREEBT).Disabled = TRUE
+    Control(maleRB).Value = FALSE
+    Control(femaleRB).Value = FALSE
     ResetList displayResults
     Sex = ""
 END SUB
@@ -326,7 +325,7 @@ SUB calcEBAC
     ' *** Convert Drinks into Fluid Ounces of EtOH (Pure Alcohol).
     ' *** A is number of drinks. 1 drink is about .6 FLoz of alcohol
     FLoz = A * OZ
-    legalToDrive = False
+    legalToDrive = FALSE
 
     '-----------------------------------------------------
     ' *** Set/calculate EBAC values based on Sex
@@ -427,10 +426,10 @@ SUB calcEBAC
     '***    - When user will be less than .08
     '***    - How long it will take to become completely sober
     IF EBAC > .08 THEN
-        SOBER = False
+        SOBER = FALSE
         CEBAC = EBAC
         st = T
-        DO UNTIL SOBER = True
+        DO UNTIL SOBER = TRUE
             T = T + 1
             IF CEBAC > .0799 THEN I = I + 1
 
@@ -443,16 +442,16 @@ SUB calcEBAC
                     CEBAC = 9.86 * FLoz / Wt - B * T
             END SELECT
 
-            IF legalToDrive = False THEN
+            IF legalToDrive = FALSE THEN
                 IF CEBAC < .08 THEN
                     prt_text = prt_text + CHR$(10) + CHR$(10) + "It will take about " + strFormat$(STR$(I), "##") + " hours from your last drink to be able to drive." + CHR$(10)
-                    legalToDrive = True
+                    legalToDrive = TRUE
                 END IF
             END IF
 
             IF CEBAC <= 0 THEN
                 prt_text = prt_text + "It will take about " + strFormat$(STR$(T - st), "##") + " hours from your last drink to be completely sober."
-                SOBER = True
+                SOBER = TRUE
             END IF
         LOOP
     END IF
@@ -476,7 +475,3 @@ FUNCTION strFormat$ (text AS STRING, template AS STRING)
     _DEST d: _SOURCE s
     _FREEIMAGE n
 END FUNCTION
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'

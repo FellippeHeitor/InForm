@@ -32,6 +32,8 @@ REDIM SHARED Motion`(10, 6, 2), Choisi`(10, 6), Grid%%(10, 6)
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Pelmanism.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------------------
 FUNCTION MakeHardware& (Img&)
@@ -73,7 +75,7 @@ SUB __UI_BeforeInit
         NEXT N%%
         CLOSE #1
     END IF
-    DoNewGame` = False
+    DoNewGame` = FALSE
 
     game_data:
     DATA 4,4
@@ -108,7 +110,7 @@ SUB __UI_BeforeUpdateDisplay
                         _PUTIMAGE (107 * (HorizPos%% - 1) + 7, 107 * (VertPos%% - 1) + 7), Images&(Grid%%(HorizPos%%, VertPos%%)) 'Fronts
                         PCount%% = PCount%% + 1
                         IF PCount%% = 40 THEN
-                            Paused` = False
+                            Paused` = FALSE
                             PCount%% = 0
                         END IF
                     ELSE
@@ -124,16 +126,16 @@ SUB __UI_BeforeUpdateDisplay
                         FlipCount%% = FlipCount%% + 2
                         IF FlipCount%% = 100 THEN
                             FlipCount%% = 0
-                            Motion`(HorizPos%%, VertPos%%, 2) = False
-                            Motion`(HorizPos%%, VertPos%%, 0) = False
+                            Motion`(HorizPos%%, VertPos%%, 2) = FALSE
+                            Motion`(HorizPos%%, VertPos%%, 0) = FALSE
                             IF HorizPos%% = FirstH%% AND VertPos%% = FirstV%% THEN
                                 FrameRate% = 40
                                 SetFrameRate FrameRate%
-                                Flipping` = False
-                                TurningBack` = False
+                                Flipping` = FALSE
+                                TurningBack` = FALSE
                                 FirstV%% = 50
                             ELSE
-                                Motion`(FirstH%%, FirstV%%, 2) = True
+                                Motion`(FirstH%%, FirstV%%, 2) = TRUE
                             END IF
                         END IF
                     END IF
@@ -151,22 +153,22 @@ SUB __UI_BeforeUpdateDisplay
                     FlipCount%% = FlipCount%% + 2
                     IF FlipCount%% = 100 THEN
                         FlipCount%% = 0
-                        Flipping` = False
-                        Motion`(HorizPos%%, VertPos%%, 1) = False
-                        Motion`(HorizPos%%, VertPos%%, 0) = True
+                        Flipping` = FALSE
+                        Motion`(HorizPos%%, VertPos%%, 1) = FALSE
+                        Motion`(HorizPos%%, VertPos%%, 0) = TRUE
                         IF FirstGo` THEN
-                            FirstGo` = False
+                            FirstGo` = FALSE
                         ELSE
-                            FirstGo` = True
+                            FirstGo` = TRUE
                             IF Grid%%(HorizPos%%, VertPos%%) = Grid%%(FirstH%%, FirstV%%) THEN 'Matched pair
-                                Choisi`(HorizPos%%, VertPos%%) = True 'Registers that that grid position cannot be clicked any more
-                                Choisi`(FirstH%%, FirstV%%) = True
+                                Choisi`(HorizPos%%, VertPos%%) = TRUE 'Registers that that grid position cannot be clicked any more
+                                Choisi`(FirstH%%, FirstV%%) = TRUE
                                 NoRemaining%% = NoRemaining%% - 2
                                 IF NoRemaining%% = 0 THEN
                                     'Tah-dah sound (completed)
                                     IF Control(AudioOnRB).Value THEN _SNDPLAYFILE ("fanfare.mp3")
-                                    Control(PairingsCompletedLB).Disabled = False
-                                    Control(PairingsCompletedLB).Hidden = False
+                                    Control(PairingsCompletedLB).Disabled = FALSE
+                                    Control(PairingsCompletedLB).Hidden = FALSE
                                 ELSE
                                     'Ching sound (match)
                                     IF Control(AudioOnRB).Value THEN _SNDPLAYFILE ("match3.mp3")
@@ -175,10 +177,10 @@ SUB __UI_BeforeUpdateDisplay
                                 'Initiate sequential turn back
                                 FrameRate% = 60
                                 SetFrameRate FrameRate%
-                                Motion`(HorizPos%%, VertPos%%, 2) = True
-                                Flipping` = True
-                                TurningBack` = True
-                                Paused` = True
+                                Motion`(HorizPos%%, VertPos%%, 2) = TRUE
+                                Flipping` = TRUE
+                                TurningBack` = TRUE
+                                Paused` = TRUE
                                 PCount%% = 0
                                 IF Control(AudioOnRB).Value THEN _SNDPLAYFILE ("nomatch1.mp3"), , 0.2
                             END IF
@@ -235,8 +237,8 @@ SUB __UI_Click (id AS LONG)
                 IF Choisi`(HorizPos%%, VertPos%%) OR (FirstH%% = HorizPos%% AND FirstV%% = VertPos%%) THEN
                     'Do nothing
                 ELSE
-                    Motion`(HorizPos%%, VertPos%%, 1) = True 'Set this cell turning
-                    Flipping` = True
+                    Motion`(HorizPos%%, VertPos%%, 1) = TRUE 'Set this cell turning
+                    Flipping` = TRUE
                     IF FirstGo` THEN
                         FirstH%% = HorizPos%%
                         FirstV%% = VertPos%%
@@ -245,13 +247,13 @@ SUB __UI_Click (id AS LONG)
             END IF
         CASE ExitBT
             IF InPlay` THEN
-                InPlay` = False
+                InPlay` = FALSE
             ELSE
                 CALL Finale
             END IF
         CASE NewGameBT
-            DoNewGame` = True
-            InPlay` = False
+            DoNewGame` = TRUE
+            InPlay` = FALSE
         CASE OneBT
             Level%% = 0
             CALL MakePairs
@@ -299,32 +301,32 @@ SUB __UI_FormResized
 END SUB
 
 SUB NouveauJeu
-    DoNewGame` = False
+    DoNewGame` = FALSE
     _DELAY 0.1
     FrameRate% = 40
     SetFrameRate FrameRate%
     Control(__UI_FormID).Width = 310
     Control(__UI_FormID).Height = 360
-    Control(PelmanismLB).Disabled = False
-    Control(PelmanismLB).Hidden = False
-    Control(SetSkillLevelLB).Disabled = False
-    Control(SetSkillLevelLB).Hidden = False
-    Control(OneBT).Disabled = False
-    Control(OneBT).Hidden = False
-    Control(TwoBT).Disabled = False
-    Control(TwoBT).Hidden = False
-    Control(ThreeBT).Disabled = False
-    Control(ThreeBT).Hidden = False
-    Control(NewGameBT).Disabled = True
-    Control(NewGameBT).Hidden = True
-    Control(AudioFM).Disabled = True
-    Control(AudioFM).Hidden = True
-    Control(BestScoreLB).Disabled = True
-    Control(BestScoreLB).Hidden = True
-    Control(ScoreLB).Disabled = True
-    Control(ScoreLB).Hidden = True
-    Control(PairingsCompletedLB).Disabled = True
-    Control(PairingsCompletedLB).Hidden = True
+    Control(PelmanismLB).Disabled = FALSE
+    Control(PelmanismLB).Hidden = FALSE
+    Control(SetSkillLevelLB).Disabled = FALSE
+    Control(SetSkillLevelLB).Hidden = FALSE
+    Control(OneBT).Disabled = FALSE
+    Control(OneBT).Hidden = FALSE
+    Control(TwoBT).Disabled = FALSE
+    Control(TwoBT).Hidden = FALSE
+    Control(ThreeBT).Disabled = FALSE
+    Control(ThreeBT).Hidden = FALSE
+    Control(NewGameBT).Disabled = TRUE
+    Control(NewGameBT).Hidden = TRUE
+    Control(AudioFM).Disabled = TRUE
+    Control(AudioFM).Hidden = TRUE
+    Control(BestScoreLB).Disabled = TRUE
+    Control(BestScoreLB).Hidden = TRUE
+    Control(ScoreLB).Disabled = TRUE
+    Control(ScoreLB).Hidden = TRUE
+    Control(PairingsCompletedLB).Disabled = TRUE
+    Control(PairingsCompletedLB).Hidden = TRUE
     Control(ExitBT).Left = Control(__UI_FormID).Width - 96
     Control(ExitBT).Top = Control(__UI_FormID).Height - 39
     SetFocus ExitBT
@@ -351,46 +353,46 @@ SUB Finale
 END SUB
 
 SUB MakePairs
-    InPlay` = True
+    InPlay` = TRUE
     Score% = 0
     NoRemaining%% = GameLevel%%(Level%%, 0) * GameLevel%%(Level%%, 1)
     NoPairs%% = 0
     FirstV%% = 50
-    ValidMouse` = False
-    Flipping` = False
-    TurningBack` = False
+    ValidMouse` = FALSE
+    Flipping` = FALSE
+    TurningBack` = FALSE
     FlipCount%% = 0
-    Paused` = False
+    Paused` = FALSE
     PCount%% = 0
-    FirstGo` = True
+    FirstGo` = TRUE
     REDIM Motion`(10, 6, 2), Choisi`(10, 6), Grid%%(10, 6)
     REDIM Selected%%(30)
     RANDOMIZE (TIMER)
     WHILE NoRemaining%% > 0
-        Vacant` = False
+        Vacant` = FALSE
         WHILE NOT Vacant`
             HorizPos%% = 1 + INT(GameLevel%%(Level%%, 0) * RND)
             VertPos%% = 1 + INT(GameLevel%%(Level%%, 1) * RND)
-            IF Grid%%(HorizPos%%, VertPos%%) = 0 THEN Vacant` = True
+            IF Grid%%(HorizPos%%, VertPos%%) = 0 THEN Vacant` = TRUE
         WEND
-        NewPair` = False
+        NewPair` = FALSE
         WHILE NOT NewPair`
             PairNo%% = 1 + INT(NoObjectsLess1%% * RND)
-            PairsExists` = False
+            PairsExists` = FALSE
             N%% = 1
             WHILE NOT PairsExists` AND N%% <= NoPairs%%
-                IF PairNo%% = Selected%%(N%%) THEN PairsExists` = True
+                IF PairNo%% = Selected%%(N%%) THEN PairsExists` = TRUE
                 N%% = N%% + 1
             WEND
-            IF NOT PairsExists` THEN NewPair` = True
+            IF NOT PairsExists` THEN NewPair` = TRUE
         WEND
         NoPairs%% = NoPairs%% + 1
         Selected%%(NoPairs%%) = PairNo%%
         Grid%%(HorizPos%%, VertPos%%) = PairNo%%
-        Vacant` = False
+        Vacant` = FALSE
         WHILE NOT Vacant`
             HorizPos%% = 1 + INT(GameLevel%%(Level%%, 0) * RND): VertPos%% = 1 + INT(GameLevel%%(Level%%, 1) * RND)
-            IF Grid%%(HorizPos%%, VertPos%%) = 0 THEN Vacant` = True
+            IF Grid%%(HorizPos%%, VertPos%%) = 0 THEN Vacant` = TRUE
         WEND
         Selected%%(NoPairs%%) = PairNo%%
         Grid%%(HorizPos%%, VertPos%%) = PairNo%%
@@ -408,24 +410,24 @@ SUB MakePairs
     Control(BestScoreLB).Left = Control(__UI_FormID).Width - 178
     Control(ScoreLB).Left = Control(__UI_FormID).Width - 178
     Control(PairingsCompletedLB).Left = Control(__UI_FormID).Width - 138
-    Control(PelmanismLB).Disabled = True
-    Control(PelmanismLB).Hidden = True
-    Control(SetSkillLevelLB).Disabled = True
-    Control(SetSkillLevelLB).Hidden = True
-    Control(OneBT).Disabled = True
-    Control(OneBT).Hidden = True
-    Control(TwoBT).Disabled = True
-    Control(TwoBT).Hidden = True
-    Control(ThreeBT).Disabled = True
-    Control(ThreeBT).Hidden = True
-    Control(NewGameBT).Disabled = False
-    Control(NewGameBT).Hidden = False
-    Control(AudioFM).Disabled = False
-    Control(AudioFM).Hidden = False
-    Control(BestScoreLB).Disabled = False
-    Control(BestScoreLB).Hidden = False
-    Control(ScoreLB).Disabled = False
-    Control(ScoreLB).Hidden = False
+    Control(PelmanismLB).Disabled = TRUE
+    Control(PelmanismLB).Hidden = TRUE
+    Control(SetSkillLevelLB).Disabled = TRUE
+    Control(SetSkillLevelLB).Hidden = TRUE
+    Control(OneBT).Disabled = TRUE
+    Control(OneBT).Hidden = TRUE
+    Control(TwoBT).Disabled = TRUE
+    Control(TwoBT).Hidden = TRUE
+    Control(ThreeBT).Disabled = TRUE
+    Control(ThreeBT).Hidden = TRUE
+    Control(NewGameBT).Disabled = FALSE
+    Control(NewGameBT).Hidden = FALSE
+    Control(AudioFM).Disabled = FALSE
+    Control(AudioFM).Hidden = FALSE
+    Control(BestScoreLB).Disabled = FALSE
+    Control(BestScoreLB).Hidden = FALSE
+    Control(ScoreLB).Disabled = FALSE
+    Control(ScoreLB).Hidden = FALSE
     IF BestScore%(Level%%) <> 0 THEN
         Caption(BestScoreLB) = "Best Score:" + STR$(BestScore%(Level%%))
     ELSE
@@ -456,15 +458,15 @@ SUB MakePairs
     WHILE InPlay`
         _LIMIT 2 * FrameRate%
         XMouse% = __UI_MouseLeft: YMouse% = __UI_MouseTop
-        ValidMouse` = False
+        ValidMouse` = FALSE
         IF XMouse% > 7 AND XMouse% < (GameLevel%%(Level%%, 0)) * 107 AND YMouse% > 7 AND YMouse% < (GameLevel%%(Level%%, 1)) * 107 THEN
-            IF NOT Flipping` THEN ValidMouse` = True
+            IF NOT Flipping` THEN ValidMouse` = TRUE
             XX%% = (XMouse% - 7) \ 107
             YY%% = (YMouse% - 7) \ 107
         END IF
         K$ = INKEY$
         IF K$ <> "" THEN
-            IF ASC(K$) = 27 THEN InPlay` = False
+            IF ASC(K$) = 27 THEN InPlay` = FALSE
         END IF
         K$ = ""
         __UI_DoEvents
@@ -476,6 +478,3 @@ SUB MakePairs
         CALL Finale
     END IF
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

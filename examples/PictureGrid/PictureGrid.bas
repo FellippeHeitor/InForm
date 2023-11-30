@@ -22,6 +22,8 @@ DIM SHARED Horiz%%, Vert%%, InPlay`, Level%%, MoveIt%%, ValidSquare`
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'PictureGrid.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------------------
 FUNCTION MakeHardware& (Img&)
@@ -43,7 +45,7 @@ SUB __UI_BeforeInit
         READ Portraits$(N%%)
     NEXT N%%
     FrameRate% = 30
-    InPlay` = False
+    InPlay` = FALSE
 
     game_data:
     DATA 2,3
@@ -53,8 +55,8 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    Control(NewGameBT).Disabled = True
-    Control(NewGameBT).Hidden = True
+    Control(NewGameBT).Disabled = TRUE
+    Control(NewGameBT).Hidden = TRUE
     CALL JeuNouveau
     SetFrameRate FrameRate%
 END SUB
@@ -130,7 +132,7 @@ SUB __UI_Click (id AS LONG)
         CASE ExitBT
             SYSTEM
         CASE NewGameBT
-            InPlay` = False
+            InPlay` = FALSE
     END SELECT
 END SUB
 
@@ -171,18 +173,18 @@ END SUB
 SUB JeuNouveau
     Control(__UI_FormID).Width = 310
     Control(__UI_FormID).Height = 360
-    Control(PictureGridLB).Disabled = False
-    Control(PictureGridLB).Hidden = False
-    Control(SetSkillLevelLB).Disabled = False
-    Control(SetSkillLevelLB).Hidden = False
-    Control(OneBT).Disabled = False
-    Control(OneBT).Hidden = False
-    Control(TwoBT).Disabled = False
-    Control(TwoBT).Hidden = False
-    Control(ThreeBT).Disabled = False
-    Control(ThreeBT).Hidden = False
-    Control(NewGameBT).Disabled = True
-    Control(NewGameBT).Hidden = True
+    Control(PictureGridLB).Disabled = FALSE
+    Control(PictureGridLB).Hidden = FALSE
+    Control(SetSkillLevelLB).Disabled = FALSE
+    Control(SetSkillLevelLB).Hidden = FALSE
+    Control(OneBT).Disabled = FALSE
+    Control(OneBT).Hidden = FALSE
+    Control(TwoBT).Disabled = FALSE
+    Control(TwoBT).Hidden = FALSE
+    Control(ThreeBT).Disabled = FALSE
+    Control(ThreeBT).Hidden = FALSE
+    Control(NewGameBT).Disabled = TRUE
+    Control(NewGameBT).Hidden = TRUE
     Control(ExitBT).Top = Control(__UI_FormID).Height - 39
     Control(ExitBT).Left = Control(__UI_FormID).Width - 96
     SetFocus ExitBT
@@ -191,16 +193,16 @@ END SUB
 SUB Slider
     Control(__UI_FormID).Width = (2 * ScreenWidth%) + 10
     Control(__UI_FormID).Height = ScreenHeight%
-    Control(PictureGridLB).Disabled = True
-    Control(PictureGridLB).Hidden = True
-    Control(SetSkillLevelLB).Disabled = True
-    Control(SetSkillLevelLB).Hidden = True
-    Control(OneBT).Disabled = True
-    Control(OneBT).Hidden = True
-    Control(TwoBT).Disabled = True
-    Control(TwoBT).Hidden = True
-    Control(ThreeBT).Disabled = True
-    Control(ThreeBT).Hidden = True
+    Control(PictureGridLB).Disabled = TRUE
+    Control(PictureGridLB).Hidden = TRUE
+    Control(SetSkillLevelLB).Disabled = TRUE
+    Control(SetSkillLevelLB).Hidden = TRUE
+    Control(OneBT).Disabled = TRUE
+    Control(OneBT).Hidden = TRUE
+    Control(TwoBT).Disabled = TRUE
+    Control(TwoBT).Hidden = TRUE
+    Control(ThreeBT).Disabled = TRUE
+    Control(ThreeBT).Hidden = TRUE
     Control(ExitBT).Top = Control(__UI_FormID).Height - 39
     Control(ExitBT).Left = Control(__UI_FormID).Width - 96
     Control(NewGameBT).Top = Control(__UI_FormID).Height - 73
@@ -251,14 +253,14 @@ SUB Slider
     LINE (0, 0)-(ScreenWidth% / RowCol%%(Level%%, 0) - 4, ScreenHeight%% / RowCol%%(Level%%, 1) - 4), , B
     LINE (1, 1)-(ScreenWidth% / RowCol%%(Level%%, 0) - 5, ScreenHeight%% / RowCol%%(Level%%, 1) - 5), , B
     Highlight& = MakeHardware&(TempImg&)
-    ValidSquare` = False
-    InPlay` = True
-    IsComplete` = False
+    ValidSquare` = FALSE
+    InPlay` = TRUE
+    IsComplete` = FALSE
     WHILE InPlay`
         _LIMIT 2 * FrameRate%
         XMouse% = __UI_MouseLeft
         YMouse% = __UI_MouseTop
-        ValidSquare` = False
+        ValidSquare` = FALSE
         IF NOT IsComplete` THEN
             Horiz%% = 1 + ((XMouse% - 3) \ (ScreenWidth% / RowCol%%(Level%%, 0)))
             Vert%% = 1 + ((YMouse% - 3) \ (ScreenHeight%% / RowCol%%(Level%%, 1)))
@@ -269,25 +271,25 @@ SUB Slider
                     IF ModHoriz% < ScreenWidth% / RowCol%%(Level%%, 0) - 6 AND ModVert% < ScreenHeight%% / RowCol%%(Level%%, 1) - 6 THEN
                         IF Grid%%(Horiz%% + 1, Vert%%) = 0 AND Horiz%% + 1 <= RowCol%%(Level%%, 0) THEN
                             MoveIt%% = 1
-                            ValidSquare` = True
+                            ValidSquare` = TRUE
                         ELSEIF Grid%%(Horiz%%, Vert%% + 1) = 0 AND Vert%% + 1 <= RowCol%%(Level%%, 1) THEN
                             MoveIt%% = 2
-                            ValidSquare` = True
+                            ValidSquare` = TRUE
                         ELSEIF Grid%%(Horiz%% - 1, Vert%%) = 0 AND Horiz%% - 1 > 0 THEN
                             MoveIt%% = 3
-                            ValidSquare` = True
+                            ValidSquare` = TRUE
                         ELSEIF Grid%%(Horiz%%, Vert%% - 1) = 0 AND Vert%% - 1 > 0 THEN
                             MoveIt%% = 4
-                            ValidSquare` = True
+                            ValidSquare` = TRUE
                         END IF
                     END IF
                 END IF
             END IF
-            AllCorrect` = True
+            AllCorrect` = TRUE
             N%% = 1: M%% = 1
             WHILE AllCorrect` AND (M%% + RowCol%%(Level%%, 1) * (N%% - 1)) < RowCol%%(Level%%, 0) * RowCol%%(Level%%, 1)
                 IF Grid%%(N%%, M%%) <> M%% + RowCol%%(Level%%, 1) * (N%% - 1) THEN
-                    AllCorrect` = False
+                    AllCorrect` = FALSE
                 ELSE
                     M%% = M%% + 1
                     IF M%% > RowCol%%(Level%%, 1) THEN
@@ -298,9 +300,9 @@ SUB Slider
             WEND
             IF AllCorrect` THEN
                 _SNDPLAYFILE ("fanfare.mp3")
-                Control(NewGameBT).Disabled = False
-                Control(NewGameBT).Hidden = False
-                IsComplete` = True
+                Control(NewGameBT).Disabled = FALSE
+                Control(NewGameBT).Hidden = FALSE
+                IsComplete` = TRUE
                 SetFocus NewGameBT
             END IF
         END IF
@@ -311,10 +313,7 @@ SUB Slider
         K$ = ""
         __UI_DoEvents
     WEND
-    ValidSquare` = False
+    ValidSquare` = FALSE
     _FREEIMAGE Highlight&
     CALL JeuNouveau
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

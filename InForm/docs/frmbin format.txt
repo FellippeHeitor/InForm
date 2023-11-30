@@ -1,6 +1,7 @@
 InForm - GUI library for QB64
 Fellippe Heitor, 2016-2019 - fellippe@qb64.org - @fellippeheitor
 https://github.com/FellippeHeitor/InForm
+
 -----------------------------------------------------------
 Below is the binary format for exchange of controls data. It is
 used for UiEditorPreview.frmbin, which is read/written to by both

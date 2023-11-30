@@ -196,21 +196,407 @@ DIM SHARED PlanetAnim%%, Trace%%, Wipe%%, UpArrow%%, DownArrow%%, EndArrow%%, Ar
 CONST FrameRate% = 30, Persp& = -8000, Origin& = -16000, Uscreen% = 1400, Vscreen% = 830 'Uscreen%/Vscreen% same as PictureBox1
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/MessageBox.bi'
+'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'GravitationSimulation.frm'
-'$INCLUDE:'democode.bas'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event Procedures & Functions: ----------------------------------------------------
+
+SUB DemoRoutine
+    STATIC ByJupiter%%, DemoText$(), N%, T$
+    IF N% = 0 THEN
+        DIM DemoText$(27)
+        OPEN "demodat.dat" FOR INPUT AS #1
+        WHILE NOT EOF(1)
+            INPUT #1, DemoText$(N%)
+            N% = N% + 1
+        WEND
+        CLOSE #1
+    END IF
+    SELECT CASE NoCycles&
+        CASE 10000
+            T$ = DemoText$(0)
+            Caption(DemoLabel1LB) = T$
+            Breadth% = LEN(T$)
+            ByJupiter%% = 0
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            Control(DemoLabel1LB).Width = 9.2 * Breadth%
+            Control(DemoLabel1LB).Left = U% - 4.6 * Breadth%
+            Control(DemoLabel1LB).Top = V% + 20
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 12000
+            PlanetAnim%% = ByJupiter%%
+        CASE 25000
+            Control(DemoLabel1LB).Hidden = TRUE
+        CASE 30000
+            T$ = DemoText$(1)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 120
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 32000
+            ByJupiter%% = 1
+            PlanetAnim%% = ByJupiter%%
+        CASE 45000
+            ByJupiter%% = 2
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            T$ = DemoText$(2)
+            Breadth% = LEN(T$)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * Breadth%
+            Control(DemoLabel2LB).Left = U% - 4.6 * Breadth%
+            Control(DemoLabel2LB).Top = V% + 20
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 47500
+            Control(DemoLabel1LB).Hidden = TRUE
+            PlanetAnim%% = ByJupiter%%
+        CASE 60000
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 65000
+            T$ = DemoText$(3)
+            UpArrow%% = TRUE
+            ArrowTop% = 68: ArrowLeft% = 970
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = ArrowLeft% - 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Top = ArrowTop%
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 67500
+            CALL Zoomer((FALSE))
+            Control(ZoomOutCB).Value = TRUE
+        CASE 67700
+            Control(ZoomOutCB).Value = FALSE
+        CASE 70000
+            CALL Zoomer((FALSE))
+            Control(ZoomOutCB).Value = TRUE
+        CASE 70200
+            Control(ZoomOutCB).Value = FALSE
+        CASE 72500
+            CALL Zoomer((FALSE))
+            Control(ZoomOutCB).Value = TRUE
+        CASE 72700
+            Control(ZoomOutCB).Value = FALSE
+        CASE 75000
+            Control(DemoLabel1LB).Hidden = TRUE
+            EndArrow%% = TRUE
+        CASE 77500
+            T$ = DemoText$(4)
+            Caption(DemoLabel1LB) = T$
+            ByJupiter%% = 3
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 100
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 82500
+            PlanetAnim%% = ByJupiter%%
+        CASE 97500
+            ByJupiter%% = 10
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            T$ = DemoText$(5)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel2LB).Top = 140
+            Control(DemoLabel2LB).Hidden = FALSE
+            PlanetAnim%% = ByJupiter%%
+        CASE 110000
+            ByJupiter%% = 3
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            Control(DemoLabel2LB).Hidden = TRUE
+            T$ = DemoText$(6)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (U% - 4.6 * LEN(T$))
+            Control(DemoLabel1LB).Top = V% + 20
+        CASE 117500
+            Control(DemoLabel1LB).Hidden = TRUE
+        CASE 120000
+            ByJupiter%% = 4
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            T$ = DemoText$(7)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (U% - 4.6 * LEN(T$))
+            Control(DemoLabel1LB).Top = V% + 20
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 122500
+            PlanetAnim%% = ByJupiter%%
+        CASE 130000
+            Control(DemoLabel1LB).Hidden = TRUE
+        CASE 132500
+            T$ = DemoText$(8)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 100
+            Control(DemoLabel1LB).Hidden = FALSE
+            T$ = DemoText$(9)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel2LB).Top = 140
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 140000
+            T$ = DemoText$(10)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel2LB).Top = 140
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 147500
+            Control(DemoLabel1LB).Hidden = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 152500
+            T$ = DemoText$(11)
+            Caption(DemoLabel1LB) = T$
+            UpArrow%% = TRUE
+            ArrowTop% = 84: ArrowLeft% = 520
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = ArrowLeft% + 32
+            Control(DemoLabel1LB).Top = ArrowTop%
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 155000
+            Text(StepTimeMinTB) = "5": Text(StepTimeSecTB) = "0"
+            CALL SetStep
+        CASE 162500
+            Control(DemoLabel1LB).Hidden = TRUE
+            EndArrow%% = TRUE
+        CASE 175000
+            T$ = DemoText$(12)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 180
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 190000
+            UpArrow%% = TRUE
+            ArrowTop% = 100: ArrowLeft% = 1200
+            T$ = DemoText$(13)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = ArrowLeft% - 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Top = ArrowTop%
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 195000
+            ViewingAngle! = -0.25 * _PI
+            Control(ViewingTrackBar).Value = ViewingAngle! * 180 / _PI
+        CASE 197500
+            EndArrow%% = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 200000
+            ViewingAngle! = -0.5 * _PI
+            Control(ViewingTrackBar).Value = ViewingAngle! * 180 / _PI
+            UpArrow%% = TRUE
+            ArrowTop% = 100: ArrowLeft% = 1150
+            Control(DemoLabel2LB).Left = ArrowLeft% - 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Top = ArrowTop%
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 205000
+            Control(DemoLabel1LB).Hidden = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+            EndArrow%% = TRUE
+        CASE 207500
+            T$ = DemoText$(14)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 600
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 237500
+            Control(DemoLabel1LB).Hidden = TRUE
+        CASE 250000
+            T$ = DemoText$(15)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 140
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 255000
+            ViewingAngle! = -.1570787
+            Control(ViewingTrackBar).Value = ViewingAngle! * 180 / _PI
+            CALL Zoomer((FALSE))
+            Zoom! = 5.960449E+08
+        CASE 262500
+            ByJupiter%% = 5
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            T$ = DemoText$(16)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (U% - 4.6 * LEN(T$))
+            Control(DemoLabel1LB).Top = V% + 20
+        CASE 265000
+            PlanetAnim%% = ByJupiter%%
+        CASE 275000
+            Control(DemoLabel1LB).Hidden = TRUE
+        CASE 280000
+            T$ = DemoText$(17)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 140
+            Control(DemoLabel1LB).Hidden = FALSE
+            Text(StepTimeMinTB) = "2": Text(StepTimeSecTB) = "0"
+            CALL SetStep
+        CASE 285000
+            DownArrow%% = TRUE
+            ArrowTop% = 730: ArrowLeft% = 210
+            T$ = DemoText$(18)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = ArrowLeft% - 4.6 * LEN(T$) + 16
+            Control(DemoLabel2LB).Top = ArrowTop% - 32
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 290000
+            Trace%% = FALSE
+            Caption(TraceBT) = "Trace"
+        CASE 297500
+            EndArrow%% = TRUE
+            Control(DemoLabel1LB).Hidden = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 302500
+            DownArrow%% = TRUE
+            ArrowTop% = 730: ArrowLeft% = 210
+            T$ = DemoText$(19)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = ArrowLeft% - 4.6 * LEN(T$) + 16
+            Control(DemoLabel2LB).Top = ArrowTop% - 32
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 305000
+            Trace%% = TRUE
+            Caption(TraceBT) = "Spot"
+        CASE 310000
+            EndArrow%% = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+            Text(StepTimeMinTB) = "5": Text(StepTimeSecTB) = "0"
+            CALL SetStep
+        CASE 330000
+            UpArrow%% = TRUE
+            ArrowTop% = 84: ArrowLeft% = 620
+            T$ = DemoText$(20)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = ArrowLeft% + 32
+            Control(DemoLabel2LB).Top = ArrowTop%
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 332500
+            EFrameClick%% = TRUE
+            Caption(EnergyLB) = "Bodies"
+            Text(EnergyTB) = MakeText$(NoBodiesLess1% + 1)
+        CASE 350000
+            EndArrow%% = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 360000
+            T$ = DemoText$(21)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 140
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 366596
+            ByJupiter%% = 11
+            PlanetAnim%% = ByJupiter%%
+        CASE 376596
+            'The Earth
+            Galaxy#(3, 3) = -36171689178.6047
+            Galaxy#(3, 1) = -147845249378.241
+            Galaxy#(3, 2) = -4877316.79803054
+            Galaxy#(3, 6) = 28470.366606139
+            Galaxy#(3, 4) = -7204.9068182243
+            Galaxy#(3, 5) = 1.0117834275
+            'The Moon
+            Galaxy#(10, 3) = -35958075763.303
+            Galaxy#(10, 1) = -147502805517.55
+            Galaxy#(10, 2) = -12243921.1369571
+            Galaxy#(10, 6) = 27655.4229032262
+            Galaxy#(10, 4) = -6672.4762717713
+            Galaxy#(10, 5) = -86.5562299173
+            Text(StepTimeMinTB) = "0": Text(StepTimeSecTB) = "1"
+            CALL SetStep
+            NoBodiesLess1% = 11
+        CASE 377500
+            T$ = DemoText$(22)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel2LB).Top = 140
+            Control(DemoLabel2LB).Hidden = FALSE
+            T$ = DemoText$(23)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% - 9.2 * LEN(T$)) / 2
+            Control(DemoLabel1LB).Top = 180
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 390000
+            Text(StepTimeMinTB) = "0": Text(StepTimeSecTB) = "8"
+            CALL SetStep
+        CASE 397500
+            Text(StepTimeMinTB) = "0": Text(StepTimeSecTB) = "30"
+            CALL SetStep
+            Control(DemoLabel1LB).Hidden = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 405000
+            Text(StepTimeHrTB) = "0": Text(StepTimeMinTB) = "30": Text(StepTimeSecTB) = "0"
+            CALL SetStep
+        CASE 480000
+            DownArrow%% = TRUE
+            ArrowTop% = 730: ArrowLeft% = 270
+            T$ = DemoText$(24)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = ArrowLeft% - 4.6 * LEN(T$) + 16
+            Control(DemoLabel2LB).Top = ArrowTop% - 32
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 485000
+            Wipe%% = TRUE
+        CASE 488500
+            Control(DemoLabel2LB).Hidden = TRUE
+            EndArrow%% = TRUE
+        CASE 555000
+            ByJupiter%% = 5
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            T$ = DemoText$(25)
+            Caption(DemoLabel2LB) = T$
+            Control(DemoLabel2LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel2LB).Left = (Uscreen% / 2) + 200
+            Control(DemoLabel2LB).Top = V% + 30
+            Control(DemoLabel2LB).Hidden = FALSE
+        CASE 567500
+            Control(DemoLabel2LB).Hidden = TRUE
+        CASE 575000
+            ByJupiter%% = 6
+            CALL ToDisp((Galaxy#(ByJupiter%%, 1)), (Galaxy#(ByJupiter%%, 2)), (Galaxy#(ByJupiter%%, 3)), U%, V%, C2%%)
+            T$ = DemoText$(26)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = U% - 4.6 * LEN(T$)
+            Control(DemoLabel1LB).Top = V% + 20
+            Control(DemoLabel1LB).Hidden = FALSE
+        CASE 582500
+            Control(DemoLabel1LB).Hidden = TRUE
+        CASE 612500
+            T$ = DemoText$(27)
+            Caption(DemoLabel1LB) = T$
+            Control(DemoLabel1LB).Width = 9.2 * LEN(T$)
+            Control(DemoLabel1LB).Left = (Uscreen% / 2) - 4.6 * LEN(T$)
+            Control(DemoLabel1LB).Top = (Vscreen% / 2) - 16
+            Control(DemoLabel1LB).Hidden = FALSE
+    END SELECT
+END SUB
+
 FUNCTION RedGreenBlue~& ' Randomly set colour of body
-    TooDim%% = True
+    TooDim%% = TRUE
     WHILE TooDim%%
         Red% = INT(256 * RND)
         Green% = INT(256 * RND)
         Blue% = INT(256 * RND)
         IF Red% + Green% + Blue% > 254 THEN
             RedGreenBlue~& = _RGB32(Red%, Green%, Blue%)
-            TooDim%% = False
+            TooDim%% = FALSE
         END IF
     WEND
 END FUNCTION
@@ -286,9 +672,9 @@ END FUNCTION
 
 SUB __UI_BeforeInit
     $EXEICON:'.\newton.ico' 'Can't be moved to DIM Shared start region
-    DoCalc%% = False
-    Paused%% = False
-    Trace%% = True
+    DoCalc%% = FALSE
+    Paused%% = FALSE
+    Trace%% = TRUE
     RANDOMIZE (TIMER)
     Pop& = _SNDOPEN("pop.mp3")
     NoBodiesLess1% = 11
@@ -298,25 +684,25 @@ END SUB
 
 SUB __UI_OnLoad
     _SCREENMOVE 0, 0
-    Control(GravitationalCollapseFR).Hidden = True
-    Control(HowManyBodiesFR).Hidden = True
-    Control(BodyDataFR).Hidden = True
-    Control(CollisionsFR).Hidden = True
-    Control(CollisionDistanceFR).Hidden = True
-    Control(SimulationLimitCyclesFR).Hidden = True
-    Control(ManualInputLB).Hidden = True
+    Control(GravitationalCollapseFR).Hidden = TRUE
+    Control(HowManyBodiesFR).Hidden = TRUE
+    Control(BodyDataFR).Hidden = TRUE
+    Control(CollisionsFR).Hidden = TRUE
+    Control(CollisionDistanceFR).Hidden = TRUE
+    Control(SimulationLimitCyclesFR).Hidden = TRUE
+    Control(ManualInputLB).Hidden = TRUE
     Control(ManualInputLB).Top = 10
-    Control(GravitationalCollapseLB).Hidden = True
+    Control(GravitationalCollapseLB).Hidden = TRUE
     Control(GravitationalCollapseLB).Top = 10
-    Control(LoadFromFileLB).Hidden = True
+    Control(LoadFromFileLB).Hidden = TRUE
     Control(LoadFromFileLB).Top = 10
-    Control(DemonstrationLB).Hidden = True
+    Control(DemonstrationLB).Hidden = TRUE
     Control(DemonstrationLB).Top = 10
-    Control(DemoLabel1LB).Hidden = True
-    Control(DemoLabel2LB).Hidden = True
+    Control(DemoLabel1LB).Hidden = TRUE
+    Control(DemoLabel2LB).Hidden = TRUE
     Control(ViewingTrackBar).Value = ViewingAngle! * 180 / _PI
-    Control(ZoomInBT).Disabled = True
-    Control(ZoomOutBT).Disabled = True
+    Control(ZoomInBT).Disabled = TRUE
+    Control(ZoomOutBT).Disabled = TRUE
     SetFocus ExecuteBT
     SetFrameRate FrameRate%
     CALL SetCtrlIndex
@@ -327,7 +713,7 @@ SUB __UI_BeforeUpdateDisplay
     'You can change the update frequency by calling SetFrameRate DesiredRate%
     STATIC FrameCount%, InitDone%%, ArrayReady%%, LocalArray!(), PlanetCount%, PlanetStop%, Planets&()
     IF NOT InitDone%% THEN
-        InitDone%% = True
+        InitDone%% = TRUE
         PlanetStop% = FrameRate% * 4 '4s animation
         PlanetCount% = 0
         DIM LocalArray!(511, 1), Planets&(14)
@@ -361,15 +747,15 @@ SUB __UI_BeforeUpdateDisplay
             WHILE Jump% <= NoBodiesLess1%: Jump% = Jump% * 2: WEND
             WHILE Jump% > 1
                 Jump% = (Jump% - 1) \ 2
-                Finis%% = False
+                Finis%% = FALSE
                 WHILE NOT Finis%%
-                    Finis%% = True
+                    Finis%% = TRUE
                     FOR Upper% = 0 TO NoBodiesLess1% - Jump%
                         Lower% = Upper% + Jump%
                         IF LocalArray!(Upper%, 1) > LocalArray!(Lower%, 1) THEN
                             SWAP LocalArray!(Upper%, 0), LocalArray!(Lower%, 0)
                             SWAP LocalArray!(Upper%, 1), LocalArray!(Lower%, 1)
-                            Finis%% = False
+                            Finis%% = FALSE
                         END IF
                     NEXT Upper%
                 WEND
@@ -381,16 +767,16 @@ SUB __UI_BeforeUpdateDisplay
             END IF
         END IF
         ' Then element 0 has z- order & keep for display
-        ArrayReady%% = True
+        ArrayReady%% = TRUE
         IF Collided%% THEN
             _SNDPLAY Pop&
-            Collided%% = False
+            Collided%% = FALSE
         END IF
         'Update data from displays
         IF Update%% THEN
             Gravity! = VAL(Text(GravitationalConstantTB))
             CALL SetStep
-            Update%% = False
+            Update%% = FALSE
         END IF
         IF FrameCount% >= FrameRate% * 3 THEN
             'Every 3s - Energy, Centre of Mass, Elaspsed Time Display
@@ -410,7 +796,7 @@ SUB __UI_BeforeUpdateDisplay
         BeginDraw PictureBox1
         IF NOT Trace%% OR Wipe%% THEN
             CLS
-            Wipe%% = False
+            Wipe%% = FALSE
         END IF
         FOR N% = 0 TO NoBodiesLess1%
             'Convert x-,y-,z- into u-,v- (in absence of _MAPTRIANGLE(3D)
@@ -432,9 +818,9 @@ SUB __UI_BeforeUpdateDisplay
         END IF
         IF EndArrow%% THEN
             _PUTIMAGE (ArrowLeft%, ArrowTop%)-(ArrowLeft% + 32, ArrowTop% + 32), Planets&(12)
-            EndArrow%% = False
-            UpArrow%% = False
-            DownArrow%% = False
+            EndArrow%% = FALSE
+            UpArrow%% = FALSE
+            DownArrow%% = FALSE
         ELSEIF UpArrow%% THEN
             _PUTIMAGE (ArrowLeft%, ArrowTop%), Planets&(13)
         ELSEIF DownArrow%% THEN
@@ -772,38 +1158,38 @@ SUB __UI_Click (id AS LONG)
 
         CASE EnergyLB
             IF EFrameClick%% THEN
-                EFrameClick%% = False
+                EFrameClick%% = FALSE
                 Caption(EnergyLB) = "Energy"
                 Text(EnergyTB) = DispEnery$
             ELSE
-                EFrameClick%% = True ' Doesn't get updated in set-up
+                EFrameClick%% = TRUE ' Doesn't get updated in set-up
                 Caption(EnergyLB) = "Bodies"
                 Text(EnergyTB) = MakeText$(NoBodiesLess1% + 1)
             END IF
         CASE TimeLimitRB
-            Control(SimulationLimitCyclesFR).Hidden = True
-            Control(SimulationLimitTimeFR).Hidden = False
+            Control(SimulationLimitCyclesFR).Hidden = TRUE
+            Control(SimulationLimitTimeFR).Hidden = FALSE
         CASE CyclesLimitRB
-            Control(SimulationLimitTimeFR).Hidden = True
-            Control(SimulationLimitCyclesFR).Hidden = False
+            Control(SimulationLimitTimeFR).Hidden = TRUE
+            Control(SimulationLimitCyclesFR).Hidden = FALSE
         CASE ZoomInBT
-            IF DoCalc%% THEN CALL Zoomer((True))
+            IF DoCalc%% THEN CALL Zoomer((TRUE))
         CASE ZoomOutBT
-            IF DoCalc%% THEN CALL Zoomer((False))
+            IF DoCalc%% THEN CALL Zoomer((FALSE))
         CASE AllowCollisionsCB
             IF Control(AllowCollisionsCB).Value THEN
-                Control(CollisionDistanceFR).Hidden = False
+                Control(CollisionDistanceFR).Hidden = FALSE
             ELSE
-                Control(CollisionDistanceFR).Hidden = True
+                Control(CollisionDistanceFR).Hidden = TRUE
             END IF
         CASE AllowComputertoSetCB
             IF Control(AllowComputertoSetCB).Value THEN
-                Control(CollisionDistanceTB).Disabled = True
-                Control(BodyDataFR).Hidden = True
+                Control(CollisionDistanceTB).Disabled = TRUE
+                Control(BodyDataFR).Hidden = TRUE
                 Text(StepTimeSecTB) = "10"
             ELSE
-                Control(CollisionDistanceTB).Disabled = False
-                Control(BodyDataFR).Hidden = False
+                Control(CollisionDistanceTB).Disabled = FALSE
+                Control(BodyDataFR).Hidden = FALSE
                 Text(StepTimeSecTB) = "1"
             END IF
         CASE ExitBT
@@ -811,25 +1197,25 @@ SUB __UI_Click (id AS LONG)
             SYSTEM
         CASE ResetBT
             CALL Refresh(1)
-            Control(SimulationTypeFR).Hidden = False
-            Control(ResetBT).Disabled = True
-            Control(PauseBT).Disabled = True
+            Control(SimulationTypeFR).Hidden = FALSE
+            Control(ResetBT).Disabled = TRUE
+            Control(PauseBT).Disabled = TRUE
             Caption(PauseBT) = "Pause"
-            Control(TraceBT).Disabled = True
-            Control(ClearBT).Disabled = True
-            Control(DemoLabel1LB).Hidden = True
-            Control(DemoLabel2LB).Hidden = True
-            Control(ZoomInBT).Disabled = True
-            Control(ZoomOutBT).Disabled = True
-            Trace%% = True
-            Wipe%% = False
+            Control(TraceBT).Disabled = TRUE
+            Control(ClearBT).Disabled = TRUE
+            Control(DemoLabel1LB).Hidden = TRUE
+            Control(DemoLabel2LB).Hidden = TRUE
+            Control(ZoomInBT).Disabled = TRUE
+            Control(ZoomOutBT).Disabled = TRUE
+            Trace%% = TRUE
+            Wipe%% = FALSE
             SetRadioButtonValue SolarSystemRB
             Control(ProgressBar1).Value = 0
             Text(HowManyBodiesTB) = "11"
             FOR M% = 1 TO 11
                 FOR K% = 8 * M% - 7 TO 8 * M%
                     Text(ControlIndex&(K%)) = ""
-                    IF M% >= 3 THEN Control(ControlIndex&(K%)).Hidden = False
+                    IF M% >= 3 THEN Control(ControlIndex&(K%)).Hidden = FALSE
                 NEXT K%
             NEXT M%
             BeginDraw PictureBox1
@@ -841,48 +1227,48 @@ SUB __UI_Click (id AS LONG)
                 StartCalc! = TIMER
                 Caption(PauseBT) = "Pause"
                 Caption(ExecuteBT) = "Stop"
-                DoCalc%% = True
-                Control(ExecuteBT).Disabled = False
-                Control(ResetBT).Disabled = True
-                Control(TraceBT).Disabled = False
-                IF Trace%% THEN Control(ClearBT).Disabled = False
+                DoCalc%% = TRUE
+                Control(ExecuteBT).Disabled = FALSE
+                Control(ResetBT).Disabled = TRUE
+                Control(TraceBT).Disabled = FALSE
+                IF Trace%% THEN Control(ClearBT).Disabled = FALSE
                 CALL Execute
             ELSEIF NOT Paused%% THEN
                 CALL UpdateDisp
                 Caption(PauseBT) = "Resume"
-                Control(ExecuteBT).Disabled = True
-                Control(TraceBT).Disabled = True
-                Control(ClearBT).Disabled = True
-                Paused%% = True
+                Control(ExecuteBT).Disabled = TRUE
+                Control(TraceBT).Disabled = TRUE
+                Control(ClearBT).Disabled = TRUE
+                Paused%% = TRUE
                 Paws! = TIMER
             ELSE
                 Caption(PauseBT) = "Pause"
-                Control(ExecuteBT).Disabled = False
+                Control(ExecuteBT).Disabled = FALSE
                 IF NOT Control(DemonstrationRB).Value THEN
-                    Control(TraceBT).Disabled = False
-                    IF Trace%% THEN Control(ClearBT).Disabled = False
+                    Control(TraceBT).Disabled = FALSE
+                    IF Trace%% THEN Control(ClearBT).Disabled = FALSE
                 END IF
-                Paused%% = False
+                Paused%% = FALSE
                 IF Paws! > TIMER THEN Paws! = Paws! - 86400
                 StartCalc! = StartCalc! + TIMER - Paws!
                 CALL Execute
             END IF
         CASE TraceBT
             IF Trace%% THEN
-                Trace%% = False
-                Control(ClearBT).Disabled = True
+                Trace%% = FALSE
+                Control(ClearBT).Disabled = TRUE
                 Caption(TraceBT) = "Trace"
             ELSE
-                Trace%% = True
-                Control(ClearBT).Disabled = False
+                Trace%% = TRUE
+                Control(ClearBT).Disabled = FALSE
                 Caption(TraceBT) = "Spot"
             END IF
         CASE ClearBT
-            Wipe%% = True
+            Wipe%% = TRUE
         CASE ExecuteBT
             'Check for valid input data
             IF DoCalc%% THEN
-                Control(PauseBT).Disabled = True
+                Control(PauseBT).Disabled = TRUE
                 CALL ThisIsAnExParrot
             ELSE
                 IF Control(SolarSystemRB).Value OR Control(DemonstrationRB).Value THEN
@@ -893,7 +1279,7 @@ SUB __UI_Click (id AS LONG)
                     CALL CollapseFill
                 ELSE ' Check for file, load data & execute
                     IF _FILEEXISTS("mbpfile.dat") THEN
-                        DoCalc%% = True
+                        DoCalc%% = TRUE
                     ELSE
                         AA& = MessageBox("You Have Not Completed a Run", "", 0)
                     END IF
@@ -901,30 +1287,30 @@ SUB __UI_Click (id AS LONG)
             END IF
             IF DoCalc%% THEN
                 PlanetAnim%% = -1
-                Control(SimulationTypeFR).Hidden = True
-                Control(AllowCollisionsCB).Disabled = True
-                Control(CollisionDistanceFR).Disabled = True
-                Control(SimulationLimitTypeFR).Hidden = True
-                Control(SimulationLimitTimeFR).Hidden = True
-                Control(SimulationLimitCyclesFR).Hidden = True
-                Control(CollisionsFR).Hidden = True
-                Control(BodyDataFR).Hidden = True
+                Control(SimulationTypeFR).Hidden = TRUE
+                Control(AllowCollisionsCB).Disabled = TRUE
+                Control(CollisionDistanceFR).Disabled = TRUE
+                Control(SimulationLimitTypeFR).Hidden = TRUE
+                Control(SimulationLimitTimeFR).Hidden = TRUE
+                Control(SimulationLimitCyclesFR).Hidden = TRUE
+                Control(CollisionsFR).Hidden = TRUE
+                Control(BodyDataFR).Hidden = TRUE
                 Control(CollisionDistanceFR).Top = 52
                 Control(CollisionDistanceFR).Left = 10
-                Control(CollisionDistanceTB).Disabled = True
+                Control(CollisionDistanceTB).Disabled = TRUE
                 IF Control(AllowCollisionsCB).Value THEN
-                    Control(CollisionDistanceFR).Hidden = False
+                    Control(CollisionDistanceFR).Hidden = FALSE
                 ELSE
-                    Control(CollisionDistanceFR).Hidden = True
+                    Control(CollisionDistanceFR).Hidden = TRUE
                 END IF
                 IF NOT Control(DemonstrationRB).Value THEN
-                    Control(TraceBT).Disabled = False
-                    Control(ClearBT).Disabled = False
-                    Control(ZoomInBT).Disabled = False
-                    Control(ZoomOutBT).Disabled = False
-                    Control(LoadFromFileRB).Disabled = True
+                    Control(TraceBT).Disabled = FALSE
+                    Control(ClearBT).Disabled = FALSE
+                    Control(ZoomInBT).Disabled = FALSE
+                    Control(ZoomOutBT).Disabled = FALSE
+                    Control(LoadFromFileRB).Disabled = TRUE
                 END IF
-                Control(PauseBT).Disabled = False
+                Control(PauseBT).Disabled = FALSE
                 Caption(ExecuteBT) = "Stop"
                 Caption(PauseBT) = "Pause"
                 Gravity! = VAL(Text(GravitationalConstantTB))
@@ -932,7 +1318,7 @@ SUB __UI_Click (id AS LONG)
                 CosAng! = COS(ViewingAngle!)
                 SinAng! = SIN(ViewingAngle!)
                 Coalesce! = 1000000 * VAL(Text(CollisionDistanceTB)) * VAL(Text(CollisionDistanceTB))
-                Collided%% = False
+                Collided%% = FALSE
                 TimeLimit! = 60 * VAL(Text(NumberofMinutesTB)) + 3600 * VAL(Text(NumberofHoursTB))
                 CyclesLimit& = VAL(Text(NumberofCyclesTB))
                 NoCycles& = 0
@@ -950,21 +1336,21 @@ SUB __UI_Click (id AS LONG)
             IF Control(AllowComputertoSetCB).Value THEN
                 Text(StepTimeSecTB) = "10"
             ELSE
-                Control(BodyDataFR).Hidden = False
+                Control(BodyDataFR).Hidden = FALSE
             END IF
         CASE GravitationalCollapseRB
             CALL Refresh(3)
         CASE LoadFromFileRB
             CALL Refresh(1)
-            Control(SolarSystemLB).Hidden = True
-            Control(LoadFromFileLB).Hidden = False
+            Control(SolarSystemLB).Hidden = TRUE
+            Control(LoadFromFileLB).Hidden = FALSE
             IF _FILEEXISTS("mbpfile.dat") THEN
                 OPEN "mbpfile.dat" FOR INPUT AS #1
                 INPUT #1, Dum1!
                 IF Dum1! <> 0 THEN
-                    Control(CollisionDistanceFR).Hidden = False
+                    Control(CollisionDistanceFR).Hidden = FALSE
                     Text(CollisionDistanceTB) = MakeText$((SQR(Dum1!) / 1000))
-                    Control(AllowCollisionsCB).Value = True
+                    Control(AllowCollisionsCB).Value = TRUE
                 END IF
                 INPUT #1, Text(StepTimeSecTB), Text(StepTimeMinTB), Text(StepTimeHrTB)
                 INPUT #1, Dum1!, Text(NumberofMinutesTB), Text(NumberofHoursTB), Text(NumberofCyclesTB)
@@ -2894,17 +3280,17 @@ SUB __UI_KeyPress (id AS LONG)
     IF __UI_KeyHit = 27 AND NOT Paused%% THEN 'Esc key
         IF DoCalc%% THEN
             'CALL UpdateDisp
-            Control(PauseBT).Disabled = True
+            Control(PauseBT).Disabled = TRUE
             CALL ThisIsAnExParrot
         ELSE
             SYSTEM
         END IF
     ELSEIF __UI_KeyHit = 13 THEN 'CR
         CtrlIndex% = 1
-        AtIndex%% = False
+        AtIndex%% = FALSE
         WHILE NOT AtIndex%%
             IF ControlIndex&(CtrlIndex%) = id THEN
-                AtIndex%% = True
+                AtIndex%% = TRUE
             ELSE
                 CtrlIndex% = CtrlIndex% + 1
             END IF
@@ -2912,16 +3298,16 @@ SUB __UI_KeyPress (id AS LONG)
         SELECT CASE CtrlIndex% 'id
             CASE 89 'HowManyBodiesTB
                 IF VAL(Text(id)) >= 2 AND VAL(Text(id)) <= 11 THEN
-                    Control(BodyDataFR).Hidden = False
+                    Control(BodyDataFR).Hidden = FALSE
                     Index% = VAL(Text(id))
                     FOR M% = 3 TO 11
                         IF Index% < M% THEN
                             FOR K% = 8 * M% - 7 TO 8 * M%
-                                Control(ControlIndex&(K%)).Hidden = True
+                                Control(ControlIndex&(K%)).Hidden = TRUE
                             NEXT K%
                         ELSE
                             FOR K% = 8 * M% - 7 TO 8 * M%
-                                Control(ControlIndex&(K%)).Hidden = False
+                                Control(ControlIndex&(K%)).Hidden = FALSE
                             NEXT K%
                         END IF
                     NEXT M%
@@ -2982,7 +3368,7 @@ SUB __UI_KeyPress (id AS LONG)
             CASE 94 TO 97 'GravitationalConstantTB, StepTimeHrTB, StepTimeMinTB, StepTimeSecTB
                 'For these and next case, convert any negative or blank entries to zero
                 Text(id) = Minus1$(Text(id))
-                Update%% = True
+                Update%% = TRUE
             CASE 98 TO 101 'CollisionDistanceTB, NumberofMinutesTB, NumberofHoursTB, NumberofCyclesTB
                 Text(id) = Minus1$(Text(id))
         END SELECT
@@ -3288,14 +3674,14 @@ END SUB
 
 SUB Refresh (IJ%) ' Set Control values dependent upon input data
     IF IJ% = 4 THEN
-        Control(SimulationLimitTypeFR).Hidden = True
-        Control(SimulationLimitTimeFR).Hidden = True
-        Control(ViewingTrackBar).Disabled = True
-        Control(GravitationalConstantTB).Disabled = True
-        Control(StepTimeSecTB).Disabled = True
-        Control(StepTimeMinTB).Disabled = True
-        Control(StepTimeHrTB).Disabled = True
-        Control(DemonstrationLB).Hidden = False
+        Control(SimulationLimitTypeFR).Hidden = TRUE
+        Control(SimulationLimitTimeFR).Hidden = TRUE
+        Control(ViewingTrackBar).Disabled = TRUE
+        Control(GravitationalConstantTB).Disabled = TRUE
+        Control(StepTimeSecTB).Disabled = TRUE
+        Control(StepTimeMinTB).Disabled = TRUE
+        Control(StepTimeHrTB).Disabled = TRUE
+        Control(DemonstrationLB).Hidden = FALSE
         SetRadioButtonValue CyclesLimitRB
         NoBodiesLess1% = 10
         Text(StepTimeSecTB) = "10"
@@ -3304,30 +3690,30 @@ SUB Refresh (IJ%) ' Set Control values dependent upon input data
         Text(GravitationalConstantTB) = "6.67385E-11"
         SetFocus ExecuteBT
     ELSE
-        Control(SimulationLimitTypeFR).Hidden = False
-        Control(SimulationLimitTimeFR).Hidden = False
-        Control(ViewingTrackBar).Disabled = False
-        Control(GravitationalConstantTB).Disabled = False
-        Control(StepTimeSecTB).Disabled = False
-        Control(StepTimeMinTB).Disabled = False
-        Control(StepTimeHrTB).Disabled = False
-        Control(DemonstrationLB).Hidden = True
+        Control(SimulationLimitTypeFR).Hidden = FALSE
+        Control(SimulationLimitTimeFR).Hidden = FALSE
+        Control(ViewingTrackBar).Disabled = FALSE
+        Control(GravitationalConstantTB).Disabled = FALSE
+        Control(StepTimeSecTB).Disabled = FALSE
+        Control(StepTimeMinTB).Disabled = FALSE
+        Control(StepTimeHrTB).Disabled = FALSE
+        Control(DemonstrationLB).Hidden = TRUE
         SetRadioButtonValue TimeLimitRB
         Text(NumberofCyclesTB) = "100000"
     END IF
     IF IJ% = 3 OR IJ% = 2 THEN
-        Control(CollisionsFR).Hidden = False
-        Control(CollisionDistanceFR).Hidden = False
+        Control(CollisionsFR).Hidden = FALSE
+        Control(CollisionDistanceFR).Hidden = FALSE
         ViewingAngle! = 0
     ELSE
-        Control(CollisionsFR).Hidden = True
-        Control(CollisionDistanceFR).Hidden = True
+        Control(CollisionsFR).Hidden = TRUE
+        Control(CollisionDistanceFR).Hidden = TRUE
         ViewingAngle! = -.1570787
     END IF
     IF IJ% = 3 THEN
-        Control(GravitationalCollapseFR).Hidden = False
-        Control(GravitationalCollapseLB).Hidden = False
-        Control(AllowCollisionsCB).Value = True
+        Control(GravitationalCollapseFR).Hidden = FALSE
+        Control(GravitationalCollapseLB).Hidden = FALSE
+        Control(AllowCollisionsCB).Value = TRUE
         NoBodiesLess1% = VAL(Text(NumberOfBodiesTB)) - 1
         Text(StepTimeSecTB) = "0"
         Text(StepTimeHrTB) = "24"
@@ -3336,43 +3722,43 @@ SUB Refresh (IJ%) ' Set Control values dependent upon input data
         Text(GravitationalConstantTB) = "6.67385E-11"
         SetFocus NumberOfBodiesTB
     ELSE
-        Control(GravitationalCollapseFR).Hidden = True
-        Control(GravitationalCollapseLB).Hidden = True
-        Control(AllowCollisionsCB).Value = False 'Default for all except Collapse will be no collisions
+        Control(GravitationalCollapseFR).Hidden = TRUE
+        Control(GravitationalCollapseLB).Hidden = TRUE
+        Control(AllowCollisionsCB).Value = FALSE 'Default for all except Collapse will be no collisions
         Text(NumberofMinutesTB) = "10"
         Text(NumberofHoursTB) = "0"
     END IF
     IF IJ% = 2 THEN
-        Control(HowManyBodiesFR).Hidden = False
-        Control(AllowCollisionsCB).Disabled = False
-        Control(ManualInputLB).Hidden = False
+        Control(HowManyBodiesFR).Hidden = FALSE
+        Control(AllowCollisionsCB).Disabled = FALSE
+        Control(ManualInputLB).Hidden = FALSE
         NoBodiesLess1% = VAL(Text(HowManyBodiesTB)) - 1
         Text(StepTimeSecTB) = "1"
         Text(StepTimeHrTB) = "0"
         SetFocus HowManyBodiesTB
     ELSE
-        Control(HowManyBodiesFR).Hidden = True
-        Control(AllowCollisionsCB).Disabled = True
-        Control(ManualInputLB).Hidden = True
+        Control(HowManyBodiesFR).Hidden = TRUE
+        Control(AllowCollisionsCB).Disabled = TRUE
+        Control(ManualInputLB).Hidden = TRUE
     END IF
     IF IJ% = 1 THEN
-        Control(SolarSystemLB).Hidden = False
+        Control(SolarSystemLB).Hidden = FALSE
         NoBodiesLess1% = 11
         Text(StepTimeSecTB) = "0"
         Text(StepTimeHrTB) = "1"
         Text(GravitationalConstantTB) = "6.67385E-11"
-        Control(ExecuteBT).Disabled = False
+        Control(ExecuteBT).Disabled = FALSE
         SetFocus ExecuteBT
     ELSE
-        Control(SolarSystemLB).Hidden = True
+        Control(SolarSystemLB).Hidden = TRUE
     END IF
-    Control(SimulationLimitCyclesFR).Hidden = True
-    Control(BodyDataFR).Hidden = True
-    Control(LoadFromFileLB).Hidden = True
+    Control(SimulationLimitCyclesFR).Hidden = TRUE
+    Control(BodyDataFR).Hidden = TRUE
+    Control(LoadFromFileLB).Hidden = TRUE
     Text(CollisionDistanceTB) = "1E6"
     Text(StepTimeMinTB) = "0"
     Control(ViewingTrackBar).Value = ViewingAngle! * 180 / _PI
-    EFrameClick%% = False
+    EFrameClick%% = FALSE
     Caption(EnergyLB) = "Energy"
     Text(EnergyTB) = "0"
     CALL ZeroTime
@@ -3433,7 +3819,7 @@ SUB ElapsedTime 'Set Elapsed Time Labels
         IF NOT DispYears%% THEN
             Caption(ElapsedTime1LB) = "Years"
             Caption(ElapsedTime2LB) = "Days"
-            DispYears%% = True
+            DispYears%% = TRUE
         END IF
         Text(ElapsedTime1TB) = MakeText$(TotYears&)
         Text(ElapsedTime2TB) = MakeText$(TotDays&)
@@ -3441,7 +3827,7 @@ SUB ElapsedTime 'Set Elapsed Time Labels
         IF NOT DispDays%% THEN
             Caption(ElapsedTime1LB) = "Days"
             Caption(ElapsedTime2LB) = "Hrs"
-            DispDays%% = True
+            DispDays%% = TRUE
         END IF
         Text(ElapsedTime1TB) = MakeText$(TotDays&)
         Text(ElapsedTime2TB) = MakeText$(TotHrs&)
@@ -3449,7 +3835,7 @@ SUB ElapsedTime 'Set Elapsed Time Labels
         IF NOT DispHours%% THEN
             Caption(ElapsedTime1LB) = "Hours"
             Caption(ElapsedTime2LB) = "Mins"
-            DispHours%% = True
+            DispHours%% = TRUE
         END IF
         Text(ElapsedTime1TB) = MakeText$(TotHrs&)
         Text(ElapsedTime2TB) = MakeText$(TotMins&)
@@ -3458,7 +3844,7 @@ SUB ElapsedTime 'Set Elapsed Time Labels
         Text(ElapsedTime2TB) = MakeText$(TotSecs&)
     END IF
     IF NOT DoCalc%% THEN
-        DispYears%% = False: DispDays%% = False: DispHours%% = False
+        DispYears%% = FALSE: DispDays%% = FALSE: DispHours%% = FALSE
     END IF
 END SUB
 
@@ -3478,7 +3864,7 @@ SUB Execute 'Do the simulation
                 J% = (I% + 1)
                 WHILE J% <= NoBodiesLess1%
                     IF (((Galaxy#(J%, 1) - Galaxy#(I%, 1)) ^ 2 + (Galaxy#(J%, 2) - Galaxy#(I%, 2)) ^ 2 + (Galaxy#(J%, 3) - Galaxy#(I%, 3)) ^ 2) < Coalesce!) THEN
-                        Collided%% = True
+                        Collided%% = TRUE
                         CombMass# = Galaxy#(I%, 0) + Galaxy#(J%, 0)
                         FOR K% = 1 TO 3
                             Galaxy#(I%, 3 + K%) = (((Galaxy#(J%, 3 + K%) * Galaxy#(J%, 0)) + (Galaxy#(I%, 3 + K%) * Galaxy#(I%, 0))) / CombMass#)
@@ -3579,25 +3965,25 @@ END SUB
 
 SUB ThisIsAnExParrot 'Complete Simulation
     CALL UpdateDisp
-    DoCalc%% = False
+    DoCalc%% = FALSE
     Caption(ExecuteBT) = "Execute"
-    Control(ExecuteBT).Disabled = True
-    Control(ResetBT).Disabled = False
-    Control(ClearBT).Disabled = True
-    Control(TraceBT).Disabled = True
+    Control(ExecuteBT).Disabled = TRUE
+    Control(ResetBT).Disabled = FALSE
+    Control(ClearBT).Disabled = TRUE
+    Control(TraceBT).Disabled = TRUE
     Control(ProgressBar1).Value = 100
     Control(CollisionDistanceFR).Top = 368
     Control(CollisionDistanceFR).Left = 150
-    Control(CollisionDistanceFR).Hidden = True
-    Control(CollisionDistanceTB).Disabled = False
+    Control(CollisionDistanceFR).Hidden = TRUE
+    Control(CollisionDistanceTB).Disabled = FALSE
     IF Control(DemonstrationRB).Value THEN
-        Control(PauseBT).Disabled = True
+        Control(PauseBT).Disabled = TRUE
     ELSE
         OPEN "mbpfile.dat" FOR OUTPUT AS #1
         IF Control(AllowCollisionsCB).Value THEN
             WRITE #1, Coalesce!
         ELSE
-            WRITE #1, False
+            WRITE #1, FALSE
         END IF
         WRITE #1, Text(StepTimeSecTB), Text(StepTimeMinTB), Text(StepTimeHrTB)
         WRITE #1, Control(TimeLimitRB).Value, Text(NumberofMinutesTB), Text(NumberofHoursTB), Text(NumberofCyclesTB)
@@ -3611,12 +3997,12 @@ SUB ThisIsAnExParrot 'Complete Simulation
         NEXT I%
         CLOSE #1
     END IF
-    IF Control(AllowCollisionsCB).Value THEN Control(CollisionDistanceFR).Disabled = False
+    IF Control(AllowCollisionsCB).Value THEN Control(CollisionDistanceFR).Disabled = FALSE
     SetFocus ResetBT
 END SUB
 
 SUB SolarFill ' Define 12-body Solar System. Earth with man-made satellite, or Jupiter with Elara
-    DoCalc%% = True
+    DoCalc%% = TRUE
     ViewingAngle! = -.1570787
     'The Sun
     Galaxy#(0, 0) = 1.98892D+30
@@ -3753,9 +4139,9 @@ END SUB
 SUB BodyManualFill 'Manual Input Data
     IF NOT Control(BodyDataFR).Hidden THEN
         'Manual data entry
-        DoCalc%% = True
+        DoCalc%% = TRUE
         IF VAL(Text(HowManyBodiesTB)) < 2 OR VAL(Text(HowManyBodiesTB)) > 11 THEN
-            DoCalc%% = False
+            DoCalc%% = FALSE
             AA& = MessageBox("From 2 to 11 Bodies Required", "", 0)
             SetFocus HowManyBodiesTB
         END IF
@@ -3766,19 +4152,19 @@ SUB BodyManualFill 'Manual Input Data
                 SELECT CASE Index%
                     CASE 2
                         IF VAL(Text(ControlIndex&(M%))) > 5E31 OR VAL(Text(ControlIndex&(M%))) <= 0 THEN
-                            DoCalc%% = False
+                            DoCalc%% = FALSE
                             AA& = MessageBox("Body Mass Greater Than Zero and Less Than 5E31 Required", "", 0)
                             SetFocus ControlIndex&(M%)
                         END IF
                     CASE 3 TO 5
                         IF VAL(Text(ControlIndex&(M%))) < -5E14 OR VAL(Text(ControlIndex&(M%))) > 5E14 THEN
-                            DoCalc%% = False
+                            DoCalc%% = FALSE
                             AA& = MessageBox("Body Distance From -5E14 To 5E14 Required", "", 0)
                             SetFocus ControlIndex&(M%)
                         END IF
                     CASE 0, 6, 7
                         IF VAL(Text(ControlIndex&(M%))) < -50000 OR VAL(Text(ControlIndex&(M%))) > 50000 THEN
-                            DoCalc%% = False
+                            DoCalc%% = FALSE
                             AA& = MessageBox("Body Velocity From -50000 To 50000 Required", "", 0)
                             SetFocus ControlIndex&(M%)
                         END IF
@@ -3796,8 +4182,8 @@ SUB BodyManualFill 'Manual Input Data
                 NEXT K%
                 Spectrum~&(N%) = RedGreenBlue~&
             NEXT N%
-            Control(BodyDataFR).Hidden = True
-            Control(HowManyBodiesFR).Hidden = True
+            Control(BodyDataFR).Hidden = TRUE
+            Control(HowManyBodiesFR).Hidden = TRUE
             CALL CentreOfMass
             Zoom! = 0
             FOR N% = 0 TO NoBodiesLess1%
@@ -3807,8 +4193,8 @@ SUB BodyManualFill 'Manual Input Data
         END IF
     ELSEIF Control(AllowComputertoSetCB).Value THEN
         ' Computer sets data
-        DoCalc%% = True
-        Control(HowManyBodiesFR).Hidden = True
+        DoCalc%% = TRUE
+        Control(HowManyBodiesFR).Hidden = TRUE
         NoBodiesLess1% = VAL(Text(HowManyBodiesTB)) - 1
         TotMass! = 0: Zoom! = 0 'Zoom! =  Calculated Mean distance
         FOR N% = 0 TO NoBodiesLess1%
@@ -3837,25 +4223,25 @@ SUB BodyManualFill 'Manual Input Data
 END SUB
 
 SUB CollapseFill ' Up to 512 bodies collapsing under gravity
-    DoCalc%% = True
+    DoCalc%% = TRUE
     IF VAL(Text(NumberOfBodiesTB)) < 12 OR VAL(Text(NumberOfBodiesTB)) > 512 THEN
-        DoCalc%% = False
+        DoCalc%% = FALSE
         AA& = MessageBox("Number of Bodies From 12 To 512 Required", "", 0)
         SetFocus NumberOfBodiesTB
     ELSEIF VAL(Text(MaximumMassTB)) > 3E26 OR Text(MaximumMassTB) = "" THEN
-        DoCalc%% = False
+        DoCalc%% = FALSE
         AA& = MessageBox("Maximum Mass Below 3E26 Required", "", 0)
     ELSEIF VAL(Text(MaximumDistanceTB)) > 5E14 OR Text(MaximumDistanceTB) = "" THEN
-        DoCalc%% = False
+        DoCalc%% = FALSE
         AA& = MessageBox("Maximum Distance Below 5E14 Required", "", 0)
         SetFocus MaximumDistanceTB
     ELSEIF VAL(Text(MaximumSpeedTB)) > 500 OR Text(MaximumSpeedTB) = "" THEN
-        DoCalc%% = False
+        DoCalc%% = FALSE
         AA& = MessageBox("Maximum Speed Below 500 Required", "", 0)
         SetFocus MaximumSpeedTB
     END IF
     IF DoCalc%% THEN
-        Control(GravitationalCollapseFR).Hidden = True
+        Control(GravitationalCollapseFR).Hidden = TRUE
         NoBodiesLess1% = VAL(Text(NumberOfBodiesTB)) - 1
         'Fill Array
         Zoom! = 0
@@ -3867,12 +4253,12 @@ SUB CollapseFill ' Up to 512 bodies collapsing under gravity
             Galaxy#(N%, 5) = MaxSpeed! * (0.5 - RND)
             Galaxy#(N%, 6) = MaxSpeed! * (0.5 - RND)
             Rad2! = 1000 * VAL(Text(MaximumDistanceTB)) 'Input value in km
-            InsideSphere%% = False
+            InsideSphere%% = FALSE
             WHILE NOT InsideSphere%%
                 FOR K% = 1 TO 3
                     Galaxy#(N%, K%) = (0.5 - RND) * 2 * Rad2!
                 NEXT K%
-                IF SQR(Galaxy#(N%, 1) * Galaxy#(N%, 1) + Galaxy#(N%, 2) * Galaxy#(N%, 2) + Galaxy#(N%, 3) * Galaxy#(N%, 3)) <= Rad2! THEN InsideSphere%% = True
+                IF SQR(Galaxy#(N%, 1) * Galaxy#(N%, 1) + Galaxy#(N%, 2) * Galaxy#(N%, 2) + Galaxy#(N%, 3) * Galaxy#(N%, 3)) <= Rad2! THEN InsideSphere%% = TRUE
             WEND
             Spectrum~&(N%) = RedGreenBlue~&
             Zoom! = Zoom! + SQR(Galaxy#(N%, 1) * Galaxy#(N%, 1) + Galaxy#(N%, 2) * Galaxy#(N%, 2) + Galaxy#(N%, 3) * Galaxy#(N%, 3))
@@ -3881,7 +4267,3 @@ SUB CollapseFill ' Up to 512 bodies collapsing under gravity
         CALL CentreOfMass
     END IF
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'

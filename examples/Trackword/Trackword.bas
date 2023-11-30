@@ -48,9 +48,13 @@ DATA 254,36541,652,12587,23698741,98523,458,56974,685
 FOR M%% = 1 TO noCells%%: READ TrackWord$(M%%): NEXT M%%
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'../../InForm/extensions/MessageBox.bi'
+'$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Trackword.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
+'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
+
 
 FUNCTION snake2word$ (snakey$)
     ' Use the dim shared theWord$ to translate snake number string to letters
@@ -69,14 +73,14 @@ END FUNCTION
 
 FUNCTION Located%% (S2$)
     'Proven to work in all circustances
-    __Located%% = False
+    __Located%% = FALSE
     P0& = 1
     P100& = Entries&
 
     WHILE P0& <= P100& AND NOT __Located%%
         P50& = INT((P0& + P100&) / 2)
         IF S2$ = words$(P50&) THEN
-            __Located%% = True
+            __Located%% = TRUE
         ELSEIF S2$ > words$(P50&) THEN
             P0& = P50& + 1
         ELSE
@@ -86,7 +90,6 @@ FUNCTION Located%% (S2$)
 
     Located = __Located%%
 END FUNCTION
-
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -170,12 +173,12 @@ SUB __UI_Click (id AS LONG)
             'Search for 9-letter word & place in grid
             OPEN "dictionary.rnd" FOR RANDOM AS #1 LEN = 9
             FIELD #1, 9 AS Lex$
-            NineLetters` = False
+            NineLetters` = FALSE
             WHILE NOT NineLetters`
                 Sel& = INT(Entries& * RND) + 1
                 GET #1, Sel&
                 OutWord$ = RTRIM$(Lex$)
-                IF LEN(OutWord$) = 9 THEN NineLetters` = True
+                IF LEN(OutWord$) = 9 THEN NineLetters` = TRUE
             WEND
             CLOSE #1
             theWord$ = "*********"
@@ -221,60 +224,60 @@ SUB __UI_Click (id AS LONG)
             Caption(WordsFoundLB) = "Words Found"
             NoAnswers% = 0
             NoNineLetters% = 0
-            FullWord` = True
+            FullWord` = TRUE
             IF Text(TextBox1) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox1
             ELSEIF Text(TextBox1) < "A" OR Text(TextBox1) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox1
             ELSEIF Text(TextBox2) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox2
             ELSEIF Text(TextBox2) < "A" OR Text(TextBox2) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox2
             ELSEIF Text(TextBox3) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox3
             ELSEIF Text(TextBox3) < "A" OR Text(TextBox3) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox3
             ELSEIF Text(TextBox4) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox4
             ELSEIF Text(TextBox4) < "A" OR Text(TextBox4) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox4
             ELSEIF Text(TextBox5) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox5
             ELSEIF Text(TextBox5) < "A" OR Text(TextBox5) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox5
             ELSEIF Text(TextBox6) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox6
             ELSEIF Text(TextBox6) < "A" OR Text(TextBox6) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox6
             ELSEIF Text(TextBox7) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox7
             ELSEIF Text(TextBox7) < "A" OR Text(TextBox7) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox7
             ELSEIF Text(TextBox8) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox8
             ELSEIF Text(TextBox8) < "A" OR Text(TextBox8) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox8
             ELSEIF Text(TextBox9) = "" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox9
             ELSEIF Text(TextBox9) < "A" OR Text(TextBox9) > "Z" THEN
-                FullWord` = False
+                FullWord` = FALSE
                 SetFocus TextBox9
             END IF
             IF FullWord` THEN
@@ -300,11 +303,11 @@ SUB __UI_Click (id AS LONG)
                     FOR M%% = 0 TO 1
                         IF Located%%(S1$(M%%)) THEN
                             IF NoAnswers% > 0 THEN
-                                Present` = False
+                                Present` = FALSE
                                 Index% = 0
                                 WHILE (NOT Present`) AND Index% <= NoAnswers%
                                     GET #1, Index% + 1
-                                    IF RTRIM$(TWord$) = S1$(M%%) THEN Present` = True
+                                    IF RTRIM$(TWord$) = S1$(M%%) THEN Present` = TRUE
                                     Index% = Index% + 1
                                 WEND
                                 IF NOT Present` THEN
@@ -325,9 +328,9 @@ SUB __UI_Click (id AS LONG)
                 WHILE Jump% <= NoAnswers%: Jump% = Jump% * 2: WEND
                 WHILE Jump% > 1
                     Jump% = (Jump% - 1) \ 2
-                    Finished` = False
+                    Finished` = FALSE
                     WHILE NOT Finished`
-                        Finished` = True
+                        Finished` = TRUE
                         FOR Upper% = 1 TO NoAnswers% - Jump%
                             Lower% = Upper% + Jump%
                             GET #1, Upper%: UWord$ = TWord$
@@ -337,7 +340,7 @@ SUB __UI_Click (id AS LONG)
                                 PUT #1, Lower%
                                 LSET TWord$ = LWord$
                                 PUT #1, Upper%
-                                Finished` = False
+                                Finished` = FALSE
                             END IF
                         NEXT Upper%
                     WEND
@@ -457,7 +460,3 @@ END SUB
 
 SUB __UI_FormResized
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'

@@ -11,6 +11,9 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
+    'DEFLNG A-Z
+    'OPTION _EXPLICIT
+
     'REDIM MyHashTable(0 TO 0) AS HashTableType
 
     'CONST TEST_LB = 1
@@ -168,7 +171,9 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
 
     ' Return TRUE if k is available in the hash table
     FUNCTION HashTable_IsKeyPresent%% (hashTable() AS HashTableType, k AS _UNSIGNED LONG)
+        $CHECKING:OFF
         HashTable_IsKeyPresent = (__HashTable_GetLookupIndex(hashTable(), k) >= 0)
+        $CHECKING:ON
     END FUNCTION
 
 
@@ -177,7 +182,7 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
         DIM idx AS LONG: idx = __HashTable_GetLookupIndex(hashTable(), k)
 
         IF idx >= 0 THEN
-            hashTable(idx).U = FALSE
+            hashTable(idx).U = __HASHTABLE_FALSE
         ELSE
             ERROR 9
         END IF
@@ -189,7 +194,7 @@ $IF HASHTABLE_BAS = UNDEFINED THEN
         DIM idx AS LONG: idx = __HashTable_GetInsertIndex(hashTable(), k)
 
         IF idx >= 0 THEN
-            hashTable(idx).U = TRUE
+            hashTable(idx).U = __HASHTABLE_TRUE
             hashTable(idx).K = k
             hashTable(idx).V = v
         ELSE

@@ -18,6 +18,8 @@ DIM SHARED Drawing AS _BYTE, Tool AS _UNSIGNED _BYTE
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'InFormPaint.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -179,7 +181,7 @@ SUB __UI_MouseDown (id AS LONG)
         CASE InFormPaint
 
         CASE PictureBox1
-            Drawing = True
+            Drawing = TRUE
         CASE CircleBT
 
         CASE SquareBT
@@ -192,7 +194,7 @@ SUB __UI_MouseDown (id AS LONG)
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
-    Drawing = False
+    Drawing = FALSE
     SELECT CASE id
         CASE InFormPaint
 
@@ -235,6 +237,3 @@ END SUB
 SUB __UI_FormResized
 
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

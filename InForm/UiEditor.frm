@@ -817,9 +817,11 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "CancelBindBT", 80, 23, 341, 220, __UI_GetID("SetControlBinding"))
     SetCaption __UI_NewID, "Cancel"
     Control(__UI_NewID).CanHaveFocus = True
+
 END SUB
 
 SUB __UI_AssignIDs
+
     UiEditor = __UI_GetID("UiEditor")
     StatusBar = __UI_GetID("StatusBar")
     FileMenu = __UI_GetID("FileMenu")
@@ -1005,4 +1007,5 @@ SUB __UI_AssignIDs
     TargetPropertyList = __UI_GetID("TargetPropertyList")
     BindBT = __UI_GetID("BindBT")
     CancelBindBT = __UI_GetID("CancelBindBT")
+
 END SUB

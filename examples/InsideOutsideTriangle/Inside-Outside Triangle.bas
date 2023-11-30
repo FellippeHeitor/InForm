@@ -36,6 +36,8 @@ DIM SHARED ClickCount%, Vertices%(3, 1), A#, B#, C#, XMouse%, YMouse%
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Inside-Outside Triangle.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Functions: ---------------------------------------------------------------------
 FUNCTION SideLength# (X1#, Y1#, X2#, Y2#)
@@ -51,18 +53,18 @@ END FUNCTION
 FUNCTION AtCorner%%
     'This function avoids trig divide by zero difficulty at triangle corners
     IF (Vertices%(3, 0) = Vertices%(0, 0) AND Vertices%(3, 1) = Vertices%(0, 1)) OR (Vertices%(3, 0) = Vertices%(1, 0) AND Vertices%(3, 1) = Vertices%(1, 1)) OR (Vertices%(3, 0) = Vertices%(2, 0) AND Vertices%(3, 1) = Vertices%(2, 1)) THEN
-        AtCorner%% = True
+        AtCorner%% = TRUE
     ELSE
-        AtCorner%% = False
+        AtCorner%% = FALSE
     END IF
 END FUNCTION
 
 FUNCTION InPicture%%
     'True if cursor is in PictureBox1
     IF XMouse% > 0 AND XMouse% < 650 AND YMouse% > 0 AND YMouse% < 540 THEN
-        InPicture%% = True
+        InPicture%% = TRUE
     ELSE
-        InPicture%% = False
+        InPicture%% = FALSE
     END IF
 END FUNCTION
 
@@ -79,7 +81,7 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    Control(InsideOutsideLB).Hidden = True
+    Control(InsideOutsideLB).Hidden = TRUE
     BeginDraw PictureBox1
     'Drawing code goes here
     COLOR _RGB32(0, 0, 0), _RGB32(255, 255, 255)
@@ -206,7 +208,7 @@ SUB __UI_Click (id AS LONG)
                         EndDraw PictureBox1
                         Caption(Click1LB) = "Move Cursor"
                         Caption(Click2LB) = "Around"
-                        Control(InsideOutsideLB).Hidden = False
+                        Control(InsideOutsideLB).Hidden = FALSE
                         'Triangle Side Lengths
                         A# = SideLength#(Vertices%(0, 0), Vertices%(0, 1), Vertices%(2, 0), Vertices%(2, 1))
                         B# = SideLength#(Vertices%(1, 0), Vertices%(1, 1), Vertices%(0, 0), Vertices%(0, 1))
@@ -227,7 +229,7 @@ SUB __UI_Click (id AS LONG)
             Caption(Y2LB) = ""
             Caption(X3LB) = ""
             Caption(Y3LB) = ""
-            Control(InsideOutsideLB).Hidden = True
+            Control(InsideOutsideLB).Hidden = TRUE
             Caption(Click1LB) = "Click To Set"
             Caption(Click2LB) = "Vertex 1"
     END SELECT
@@ -266,6 +268,3 @@ END SUB
 
 SUB __UI_FormResized
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

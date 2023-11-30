@@ -21,6 +21,8 @@ DIM SHARED elapsed AS SINGLE
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Stopwatch.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -73,15 +75,15 @@ SUB __UI_Click (id AS LONG)
         CASE StartBT
             IF Running THEN
                 Caption(id) = "Start"
-                Running = False
-                Control(StopBT).Disabled = False
-                Control(LapBT).Disabled = True
+                Running = FALSE
+                Control(StopBT).Disabled = FALSE
+                Control(LapBT).Disabled = TRUE
             ELSE
                 Caption(id) = "Pause"
                 start = TIMER - elapsed
-                Running = True
-                Control(StopBT).Disabled = True
-                Control(LapBT).Disabled = False
+                Running = TRUE
+                Control(StopBT).Disabled = TRUE
+                Control(LapBT).Disabled = FALSE
             END IF
         CASE LapBT
             AddItem ListBox1, Caption(TimeLB)
@@ -219,6 +221,3 @@ END SUB
 SUB __UI_FormResized
 
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

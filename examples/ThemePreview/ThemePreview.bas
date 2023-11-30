@@ -15,8 +15,11 @@ DIM SHARED ContextMenu1Copy AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'ThemePreview.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
+
 SUB __UI_BeforeInit
 
 END SUB
@@ -147,13 +150,10 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE DropdownList1
             _FREEIMAGE Control(PictureBox1).HelperCanvas
             Control(PictureBox1).HelperCanvas = _COPYIMAGE(__UI_LoadThemeImage(GetItem$(DropdownList1, Control(DropdownList1).Value)))
-            Control(PictureBox1).Redraw = True
+            Control(PictureBox1).Redraw = TRUE
     END SELECT
 END SUB
 
 SUB __UI_FormResized
 
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

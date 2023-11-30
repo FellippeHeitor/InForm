@@ -11,6 +11,8 @@ $IF STRINGFILE_BAS = UNDEFINED THEN
     '-------------------------------------------------------------------------------------------------------------------
     ' Test code for debugging the library
     '-------------------------------------------------------------------------------------------------------------------
+    'DEFLNG A-Z
+    'OPTION _EXPLICIT
     'WIDTH , 80
     'DIM sf AS StringFileType
     'StringFile_Create sf, "This_is_a_test_buffer."
@@ -97,7 +99,7 @@ $IF STRINGFILE_BAS = UNDEFINED THEN
             stringFile.cursor = 0
             CLOSE fh
 
-            StringFile_Load = TRUE
+            StringFile_Load = __STRINGFILE_TRUE
         END IF
     END FUNCTION
 
@@ -113,7 +115,7 @@ $IF STRINGFILE_BAS = UNDEFINED THEN
         PRINT #fh, stringFile.buffer; ' write the buffer to the file (works regardless of the file being opened in text mode)
         CLOSE fh
 
-        StringFile_Save = TRUE
+        StringFile_Save = __STRINGFILE_TRUE
     END FUNCTION
 
 

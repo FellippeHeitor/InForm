@@ -48,6 +48,8 @@ DIM SHARED pbScene AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Lander1.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -101,8 +103,8 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     ELSE
         'actvate restart
-        Control(bRestart).Hidden = False
-        Control(bRestart).Disabled = False
+        Control(bRestart).Hidden = FALSE
+        Control(bRestart).Disabled = FALSE
     END IF 'if no message about ending landing
 
 END SUB
@@ -325,8 +327,8 @@ SUB initialize
     dy = speed * SIN(d2r * vda) 'this is the vertical y change on screen due to speed and angle
     dg = .01 'this is the constant acceleration gravity applies to the vehicle
     dat = .5 'this is burst of acceleration a thrust or reverse thrust will apply to speed and angle
-    Control(bRestart).Hidden = True
-    Control(bRestart).Disabled = True
+    Control(bRestart).Hidden = TRUE
+    Control(bRestart).Disabled = TRUE
 
 END SUB
 
@@ -523,6 +525,3 @@ SUB makeTerra
         END IF
     NEXT
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

@@ -38,6 +38,8 @@ DIM SHARED Word(1 TO 22) AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'WordClock.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -190,12 +192,12 @@ END SUB
 
 SUB switchOn (this AS LONG)
     Control(this).ForeColor = _RGB32(111, 205, 0)
-    Control(this).Redraw = True
+    Control(this).Redraw = TRUE
 END SUB
 
 SUB switchOff (this AS LONG)
     Control(this).ForeColor = _RGB32(0, 39, 0)
-    Control(this).Redraw = True
+    Control(this).Redraw = TRUE
 END SUB
 
 SUB __UI_BeforeUnload
@@ -491,6 +493,3 @@ END SUB
 SUB __UI_FormResized
 
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

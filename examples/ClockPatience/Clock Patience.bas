@@ -22,11 +22,13 @@ REDIM SHARED Clock%%(12, 4, 2)
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Clock Patience.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
     $EXEICON:'.\clubs.ico'
-    DoPatience%% = False
+    DoPatience%% = FALSE
     Anime1%% = 31
     Anime2%% = 43
     'Set Data
@@ -203,7 +205,7 @@ SUB __UI_BeforeUpdateDisplay
     'You can change the update frequency by calling SetFrameRate DesiredRate%
     STATIC Count%, InitDone%%, Grandad&, XStart%, YStart%
     IF NOT InitDone%% THEN
-        InitDone%% = True
+        InitDone%% = TRUE
         XStart% = -120
         YStart% = 0
         Grandad& = _LOADIMAGE("Clock1.png", 33)
@@ -299,9 +301,9 @@ SUB __UI_BeforeUpdateDisplay
             END IF
             Anime1%% = Anime1%% + 1
             IF Anime1%% = 31 THEN
-                TurnOver%% = False
+                TurnOver%% = FALSE
                 Clock%%(PickedHour%%, 4, 0) = PickedCard%%
-                Clock%%(PickedHour%%, 4, 1) = True 'Temporary until picked up
+                Clock%%(PickedHour%%, 4, 1) = TRUE 'Temporary until picked up
             END IF
         ELSEIF Anime2%% < 43 THEN
             'Display Tucking-in
@@ -373,7 +375,7 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
             END IF
             Anime2%% = Anime2%% + 1
-            IF Anime2%% = 43 THEN CanPutDown%% = True
+            IF Anime2%% = 43 THEN CanPutDown%% = TRUE
         ELSEIF PickedUp%% THEN
             'Display picked-up card
             IF __UI_MouseLeft > 680 AND __UI_MouseTop > 738 THEN
@@ -475,7 +477,7 @@ SUB __UI_Click (id AS LONG)
     SELECT CASE id
         CASE ClockPatience
             IF GreenValid%% THEN
-                DoPickUp%% = True
+                DoPickUp%% = TRUE
             ELSEIF RedValid%% THEN
                 Anime2%% = 0
             END IF
@@ -483,13 +485,13 @@ SUB __UI_Click (id AS LONG)
             SYSTEM
         CASE NewGameBT
             IF NOT DoPatience%% THEN
-                Control(NewGameBT).Disabled = True
-                Control(NewGameBT).Hidden = True
+                Control(NewGameBT).Disabled = TRUE
+                Control(NewGameBT).Hidden = TRUE
                 Caption(NewGameBT) = "New Game"
                 SetFocus ExitBT
                 CALL Patience
             ELSE
-                DoPatience%% = False
+                DoPatience%% = FALSE
                 Caption(NewGameBT) = "Deal"
             END IF
     END SELECT
@@ -537,7 +539,7 @@ END SUB
 
 SUB Patience
     RANDOMIZE (TIMER)
-    BadDeal%% = True
+    BadDeal%% = TRUE
     WHILE BadDeal%%
         REDIM Clock%%(12, 4, 2)
         CALL Shuffle(Cards%%())
@@ -547,33 +549,33 @@ SUB Patience
             R%% = N%% MOD 13
             Clock%%(R%%, S%% + 1, 2) = Cards%%(N%%)
         NEXT N%%
-        BadDeal%% = False
+        BadDeal%% = FALSE
         FOR M%% = 0 TO 12 'Cards are in S 1 to 4
-            IF Clock%%(M%%, 1, 2) MOD 13 = Clock%%(M%%, 2, 2) MOD 13 AND Clock%%(M%%, 1, 2) MOD 13 = Clock%%(M%%, 3, 2) MOD 13 AND Clock%%(M%%, 1, 2) MOD 13 = Clock%%(M%%, 4, 2) MOD 13 THEN BadDeal%% = True
+            IF Clock%%(M%%, 1, 2) MOD 13 = Clock%%(M%%, 2, 2) MOD 13 AND Clock%%(M%%, 1, 2) MOD 13 = Clock%%(M%%, 3, 2) MOD 13 AND Clock%%(M%%, 1, 2) MOD 13 = Clock%%(M%%, 4, 2) MOD 13 THEN BadDeal%% = TRUE
         NEXT M%%
     WEND
     Stock%% = 52
     Anime1%% = 31
     Anime2%% = 43
-    TurnOver%% = True
-    DoPickUp%% = False
-    PickedUp%% = False
+    TurnOver%% = TRUE
+    DoPickUp%% = FALSE
+    PickedUp%% = FALSE
     PickedCard%% = 0
     PickedHour%% = 12
-    CanPutDown%% = False
-    IsComplete%% = False
-    DoPatience%% = True
-    HangOn%% = True
+    CanPutDown%% = FALSE
+    IsComplete%% = FALSE
+    DoPatience%% = TRUE
+    HangOn%% = TRUE
     HangStop%% = 50
     HCount%% = 0
     WHILE DoPatience%%
         _LIMIT 60
-        GreenValid%% = False
-        RedValid%% = False
+        GreenValid%% = FALSE
+        RedValid%% = FALSE
         IF Stock%% = 0 AND HangOn%% THEN
             HCount%% = HCount%% + 1
             IF HCount%% = HangStop%% THEN
-                HangOn%% = False
+                HangOn%% = FALSE
                 HCount%% = 0
                 HangStop%% = 20
             END IF
@@ -589,7 +591,7 @@ SUB Patience
                 OldHour%% = PickedHour%%
                 Anime1%% = 0
             ELSEIF NOT DoPickUp%% AND NOT PickedUp%% THEN
-                IF SQR((Positions!(4, PickedHour%%, 0, 4) - XM%) * (Positions!(4, PickedHour%%, 0, 4) - XM%) + (Positions!(4, PickedHour%%, 1, 4) - YM%) * (Positions!(4, PickedHour%%, 1, 4) - YM%)) < 40 THEN GreenValid%% = True
+                IF SQR((Positions!(4, PickedHour%%, 0, 4) - XM%) * (Positions!(4, PickedHour%%, 0, 4) - XM%) + (Positions!(4, PickedHour%%, 1, 4) - YM%) * (Positions!(4, PickedHour%%, 1, 4) - YM%)) < 40 THEN GreenValid%% = TRUE
             ELSEIF DoPickUp%% THEN
                 IF PickedHour%% = 12 THEN
                     FOR R%% = 4 TO 2 STEP -1
@@ -611,11 +613,11 @@ SUB Patience
                     PickedHour%% = 0
                 END IF
                 Orient1! = Phi!(PickedHour%%)
-                PickedUp%% = True
-                DoPickUp%% = False
+                PickedUp%% = TRUE
+                DoPickUp%% = FALSE
             ELSEIF PickedUp%% THEN
                 IF SQR((Positions!(4, PickedHour%%, 0, 4) - XM%) * (Positions!(4, PickedHour%%, 0, 4) - XM%) + (Positions!(4, PickedHour%%, 1, 4) - YM%) * (Positions!(4, PickedHour%%, 1, 4) - YM%)) < 40 THEN
-                    IF NOT CanPutDown%% THEN RedValid%% = True
+                    IF NOT CanPutDown%% THEN RedValid%% = TRUE
                     Orient! = Orient1!
                 ELSEIF SQR((Positions!(4, OldHour%%, 0, 4) - XM%) * (Positions!(4, OldHour%%, 0, 4) - XM%) + (Positions!(4, OldHour%%, 1, 4) - YM%) * (Positions!(4, OldHour%%, 1, 4) - YM%)) < 40 THEN
                     Orient! = Orient0!
@@ -623,30 +625,30 @@ SUB Patience
                     Orient! = 0
                 END IF
                 IF CanPutDown%% THEN
-                    CanPutDown%% = False
-                    PickedUp%% = False
-                    HangOn%% = True
+                    CanPutDown%% = FALSE
+                    PickedUp%% = FALSE
+                    HangOn%% = TRUE
                     IF PickedHour%% = 12 THEN
                         Clock%%(PickedHour%%, 1, 0) = PickedCard%%
-                        Clock%%(PickedHour%%, 1, 1) = True
+                        Clock%%(PickedHour%%, 1, 1) = TRUE
                     ELSE
                         Clock%%(PickedHour%%, 0, 0) = PickedCard%%
-                        Clock%%(PickedHour%%, 0, 1) = True
+                        Clock%%(PickedHour%%, 0, 1) = TRUE
                     END IF
                     PickedCard%% = 0
                     IF Clock%%(12, 4, 1) AND Clock%%(12, 1, 0) <> 0 THEN 'Game Finished
-                        IsComplete%% = True
-                        Control(NewGameBT).Disabled = False
-                        Control(NewGameBT).Hidden = False
+                        IsComplete%% = TRUE
+                        Control(NewGameBT).Disabled = FALSE
+                        Control(NewGameBT).Hidden = FALSE
                         SetFocus NewGameBT
-                        GotOut%% = True
+                        GotOut%% = TRUE
                         M%% = 0
                         WHILE M%% <= 11 AND GotOut%%
-                            IF NOT Clock%%(M%%, 4, 1) THEN GotOut%% = False
+                            IF NOT Clock%%(M%%, 4, 1) THEN GotOut%% = FALSE
                             M%% = M%% + 1
                         WEND
                     END IF
-                    IF NOT IsComplete%% THEN TurnOver%% = True
+                    IF NOT IsComplete%% THEN TurnOver%% = TRUE
                 END IF
             END IF
         END IF
@@ -660,6 +662,3 @@ SUB Shuffle (Pack%%()) 'Fisher Yates or Knuth shuffle
         SWAP Pack%%(R%%), Pack%%(S%%)
     NEXT S%%
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

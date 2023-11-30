@@ -83,8 +83,11 @@ __UI_ClearColor ContextMenuIcon, 0, 0
 '$INCLUDE:'extensions/GIFPlay.bi'
 '$INCLUDE:'extensions/MessageBox.bi'
 '$INCLUDE:'InForm.bi'
-'$INCLUDE:'xp.uitheme'
 '$INCLUDE:'UiEditorPreview.frm'
+'$INCLUDE:'xp.uitheme'
+'$INCLUDE:'InForm.ui'
+'$INCLUDE:'extensions/GIFPlay.bas'
+'$INCLUDE:'extensions/MessageBox.bas'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
@@ -386,7 +389,7 @@ SUB __UI_BeforeUpdateDisplay
             IF EditorWasActive = FALSE THEN
                 'Preview was launched by user
                 _SCREENHIDE
-                _DELAY 0.2: _MESSAGEBOX "InForm Preview", "__UI_BeforeUpdateDisplay: InForm Designer is not running. Please run the main program.", "error"
+                MessageBox "__UI_BeforeUpdateDisplay: InForm Designer is not running. Please run the main program.", _TITLE$, MsgBox_Critical
             END IF
             IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
             SYSTEM
@@ -1694,7 +1697,7 @@ SUB __UI_OnLoad
     IF VAL(HostPort) < 60000 THEN
         ForceQuit:
         _SCREENHIDE
-        _DELAY 0.2: _MESSAGEBOX "InForm Preview", "__UI_OnLoad: InForm Designer is not running. Please run the main program.", "error"
+        MessageBox "__UI_OnLoad: InForm Designer is not running. Please run the main program.", _TITLE$, MsgBox_Critical
         SYSTEM
     END IF
 
@@ -3046,8 +3049,8 @@ SUB LoadPreviewText
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
                     LoadImage Control(TempValue), DummyText$
-                ELSEIF LEFT$(b$, 30) = "__UI_RegisterResult = OpenGif(" THEN
-                    IF LogFileLoad THEN PRINT #LogFileNum, "OPENGIF"
+                ELSEIF LEFT$(b$, 30) = "__UI_RegisterResult = GIF_LoadFromFile(" THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "GIF_LOADFROMFILE"
                     'Gif extension
                     DIM RegisterResult AS _BYTE
                     DummyText$ = nextParameter(b$) 'discard first parameter
@@ -3062,9 +3065,9 @@ SUB LoadPreviewText
                         Control(TempValue).HelperCanvas = _NEWIMAGE(GIF_GetWidth(TempValue), GIF_GetHeight(TempValue), 32)
                         GIF_Draw TempValue
                     ELSE
-                        MessageBox DummyText$ + " is not a GIF file!", "", MsgBox_Exclamation
+                        MessageBox DummyText$ + " is not a GIF file!", _TITLE$, MsgBox_Exclamation
                     END IF
-                ELSEIF b$ = "IF __UI_RegisterResult THEN PlayGif __UI_NewID" OR LEFT$(b$, 8) = "PlayGif " THEN
+                ELSEIF b$ = "IF __UI_RegisterResult THEN GIF_Play __UI_NewID" OR LEFT$(b$, 9) = "GIF_Play " THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "AUTOPLAY GIF"
                     'Auto-play gif
                     AutoPlayGif(TempValue) = TRUE
@@ -3150,10 +3153,8 @@ END SUB
 
 SUB PreviewLoadImage (This AS __UI_ControlTYPE, fileName$)
     IF LCASE$(RIGHT$(fileName$, 4)) = ".gif" THEN
-        DIM tryGif AS _BYTE
         GIF_Free This.ID
-        tryGif = GIF_LoadFromFile(This.ID, fileName$)
-        IF tryGif THEN
+        IF GIF_LoadFromFile(This.ID, fileName$) THEN
             IF GIF_GetTotalFrames(This.ID) = 1 THEN
                 GIF_Free This.ID
             ELSE
@@ -3167,7 +3168,7 @@ SUB PreviewLoadImage (This AS __UI_ControlTYPE, fileName$)
                 EXIT SUB
             END IF
         ELSE
-            MessageBox fileName$ + " is not a GIF file!", "", MSGBOX_EXCLAMATION
+            MessageBox fileName$ + " is not a GIF file!", _TITLE$, MsgBox_Exclamation
         END IF
     END IF
     GIF_Free This.ID
@@ -3999,7 +4000,3 @@ FUNCTION LoadEditorImage& (FileName$)
 
     LoadEditorImage& = TempImage
 END FUNCTION
-
-'$INCLUDE:'extensions/GIFPlay.bas'
-'$INCLUDE:'extensions/MessageBox.bas'
-'$INCLUDE:'InForm.ui'

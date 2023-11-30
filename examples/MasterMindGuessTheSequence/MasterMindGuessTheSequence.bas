@@ -28,6 +28,8 @@ DIM SHARED ma&
 
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'MasterMindGuessTheSequence.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit
@@ -38,25 +40,25 @@ SUB __UI_OnLoad
     RANDOMIZE TIMER
     MaxSequence = 4
     Caption(SecretSequenceLB) = STR$(MaxSequence) + " Digits"
-    Control(SecretSequenceLB).Disabled = True
-    Control(ListBox1).Disabled = True
-    Control(WriteSequenceToTestTB).Disabled = True
-    Control(TestSequenceBT).Disabled = True
+    Control(SecretSequenceLB).Disabled = TRUE
+    Control(ListBox1).Disabled = TRUE
+    Control(WriteSequenceToTestTB).Disabled = TRUE
+    Control(TestSequenceBT).Disabled = TRUE
     Caption(HelpLB) = "Help:" + CHR$(10) + " Options: set difficult of game, Tutor, Music " + CHR$(10) + " Help: this info" + CHR$(10) + " Quit:exit program" + CHR$(10) + " Start: begin the game" + CHR$(10) + " Reset: restart the game" + CHR$(10) + " HOW TO PLAY: click Start, type sequence, press Enter/click Test sequence"
-    Control(HelpLB).Hidden = True
-    Control(HelpLB).Disabled = True
-    Control(HelpLB).WordWrap = True
+    Control(HelpLB).Hidden = TRUE
+    Control(HelpLB).Disabled = TRUE
+    Control(HelpLB).WordWrap = TRUE
     Control(TrackBar1).Value = 4
-    Control(TrackBar1).HasBorder = True
+    Control(TrackBar1).HasBorder = TRUE
     Control(TrackBar1).BorderColor = _RGB32(0, 255, 127)
     Caption(TrackBar1) = LTRIM$(STR$(MaxSequence))
     Control(TrackBar1).ForeColor = _RGB32(0, 0, 255)
-    Control(TrackBar1).Disabled = True
+    Control(TrackBar1).Disabled = TRUE
     Caption(RadioButton1) = "Tutor"
-    Control(RadioButton1).Disabled = True
+    Control(RadioButton1).Disabled = TRUE
     Caption(TrackBar1LB) = LTRIM$(STR$(MaxSequence))
     ma& = _SNDOPEN("mozart_-_Turkish_March_in_Bb.mid")
-    Control(MusicCB).Disabled = True
+    Control(MusicCB).Disabled = TRUE
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -74,13 +76,13 @@ SUB VictorY
     BEEP
     Caption(StartBT) = "Start"
     ResetList ListBox1
-    Control(SecretSequenceLB).Disabled = True
-    Control(ListBox1).Disabled = True
-    Control(WriteSequenceToTestTB).Disabled = True
-    Control(TestSequenceBT).Disabled = True
+    Control(SecretSequenceLB).Disabled = TRUE
+    Control(ListBox1).Disabled = TRUE
+    Control(WriteSequenceToTestTB).Disabled = TRUE
+    Control(TestSequenceBT).Disabled = TRUE
     Caption(SecretSequenceLB) = ""
     Text(SecretSequenceLB) = ""
-    Control(RadioButton1).Value = False
+    Control(RadioButton1).Value = FALSE
 END SUB
 
 SUB CheckInput (stringa AS STRING)
@@ -105,11 +107,11 @@ SUB CheckInput (stringa AS STRING)
             ' if position of z  in stringa is the same in Text(secretSequenceLB) we get X otherwise we get O z is in Text(secretSequenceLB) but in different position
             IF INSTR(1, visto, z) = 0 THEN IF b = a THEN ResulT = ResulT + "X" ELSE ResulT = ResulT + "O"
         ELSE
-            IF Control(RadioButton1).Value = True THEN ResulT = ResulT + "-"
+            IF Control(RadioButton1).Value = TRUE THEN ResulT = ResulT + "-"
         END IF
         visto = visto + z
     NEXT
-    IF Control(RadioButton1).Value = False THEN IF LEN(ResulT) < MaxSequence THEN ResulT = ResulT + STRING$(MaxSequence - LEN(ResulT) + 1, "_") ' or ,"?") or ,"�")
+    IF Control(RadioButton1).Value = FALSE THEN IF LEN(ResulT) < MaxSequence THEN ResulT = ResulT + STRING$(MaxSequence - LEN(ResulT) + 1, "_") ' or ,"?") or ,"�")
     AddItem ListBox1, stringa + "--> " + ResulT
     Text(WriteSequenceToTestTB) = ""
     ResulT = " "
@@ -143,49 +145,49 @@ SUB __UI_Click (id AS LONG)
                 Caption(SecretSequenceLB) = LTRIM$(STR$(MaxSequence)) + " Digits"
             END IF
         CASE HelpBT
-            Control(HelpLB).Hidden = False
-            Control(HelpLB).Disabled = False
+            Control(HelpLB).Hidden = FALSE
+            Control(HelpLB).Disabled = FALSE
 
 
         CASE StartBT
             IF Caption(StartBT) = "Start" THEN
                 Caption(StartBT) = "Reset"
-                Control(SecretSequenceLB).Disabled = False
-                Control(ListBox1).Disabled = False
+                Control(SecretSequenceLB).Disabled = FALSE
+                Control(ListBox1).Disabled = FALSE
                 Text(WriteSequenceToTestTB) = ""
-                Control(WriteSequenceToTestTB).Disabled = False
-                Control(TestSequenceBT).Disabled = False
+                Control(WriteSequenceToTestTB).Disabled = FALSE
+                Control(TestSequenceBT).Disabled = FALSE
                 CreateListToCheck
                 Caption(SecretSequenceLB) = STR$(MaxSequence) + " Digits" 'Text(SecretSequenceLB)       ' debug statement
 
             ELSE
                 Caption(StartBT) = "Start"
                 ResetList ListBox1
-                Control(SecretSequenceLB).Disabled = True
+                Control(SecretSequenceLB).Disabled = TRUE
                 Text(WriteSequenceToTestTB) = ""
-                Control(ListBox1).Disabled = True
-                Control(WriteSequenceToTestTB).Disabled = True
-                Control(TestSequenceBT).Disabled = True
+                Control(ListBox1).Disabled = TRUE
+                Control(WriteSequenceToTestTB).Disabled = TRUE
+                Control(TestSequenceBT).Disabled = TRUE
                 Caption(SecretSequenceLB) = STR$(MaxSequence) + " Digits"
                 Text(SecretSequenceLB) = ""
-                Control(RadioButton1).Value = False
+                Control(RadioButton1).Value = FALSE
             END IF
         CASE OptionsBT
-            IF Control(TrackBar1).Disabled = True THEN
-                Control(TrackBar1).Disabled = False
-                Control(RadioButton1).Disabled = False
-                IF ma& = 0 THEN Control(MusicCB).Disabled = True ELSE Control(MusicCB).Disabled = False
+            IF Control(TrackBar1).Disabled = TRUE THEN
+                Control(TrackBar1).Disabled = FALSE
+                Control(RadioButton1).Disabled = FALSE
+                IF ma& = 0 THEN Control(MusicCB).Disabled = TRUE ELSE Control(MusicCB).Disabled = FALSE
             ELSE
-                Control(TrackBar1).Disabled = True
-                Control(RadioButton1).Disabled = True
-                Control(MusicCB).Disabled = True
+                Control(TrackBar1).Disabled = TRUE
+                Control(RadioButton1).Disabled = TRUE
+                Control(MusicCB).Disabled = TRUE
             END IF
 
         CASE QuitBT
             SYSTEM
         CASE HelpLB
-            Control(HelpLB).Hidden = True
-            Control(HelpLB).Disabled = True
+            Control(HelpLB).Hidden = TRUE
+            Control(HelpLB).Disabled = TRUE
         CASE TrackBar1
     END SELECT
     __UI_Focus = WriteSequenceToTestTB
@@ -427,12 +429,9 @@ SUB __UI_ValueChanged (id AS LONG)
             ToolTip(TrackBar1) = LTRIM$(STR$(MaxSequence))
             Caption(TrackBar1LB) = LTRIM$(STR$(MaxSequence))
         CASE MusicCB
-            IF Control(MusicCB).Value = True THEN _SNDLOOP ma& ELSE _SNDSTOP ma&
+            IF Control(MusicCB).Value = TRUE THEN _SNDLOOP ma& ELSE _SNDSTOP ma&
     END SELECT
 END SUB
 
 SUB __UI_FormResized
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'

@@ -60,6 +60,8 @@ DIM SHARED SpiralAngle!, KeysList$, XF!, YF!, XN!, YN!, XGun!, YGun!
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Duck Shoot.frm'
+'$INCLUDE:'../../InForm/xp.uitheme'
+'$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------
 
@@ -74,9 +76,9 @@ END FUNCTION
 
 SUB __UI_BeforeInit
     $EXEICON:'.\helloducky.ico'
-    AtGameStart%% = True
-    StartGame%% = True
-    SideBarIn%% = True
+    AtGameStart%% = TRUE
+    StartGame%% = TRUE
+    SideBarIn%% = TRUE
     KeysList$ = "abcdefghijklmnopqrstuvwxyz#',./;[\]"
     'Parameters!() Data Input
     RESTORE level_data
@@ -110,9 +112,9 @@ SUB __UI_BeforeInit
     END IF
     GameLevel%% = ReachedLevel%%
     IF ReachedLevel%% = 7 THEN
-        SideBarFlag%% = True
+        SideBarFlag%% = TRUE
     ELSE
-        SideBarFlag%% = False
+        SideBarFlag%% = FALSE
     END IF
     AllTheFunoftheFair& = _SNDOPEN("funfair.mp3")
     _SNDLOOP AllTheFunoftheFair&
@@ -171,14 +173,14 @@ SUB __UI_OnLoad
     Control(LeftHandKeysFR).Top = 400
     Control(RightHandKeysFR).Left = GoldX% + 30
     Control(RightHandKeysFR).Top = 400
-    CALL DispSetKeys((True))
-    CALL DispLHKeys((True))
-    CALL DispRHKeys((True))
-    Control(GameLevelFR).Disabled = True
-    CALL ButtonLock((True))
-    Control(AudioOnRB).Disabled = False
-    Control(AudioOffRB).Disabled = False
-    Control(ResetBT).Disabled = False
+    CALL DispSetKeys((TRUE))
+    CALL DispLHKeys((TRUE))
+    CALL DispRHKeys((TRUE))
+    Control(GameLevelFR).Disabled = TRUE
+    CALL ButtonLock((TRUE))
+    Control(AudioOnRB).Disabled = FALSE
+    Control(AudioOffRB).Disabled = FALSE
+    Control(ResetBT).Disabled = FALSE
     Caption(ResetBT) = "Start"
     SetFocus ResetBT
     CALL WriteList(0)
@@ -203,7 +205,7 @@ SUB __UI_BeforeUpdateDisplay
     STATIC Slug&, WonLevel&, ImReady&, DispLevel&, ShotsTot&, Success&, Award&, GoldenShot&
     STATIC Targ1&, Pigeon&, Quacker&
     IF NOT HereAgain%% THEN 'Load Images
-        HereAgain%% = True
+        HereAgain%% = TRUE
         SideBar% = 1120
         XErr%% = -2
         DIM Numerals&(10)
@@ -366,7 +368,7 @@ SUB __UI_BeforeUpdateDisplay
         Pigeon& = _LOADIMAGE("pigeon1.png", 32)
     END IF
     IF QuackInit%% THEN
-        QuackInit%% = False
+        QuackInit%% = FALSE
         TempImg& = _NEWIMAGE(2 * HalfWidth% + 1, 2 * HalfHeight% + 1, 32)
         _DEST TempImg&
         _PUTIMAGE , Pigeon&
@@ -516,27 +518,27 @@ SUB __UI_BeforeUpdateDisplay
             Control(AudioFR).Left = Control(AudioFR).Left - 5
             Control(OptionsFR).Left = Control(OptionsFR).Left - 5
             IF SideBar% = 1120 THEN
-                SideBarIn%% = True
-                Control(GameLevelFR).Disabled = False
-                Control(AudioFR).Disabled = False
-                Control(OptionsFR).Disabled = False
-                Control(ExitBT).Disabled = False
-                Control(AudioOnRB).Disabled = False
-                Control(AudioOffRB).Disabled = False
-                IF NOT SideBarFlag%% THEN CALL ButtonLock((False))
+                SideBarIn%% = TRUE
+                Control(GameLevelFR).Disabled = FALSE
+                Control(AudioFR).Disabled = FALSE
+                Control(OptionsFR).Disabled = FALSE
+                Control(ExitBT).Disabled = FALSE
+                Control(AudioOnRB).Disabled = FALSE
+                Control(AudioOffRB).Disabled = FALSE
+                IF NOT SideBarFlag%% THEN CALL ButtonLock((FALSE))
             END IF
         END IF
     ELSE
         IF SideBar% < XScreen% THEN
             IF SideBar% = 1120 THEN
-                SideBarIn%% = False
-                Control(GameLevelFR).Disabled = True
-                Control(AudioFR).Disabled = True
-                Control(OptionsFR).Disabled = True
-                Control(ExitBT).Disabled = True
-                Control(AudioOnRB).Disabled = True
-                Control(AudioOffRB).Disabled = True
-                CALL ButtonLock((True))
+                SideBarIn%% = FALSE
+                Control(GameLevelFR).Disabled = TRUE
+                Control(AudioFR).Disabled = TRUE
+                Control(OptionsFR).Disabled = TRUE
+                Control(ExitBT).Disabled = TRUE
+                Control(AudioOnRB).Disabled = TRUE
+                Control(AudioOffRB).Disabled = TRUE
+                CALL ButtonLock((TRUE))
             END IF
             SideBar% = SideBar% + 5
             Control(GameLevelFR).Left = Control(GameLevelFR).Left + 5
@@ -574,27 +576,27 @@ SUB __UI_Click (id AS LONG)
                 IF HaveSet%% THEN CALL WeAreDone
                 SYSTEM
             ELSE
-                Dux%% = False
-                StartGame%% = False
+                Dux%% = FALSE
+                StartGame%% = FALSE
             END IF
         CASE ResetBT
             IF AtGameStart%% THEN
-                AtGameStart%% = False
+                AtGameStart%% = FALSE
                 Caption(ResetBT) = "Reset"
-                Control(GameLevelFR).Disabled = False
-                Control(AudioFR).Disabled = False
-                Control(AudioOnRB).Disabled = False
-                Control(AudioOffRB).Disabled = False
-                Control(SetKeysBT).Disabled = True
-                CALL ButtonLock((False))
-                Ready%% = True
+                Control(GameLevelFR).Disabled = FALSE
+                Control(AudioFR).Disabled = FALSE
+                Control(AudioOnRB).Disabled = FALSE
+                Control(AudioOffRB).Disabled = FALSE
+                Control(SetKeysBT).Disabled = TRUE
+                CALL ButtonLock((FALSE))
+                Ready%% = TRUE
                 CALL MadameZora
             ELSE
                 'Reset to level 1 & reset parameters
-                Dux%% = False
+                Dux%% = FALSE
                 ReachedLevel%% = 1
                 GameLevel%% = ReachedLevel%%
-                Control(Level6RB).Disabled = True
+                Control(Level6RB).Disabled = TRUE
                 SetRadioButtonValue Level1RB
             END IF
         CASE RestartLevelBT
@@ -606,58 +608,58 @@ SUB __UI_Click (id AS LONG)
         CASE Level1RB
             IF GameLevel%% <> 1 THEN
                 GameLevel%% = 1
-                Dux%% = False
+                Dux%% = FALSE
             END IF
         CASE Level2RB
             IF GameLevel%% <> 2 THEN
                 GameLevel%% = 2
-                Dux%% = False
+                Dux%% = FALSE
             END IF
         CASE Level3RB
             IF GameLevel%% <> 3 THEN
                 GameLevel%% = 3
-                Dux%% = False
+                Dux%% = FALSE
             END IF
         CASE Level4RB
             IF GameLevel%% <> 4 THEN
                 GameLevel%% = 4
-                Dux%% = False
+                Dux%% = FALSE
             END IF
         CASE Level5RB
             IF GameLevel%% <> 5 THEN
                 GameLevel%% = 5
-                Dux%% = False
+                Dux%% = FALSE
             END IF
         CASE Level6RB
             IF GameLevel%% <> 6 THEN
                 GameLevel%% = 6
-                Dux%% = False
+                Dux%% = FALSE
             END IF
         CASE AudioOffRB
             _SNDSTOP AllTheFunoftheFair&
         CASE AudioOnRB
             _SNDLOOP AllTheFunoftheFair&
         CASE SetKeysBT
-            Control(ResetBT).Disabled = True
-            Control(SetKeysBT).Disabled = True
-            CALL DispSetKeys((False))
-            CALL DispLHKeys((False))
-            CALL DispRHKeys((True))
+            Control(ResetBT).Disabled = TRUE
+            Control(SetKeysBT).Disabled = TRUE
+            CALL DispSetKeys((FALSE))
+            CALL DispLHKeys((FALSE))
+            CALL DispRHKeys((TRUE))
         CASE DoneBT
-            CALL DispSetKeys((True))
-            CALL DispLHKeys((True))
-            CALL DispRHKeys((True))
-            Control(ResetBT).Disabled = False
-            Control(SetKeysBT).Disabled = False
+            CALL DispSetKeys((TRUE))
+            CALL DispLHKeys((TRUE))
+            CALL DispRHKeys((TRUE))
+            Control(ResetBT).Disabled = FALSE
+            Control(SetKeysBT).Disabled = FALSE
             SetFocus ResetBT
         CASE SetLeftHandKeysRB
-            CALL DispLHKeys((False))
-            CALL DispRHKeys((True))
+            CALL DispLHKeys((FALSE))
+            CALL DispRHKeys((TRUE))
             SetRadioButtonValue NearSightUpRB
             CALL KeyList(0)
         CASE SetRightHandKeysRB
-            CALL DispLHKeys((True))
-            CALL DispRHKeys((False))
+            CALL DispLHKeys((TRUE))
+            CALL DispRHKeys((FALSE))
             SetRadioButtonValue FarSightUpRB
             CALL KeyList(4)
         CASE NearSightUpRB
@@ -681,7 +683,7 @@ SUB __UI_Click (id AS LONG)
         CASE SetBT
             TheItem%% = Control(SelectKeyDD).Value
             IF TheItem%% > 0 THEN
-                HaveSet%% = True
+                HaveSet%% = TRUE
                 IF Control(SetLeftHandKeysRB).Value THEN
                     IF Control(NearSightUpRB).Value THEN
                         KeyCode%(0) = ASC(GetItem$(SelectKeyDD, TheItem%%))
@@ -759,9 +761,9 @@ SUB ButtonLock (OnOff%%)
     Control(Level4RB).Disabled = OnOff%%
     Control(Level5RB).Disabled = OnOff%%
     IF OnOff%% THEN
-        Control(Level6RB).Disabled = True
+        Control(Level6RB).Disabled = TRUE
     ELSEIF GameLevel%% = 6 OR GameLevel%% = 7 THEN
-        Control(Level6RB).Disabled = False
+        Control(Level6RB).Disabled = FALSE
     END IF
 END SUB
 
@@ -860,11 +862,11 @@ SUB MadameZora
         XNprev! = XNDev!
         YNprev! = YNDev!
         FireCount% = CanFire%
-        Fired%% = False
+        Fired%% = FALSE
         NoShots% = 0
         DuckCount% = 0
         WhatLevel% = AtNextLevel%
-        Dux%% = True
+        Dux%% = TRUE
         WHILE Dux%%
             _LIMIT FrameRate%
             IF Parameters!(GameLevel%%, 15) > 0 THEN 'Rotate Spiral
@@ -943,47 +945,47 @@ SUB MadameZora
                 XNprev! = XNDev!
                 IF XUp%% THEN
                     X0! = X0! + X0Step!
-                    IF RND > TRand! OR X0! > Parameters!(GameLevel%%, 7) THEN XUp%% = False
+                    IF RND > TRand! OR X0! > Parameters!(GameLevel%%, 7) THEN XUp%% = FALSE
                 ELSE
                     X0! = X0! - X0Step!
-                    IF RND > TRand! OR X0! < Parameters!(GameLevel%%, 8) THEN XUp%% = True
+                    IF RND > TRand! OR X0! < Parameters!(GameLevel%%, 8) THEN XUp%% = TRUE
                 END IF
                 IF O0Up%% THEN
                     Omega0! = Omega0! + O0Step!
-                    IF RND > TRand! OR Omega0! > Parameters!(GameLevel%%, 9) THEN O0Up%% = False
+                    IF RND > TRand! OR Omega0! > Parameters!(GameLevel%%, 9) THEN O0Up%% = FALSE
                 ELSE
                     Omega0! = Omega0! - O0Step!
-                    IF RND > TRand! OR Omega0! < Parameters!(GameLevel%%, 10) THEN O0Up%% = True
+                    IF RND > TRand! OR Omega0! < Parameters!(GameLevel%%, 10) THEN O0Up%% = TRUE
                 END IF
                 YNDev! = Y0! * SIN(Omega1! * Count1%)
                 YNDelta! = YNDev! - YNprev!
                 YNprev! = YNDev!
                 IF YUp%% THEN
                     Y0! = Y0! + Y0Step!
-                    IF RND > TRand! OR Y0! > Parameters!(GameLevel%%, 11) THEN YUp%% = False
+                    IF RND > TRand! OR Y0! > Parameters!(GameLevel%%, 11) THEN YUp%% = FALSE
                 ELSE
                     Y0! = Y0! - Y0Step!
-                    IF RND > TRand! OR Y0! < Parameters!(GameLevel%%, 12) THEN YUp%% = True
+                    IF RND > TRand! OR Y0! < Parameters!(GameLevel%%, 12) THEN YUp%% = TRUE
                 END IF
                 IF O1Up%% THEN
                     Omega1! = Omega1! + O1Step!
-                    IF RND > TRand! OR Omega1! > Parameters!(GameLevel%%, 13) THEN O1Up%% = False
+                    IF RND > TRand! OR Omega1! > Parameters!(GameLevel%%, 13) THEN O1Up%% = FALSE
                 ELSE
                     Omega1! = Omega1! - O1Step!
-                    IF RND > TRand! OR Omega1! < Parameters!(GameLevel%%, 14) THEN O1Up%% = True
+                    IF RND > TRand! OR Omega1! < Parameters!(GameLevel%%, 14) THEN O1Up%% = TRUE
                 END IF
             ELSE
                 IF AwardAnim% = 0 THEN _SNDPLAYFILE "fanfare.mp3"
                 IF AwardAnim% < 4 * 192 THEN
                     AwardAnim% = AwardAnim% + 1
                 ELSEIF SideBarFlag%% THEN
-                    IF SideBarIn%% THEN CALL ButtonLock((False))
-                    SideBarFlag%% = False
+                    IF SideBarIn%% THEN CALL ButtonLock((FALSE))
+                    SideBarFlag%% = FALSE
                 END IF
             END IF
             IF _KEYDOWN(27) THEN
-                Dux%% = False
-                StartGame%% = False
+                Dux%% = FALSE
+                StartGame%% = FALSE
             ELSEIF GameLevel%% <= 6 AND Ready%% THEN
                 IF _KEYDOWN(KeyCode%(0)) THEN YN! = YN! - PosStep! 'Up (Default w)
                 IF _KEYDOWN(KeyCode%(1)) THEN YN! = YN! + PosStep! 'Down (Default z)
@@ -996,7 +998,7 @@ SUB MadameZora
                 IF _KEYDOWN(KeyCode%(8)) AND FireCount% = CanFire% THEN 'Fire (Default s)
                     _SNDPLAYFILE "22handgun.mp3"
                     FireCount% = 0
-                    Fired%% = True
+                    Fired%% = TRUE
                     ZGun! = 0
                     XGun! = XF!
                     YGun! = YF!
@@ -1048,11 +1050,11 @@ SUB MadameZora
                                             NoShots% = 0
                                             DuckCount% = 0
                                             WhatLevel% = 0
-                                            Ready%% = False
-                                            Control(AudioFR).Disabled = True
-                                            Control(GameLevelFR).Disabled = True
-                                            CALL ButtonLock((True))
-                                            SideBarFlag%% = True
+                                            Ready%% = FALSE
+                                            Control(AudioFR).Disabled = TRUE
+                                            Control(GameLevelFR).Disabled = TRUE
+                                            CALL ButtonLock((TRUE))
+                                            SideBarFlag%% = TRUE
                                         END IF
                                         N%% = 6
                                     ELSE
@@ -1063,7 +1065,7 @@ SUB MadameZora
                                 END IF
                             WEND
                         END IF
-                        Fired%% = False
+                        Fired%% = FALSE
                     END IF
                 END IF
                 IF WhatLevel% < AtNextLevel% THEN
@@ -1085,13 +1087,13 @@ SUB MadameZora
                             ReachedLevel%% = ReachedLevel%% + 1
                         ELSE
                             ReachedLevel%% = 7
-                            Control(Level6RB).Disabled = False
+                            Control(Level6RB).Disabled = FALSE
                         END IF
                         GameLevel%% = ReachedLevel%%
                         CALL InitParams(X0Step!, Y0Step!, O0Step!, O1Step!, Omega!, X0!, Omega0!, Y0!, Omega1!)
-                        Ready%% = True
-                        IF SideBarIn%% THEN CALL ButtonLock((False))
-                        SideBarFlag%% = False
+                        Ready%% = TRUE
+                        IF SideBarIn%% THEN CALL ButtonLock((FALSE))
+                        SideBarFlag%% = FALSE
                     END IF
                 END IF
             END IF
@@ -1109,7 +1111,7 @@ SUB Rotor (XIn!, YIn!, XOut!, YOut!, Theta!)
 END SUB
 
 SUB InitParams (X00Step!, Y00Step!, O00Step!, O10Step!, Mega!, X00!, Omega00!, Y00!, Omega10!)
-    QuackInit%% = True
+    QuackInit%% = TRUE
     X00Step! = (Parameters!(GameLevel%%, 7) - Parameters!(GameLevel%%, 8)) / (15 * FrameRate%)
     Y00Step! = (Parameters!(GameLevel%%, 11) - Parameters!(GameLevel%%, 12)) / (15 * FrameRate%)
     O00Step! = (Parameters!(GameLevel%%, 9) - Parameters!(GameLevel%%, 10)) / (30 * FrameRate%)
@@ -1132,6 +1134,3 @@ SUB WeAreDone
     PRINT #1, ReachedLevel%%
     CLOSE #1
 END SUB
-
-'$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/xp.uitheme'
