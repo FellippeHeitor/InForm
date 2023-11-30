@@ -280,9 +280,9 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         ' Walk through the animation chain and find the frame we have to render based on the tick we recorded the last time
         DO UNTIL currentTick < __GIFPlay(idx).lastTick + __GIFPlayFrame(__GIFPlay(idx).frame).duration
-            ' Add the current frame duration to the lastTick so that we can do frame skips if needed
+            ' Add the current frame duration to lastTick so that we can do frame skips if needed
             __GIFPlay(idx).lastTick = __GIFPlay(idx).lastTick + __GIFPlayFrame(__GIFPlay(idx).frame).duration
-            ' We cross the duration of the current frame, so move to the next one
+            ' We crossed the duration of the current frame, so move to the next one
             __GIFPlay(idx).frame = __GIFPlayFrame(__GIFPlay(idx).frame).nextFrame ' this should correctly loop back to the first frame
             ' Increment the frame counter and loop back to 0 if needed
             __GIFPlay(idx).frameNumber = __GIFPlay(idx).frameNumber + 1
@@ -373,8 +373,11 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     ' Returns TRUE if a GIF with Id is loaded
     FUNCTION GIF_IsLoaded%% (Id AS LONG)
         SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
 
-        GIF_IsLoaded = HashTable_IsKeyPresent(__GIFPlayHashTable(), Id)
+        IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
+            GIF_IsLoaded = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).isReady
+        END IF
     END FUNCTION
 
 
@@ -597,6 +600,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         HashTable_InsertLong __GIFPlayHashTable(), Id, idx ' add it to the hash table
 
         ' Reset some stuff
+        __GIFPlay(idx).isReady = FALSE
         __GIFPlay(idx).firstFrame = -1
         __GIFPlay(idx).lastFrame = -1
         __GIFPlay(idx).frame = -1
@@ -719,8 +723,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                     END IF
                     __GIFPlay(idx).lastFrame = frameIdx ' make the last frame to point to this
                     __GIFPlayFrame(frameIdx).disposalMethod = rawFrame.disposalMethod
-                    IF rawFrame.duration = 0 THEN rawFrame.duration = 10 ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
-                    __GIFPlayFrame(frameIdx).duration = rawFrame.duration * 10 ' convert to ticks (ms)
+                    IF rawFrame.duration = 0 THEN rawFrame.duration = 10~% ' 0.1 seconds if no duration is specified (this behavior is from the erstwhile GIFPlay library)
+                    __GIFPlayFrame(frameIdx).duration = 10~&& * rawFrame.duration ' convert to ticks (ms)
                     __GIFPlay(idx).duration = __GIFPlay(idx).duration + __GIFPlayFrame(frameIdx).duration ' add the frame duration to the global duration
                     __GIFPlay(idx).frameCount = __GIFPlay(idx).frameCount + 1
 
@@ -787,6 +791,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         __GIFPlay(idx).lastTick = __GIF_GetTicks
         DIM dummy AS LONG: dummy = GIF_GetFrame(Id)
         __GIFPlay(idx).isPlaying = FALSE
+        __GIFPlay(idx).isReady = TRUE ' set the ready flag
 
         __GIF_Load = TRUE
         EXIT FUNCTION

@@ -12,6 +12,7 @@ $IF GIFPLAY_BI = UNDEFINED THEN
     ' This is the master animation type that holds info about a complete animation
     TYPE __GIFPlayType
         isUsed AS _BYTE ' is this slot being used (this is only here to assist slot allocation)
+        isReady AS _BYTE ' this is set if the GIF is fully loaded (helps fix issues with InForm-PE TIMERs)
         image AS LONG ' the rendered 32bpp frame image
         bgColor AS _UNSIGNED _BYTE ' background color
         firstFrame AS LONG ' index of the first frame in the frame data array

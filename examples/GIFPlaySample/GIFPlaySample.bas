@@ -8,6 +8,7 @@ DEFLNG A-Z
 OPTION _EXPLICIT
 
 ': Controls' IDs: ------------------------------------------------------------------
+DIM SHARED AboutBT AS LONG
 DIM SHARED gifplaySample AS LONG
 DIM SHARED PictureBox1 AS LONG
 DIM SHARED LoadBT AS LONG
@@ -36,6 +37,9 @@ END SUB
 
 SUB __UI_Click (id AS LONG)
     SELECT CASE id
+        CASE AboutBT
+            MessageBox "GIFPlay library + InForm-PE demo." + STRING$(2, 10) + "Get it from https://github.com/a740g/InForm-PE", "About " + Caption(gifplaySample), MsgBox_OkOnly + MsgBox_Information
+
         CASE gifplaySample
 
         CASE LoadBT
@@ -43,6 +47,9 @@ SUB __UI_Click (id AS LONG)
 
             IF LEN(fileName) > 0 THEN
                 IF GIF_LoadFromFile(PictureBox1, fileName) THEN
+                    ' Calculate picturebox width based on the aspect ratio of the GIF
+                    Control(PictureBox1).Width = GIF_GetWidth(PictureBox1) / GIF_GetHeight(PictureBox1) * Control(PictureBox1).Height
+                    Control(gifplaySample).Width = Control(PictureBox1).Width + Control(LoadBT).Width + 24
 
                     Control(PlayBT).Disabled = FALSE
 
