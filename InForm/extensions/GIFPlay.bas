@@ -249,13 +249,14 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             ' Get the rendered image handle
             DIM renderedFrame AS LONG: renderedFrame = GIF_GetFrame(Id)
 
-            ' Clear the surface
-            CLS
+            ' Cache the GIF index because we'll be using this a lot
+            DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
+
+            ' Clear the surface using the background color (this will be black if the GIF has no global color table)
+            CLS , __GIFPlay(idx).bgColor
 
             ' Blit the rendered frame
             _PUTIMAGE , renderedFrame, , , _SMOOTH
-
-            DIM idx AS LONG: idx = HashTable_LookupLong(__GIFPlayHashTable(), Id)
 
             ' Render the overlay if needed
             IF NOT __GIFPlay(idx).isPlaying AND __GIFPlay(idx).overlayEnabled AND __GIFPlay(idx).frameCount > 1 THEN
@@ -325,13 +326,20 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         __GIFPlay(idx).lastFrameRendered = lastFrameRendered
 
         ' Take appropriate action based on the disposal method of the previous frame
+        DIM oldDest AS LONG: oldDest = _DEST ' this is needed for CLS. CLS in v3.9.1 does not support using image handles (can remove with v4.0)
         IF __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame THEN
             ' If this is the first frame, then we do not have any previous disposal method
-            CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image ' clear the render image using the BG color
+            _DEST __GIFPlay(idx).image
+            'CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image ' clear the render image using the BG color
+            CLS , __GIFPlay(idx).bgColor
+            _DEST oldDest
         ELSE
             SELECT CASE __GIFPlayFrame(__GIFPlayFrame(__GIFPlay(idx).frame).prevFrame).disposalMethod
                 CASE 2 ' Restore to background color
-                    CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image
+                    _DEST __GIFPlay(idx).image
+                    'CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image
+                    CLS , __GIFPlay(idx).bgColor
+                    _DEST oldDest
                     _CLEARCOLOR __GIFPlay(idx).bgColor, __GIFPlay(idx).image
 
                 CASE 3 ' Restore to previous
@@ -668,13 +676,16 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         IF _READBIT(i, 7) THEN rawFrame.globalColors = _SHL(1, ((i AND 7) + 1))
 
         ' Background color is only valid with a global palette
-        __GIFPlay(idx).bgColor = StringFile_ReadByte(sf)
+        i = StringFile_ReadByte(sf)
 
         ' Skip aspect ratio
         StringFile_Seek sf, StringFile_GetPosition(sf) + 1
 
         ' Read the global palette data
         IF rawFrame.globalColors > 0 THEN MID$(rawFrame.globalPalette, 1, 3 * rawFrame.globalColors) = StringFile_ReadString(sf, 3 * rawFrame.globalColors)
+
+        ' Get RGBA value from the global palette for the backgrond color
+        __GIFPlay(idx).bgColor = _RGB32(ASC(rawFrame.globalPalette, i + 1), ASC(rawFrame.globalPalette, i + 2), ASC(rawFrame.globalPalette, i + 3))
 
         DIM frameIdx AS LONG: frameIdx = -1
 

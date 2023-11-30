@@ -16,7 +16,7 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         isUsed AS _BYTE ' is this slot being used (this is only here to assist slot allocation)
         isReady AS _BYTE ' this is set if the GIF is fully loaded (helps fix issues with InForm-PE TIMERs)
         image AS LONG ' the rendered 32bpp frame image
-        bgColor AS _UNSIGNED _BYTE ' background color
+        bgColor AS _UNSIGNED LONG ' background color (32-bit RGBA!)
         firstFrame AS LONG ' index of the first frame in the frame data array
         lastFrame AS LONG ' index of the last frame in the frame data array
         frame AS LONG ' index of the current frame being played
