@@ -27,6 +27,7 @@ $IF GIFPLAY_BI = UNDEFINED THEN
         loopCounter AS _UNSIGNED LONG ' this counts the number of loops
         duration AS _UNSIGNED _INTEGER64 ' total duration in ticks (ms)
         lastTick AS _UNSIGNED _INTEGER64 ' the tick recorded when the last frame was played
+        elapsedTime AS _UNSIGNED _INTEGER64 ' the time (ms) that has passed since the animation was started
         lastFrameRendered AS LONG ' index of the last frame that was rendered
         savedImage AS LONG ' copy of the current frame when disposal method 3 (restore to previous) is encountered
         hasSavedImage AS _BYTE ' set to true if we have a valid saved frame

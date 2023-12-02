@@ -7,13 +7,13 @@ SUB __UI_LoadForm
 
     DIM __UI_NewID AS LONG, __UI_RegisterResult AS LONG
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Form, "gifplaySample", 425, 339, 0, 0, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Form, "GIFPlaySample", 425, 367, 0, 0, 0)
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "GIFPlay Sample"
     Control(__UI_NewID).Font = SetFont("arial.ttf", 12)
     Control(__UI_NewID).HasBorder = False
 
-    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "PictureBox1", 320, 320, 95, 10, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "GIFPictureBox", 320, 320, 95, 10, 0)
     __UI_RegisterResult = 0
     Control(__UI_NewID).Stretch = True
     Control(__UI_NewID).HasBorder = True
@@ -21,31 +21,39 @@ SUB __UI_LoadForm
     Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).BorderSize = 1
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "LoadBT", 80, 40, 10, 10, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "LoadButton", 80, 40, 10, 10, 0)
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "&Load"
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "PlayBT", 80, 40, 10, 55, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "PlayButton", 80, 40, 10, 55, 0)
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "&Play"
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).CanHaveFocus = True
 
-    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AboutBT", 80, 40, 10, 100, 0)
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AboutButton", 80, 40, 10, 100, 0)
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "&About"
     Control(__UI_NewID).Stretch = True
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_ProgressBar, "DoneProgressBar", 320, 23, 95, 335, 0)
+    __UI_RegisterResult = 0
+    SetCaption __UI_NewID, "\92;#"
+    Control(__UI_NewID).HasBorder = False
+    Control(__UI_NewID).Max = 100
+    Control(__UI_NewID).ShowPercentage = True
+
 END SUB
 
 SUB __UI_AssignIDs
-    gifplaySample = __UI_GetID("gifplaySample")
-    PictureBox1 = __UI_GetID("PictureBox1")
-    LoadBT = __UI_GetID("LoadBT")
-    PlayBT = __UI_GetID("PlayBT")
-    AboutBT = __UI_GetID("AboutBT")
+    GIFPlaySample = __UI_GetID("GIFPlaySample")
+    GIFPictureBox = __UI_GetID("GIFPictureBox")
+    LoadButton = __UI_GetID("LoadButton")
+    PlayButton = __UI_GetID("PlayButton")
+    AboutButton = __UI_GetID("AboutButton")
+    DoneProgressBar = __UI_GetID("DoneProgressBar")
 END SUB

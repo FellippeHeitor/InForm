@@ -106,6 +106,12 @@ FUNCTION GIF_GetFrameDuration~&& (Id AS LONG)
 Returns the total runtime of the current frame in ms.
 
 ```vb
+FUNCTION GIF_GetElapsedTime~&& (Id AS LONG)
+```
+
+Returns the current runtime of the animation in ms.
+
+```vb
 SUB GIF_SetLoop (Id AS LONG, loops AS LONG)
 ```
 
@@ -123,7 +129,14 @@ FUNCTION GIF_GetFrame& (Id AS LONG)
 ```
 
 Returns the current rendered frame image to be played. Playback is time sensitive so frames may be skipped or the last frame may be returned.
-Use this if you want to do your own rendering. Do not free the image. The library will do that when it is no longer needed.
+Use this if you want to do your own final _PUTIMAGE. Do not free the image. The library will do that when it is no longer needed.
+
+```vb
+FUNCTION GIF_GetBackgroundColor~& (Id AS LONG)
+```
+
+Returns the background color that should be used to clear the surface before drawing the final rendered frame.
+Use this if you want to do your own final _PUTIMAGE.
 
 ```vb
 SUB GIF_EnableOverlay (Id AS LONG, isEnabled AS _BYTE)

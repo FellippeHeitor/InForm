@@ -220,6 +220,9 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
             __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame
             __GIFPlay(idx).frameNumber = 0
             __GIFPlay(idx).loopCounter = 0
+            __GIFPlay(idx).elapsedTime = 0
+            __GIFPlay(idx).lastFrameRendered = -1
+            __GIFPlay(idx).hasSavedImage = __GIF_FALSE
         END IF
     END SUB
 
@@ -306,6 +309,8 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         DO UNTIL currentTick < __GIFPlay(idx).lastTick + __GIFPlayFrame(__GIFPlay(idx).frame).duration
             ' Add the current frame duration to lastTick so that we can do frame skips if needed
             __GIFPlay(idx).lastTick = __GIFPlay(idx).lastTick + __GIFPlayFrame(__GIFPlay(idx).frame).duration
+            ' Increment elapsed time
+            __GIFPlay(idx).elapsedTime = __GIFPlay(idx).elapsedTime + __GIFPlayFrame(__GIFPlay(idx).frame).duration
             ' We crossed the duration of the current frame, so move to the next one
             __GIFPlay(idx).frame = __GIFPlayFrame(__GIFPlay(idx).frame).nextFrame ' this should correctly loop back to the first frame
             ' Increment the frame counter and loop back to 0 if needed
@@ -314,7 +319,11 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
                 __GIFPlay(idx).frameNumber = 0
                 __GIFPlay(idx).loopCounter = __GIFPlay(idx).loopCounter + 1
 
-                IF __GIFPlay(idx).loops < 0 THEN __GIFPlay(idx).loopCounter = -1 ' single-shot animation
+                IF __GIFPlay(idx).loops < 0 THEN
+                    __GIFPlay(idx).loopCounter = -1 ' single-shot animation
+                ELSE
+                    __GIFPlay(idx).elapsedTime = 0 ' only reset the elapsed time for looping playback
+                END IF
             END IF
         LOOP
 
@@ -364,6 +373,17 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
     END FUNCTION
 
 
+    ' Returns the background color that should be used to clear the surface before drawing the final rendered frame
+    FUNCTION GIF_GetBackgroundColor~& (Id AS LONG)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+
+        IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
+            GIF_GetBackgroundColor = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).bgColor
+        END IF
+    END FUNCTION
+
+
     ' Returns the total runtime of the animation in ms
     FUNCTION GIF_GetTotalDuration~&& (Id AS LONG)
         SHARED __GIFPlayHashTable() AS HashTableType
@@ -383,6 +403,17 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
 
         IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
             GIF_GetFrameDuration = __GIFPlayFrame(__GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).frame).duration
+        END IF
+    END FUNCTION
+
+
+    ' Returns the current runtime of the animation in ms
+    FUNCTION GIF_GetElapsedTime~&& (Id AS LONG)
+        SHARED __GIFPlayHashTable() AS HashTableType
+        SHARED __GIFPlay() AS __GIFPlayType
+
+        IF HashTable_IsKeyPresent(__GIFPlayHashTable(), Id) THEN
+            GIF_GetElapsedTime = __GIFPlay(HashTable_LookupLong(__GIFPlayHashTable(), Id)).elapsedTime
         END IF
     END FUNCTION
 
@@ -652,6 +683,7 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         __GIFPlay(idx).loopCounter = 0
         __GIFPlay(idx).duration = 0
         __GIFPlay(idx).lastTick = 0
+        __GIFPlay(idx).elapsedTime = 0
         __GIFPlay(idx).lastFrameRendered = -1
         __GIFPlay(idx).hasSavedImage = __GIF_FALSE
         __GIFPlay(idx).overlayEnabled = __GIF_TRUE

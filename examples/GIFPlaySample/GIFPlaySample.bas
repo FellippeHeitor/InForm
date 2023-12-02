@@ -8,11 +8,12 @@ DEFLNG A-Z
 OPTION _EXPLICIT
 
 ': Controls' IDs: ------------------------------------------------------------------
-DIM SHARED AboutBT AS LONG
-DIM SHARED gifplaySample AS LONG
-DIM SHARED PictureBox1 AS LONG
-DIM SHARED LoadBT AS LONG
-DIM SHARED PlayBT AS LONG
+DIM SHARED DoneProgressBar AS LONG
+DIM SHARED AboutButton AS LONG
+DIM SHARED GIFPlaySample AS LONG
+DIM SHARED GIFPictureBox AS LONG
+DIM SHARED LoadButton AS LONG
+DIM SHARED PlayButton AS LONG
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/extensions/GIFPlay.bi'
@@ -29,11 +30,15 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    Control(PlayBT).Disabled = TRUE
+    Control(PlayButton).Disabled = TRUE
+    Control(DoneProgressBar).Disabled = TRUE
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
-    GIF_Draw PictureBox1
+    IF GIF_IsLoaded(GIFPictureBox) THEN
+        GIF_Draw GIFPictureBox
+        Control(DoneProgressBar).Value = (GIF_GetElapsedTime(GIFPictureBox) / GIF_GetTotalDuration(GIFPictureBox)) * 100
+    END IF
 END SUB
 
 SUB __UI_BeforeUnload
@@ -41,44 +46,49 @@ END SUB
 
 SUB __UI_Click (id AS LONG)
     SELECT CASE id
-        CASE AboutBT
-            MessageBox "GIFPlay library + InForm-PE demo." + STRING$(2, 10) + "Get it from https://github.com/a740g/InForm-PE", "About " + Caption(gifplaySample), MsgBox_OkOnly + MsgBox_Information
+        CASE DoneProgressBar
 
-        CASE gifplaySample
+        CASE AboutButton
+            MessageBox "GIFPlay library + InForm-PE demo." + STRING$(2, 10) + "Get it from https://github.com/a740g/InForm-PE", "About " + Caption(GIFPlaySample), MsgBox_OkOnly + MsgBox_Information
 
-        CASE LoadBT
-            DIM fileName AS STRING: fileName = _OPENFILEDIALOG$(Caption(gifplaySample), , "*.gif|*.GIF|*.Gif", "GIF Files")
+        CASE GIFPlaySample
+
+        CASE LoadButton
+            DIM fileName AS STRING: fileName = _OPENFILEDIALOG$(Caption(GIFPlaySample), , "*.gif|*.GIF|*.Gif", "GIF Files")
 
             IF LEN(fileName) > 0 THEN
-                IF GIF_LoadFromFile(PictureBox1, fileName) THEN
+                IF GIF_LoadFromFile(GIFPictureBox, fileName) THEN
                     ' Calculate picturebox width based on the aspect ratio of the GIF
-                    Control(PictureBox1).Width = GIF_GetWidth(PictureBox1) / GIF_GetHeight(PictureBox1) * Control(PictureBox1).Height
-                    Control(gifplaySample).Width = Control(PictureBox1).Width + Control(LoadBT).Width + 24
+                    Control(GIFPictureBox).Width = GIF_GetWidth(GIFPictureBox) / GIF_GetHeight(GIFPictureBox) * Control(GIFPictureBox).Height
+                    Control(GIFPlaySample).Width = Control(GIFPictureBox).Width + Control(LoadButton).Width + 24
+                    Control(DoneProgressBar).Width = Control(GIFPictureBox).Width
 
-                    Control(PlayBT).Disabled = FALSE
+                    Control(DoneProgressBar).Disabled = FALSE
 
-                    IF GIF_GetTotalFrames(PictureBox1) > 1 THEN
-                        Caption(PlayBT) = "Play"
+                    IF GIF_GetTotalFrames(GIFPictureBox) > 1 THEN
+                        Control(PlayButton).Disabled = FALSE
+                        Caption(PlayButton) = "Play"
                     ELSE
-                        Control(PlayBT).Disabled = TRUE
+                        Control(PlayButton).Disabled = TRUE
                     END IF
                 ELSE
-                    Control(PlayBT).Disabled = TRUE
+                    Control(PlayButton).Disabled = TRUE
+                    Control(DoneProgressBar).Disabled = TRUE
                     MessageBox fileName + " failed to load!", "", MsgBox_Exclamation
                 END IF
             END IF
 
-        CASE PlayBT
-            IF GIF_IsPlaying(PictureBox1) THEN
-                GIF_Pause PictureBox1
-                Caption(PlayBT) = "Play"
+        CASE PlayButton
+            IF GIF_IsPlaying(GIFPictureBox) THEN
+                GIF_Pause GIFPictureBox
+                Caption(PlayButton) = "Play"
             ELSE
-                GIF_Play PictureBox1
-                Caption(PlayBT) = "Pause"
+                GIF_Play GIFPictureBox
+                Caption(PlayButton) = "Pause"
             END IF
 
-        CASE PictureBox1
-            GIF_EnableOverlay PictureBox1, FALSE
+        CASE GIFPictureBox
+            GIF_EnableOverlay GIFPictureBox, FALSE
     END SELECT
 END SUB
 
