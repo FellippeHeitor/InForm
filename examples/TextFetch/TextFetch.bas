@@ -1,5 +1,5 @@
 ' Text Fetch.bas started b+ 2019-11-12 from other work with Dirs and Files loading
-' Changes and updates by a740g (1-Dec-2023). Also simplified direntry.h
+' Updated to work with QB64-PE 3.11.0 by a740g (5-Jan-2024)
 '
 ': This program uses
 ': InForm - GUI library for QB64 - v1.0
@@ -8,6 +8,10 @@
 '-----------------------------------------------------------
 
 OPTION _EXPLICIT
+
+$IF VERSION < 3.11.0 THEN
+        $ERROR This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
+$END IF
 
 ': Controls' IDs: ------------------------------------------------------------------
 DIM SHARED frmTextFetch AS LONG
@@ -30,30 +34,6 @@ DIM SHARED lbEnd AS LONG
 '$INCLUDE:'TextFetch.frm'
 '$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-
-' --- DIRENTRY STUFF ---
-
-DECLARE LIBRARY "direntry"
-    ' This opens a directly for reading it's contents
-    ' IMPORTANT: Call the open_dir() wrapper instead of calling this directly. open_dir() properly null-terminates the directory string
-    FUNCTION __open_dir%% (dirName AS STRING)
-
-    ' This reads a single directory entry. You can call this repeatedly
-    ' It will return an empty string once all entries have been read
-    ' "flags" and "fileSize" are output parameters (i.e. use a variable)
-    ' If "flag" is 1 then it is a directory and 2 if it is a file
-    FUNCTION read_dir$ (flags AS LONG, fileSize AS LONG)
-
-    ' Close the directory. This must be called before open_dir() or read_dir$() can be used again
-    SUB close_dir
-END DECLARE
-
-' This properly null-terminates the directory name before passing it to __load_dir()
-FUNCTION open_dir%% (dirName AS STRING)
-    open_dir = __open_dir(dirName + CHR$(0))
-END FUNCTION
-
-' --- DIRENTRY STUFF ---
 
 SUB loadText
     DIM i AS INTEGER, b$, clip$
@@ -93,33 +73,30 @@ FUNCTION GetCurDirLists& (DirList() AS STRING, FileList() AS STRING)
 
     REDIM AS STRING DirList(0 TO RESIZE_BLOCK_SIZE), FileList(0 TO RESIZE_BLOCK_SIZE) ' resize the file and dir list arrays (and toss contents)
 
-    DIM dirName AS STRING: dirName = _CWD$ ' we'll enumerate the current directory contents
-    DIM AS LONG dirCount, fileCount, flags, fileSize
+    DIM dirName AS STRING: dirName = _CWD$ + "/" ' we'll enumerate the current directory contents
+    DIM AS LONG dirCount, fileCount
     DIM entryName AS STRING, ext AS STRING
 
-    IF open_dir(dirName) THEN
-        DO
-            entryName = read_dir(flags, fileSize)
-            IF LEN(entryName) <> 0 THEN
-                SELECT CASE flags
-                    CASE 1
-                        IF dirCount > UBOUND(DirList) THEN REDIM _PRESERVE DirList(0 TO UBOUND(DirList) + RESIZE_BLOCK_SIZE) AS STRING
-                        DirList(dirCount) = entryName
-                        dirCount = dirCount + 1
-                    CASE 2
-                        ext = LCASE$(MID$(entryName, 1 + _INSTRREV(entryName, ".")))
+    entryName = _FILES$(dirName)
 
-                        SELECT CASE ext
-                            CASE "", "txt", "log", "md", "lst", "bas", "bi", "bm", "frm", "vb", "cls", "c", "cpp", "h", "cc", "cxx", "c++", "hh", "hpp", "hxx", "h++", "cppm", "ixx"
-                                IF fileCount > UBOUND(FileList) THEN REDIM _PRESERVE FileList(0 TO UBOUND(FileList) + RESIZE_BLOCK_SIZE) AS STRING
-                                FileList(fileCount) = entryName
-                                fileCount = fileCount + 1
-                        END SELECT
-                END SELECT
-            END IF
-        LOOP UNTIL LEN(entryName) = 0
-        close_dir
-    END IF
+    DO
+        IF RIGHT$(entryName, 1) = "/" OR RIGHT$(entryName, 1) = "\" THEN
+            IF dirCount > UBOUND(DirList) THEN REDIM _PRESERVE DirList(0 TO UBOUND(DirList) + RESIZE_BLOCK_SIZE) AS STRING
+            DirList(dirCount) = entryName
+            dirCount = dirCount + 1
+        ELSE
+            ext = LCASE$(MID$(entryName, 1 + _INSTRREV(entryName, ".")))
+
+            SELECT CASE ext
+                CASE "", "txt", "log", "md", "lst", "bas", "bi", "bm", "frm", "vb", "cls", "c", "cpp", "h", "cc", "cxx", "c++", "hh", "hpp", "hxx", "h++", "cppm", "ixx"
+                    IF fileCount > UBOUND(FileList) THEN REDIM _PRESERVE FileList(0 TO UBOUND(FileList) + RESIZE_BLOCK_SIZE) AS STRING
+                    FileList(fileCount) = entryName
+                    fileCount = fileCount + 1
+            END SELECT
+        END IF
+
+        entryName = _FILES$
+    LOOP UNTIL LEN(entryName) = 0
 
     REDIM _PRESERVE DirList(0 TO dirCount) AS STRING
     REDIM _PRESERVE FileList(0 TO fileCount) AS STRING
@@ -428,6 +405,10 @@ END SUB
 
 SUB __UI_TextChanged (id AS LONG)
     SELECT CASE id
+        CASE lbTxt
+
+        CASE ListTxt
+
     END SELECT
 END SUB
 
