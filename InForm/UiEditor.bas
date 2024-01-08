@@ -2596,12 +2596,6 @@ SUB SaveSettings
     IF __UI_ShowInvisibleControls THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show invisible controls", value$
 
-    value$ = "False" ' *** Removing the checking for update function
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Check for updates", value$
-
-    value$ = "False" ' *** Removing the checking for update function
-    WriteSetting "InForm/InForm.ini", "InForm Settings", "Receive development updates", value$
-
     IF ShowFontList THEN value$ = "True" ELSE value$ = "False"
     WriteSetting "InForm/InForm.ini", "InForm Settings", "Show font list", value$
 

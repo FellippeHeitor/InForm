@@ -104,7 +104,7 @@ $IF STRINGFILE_BAS = UNDEFINED THEN
     END FUNCTION
 
 
-    ' Saves a string buffer to a file
+    ' Saves a StringFile object to a file
     ' This does not disturb the read / write cursor
     FUNCTION StringFile_Save%% (stringFile AS StringFileType, fileName AS STRING, overwrite AS _BYTE)
         IF _FILEEXISTS(fileName) AND NOT overwrite THEN EXIT FUNCTION
