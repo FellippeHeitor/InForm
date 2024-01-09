@@ -18,6 +18,47 @@ DIM SHARED ContextMenu1Copy AS LONG
 '$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
+FUNCTION GetThemeImageId~%% (fileName AS STRING)
+    SELECT CASE LCASE$(fileName)
+        CASE "scrollhbuttons.bmp"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SCROLLHBUTTONS
+        CASE "scrollhthumb.bmp"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SCROLLHTHUMB
+        CASE "scrollhtrack.bmp"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SCROLLHTRACK
+        CASE "menucheckmark.bmp"
+            GetThemeImageId = __INFORM_THEME_IMAGE_MENUCHECKMARK
+        CASE "slidertrack.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SLIDERTRACK
+        CASE "frame.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_FRAME
+        CASE "arrows.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_ARROWS
+        CASE "scrolltrack.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SCROLLTRACK
+        CASE "scrollthumb.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SCROLLTHUMB
+        CASE "scrollbuttons.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SCROLLBUTTONS
+        CASE "radiobutton.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_RADIOBUTTON
+        CASE "progresstrack.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_PROGRESSTRACK
+        CASE "progresschunk.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_PROGRESSCHUNK
+        CASE "button.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_BUTTON
+        CASE "checkbox.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_CHECKBOX
+        CASE "notfound.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_NOTFOUND
+        CASE "sliderdown.png"
+            GetThemeImageId = __INFORM_THEME_IMAGE_SLIDERDOWN
+        CASE ELSE
+            ERROR 5
+    END SELECT
+END FUNCTION
+
 ': Event procedures: ---------------------------------------------------------------
 
 SUB __UI_BeforeInit
@@ -149,7 +190,7 @@ SUB __UI_ValueChanged (id AS LONG)
     SELECT CASE id
         CASE DropdownList1
             _FREEIMAGE Control(PictureBox1).HelperCanvas
-            Control(PictureBox1).HelperCanvas = _COPYIMAGE(__UI_LoadThemeImage(GetItem$(DropdownList1, Control(DropdownList1).Value)))
+            Control(PictureBox1).HelperCanvas = _COPYIMAGE(__UI_LoadThemeImage(GetThemeImageId(GetItem$(DropdownList1, Control(DropdownList1).Value))))
             Control(PictureBox1).Redraw = TRUE
     END SELECT
 END SUB
