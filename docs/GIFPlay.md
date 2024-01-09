@@ -53,7 +53,7 @@ Frees resources used by the GIF file loaded previously using GIF_LoadFromFile or
 FUNCTION GIF_IsLoaded%% (Id AS LONG)
 ```
 
-Returns True if GIF file is completly loaded and ready for use.
+Returns True if GIF file is completely loaded and ready for use.
 
 ```vb
 FUNCTION GIF_GetWidth~& (Id AS LONG)

@@ -4,6 +4,8 @@
 !*.*
 # Unignore all dirs
 !*/
+# Unignore wiki
+!docs/wiki
 # Ignore all exe files
 *.exe
 # Ignore all ini files

@@ -4421,7 +4421,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         IF AddGifExtension = TRUE AND TotalGifLoaded > 0 THEN
                             PRINT #TextFileNum,
                             PRINT #TextFileNum, "    'The lines below ensure your GIFs will display properly;"
-                            PRINT #TextFileNum, "    'Please refer to the documentation in 'InForm/docs/GIFPlay.md'"
+                            PRINT #TextFileNum, "    'Please refer to the documentation in 'docs/GIFPlay.md'"
                             FOR Dummy = 1 TO UBOUND(PreviewControls)
                                 IF PreviewAnimatedGif(Dummy) THEN
                                     PRINT #TextFileNum, "    GIF_Draw " + RTRIM$(PreviewControls(Dummy).Name)
