@@ -283,6 +283,6 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
             __UI_ImageData = Base64_LoadResourceString(DATA_SLIDERTRACK_BMP_222, SIZE_SLIDERTRACK_BMP_222, COMP_SLIDERTRACK_BMP_222)
 
         CASE ELSE
-            ERROR 5
+            ERROR 51
     END SELECT
 END FUNCTION

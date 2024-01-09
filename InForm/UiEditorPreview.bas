@@ -19,7 +19,7 @@ READ_KEYWORDS
 
 CHDIR ".."
 
-CONST EmptyForm$ = "9iVA_9GK1P<000`ooO7000@00D006mVL]53;1`B000000000noO100006mVL]5cno760cEfI_EFMYi2MdIf?Q9GJQaV;dAWIol2CY9VLQ9GN_HdK^AgL_4TLY56K^@7MVmCB^IdKbef;bEfL_EWLSEfL_hdKdmFC_ifK]8EIWE7KQ9W;dAWIo<fKe9W;dAWIZXB<b00o%%%0"
+CONST EMPTY_FORM = "SW5Gb3JtAcgAAAD//3cAAAABAAUARm9ybTEsASwBAAAAAAAA/v8FAAAARm9ybTH7/2EAc2Vnb2V1aS50dGY/YXJpYWwudHRmPy9MaWJyYXJ5L0ZvbnRzL0FyaWFsLnR0Zj9JbkZvcm0vcmVzb3VyY2VzL05vdG9Nb25vLVJlZ3VsYXIudHRmP2NvdXIudHRmKioxMgD8"
 
 'Signals sent from Editor to Preview:
 '   201 = Align Left
@@ -76,8 +76,10 @@ $ELSE
         CONST PathSep$ = "/"
 $END IF
 
+CONST EDITOR_IMAGE_CONTEXTMENU = 1
+
 'Load context menu icon image:
-ContextMenuIcon = LoadEditorImage("contextmenu.bmp")
+ContextMenuIcon = LoadEditorImage(EDITOR_IMAGE_CONTEXTMENU)
 __UI_ClearColor ContextMenuIcon, 0, 0
 
 '$INCLUDE:'extensions/GIFPlay.bi'
@@ -612,7 +614,7 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF TempValue = -5 THEN
             'Reset request (new form)
             IsCreating = TRUE
-            a$ = Unpack$(EmptyForm$)
+            a$ = Base64_Decode(EMPTY_FORM)
 
             FileToLoad = FREEFILE
             OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #FileToLoad
@@ -2242,86 +2244,6 @@ END SUB
 SUB __UI_ValueChanged (id AS LONG)
 END SUB
 
-FUNCTION Pack$ (__DataIn$)
-    'Adapted from:
-    '==================
-    ' BASFILE.BAS v0.10
-    '==================
-    'Coded by Dav for QB64 (c) 2009
-    'http://www.qbasicnews.com/dav/qb64.php
-    DIM DataIn$, OriginalLength AS LONG
-    DIM a$, BC&, LL&, DataOut$
-    DIM T%, B&, c$, g$
-    DIM B$
-
-    DataIn$ = __DataIn$
-    OriginalLength = LEN(DataIn$)
-    DO
-        a$ = ReadSequential(DataIn$, 3)
-        BC& = BC& + 3: LL& = LL& + 4
-        GOSUB Encode
-        DataOut$ = DataOut$ + a$
-        IF OriginalLength - BC& < 3 THEN
-            a$ = ReadSequential(DataIn$, OriginalLength - BC&)
-            GOSUB Encode
-            B$ = a$
-            SELECT CASE LEN(B$)
-                CASE 1: a$ = "%%%" + B$
-                CASE 2: a$ = "%%" + B$
-                CASE 3: a$ = "%" + B$
-            END SELECT
-            DataOut$ = DataOut$ + a$
-            EXIT DO
-        END IF
-    LOOP
-
-    Pack$ = DataOut$
-    EXIT FUNCTION
-
-    Encode:
-    FOR T% = LEN(a$) TO 1 STEP -1
-        B& = B& * 256 + ASC(MID$(a$, T%))
-    NEXT
-
-    c$ = ""
-    FOR T% = 1 TO LEN(a$) + 1
-        g$ = CHR$(48 + (B& AND 63)): B& = B& \ 64
-        'If < and > are here, replace them with # and *
-        'Just so there's no HTML tag problems with forums.
-        'They'll be restored during the decoding process..
-        'IF g$ = "<" THEN g$ = "#"
-        'IF g$ = ">" THEN g$ = "*"
-        c$ = c$ + g$
-    NEXT
-    a$ = c$
-    RETURN
-END FUNCTION
-
-FUNCTION Unpack$ (PackedData$)
-    'Adapted from:
-    '==================
-    ' BASFILE.BAS v0.10
-    '==================
-    'Coded by Dav for QB64 (c) 2009
-    'http://www.qbasicnews.com/dav/qb64.php
-    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$
-
-    A$ = PackedData$
-
-    FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
-        IF INSTR(1, B$, "%") THEN
-            FOR C% = 1 TO LEN(B$): F$ = MID$(B$, C%, 1)
-                IF F$ <> "%" THEN C$ = C$ + F$
-            NEXT: B$ = C$
-            END IF: FOR t% = LEN(B$) TO 1 STEP -1
-            B& = B& * 64 + ASC(MID$(B$, t%)) - 48
-            NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
-            X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
-    NEXT: btemp$ = btemp$ + X$: NEXT
-
-    Unpack$ = btemp$
-END FUNCTION
-
 FUNCTION ReadSequential$ (Txt$, Bytes%)
     ReadSequential$ = LEFT$(Txt$, Bytes%)
     Txt$ = MID$(Txt$, Bytes% + 1)
@@ -2443,7 +2365,7 @@ SUB LoadPreview (Destination AS _BYTE)
 
         b$ = ReadSequential$(Clip$, VAL("&H" + ClipLen$))
         b$ = Replace$(b$, CHR$(10), "", FALSE, 0)
-        Clip$ = Unpack$(b$)
+        Clip$ = Base64_Decode(b$)
     END IF
 
     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
@@ -3077,13 +2999,13 @@ SUB LoadPreviewText
                     'Tooltip
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
-                    ToolTip(TempValue) = removeQuotation$(DummyText$)
+                    ToolTip(TempValue) = RemoveQuotation$(DummyText$)
                 ELSEIF LEFT$(b$, 19) = "Text(__UI_NewID) = " THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "TEXT"
                     'Text
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
-                    Text(TempValue) = removeQuotation$(DummyText$)
+                    Text(TempValue) = RemoveQuotation$(DummyText$)
 
                     IF Control(TempValue).Type = __UI_Type_Form THEN
                         IF ExeIcon <> 0 THEN _FREEIMAGE ExeIcon: ExeIcon = 0
@@ -3097,7 +3019,7 @@ SUB LoadPreviewText
                     'Mask
                     DummyText$ = MID$(b$, INSTR(b$, " = ") + 3)
                     DummyText$ = RestoreCHR$(DummyText$)
-                    Mask(TempValue) = removeQuotation$(DummyText$)
+                    Mask(TempValue) = RemoveQuotation$(DummyText$)
                 ELSEIF LEFT$(b$, 38) = "__UI_RegisterResult = RegisterKeyCombo" THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "KEYCOMBO"
                     DummyText$ = nextParameter(b$)
@@ -3215,21 +3137,21 @@ FUNCTION nextParameter$ (__text$)
     END IF
     IF position2 = 0 THEN position2 = LEN(text$) + 1
     thisParameter$ = LTRIM$(RTRIM$(MID$(text$, position1, position2 - position1)))
-    nextParameter$ = removeQuotation$(thisParameter$)
+    nextParameter$ = RemoveQuotation$(thisParameter$)
     position1 = position2 + 1
 END FUNCTION
 
-FUNCTION removeQuotation$ (__text$)
+FUNCTION RemoveQuotation$ (__text$)
     DIM text$, firstQ AS LONG, nextQ AS LONG
     text$ = __text$
 
     firstQ = INSTR(text$, CHR$(34))
-    IF firstQ = 0 THEN removeQuotation$ = text$: EXIT FUNCTION
+    IF firstQ = 0 THEN RemoveQuotation$ = text$: EXIT FUNCTION
 
     nextQ = INSTR(firstQ + 1, text$, CHR$(34))
-    IF nextQ = 0 THEN removeQuotation$ = MID$(text$, firstQ + 1): EXIT FUNCTION
+    IF nextQ = 0 THEN RemoveQuotation$ = MID$(text$, firstQ + 1): EXIT FUNCTION
 
-    removeQuotation$ = MID$(text$, firstQ + 1, nextQ - firstQ - 1)
+    RemoveQuotation$ = MID$(text$, firstQ + 1, nextQ - firstQ - 1)
 END FUNCTION
 
 SUB SavePreview (Destination AS _BYTE)
@@ -3639,7 +3561,7 @@ SUB SavePreview (Destination AS _BYTE)
         END IF
     ELSE
         Clip$ = Clip$ + b$
-        b$ = Pack$(Clip$)
+        b$ = Base64_Encode(Clip$)
 
         IF LEN(b$) > 60 THEN
             a$ = ""
@@ -3921,7 +3843,6 @@ SUB RestoreRedoImage
     LoadPreview ToUndoBuffer
 END SUB
 
-
 SUB LoadDefaultFonts
     IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
         Control(__UI_FormID).Font = SetFont("segoeui.ttf", 12)
@@ -3946,57 +3867,22 @@ SUB LoadDefaultFonts
     END IF
 END SUB
 
-FUNCTION EditorImageData$ (FileName$)
-    DIM A$
+' Use this to store editor images and bitmaps
+' Take care not to call multiple times for the same image as it will create a new _IMAGE everytime it is called!
+FUNCTION LoadEditorImage& (id AS _UNSIGNED _BYTE)
+    SELECT CASE id
+        CASE EDITOR_IMAGE_CONTEXTMENU
+            CONST SIZE_CONTEXTMENU_BMP_1146~& = 1146~&
+            CONST COMP_CONTEXTMENU_BMP_1146%% = -1%%
+            CONST DATA_CONTEXTMENU_BMP_1146 = _
+                "eNpy8q1iYQCDKiDOAWIBKGZkUGBgZsAF/kMQjEMGADRLhkwBAkEU9qcZjUaamDQpCYy2uyQmPJNQ4CCAFKtG0vFrAKA8zx1mx1FHOcdgeLPp49vH" + _
+                "Hg6Av8hDXiPJcyRFY1Mg1Q3utIbSj1Bliaxsad5XrU31kSd2GAaM40jpug5939NcloWzrit94zNfM2+enxBH53irp26vcXV6hOD4kPmv/KEQzMeR" + _
+                "j2maiN/rvwnPYIyhiEvmoaT1e9bvfe8XFyfYbkg72OnQn/y8/8Zz2kz90J/873nef57nX/tfGg0ZeNTfwU+s9VNc/Zal+6cyojcgA3/P/fn/c393" + _
+                "v/v7/wd5BeeEEdg="
 
-    SELECT CASE LCASE$(FileName$)
-        CASE "contextmenu.bmp"
-            A$ = MKI$(16) + MKI$(16)
-            A$ = A$ + "o3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo"
-            A$ = A$ + "0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
-            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o"
-            A$ = A$ + "okXMWm_UVJjoFNj[oKiYWn?XXnjoGR:ZoS9Z`n?VYVjoQVJ\oSIZYnOVZ6ko"
-            A$ = A$ + "IZZZoo?0oooo0looo3`ooo?0oooQ^meo0000oK_mfo_mfKoogOomoOomgo?n"
-            A$ = A$ + "hSooiWOnoWOnioOniWooj[_noWYZanoo0looo3`ooo?0oooo0loo>JgIoGOm"
-            A$ = A$ + "eo?000`o>o[]o3:RgmoSgQfo827HoSGH8m?L@1doiWOno[_njoOVZZjoo3`o"
-            A$ = A$ + "oo?0oooo0looo3`ooOXKOmOmeGoofK_mo3000lomgOoogOomoS?nhoOniWoo"
-            A$ = A$ + "iWOnoWOnio_nj[ooIZJ\oo?0oooo0looo3`ooo?0oo_SfMfoeGOmoK_mfo_m"
-            A$ = A$ + "fKoo0000o3l[Xn?R`QeohQ5Bo37D0mOniWooj[_noWYZZnoo0looo3`ooo?0"
-            A$ = A$ + "oooo0loo7jfGoGOmeo_mfKoofK_moOomgo?000`ohS?noWOnioOniWooiWOn"
-            A$ = A$ + "o[_njoOVZ6koo3`ooo?0oooo0looo3`ookXMWmOmeGoofK_moK_mfo?000`o"
-            A$ = A$ + "0000o3000lO\QRio`15@oWOnio_nj[ooIZZZoo?0oooo0looo3`ooo?0oooQ"
-            A$ = A$ + "^meo0000o3000l_mfKoo0000oolc?o?b8SloiWOnoWOnioOniWooj[_noWYZ"
-            A$ = A$ + "anoo0looo3`ooo?0oooo0loo>JgIok\c>o_c>klo7n6HoOomgo?000`oHR8P"
-            A$ = A$ + "oS7F8m?LH1doiWOno[_njoOVZZjoo3`ooo?0oooo0looo3`ooKgQ7nOmeGoo"
-            A$ = A$ + "fK_moohMPmomgOoo0000oS<b8oOniWooiWOnoWOnio_nj[ooIZJ\oo?0oooo"
-            A$ = A$ + "0looo3`ooo?0oo_UVjjoeGOmoK_mfo_coJko?N7Jo3000l?V@2hoh56Bo37D"
-            A$ = A$ + "0mOniWooj[_noWYZZnoo0looo3`ooo?0oooo0looFJZYoGOmeo_mfKoofK_m"
-            A$ = A$ + "oS<b8ooc?olo8S<boWOnioOniWooiWOno[_njoOVZ6koo3`ooo?0oooo0loo"
-            A$ = A$ + "o3`oooYY^n_UVJjoFNj[oKiYWn?XXnjoGR:ZoS9Z`n?VYVjoQVJ\oSIZYnOV"
-            A$ = A$ + "Z6koIZZZoo?0oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`ooo?0"
-            A$ = A$ + "oooo0looo3`ooo?0oooo0looo3`ooo?0oooo0looo3`o%%o3"
+            LoadEditorImage = _LOADIMAGE(Base64_LoadResourceString(DATA_CONTEXTMENU_BMP_1146, SIZE_CONTEXTMENU_BMP_1146, COMP_CONTEXTMENU_BMP_1146), 32, "memory")
+
+        CASE ELSE
+            ERROR 51
     END SELECT
-    EditorImageData$ = A$
-END FUNCTION
-
-FUNCTION LoadEditorImage& (FileName$)
-    DIM MemoryBlock AS _MEM, TempImage AS LONG
-    DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
-
-    A$ = EditorImageData$(FileName$)
-    IF LEN(A$) = 0 THEN EXIT FUNCTION
-
-    NewWidth = CVI(LEFT$(A$, 2))
-    NewHeight = CVI(MID$(A$, 3, 2))
-    A$ = MID$(A$, 5)
-
-    BASFILE$ = Unpack$(A$)
-
-    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
-    MemoryBlock = _MEMIMAGE(TempImage)
-
-    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
-    _MEMFREE MemoryBlock
-
-    LoadEditorImage& = TempImage
 END FUNCTION

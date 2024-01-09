@@ -57,7 +57,7 @@ Assuming your setup is like the above, do the following:
 
 - *BeforeInit*, triggered just before the form is shown.
 - *OnLoad*, triggered right after the form is first shown.
-- *BeforeUpdateDisplay*, triggered everytime the form is about to be repainted.
+- *BeforeUpdateDisplay*, triggered every time the form is about to be repainted.
 - *BeforeUnload*, triggered when the user tries to close the program, either via clicking the window's X button, right click in the task bar -> Close or with Alt+F4 (Windows only).
 - *FormResized*, triggered when a form with the CanResize property is resized at runtime.
 
@@ -120,4 +120,4 @@ InForm/extensions/MessageBox.bas
 
 ## NOTES
 
-- This requires the latest version of [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest). More accurately, it only works with QB64-PE v3.8.0 or above.
+- This requires the latest version of [QB64-PE](https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest). QB64, or other forks of QB64 will not work!

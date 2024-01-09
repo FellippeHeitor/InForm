@@ -246,6 +246,9 @@ END IF
 
 DIM SHARED CurrentPath$, ThisFileName$
 
+CONST EDITOR_IMAGE_COMMONCONTROLS~%% = 1~%%
+CONST EDITOR_IMAGE_DISK~%% = 2~%%
+
 'CheckPreviewTimer = _FREETIMER
 'ON TIMER(CheckPreviewTimer, .003) CheckPreview
 
@@ -355,10 +358,7 @@ SUB __UI_Click (id AS LONG)
         CASE AlignMenuAlignCenterH: Dummy = 208
         CASE AlignMenuDistributeV: Dummy = 209
         CASE AlignMenuDistributeH: Dummy = 210
-CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops, _
-AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH, _
-AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV, _
-AlignMenuDistributeH
+        CASE AlignMenuAlignLeft, AlignMenuAlignRight, AlignMenuAlignTops, AlignMenuAlignBottoms, AlignMenuAlignCentersV, AlignMenuAlignCentersH, AlignMenuAlignCenterV, AlignMenuAlignCenterH, AlignMenuDistributeV, AlignMenuDistributeH
             b$ = MKI$(0)
             SendData b$, Dummy
         CASE OptionsMenuAutoName
@@ -405,10 +405,7 @@ AlignMenuDistributeH
         CASE AddPictureBox: Dummy = __UI_Type_PictureBox
         CASE AddFrame: Dummy = __UI_Type_Frame
         CASE AddToggleSwitch: Dummy = __UI_Type_ToggleSwitch
-CASE AddButton, AddLabel, AddTextBox, AddCheckBox, _
-AddRadioButton, AddListBox, AddDropdownList, _
-AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, _
-AddToggleSwitch
+        CASE AddButton, AddLabel, AddTextBox, AddCheckBox, AddRadioButton, AddListBox, AddDropdownList, AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, AddToggleSwitch
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
             Send Client, b$
         CASE AddNumericBox
@@ -580,9 +577,7 @@ AddToggleSwitch
                 SaveForm TRUE, Control(SaveFrmOnlyCB).Value
             END IF
         CASE HelpMenuAbout
-            DIM isBeta$
-            IF __UI_VersionIsBeta THEN isBeta$ = " Beta Version" ELSE isBeta$ = ""
-            MessageBox "InForm GUI for QB64-PE - Created by Fellippe Heitor (" + __UI_CopyrightSpan + ")" + STRING$(2, 13) + UiEditorTitle$ + " v" + __UI_Version + " (build" + STR$(__UI_VersionNumber) + isBeta$ + ")" + STRING$(2, 13) + "Updates by George McGinn (gbytes58@gmail.com)" + STRING$(2, 13) + "QB64-PE port by Samuel Gomes (a740g)" + STRING$(2, 13) + "GitHub: https://github.com/a740g/InForm-PE", UiEditorTitle$ + " - About", MsgBox_Information
+            MessageBox "InForm GUI engine for QB64-PE" + CHR$(13) + "Fellippe Heitor, (2016 - 2022) - @FellippeHeitor" + chr$(13) + "George McGinn, 2023 - gbytes58@gmail.com"+  CHR$(13) + "Samuel Gomes, (2023 - 2024) - @a740g" + STRING$(2, 13) + UiEditorTitle$ + " v" + __UI_Version  + STRING$(2, 13) + "https://github.com/a740g/InForm-PE", UiEditorTitle$ + " - About", MsgBox_Information
         CASE HelpMenuHelp
             MessageBox "Design a form and export the resulting code to generate an event-driven QB64-PE program.", UiEditorTitle$ + " - What's all this?", MsgBox_Information
         CASE FileMenuExit
@@ -757,9 +752,7 @@ AddToggleSwitch
 
             __UI_Focus = 0
             __UI_ForceRedraw = TRUE
-CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, _
-FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, _
-FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
+        CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
             DIM RecentToOpen$
             RecentToOpen$ = ToolTip(id)
             IF _FILEEXISTS(RecentToOpen$) THEN
@@ -2814,8 +2807,7 @@ SUB __UI_OnLoad
                     LINE INPUT #FreeFileNum, b$
                     b$ = LTRIM$(RTRIM$(b$))
                     uB$ = UCASE$(b$)
-IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND _
-INSTR(uB$, "$INCLUDE") > 0 THEN
+                    IF (LEFT$(b$, 1) = "'" OR LEFT$(uB$, 4) = "REM ") AND INSTR(uB$, "$INCLUDE") > 0 THEN
                         DIM FirstMark AS INTEGER, SecondMark AS INTEGER
                         FirstMark = INSTR(INSTR(uB$, "$INCLUDE") + 8, uB$, "'")
                         IF FirstMark > 0 THEN
@@ -2985,7 +2977,7 @@ INSTR(uB$, "$INCLUDE") > 0 THEN
 
     'Load toolbox images:
     DIM CommControls AS LONG
-    CommControls = LoadEditorImage("commoncontrols.bmp")
+    CommControls = LoadEditorImage(EDITOR_IMAGE_COMMONCONTROLS)
     __UI_ClearColor CommControls, 0, 0
 
     i = 0
@@ -3047,7 +3039,7 @@ INSTR(uB$, "$INCLUDE") > 0 THEN
 
     _DEST prevDest
 
-    Control(FileMenuSave).HelperCanvas = LoadEditorImage("disk.png")
+    Control(FileMenuSave).HelperCanvas = LoadEditorImage(EDITOR_IMAGE_DISK)
 
     _FREEIMAGE CommControls
 
@@ -3362,235 +3354,57 @@ SUB PreselectFile
     END IF
 END SUB
 
-FUNCTION EditorImageData$ (FileName$)
-    DIM A$
-
-    SELECT CASE LCASE$(FileName$)
-        CASE "disk.png"
-            A$ = MKI$(16) + MKI$(16)
-            A$ = A$ + "0000005D@1AA15TB=MdA[`hQ7>c[ZZj<7:HOcPgL^=COc=g<0FGMbd7Nc=cH"
-            A$ = A$ + "NiE<:A4A]<eC<eDEBmdE9UDB>0000`0GHIUb854?oWiUFj_iUCno4;\`o;Nh"
-            A$ = A$ + "QoOjXSnoXO^ioKNiUo_k]cnoHFIUo7S8Rl?IOaeoQeEFoc3>hLCD:YdCJM5E"
-            A$ = A$ + "o33:SPOUC>io5C<an3000hoa7O\oMgMgnS=fHk?fGO]oNk]gn[HR9j?000Po"
-            A$ = A$ + "Bi4CkcDB6m?<`\B=7AD@;iTB8m_<\P2om]WNoOZYVn_59T`oYR:ZoSk]gnO]"
-            A$ = A$ + "c>kod>k\o[K^in?Mb9go9000n[dA5eoA35do`\b:e04?i`TA35doR\16lcWN"
-            A$ = A$ + "jmOYUFjo0000oOZYVn?^gNkod>k\oCk\cn_^iVkob5GLo3000lo@odCoo\S>"
-            A$ = A$ + "o_R9VDS=b83Cn\C>oga5D`oK]efoXNjYog7Olm_ZYVjoanj[ooZ[^n_[]fjo"
-            A$ = A$ + "b6K\o[FJYm?000`ojLS=mK3=bl_9R8B=bl2;<=3<_lO<^d2o^\R:oODA4m_G"
-            A$ = A$ + "L]eoFAeDo;5D@moDA5eoB15Do3UC=m??jTcoahB;o7S;]h?<]`boR8R8el2;"
-            A$ = A$ + "\`D<]dbo^\b:l[3>glo>iPcof@c<o_C>gl??jTcolT3>ocS>ilO?jTcood3?"
-            A$ = A$ + "oK3=clO;ZTRo^\R:o;R8RD3?iT3C0000o7GK]aOe?kloEk\coG]c>oOe?klo"
-            A$ = A$ + "Eo\coGmc>oOe?kloEkLcoSMdAo_aonkojPc=nOb8Rlo:[\B=314?<1000l?Q"
-            A$ = A$ + "028oY;^ho?>gLo?iMgmoTgMgoCNgMo?iMgmoTgMgo?NgLo_iOomoKG=eoKd@"
-            A$ = A$ + "3eO7JTao`\b:e04?l`4000`o2fGOlSNhQo_hL_moSg=go?NgMoohMcmoSgMg"
-            A$ = A$ + "o?NgMo_hLcmoUomgoWmdCo_@01ToJHQ5o_b:[D3@l`3C0000o?8P0b_jUCno"
-            A$ = A$ + "To]goG>hOoOiPomoU3ngoG>hOoOiPomoUomgoS^hRo?gGKmo35d?mGA4@lo:"
-            A$ = A$ + "[\B=o`3?=1000lOQ2:8o]S>joO^hQo?jS;noX?^hoSnhRo?jS;noX?^hoO^h"
-            A$ = A$ + "Ro_jUGnoO_]fn;4@0mO4<``o\`2;d\c>kT40000h5:XPhc>jWg?jT?>oYG>i"
-            A$ = A$ + "lWNiTc?jT?NoXCnhmWNiTc?jT?>o[O^ilgMfHo?A294l3000Kg2:XTc9T@2E"
-            A$ = A$ + "0000OcUFImoS;^ho:NhQo_8R8noR8Rho;R8Ro_8R8noR8Rho;R8Ro_8R8n_R"
-            A$ = A$ + "7NholXC>iW@14X=9P02@<`03FLa5Gh4000`?000001000040000@00000100"
-            A$ = A$ + "0040000@000001000040000@0000o@000<D5B81B0000%%70"
-        CASE "commoncontrols.bmp"
-            A$ = MKI$(16) + MKI$(176)
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_emfjo<ZE:"
-            A$ = A$ + "o?G>0loN21`ocU30o_W@0loLi0`ok940o?G>0loN21`ocU30o_W@0loN:1aoFKL[oK?0fo_cmFjoD^F>ok]c6ooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooo_O^goCiHal_emfjo<ZE:ok]e6ooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooiFKlo4:E8o?G>0loooooooooooooooooooooooooooooooooooooo0000oooooooooooo"
-            A$ = A$ + "oooooooooooooooogOomo_W@0loN21`oooooooooooooooooooooooooooooooooooooo3000loooooooooooooooooooooogOom"
-            A$ = A$ + "oOoooooLi0`ocU30ooooooooooooooooo3000l?000`ooooooooooo?000`o0000o3000loooooooooooOomgook_Oook940o_W@"
-            A$ = A$ + "0lomooooooooooooooooooooooooo3000loooooo0000oooooooooooo0000oooooook_Ooo_Oomo?G>0loLi0`ogooooOomgooo"
-            A$ = A$ + "oooo0000o3000l?000`oooooo3000loooooogOomo3000lomgOooWonkoOnk_ooN21`ok940oonmgooooooo0000oOooooomgOoo"
-            A$ = A$ + "0000oOomgo?000`ogOomoOoooo?000`ogooooOni_ooi_onocU30o?G>0lomgOoo_OomoOomgo?000`o0000o3000lomgOoo0000"
-            A$ = A$ + "o3000l?000`ogOomoonmgooiWonoNOnio_W@0loN21`o_onkoOomgookgOoogOomoonmgoomgOoo_OomoOomgookgOoogOomoonm"
-            A$ = A$ + "goomgOooNOniokmi_ooLi0`okY44ok\c6ook_ono_Oomoonk_ookgOoo_onkoonmgook_ono_Oomoonk_ookgOoo_onkoonmgoO_"
-            A$ = A$ + "mFko4:56oK]a]n?SS5comFK[ok\eNo_cFkmo6K]gok\eNo_cFkmo>K]goK\eNo_cFkmo>K]gok\eNoO_mFko<>F<oKM_]n_m0Hoo"
-            A$ = A$ + "FKL[oCXDQloN21`ocU30o_W@0loLi0`ok940o?G>0loN21`ocU30o_W@0loLi0`o4:56okL_Un_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK\a6ooHB9eof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fooNk]go0000oK\a6o_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_a6Klo0000o3000lO8HPaof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoo4>gJo_gJSm?000`o0000ok\c>o_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoo6K\ao3128l_a6Klo:9D>o3000lO>aTbof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pmoc9S4n_F:9do"
-            A$ = A$ + "f3Pmok\c>o?000`o8000oK\a6o_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_@i4co6K\aoK?0fo_m0HooQP16"
-            A$ = A$ + "o3000loHJ9eof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_c>klo0000o[T@ilO>a4co2UC<o3148l?000`o0000ok\c"
-            A$ = A$ + ">o_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hooc=VFo?VDBm_m0Hoof3PmoK?0fo_m0Hoo0000o3000loHJ9eof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoo6K\aoS14@l_a6Klof3PmoK?0fo_m0Hoof3Pmoc8Qkm?000`oQP16oK\a6o_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "6K\ao7C<Yl?28P`oQ426oK\a6o_m0Hoof3PmoK?0fo?000`o0000o3000l?6@0aof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0foO_UBhomb9QoKLY4nO_UBhomF:Qog;W4n_aUBhomF:QogKY4nO_LBho6G:QogKY4nO_UBhomb9QoKLY4n_m0Hoomb9Qoooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooO_L^gof3PmoKLY4noooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooomF:QoK?0foO_L^gooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "0000oooooooooooooooooooooo?000`oooooog;W4n_m0HoomF:Qooooooooooooooooooooooooooooooooo3000loooooooooo"
-            A$ = A$ + "oooooooooooo0000oooooo_aUBhof3Pmog;W4nooooooooooo3000l?000`ooooooooooo?000`o0000o3000looooooooooo300"
-            A$ = A$ + "0loooooombiNoK?0fo_aUBhoooooo3000looooooooooo3000loooooo0000oooooooooooo0000oooooo?000`oooooogKY4n_m"
-            A$ = A$ + "0HoombiNoooooooooooo0000o3000l?000`oooooo3000looooooooooo3000loooooo0000ooooooO_LBhof3PmogKY4noooooo"
-            A$ = A$ + "0000oooooooooooo0000oooooo?000`ooooooooooo?000`oooooo3000loooooo6G:QoK?0foO_LBhooooooooooo?000`o0000"
-            A$ = A$ + "o3000loooooo0000o3000l?000`ooooooooooo?000`oooooog;Wkm_m0Hoo6G:Qoooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooO_UBhof3Pmog;Wkmoooooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooomb9QoK?0foO_UBhomb9QoKLY4nO_UBhomF:Qog;W4n_aUBhomF:QogKY4nO_LBho6G:QogKY4nO_UBho"
-            A$ = A$ + "mb9QoKLY4n_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoCXDHl?QJ5bo4:56oCXDQl?Q"
-            A$ = A$ + "BQao4ZE8oCXDHl?QB5bo4:56oCXFQl?QBQao4:E8oCXDHl_m0Hoof3PmoK?0fo?QB5boNOnioOniWo_gWOnoWonkoOniWooi_ono"
-            A$ = A$ + "Wonkoonmgook_onogOomoOomgo?QB5bof3PmoK?0fo_m0Hoo4:56oOnk_o_gWOnoWonkoOnk_ook_ono_onkoOomgookgOoogOom"
-            A$ = A$ + "oOomgooooooo4:56oK?0fo_m0Hoof3PmoCXDQl_gWOnoWonkoOniWooi_onoWonkoonmgook_onogOomo7BYQloooooogOomoCXD"
-            A$ = A$ + "Ql_m0Hoof3PmoK?0fo?QBQaoWonkoOnk_ook_ono_onkoOomgookgOoogOomo7BYQlO:]Vbooooooooooo?QBQaof3PmoK?0fo_m"
-            A$ = A$ + "0Hoo4:E8oOniWooi_onoQDJ8oonmgook_onogOomo7BYQlO8U6boQDJ8oooooooooooo4:E8oK?0fo_m0Hoof3PmoCXDHlok_ono"
-            A$ = A$ + "_onkoWB[YlO8U6bogOomo7BYQlO:]VboQDJ8oooooooooooooooooCXDHl_m0Hoof3PmoK?0fo?QB5boWonkoonmgoO8U6boQDJ8"
-            A$ = A$ + "o7BYQlO8U6boQDJ8oooooooooooooooooooooo?QB5bof3PmoK?0fo_m0Hoo4:56oOomgookgOoogOomo7BYQlO:]VboQDJ8oooo"
-            A$ = A$ + "oooooooooooooooooooooooo4:56oK?0fo_m0Hoof3PmoCXDQlok_onogOomoOomgoooooooQDJ8oooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooCXDQl_m0Hoof3PmoK?0fo?QBQaogOomoOomgooooooooooooooooooooooooooooooooooooooooooooooooo?QBQao"
-            A$ = A$ + "f3PmoK?0fo_m0Hoo4:E8oOomgooooooogOomoooooooooooooooooooooooooooooooooooooooooooo4:E8oK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oCXDHl?QJ5bo4:56oCXDQl?QBQao4ZE8oCXDHl?QB5bo4:56oCXFQl?QBQao4:E8oCXDHl_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_cmFjo]bhHoCXFQl?UkYeo>gKYoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK]cen?QB5boeBiLoKL_]noiWOno>gK[og:U[m?QB5bof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3Pmok]cmnOY4Zeo>KL]oOnk_ook_ono_onkoOomgookgOoomF:QoG:QJm_g>gkof3PmoK?0fo_m0Hoof3PmoK?0fo?Q"
-            A$ = A$ + "B5bo>gK[oOniWooi_onoWonkoonmgook_onogOomoOomgo_e>gko4:E8oK?0fo_m0Hoof3PmoK?0fo_cmFjo]BiLoOnk_ook_ono"
-            A$ = A$ + "Woniogjien_B6;eoUjMYoonm_ooooooooooooG;Ucm_cmFjof3PmoK?0fo_m0HooD^WFoKL_]noi_onoWonkogji]n_DF;eo2I\B"
-            A$ = A$ + "oWB[Yl?WFciogOomoooooo_e>gko<>WBoK?0fo_m0Hoof3PmoCXFQloiWOno_onkoOomgo_B6;eo2i\BoWC_ilO:]VboQ`I:oooo"
-            A$ = A$ + "oooooooooooooCXFQl_m0Hoof3PmoK?0foOYD^go>gK[oonmgook_onoUJMYoWB[YlO8UVbo@@94ocYcLnoooooooooook]cmn?S"
-            A$ = A$ + "[Ydof3PmoK?0fo_m0Hoo>gKYog:UcmokgOoogOomoonm_o?WFGjoY`I:ocYcLnokgOooooooooooooO]D>go>gKYoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo?QB5boFKL]oOomgooooooogOomoooooooooooooooooooooo_gFKlo4:E8oK?0fo_m0Hoof3PmoK?0fo_m0HooNkL_"
-            A$ = A$ + "oG:QJm_g>gkooooooooooooooooooooooooooo_gFKlo]BhHok]cmn_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_g>gko4:E8oG;U"
-            A$ = A$ + "cm_e>gkooooook]cmnO]D>go4:E8ok]cmn_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_cmFjo]B9QoCXFQlO["
-            A$ = A$ + "D^go>gKYoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "foO_UBhomb9QoKLY4nO_UBhomF:Qog;W4n_aUBhomF:QogKY4nO_LBho6G:QogKY4nO_UBhomb9QoKLY4n_m0Hoomb9Qoooooooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooom>GkookL]oO_aen_cUBiogkL]oo_cenO_L^gof3PmoKLY4noooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooookL]oO_cen_cUBio0000okL[Dnom>GkomF:QoK?0foO_L^gooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oO_aenom>Gko0000oo_cen?000`ogkL]og;W4n_m0HoomF:Qoooooo?000`o0000o3000loooooooooooooooooo>GkogkL]oo_c"
-            A$ = A$ + "enom>GkookL]oO_cen_aUBhof3Pmog;W4noooooooooooooooooooooooooooooooooooooogkL]oo_cenom6GkogkL]oO_cenoo"
-            A$ = A$ + ">GkombiNoK?0fo_aUBhoooooo3000l?000`o0000o3000l?000`oooooooom_ooo_OnooOokoookWooogonoooniogKY4n_m0Hoo"
-            A$ = A$ + "mbiNooooooooooooooooooooooooooooooooooooooom6GkogkL]oO_cenoo>GkogKL]oO_cenO_LBhof3PmogKY4noooooo0000"
-            A$ = A$ + "o3000l?000`o0000oooooooooooookL]oO_cenoo>GkogkL]oo_cenom>Gko6G:QoK?0foO_LBhooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooO_cenoo>Gko0000oO_cen?000`ookL]og;Wkm_m0Hoo6G:Qoooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + ">GkogkL]okLYDn?000`o>g:UoO_cenO_UBhof3Pmog;WkmoooooooooooooooooooooooooooooooooooooogKL]oO_cenom>Gko"
-            A$ = A$ + ">G:UoO_aenom>Gkomb9QoK?0foO_UBhomb9QoKLY4nO_UBhomF:Qog;W4n_aUBhomF:QogKY4nO_LBho6G:QogKY4nO_UBhomb9Q"
-            A$ = A$ + "oKLY4n_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0foO_UBhomb9QoKLY4nO_UBhomF:Qog;W4n_aUBho"
-            A$ = A$ + "mF:QogKY4nO_LBho6G:QoCXDHl?QB5bo4:56oCXFQl?QBQaomb9Qoooooooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooo?QB5bo6K\aoK\a6o_a6Klo4:E8oKLY4noooooooooooooooooooooooooooooooooooooooooooooooooooooo4:56oCXF"
-            A$ = A$ + "Ql_a6Klo4:E8oCXDHlO_L^go4:E8oCXDHl?QB5bo4:56oCXDQl?QBQao4:E8oCXDHl?QB5bo4:56oCXDQl?QBQao4:E8oCXDHl?Q"
-            A$ = A$ + "B5bof3Pmog;W4noooooooooooooooooooooooooooooooooooooogkL]oo_cenom>Gko>G:UoO_cenoo>GkomF:QoK?0foO_UBho"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooo_cenom6Gko>G:Uo3000l_cUBiogKL]ogKY4n_m0HoomF:Qoooooo?000`o0000"
-            A$ = A$ + "o3000looooooooooooooooom>GkookL]o3000loo>Gko0000oo_cenO_LBhof3PmogKY4noooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooogkL]oO_cenoo>GkogKL]oO_cenom>GkomF:QoK?0foO_LBhoooooo3000l?000`o0000o3000l?000`oooooog;W4n_a"
-            A$ = A$ + "UBhomF:QogKY4nO_LBho6G:QogKY4n_m0HoomF:Qoooooooooooooooooooooooooooooooooooooooo>GkogKL]oO_cenom>Gko"
-            A$ = A$ + "okL]oO_aenO_UBhof3PmogKY4noooooo0000o3000l?000`o0000oooooooooooogkL]oo_cen?000`ookL]o3000loo>Gkomb9Q"
-            A$ = A$ + "oK?0foO_UBhooooooooooooooooooooooooooooooooooooooO_cenom>Gko>G:Uo3000l_cUBiogkL]ogKY4n_m0Hoomb9Qoooo"
-            A$ = A$ + "ooooooooooooooooooooooooooooooooooom>GkookL]oO_cen_cUBiogkL]oo_cenO_UBhof3PmogKY4nO_L^gomF:Qog;W4nO_"
-            A$ = A$ + "UBhombiNogKY4nO_LBhomF:Qog;WkmO_UBhomb9QogKY4nO_L^gomF:QoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0HooQdJ8oSAYQlO8]6boHD:6oC9Skm_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoSAYHl_B>[do"
-            A$ = A$ + "2I\Bo[Tc:m?S4>gof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo?Q<Biogooooonk_o_eFKmo4b8U"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo4b8SoooooooiWOnoFK]eoC8S<n?WUFjoLb9WocIY"
-            A$ = A$ + "Un?WLbioLFJYoc9WLn?WUFjoLb9WocIYUnoooooof3PmoC8SDnomooooWonkoK]eFo?Q<Bio_OomoonmoookgOoogooooonmgook"
-            A$ = A$ + "gooo_OomoOoooookgOoooooooK?0fo?6URaoLJ=WoOniWo?Smbho4B8Soooooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooo_m0Hoo<J=SoSAYHl?U>CioH@96oGJ[]n_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo?SNchoHD:6ocIYUn_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmocIY"
-            A$ = A$ + "Un_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pmo_fJ[moJ[]fo[]fJo_fJ[moJ[]fo[]fJ"
-            A$ = A$ + "o_fJ[moJ[]fo[]fJo_fJ[moJ[]fo[]fJo_fJ[moJ[]fof3Pmo_fJ[m_gNkmooooooooooooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooo_onko_fJ[moJ[]foooooo;Ug:m_DN;eoooooo;UgBm_DN[doooooo;Ug:m_DN;eooooooooooooo"
-            A$ = A$ + "oooooooooooooooJ[]fo[]fJooooooO>NWcoiHM<ooooooO>NWcoihM>ooooooO>NWcoihM>oooooooooooooooooooooooooooo"
-            A$ = A$ + "[]fJo_fJ[mooooooaHM:o7SgalooooooaHM<o7SeYlooooooaHM:o7Sealooooooooooooooooooooooooooo_fJ[moJ[]fooooo"
-            A$ = A$ + "o[Tg:m_@N;doooooo;Tg2m_BN[doooooo[Tg2m_@N;dooooooooooooooooooooooooooooJ[]fo[]fJoOniWooooooooooooooo"
-            A$ = A$ + "oooooooooooooooooooooooooooooooooooooooooooooooooooiWOno[]fJoK?0fooJ[]fo[]fJo_fJ[moJ[]fo[]fJo_fJ[moJ"
-            A$ = A$ + "[]fo[]fJo_fJ[moJ[]fo[]fJo_fJ[moJ[]fo[]fJoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_c]bioFG;WokL[Ln_cebio"
-            A$ = A$ + ">g:UokLYDn_aLBhomb9QoG;ScmO]<>go]^gHogjNSmOYc9eoU>WDoK?0fo_m0Hoo>g:Woooooooooooooooooooooooooooooooo"
-            A$ = A$ + "oooooooooooooOokooom_oooWkmooO^eoCX@Yl_m0Hoof3PmokL[Lnoooooooooooooooooooooooooooooooo_gNOooa<Vgo7cH"
-            A$ = A$ + "No_e6KmooO^eoON_Un?Q:Ubof3PmoK?0fo_c]bioooooooooooooooooooooooooooooooooa<VeogkkoooLmnooQXUeoo_e6o_g"
-            A$ = A$ + "eFjo4:D8oK?0fo_m0Hoo>g:UoooooooooooooooooooooooooooooOomo7cHNooL6ooo:AYeo7RD>oooFgkoFg:WoCXBYl_m0Hoo"
-            A$ = A$ + "f3PmoKLYDnoooooooooooooooooooooooOokooom_o_e6KmoQXUeoSQD6o_eeFkookL]okL[LnoN2Qaof3PmoK?0fo_aLBhooooo"
-            A$ = A$ + "ooooooomWkmoLBhLoG:ScmomNklooO^eoo_g6oooFgkookL]oo_c]n_aUBio4:D8oK?0fo_m0HoomB9Qooooooom_OnoLBhLogji"
-            A$ = A$ + "enO]Wgko[=VBokL[LnoJB9doS9U@okM]Lnoo6Gjomb9Uo_G>Hl_m0Hoof3PmoG;Scmom_OnoLF:Qogjien_egkmo]NN]oCXcDnoJ"
-            A$ = A$ + "k=foFgK]ok]cmn?000`ogg;WoG;W<n?QiPaof3PmoK?0foO]<^foLF:Qogjien_egKmo]NN]ocXeLnoL6choBEkJo?fLBmO_]Fjo"
-            A$ = A$ + "eF:Uo3000lO]Dbhok534oK?0fo_m0Hoo]^gHogjien_egkmo]NN_oCYeLnoN>choSekLo[D[[mO:LZdoBYD>oCiNcm?Uk=go0000"
-            A$ = A$ + "o_G>@l_m0Hoof3PmoGjNJmO_WKlo]NN]oCYeLn?Q>CioSekNo;E][mO<L:eoQ@Y@o31Sil_BJUco[YUBo?VD2moNaP`of3PmoK?0"
-            A$ = A$ + "foOYc9eoDJ=WocXeLnoN>choSekLo;E][mO<L:eoY@Y@oS1Sil?6<VcoH`H>oWbNil_BiTbok534oK?0fo_m0HooU>WDoCX@Yl?Q"
-            A$ = A$ + ":Ubo4:D8oCX@QloN2Qao4:46o_G>HloNiPaok534o_G<@loNaP`ok532o?G:8l_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0HooN[40oK?0fo_g:1`of3Pmok]B0l_m0HooN[40oK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoGJYDn?WLBiof3PmoK?0fo_g:1`of3PmoK?0fo_e21`of3PmoK]@0l_m0HooLb9UoGJYDn?W"
-            A$ = A$ + "LBiof3PmoGJYLn_m0Hoof3PmoK?0fo_m0HooN[40oK?0fo_m0Hoof3Pmok]B0l_m0Hoof3PmoK?0fo_m0Hoof3Pmoc9WDn?WLBio"
-            A$ = A$ + "f3PmoK?0fo_m0HooF;40oK?0fo_e21`of3PmoK?0fo_g:1`of3PmoK?0fo_m0Hoof3PmoK?0foOYUBioUF:UoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0HooLb9Uoc9WDn_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoG:WDnOYUbiof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo?WLBioLb9UoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0HooUF:UoGJYDn_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3Pm"
-            A$ = A$ + "oc9WDn?WLBiof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0foOYLBioUF:WoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0HooLb9Uoc9WDn_m0Hoof3PmoK?0fo_m"
-            A$ = A$ + "0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoGJYDnOYUBiof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoo"
-            A$ = A$ + "f3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo?WLBiof3PmoGJYDn?WLBioUb9Uoc9WDnOYUBioLb9UoG:WDn?WLBioUF:U"
-            A$ = A$ + "oc9WDnOYLBioLb9UoGJYDn?WLBiof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0fo_m0Hoof3PmoK?0"
-            A$ = A$ + "fo_m0Hoof3PmoK?0%fo?"
-    END SELECT
-
-    EditorImageData$ = A$
-END FUNCTION
-
 '---------------------------------------------------------------------------------
-FUNCTION LoadEditorImage& (FileName$)
-    DIM MemoryBlock AS _MEM, TempImage AS LONG
-    DIM NewWidth AS INTEGER, NewHeight AS INTEGER, A$, BASFILE$
+' Use this to store editor images and bitmaps
+' Take care not to call multiple times for the same image as it will create a new _IMAGE everytime it is called!
+FUNCTION LoadEditorImage& (id AS _UNSIGNED _BYTE)
+    SELECT CASE id
+        CASE EDITOR_IMAGE_COMMONCONTROLS
+            CONST SIZE_COMMONCONTROLS_BMP_11386~& = 11386~&
+            CONST COMP_COMMONCONTROLS_BMP_11386%% = -1%%
+            CONST DATA_COMMONCONTROLS_BMP_11386 = _
+                "eNpy8q3SYQC0W4UwsgJJdC5nRo4ceciRSCwSiRw7knO4wyKRyLZIkjNILBLZsi0S90e+q7x0SF96tj/MbvJ/NluZl6KYflVV3UWnKP8R/FtwEfxX" + _
+                "8I/Tv07/PH0ksD9rvCG/Tr/wWXRdC6VadIp6t22578alD8Fn8haoPxdfuD/1f239Oj25mjDZ6UD9zvow3+1hPnvr/Xy8/n8VO6D/SnRljjq9oc4E" + _
+                "aURU6RW1oEos4ovFmShvZ7j8Vis0gmpu8BhL5EOBWOW4tSmuTbLhViXIkht9bfzqjnGZ0C8D/dRzKz6qzUckPi6N8O4JinuGR54yB8tHXz3I1U8j" + _
+                "ekTr5JH1BW4qQ54laKuSkGtTamJ8YmgKqK62PjS11IJyapjDQ+ob+w5D15I7tI3Ed/klnuvi+DDUUgcKyU2PA8w8kvscFQbVoE6uG39sa4iAPuqS" + _
+                "3EHqKB4Z5l6hyFPWbAYFTB1G1aJy+JMin/JcDH10jeRkZmDRgJkgSQDzIOjFRcsztnzanjxXQk8a0V3jmk/Qw0AfkhP7w/LF9vjWxxPxw6CcgKwV" + _
+                "P/nMPLTwpdccvsIHInyNcQXKEcxDEoIZOua/h28McyCkFu7HMnY74/v7gcUINL8Xl68HRT1Tt5i7lucyCqQ/COlTQr4XgvwffBpFUbyDjbssCw4K" + _
+                "OdYP7cxkSE0KEWqx7fuU9itx+bG+ITaxfY5p2/e0f8dPTIJEx9uzwHsO8XOTCXL7nNN234f4xhgclXVdyf3s+f3g+0B13dvcxjS4dte3fDSaXLRz" + _
+                "i2t7Rdf3h/iMqxXvhGZsUNcNdgr5ddPiCWBZV2itaa/PpwDUol7ZDp/xGF+T33AflFIh7cVfnfhH68/mDOmUUTd1eYgf9ZH4iKh5Dk11gP+Dsasx" + _
+                "qsrq+pBNvrwLyXPm3Ec9d+1mWz51mL9xOQPTh8/nfw68+Hzn6FHti8/cJ+ZAWNurn3H9HPj/JGtHC2sfrd/LI1Q/5Yvrd/af9hecP/uoziPB9R3N" + _
+                "fdwr5NyFM02bj1Ed4ZO7QWzvPAP2/+d+p/5G94dT8wGbfFUhJE7Ps39oO/077elf9/7oW9oH+5dceXa+n2rX/WPje/qd+sn16w/eP3iuwLp4+mD9" + _
+                "Xh6h+ilfW797f/2R87d3oF//J/v/u2EeO/RtzTuubyvae3hmHnk/Dm0JLc8ifCc238tzkNvVd+pXYvSEvn585IP+9SRnbOdiat8H172ut+RMLTzR" + _
+                "K5TucFM3qFlhdXxJLd5+dNyjnuvWdUWnhdvfEHU3XNoLfVhh/k2RuXzu87Is5Ep8ZFOOdM6QjAnoR/JwhOtdflvdMUn8ZV2JfumRa/ExZeQrrehX" + _
+                "hOfSlNmr+sld6WMRHwPz6EzH/fDr9/df9oB12Dy4H7YmQtv+CJ3/PA1bHpZLP2NX8/9QD+l52PpvsrnMovu24PtD/d88uM+yt2693xXuTCOI9tje" + _
+                "+fvfXnAW8+ILj9gjr+K7vSaCqIsOx18tX7j2G472xrc9T66HPfFtz29x/TzC8e23x7XOt+fmEYpP7otvz80jGN/Y+B/dATY+nz+ITx+BPIhgfMHv" + _
+                "8rDxv7T/f+b/4+LPf4fEm/+8Gda3KfbZn3/9NcF3bv1+/DDfr/9o/HD9lIP1++LGp4TrP8j/+vM/JH/R/P+DaZoQxzecz2dE0ZW2+7/bx9fL5SMf" + _
+                "/M/hbmjqitzo6vr2UT7ueOS5tf34j3senh3nmeuyNEESx0iTGJfLeePL/wE+QY6TI3MOxPagmhr3LHXzwVlAnzvP4nI+U0sd5Cfx7dg8WRaoiseR" + _
+                "ur0cLJf1v9NTVcUzd+s+nIPthW8NPfWcaar0hDI5/U5z9pnHbuM2jxjj0GPWhpis/sgex4EcPfaosgvmecJqZ7Sdmj4kD+bkzIi7tOGMuLIWgfuf" + _
+                "e8/4tl23CFd8MLaA70TANcDGc/Vz+x/kL6sT33IC84Pri1yBjU++J6H5YV1Zxxafsn9+YA7iY4sfEJfn8pmzjX+Yb30wdnO/wegJR2URjvQ8+7gt" + _
+                "Eph5v491MWht/8o3QC157Ph2qNnzeiL30/gfg472/w=="
 
-    A$ = EditorImageData$(FileName$)
-    IF LEN(A$) = 0 THEN EXIT FUNCTION
+            LoadEditorImage = _LOADIMAGE(Base64_LoadResourceString(DATA_COMMONCONTROLS_BMP_11386, SIZE_COMMONCONTROLS_BMP_11386, COMP_COMMONCONTROLS_BMP_11386), 32, "memory")
 
-    NewWidth = CVI(LEFT$(A$, 2))
-    NewHeight = CVI(MID$(A$, 3, 2))
-    A$ = MID$(A$, 5)
+        CASE EDITOR_IMAGE_DISK
+            CONST SIZE_DISK_BMP_1146~& = 1146~&
+            CONST COMP_DISK_BMP_1146%% = -1%%
+            CONST DATA_DISK_BMP_1146 = _
+                "eNpy8q1iYQCDKiDOAWIBKGZkUGBgZsAF/kMQjEMG4OHhERMXF/cDMu2B2IEIbA90qrOokJAHkM2urqISAqTvx0RF/u/v7v7f1d7+v7ujAxcGy9tY" + _
+                "Wf7kZGW5paKg4AAgixwC64iDMJ5jbbtx8mxtbLO27V5q81j3Xtu2bTxbcW7Vvv06/dft4Rv/ZhYmk6mAePe61as/1odDkbDfx9cE/EwUf8sjP2K+" + _
+                "LhTkHRYzsjMzm+mb2CSJiYY0jishHsTzDeEwQl4Pwj7vv6K6F7WBAFw2q5CZno6ObdpALBar0zmumHisWbmSrw344Xc5EXC7/pfLhTDtsL9/h6yM" + _
+                "tEjXjh0gEok0P/nVy5bxYY8HXrsNPoed5PjlSVS3sx2W169B94Ve3boxPiud8VhL92tov4/m/DT/j9iuIPG2t2+Qm5UV6durJ+TEcwYD4+fNmsW/" + _
+                "ff4Mb5/90PN/9OwpzC9f4t716zDqdUJCTDS7LxOLixUSCaQiEU91mAx6aNUq8jrQfwJHOXmkkNJSONaTJCcJUlEyoqOjNUqZuFgll0EhlfBUQ15O" + _
+                "NkaPHIHB1VWoLC9HVUUF8+WlJWwPzYEkyCVixmuVyuJUkwF9u3fh58yahQP792PZ0qU4dPAgTh4/juPHjuHY0aM4dfIkpk+bBnpXGHXaiFatRDzx" + _
+                "6ZyhODcrA9G9e/BLFy/G3r172cz+fftw4fx5nDl9munSxYuYP28e62WlpUTSTEaI4uM1edkZRaWF+VCKE/llSxYzrlvLljh44ADjz/7BL5w/Hy2j" + _
+                "ooTCvJxIXlYG+/4VhYVlw4dUQ54Y83H71q24e+eOQDeE+/fvCw6HQzCbzYL5/XvB6XQKmzdtYr3K0uIvxQW5kMtFGsrbjBw6+FF+BofdO3cIwYAf" + _
+                "d27dgtfjQU04jHAoiGAggMaGeuzavh2K6GhMHDMS40YNA6fX64iP+rqAgAABV0dHL193d+2e9nbj9atWGbc31RpXFOcZ1xYXGzeUlhrVVhQbJ8fF" + _
+                "GXq5uOgG+/v4hgb5h3t6evIBAK70LyE="
 
-    BASFILE$ = Unpack$(A$)
+            LoadEditorImage = _LOADIMAGE(Base64_LoadResourceString(DATA_DISK_BMP_1146, SIZE_DISK_BMP_1146, COMP_DISK_BMP_1146), 32, "memory")
 
-    TempImage = _NEWIMAGE(NewWidth, NewHeight, 32)
-    MemoryBlock = _MEMIMAGE(TempImage)
-
-    __UI_MemCopy MemoryBlock.OFFSET, _OFFSET(BASFILE$), LEN(BASFILE$)
-    _MEMFREE MemoryBlock
-
-    LoadEditorImage& = TempImage
-END FUNCTION
-
-FUNCTION Unpack$ (PackedData$)
-    'Adapted from Dav's BIN2BAS
-    'http://www.qbasicnews.com/dav/qb64.php
-    DIM A$, i&, B$, C%, F$, C$, t%, B&, X$, btemp$
-
-    A$ = PackedData$
-
-    FOR i& = 1 TO LEN(A$) STEP 4: B$ = MID$(A$, i&, 4)
-        IF INSTR(1, B$, "%") THEN
-            FOR C% = 1 TO LEN(B$): F$ = MID$(B$, C%, 1)
-                IF F$ <> "%" THEN C$ = C$ + F$
-            NEXT: B$ = C$
-            END IF: FOR t% = LEN(B$) TO 1 STEP -1
-            B& = B& * 64 + ASC(MID$(B$, t%)) - 48
-            NEXT: X$ = "": FOR t% = 1 TO LEN(B$) - 1
-            X$ = X$ + CHR$(B& AND 255): B& = B& \ 256
-    NEXT: btemp$ = btemp$ + X$: NEXT
-
-    Unpack$ = btemp$
+        CASE ELSE
+            ERROR 51
+    END SELECT
 END FUNCTION
 
 FUNCTION ReadSequential$ (Txt$, Bytes%)
@@ -4065,9 +3879,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     TextFileNum = FREEFILE
     OPEN BaseOutputFileName + ".frm" FOR OUTPUT AS #TextFileNum
     PRINT #TextFileNum, "': This form was generated by"
-    PRINT #TextFileNum, "': InForm - GUI library for QB64 - v"; __UI_Version
-    PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
-    PRINT #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
+    PRINT #TextFileNum, "': InForm GUI engine for QB64-PE - v"; __UI_Version
+    PRINT #TextFileNum, "': Fellippe Heitor, (2016 - 2022) - @FellippeHeitor"
+    PRINT #TextFileNum, "': Samuel Gomes, (2023 - 2024) - @a740g"
+    PRINT #TextFileNum, "': https://github.com/a740g/InForm-PE"
     PRINT #TextFileNum, "'-----------------------------------------------------------"
     PRINT #TextFileNum, "SUB __UI_LoadForm"
     PRINT #TextFileNum,
@@ -4514,15 +4329,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             FOR Dummy = 1 TO UBOUND(PreviewControls)
                                 GOSUB checkCondition
                                 IF checkConditionResult THEN
-    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND _
-        INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
+                                    IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
                                         addedItems$ = addedItems$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
                                     ELSEIF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") > 0 THEN
-    thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
-    " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + _
-    MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + _
-        " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + _
-        " deleted from Form on "), thisBlock$, CHR$(10)))
+                                        thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on "), thisBlock$, CHR$(10)))
                                     END IF
                                 END IF
                             NEXT
@@ -4542,9 +4352,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
         ELSE
             OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
             PRINT #TextFileNum, "': This program uses"
-            PRINT #TextFileNum, "': InForm - GUI library for QB64 - v"; __UI_Version
-            PRINT #TextFileNum, "': Fellippe Heitor, " + __UI_CopyrightSpan + " - fellippe@qb64.org - @fellippeheitor"
-            PRINT #TextFileNum, "': https://github.com/FellippeHeitor/InForm"
+            PRINT #TextFileNum, "': InForm GUI engine for QB64-PE - v"; __UI_Version
+            PRINT #TextFileNum, "': Fellippe Heitor, (2016 - 2022) - @FellippeHeitor"
+            PRINT #TextFileNum, "': Samuel Gomes, (2023 - 2024) - @a740g"
+            PRINT #TextFileNum, "': https://github.com/a740g/InForm-PE"
             PRINT #TextFileNum, "'-----------------------------------------------------------"
             PRINT #TextFileNum,
             PRINT #TextFileNum, "': Controls' IDs: ------------------------------------------------------------------"
