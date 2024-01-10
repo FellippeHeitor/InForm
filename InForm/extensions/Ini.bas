@@ -1,8 +1,8 @@
+'-----------------------------------------------------------------------------------------------------------------------
 ' INI Manager
-' Fellippe Heitor, 2017-2021 - fellippe@qb64.org - @fellippeheitor
-' https://github.com/FellippeHeitor/INI-Manager
-'
-' Add include guards - @a740g
+' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2022 Fellippe Heitor
+'-----------------------------------------------------------------------------------------------------------------------
 
 $IF INI_BAS = UNDEFINED THEN
     $LET INI_BAS = TRUE

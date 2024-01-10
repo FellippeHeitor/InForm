@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' Base64 Encoder and Decoder library
-' Copyright (c) 2023 Samuel Gomes
+' Base64 encoder, decoder & resource loading library
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF BASE64_BAS = UNDEFINED THEN

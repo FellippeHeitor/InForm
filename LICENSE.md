@@ -1,8 +1,8 @@
 MIT License
 
-Copyright (c) 2023-2024 Samuel Gomes
-Copyright (c) 2023, George McGinn
-Copyright (c) 2016-2022 Fellippe Heitor
+Copyright (c) 2024 Samuel Gomes
+Copyright (c) 2023 George McGinn
+Copyright (c) 2022 Fellippe Heitor
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

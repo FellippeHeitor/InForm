@@ -1,9 +1,16 @@
-OPTION _EXPLICIT
+'-----------------------------------------------------------------------------------------------------------------------
+' VBDOS to InForm form conversion utility
+' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2023 George McGinn
+' Copyright (c) 2022 Fellippe Heitor
+'-----------------------------------------------------------------------------------------------------------------------
+
 $CONSOLE:ONLY
+OPTION _EXPLICIT
 
-CONST FALSE = 0, TRUE = NOT FALSE
+CONST FALSE%% = 0%%, TRUE%% = NOT FALSE
 
-'$INCLUDE:'InFormVersion.bas'
+'$INCLUDE:'InFormVersion.bi'
 
 PRINT "InForm GUI engine for QB64-PE - v"; __UI_Version
 PRINT "VBDOS to InForm form conversion utility"

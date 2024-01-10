@@ -1,6 +1,11 @@
+'-----------------------------------------------------------------------------------------------------------------------
+' InForm-PE GUI engine for QB64-PE
+' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2023 George McGinn
+' Copyright (c) 2022 Fellippe Heitor
+'-----------------------------------------------------------------------------------------------------------------------
+
 OPTION _EXPLICIT
-OPTION _EXPLICITARRAY
-$UNSTABLE:HTTP
 
 DIM SHARED UiEditorPID AS LONG, ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
@@ -83,34 +88,52 @@ ContextMenuIcon = LoadEditorImage(EDITOR_IMAGE_CONTEXTMENU)
 __UI_ClearColor ContextMenuIcon, 0, 0
 
 '$INCLUDE:'extensions/GIFPlay.bi'
-'$INCLUDE:'extensions/MessageBox.bi'
 '$INCLUDE:'InForm.bi'
 '$INCLUDE:'UiEditorPreview.frm'
-'$INCLUDE:'xp.uitheme'
 '$INCLUDE:'InForm.ui'
 '$INCLUDE:'extensions/GIFPlay.bas'
-'$INCLUDE:'extensions/MessageBox.bas'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_MouseEnter (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_MouseLeave (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_FocusIn (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_FocusOut (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_MouseDown (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_MouseUp (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 FUNCTION AddNewMenuBarControl&
@@ -2239,9 +2262,15 @@ SUB RefreshContextMenus
 END SUB
 
 SUB __UI_TextChanged (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 SUB __UI_ValueChanged (id AS LONG)
+    SELECT CASE id
+        CASE ELSE
+    END SELECT
 END SUB
 
 FUNCTION ReadSequential$ (Txt$, Bytes%)

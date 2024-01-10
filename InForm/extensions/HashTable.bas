@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' A simple hash table for integers and QB64 handles
-' Copyright (c) 2023 Samuel Gomes
+' A simple hash table for integers and QB64-PE handles
+' Copyright (c) 2024 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
 $IF HASHTABLE_BAS = UNDEFINED THEN

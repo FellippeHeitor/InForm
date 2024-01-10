@@ -1,70 +1,75 @@
-'---------------------------------------------------------------------------------
-' *** XP.UITHEME ***
-' UI theme mimicking Windows XP's controls style
-' Image data embedded into SUB __UI_ImageData$
-'---------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------------------------------
+' InForm-PE GUI theme mimicking Windows XP's controls style
+' Copyright (c) 2024 Samuel Gomes
+' Copyright (c) 2022 Fellippe Heitor
+'-----------------------------------------------------------------------------------------------------------------------
 
-SUB __UI_ThemeSetup
-    'Metrics
-    __UI_ScrollbarWidth = 17
-    __UI_ScrollbarButtonHeight = 17
-    __UI_MenuBarOffset = 8
-    __UI_MenuItemOffset = 22
-    __UI_DefaultCaptionIndent = 5
-END SUB
+$IF XP_UITHEME = UNDEFINED THEN
+    $LET XP_UITHEME = TRUE
 
-'---------------------------------------------------------------------------------
-FUNCTION __UI_DefaultColor~& (ControlType AS _BYTE, Attribute AS _BYTE)
-    DIM Colors(1 TO 6) AS _UNSIGNED LONG
+    '$INCLUDE:'InFormCommon.bi'
 
-    '.ForeColor
-    Colors(1) = _RGB32(0, 0, 0)
+    SUB __UI_ThemeSetup
+        'Metrics
+        __UI_ScrollbarWidth = 17
+        __UI_ScrollbarButtonHeight = 17
+        __UI_MenuBarOffset = 8
+        __UI_MenuItemOffset = 22
+        __UI_DefaultCaptionIndent = 5
+    END SUB
+
+    '---------------------------------------------------------------------------------
+    FUNCTION __UI_DefaultColor~& (ControlType AS _BYTE, Attribute AS _BYTE)
+        DIM Colors(1 TO 6) AS _UNSIGNED LONG
+
+        '.ForeColor
+        Colors(1) = _RGB32(0, 0, 0)
     IF ControlType <> __UI_Type_Form AND Control(__UI_FormID).ForeColor <> Colors(1) THEN _
         Colors(1) = Control(__UI_FormID).ForeColor
-    '.BackColor
-    Colors(2) = _RGB32(235, 233, 237)
+        '.BackColor
+        Colors(2) = _RGB32(235, 233, 237)
     IF ControlType <> __UI_Type_Form AND Control(__UI_FormID).BackColor <> Colors(2) THEN _
         Colors(2) = Control(__UI_FormID).BackColor
-    '.SelectedForeColor
-    Colors(3) = _RGB32(255, 255, 255)
+        '.SelectedForeColor
+        Colors(3) = _RGB32(255, 255, 255)
     IF ControlType <> __UI_Type_Form AND Control(__UI_FormID).SelectedForeColor <> Colors(3) THEN _
         Colors(3) = Control(__UI_FormID).SelectedForeColor
-    '.SelectedBackColor
-    Colors(4) = _RGB32(78, 150, 216)
+        '.SelectedBackColor
+        Colors(4) = _RGB32(78, 150, 216)
     IF ControlType <> __UI_Type_Form AND Control(__UI_FormID).SelectedBackColor <> Colors(4) THEN _
         Colors(4) = Control(__UI_FormID).SelectedBackColor
-    '.BorderColor
-    Colors(5) = _RGB32(167, 166, 170)
+        '.BorderColor
+        Colors(5) = _RGB32(167, 166, 170)
     IF ControlType <> __UI_Type_Form AND Control(__UI_FormID).BorderColor <> Colors(5) THEN _
         Colors(5) = Control(__UI_FormID).BorderColor
-    'Tip color (global property)
-    Colors(6) = _RGB32(255, 255, 225)
+        'Tip color (global property)
+        Colors(6) = _RGB32(255, 255, 225)
 
-    'Specific cases:
-    SELECT CASE ControlType
-        CASE __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList
-            Colors(2) = _RGB32(255, 255, 255)
-    END SELECT
+        'Specific cases:
+        SELECT CASE ControlType
+            CASE __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList
+                Colors(2) = _RGB32(255, 255, 255)
+        END SELECT
 
-    __UI_DefaultColor~& = Colors(Attribute)
-END FUNCTION
+        __UI_DefaultColor~& = Colors(Attribute)
+    END FUNCTION
 
-'---------------------------------------------------------------------------------
-FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
-    SELECT CASE id
-        CASE __INFORM_THEME_IMAGE_ARROWS
-            CONST SIZE_ARROWS_BMP_5306~& = 5306~&
-            CONST COMP_ARROWS_BMP_5306%% = -1%%
+    '---------------------------------------------------------------------------------
+    FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
+        SELECT CASE id
+            CASE __INFORM_THEME_IMAGE_ARROWS
+                CONST SIZE_ARROWS_BMP_5306~& = 5306~&
+                CONST COMP_ARROWS_BMP_5306%% = -1%%
             CONST DATA_ARROWS_BMP_5306 = _
                 "eNpy8t0lwgAGVUCcA8ScQDwBiBkZFBiYGXCB/xAE45AEYJr+/4fhx6e3g2hMjJAH4QFWR395wuGDwC3V2YTkQXgg1dFXHlMdHcJwNAyLU6IB7ZcB" + _
                 "BgAACAP//+vAADlwJsIhKzIakR5afb7O/iCXsqnVRx5euqtW33voe3gpmwp9pDNCZoZFhxrncH8f/97DokONc7C/wHso4GdmWHSocU7INBPOHyn/" + _
                 "hH+4BN+Oerv+LyfwHgpw/kj5J//DzAC3fJnz"
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_ARROWS_BMP_5306, SIZE_ARROWS_BMP_5306, COMP_ARROWS_BMP_5306)
+                __UI_ImageData = Base64_LoadResourceString(DATA_ARROWS_BMP_5306, SIZE_ARROWS_BMP_5306, COMP_ARROWS_BMP_5306)
 
-        CASE __INFORM_THEME_IMAGE_BUTTON
-            CONST SIZE_BUTTON_BMP_7682~& = 7682~&
-            CONST COMP_BUTTON_BMP_7682%% = -1%%
+            CASE __INFORM_THEME_IMAGE_BUTTON
+                CONST SIZE_BUTTON_BMP_7682~& = 7682~&
+                CONST COMP_BUTTON_BMP_7682%% = -1%%
             CONST DATA_BUTTON_BMP_7682 = _
                 "eNpy8mWSYwCDKiDOAWIhIM4EYkYGBQZmBlwA0I45MEmSRlH016wdWNu20WPbtm22bdu2bds27uZdvKioUL+xOuaMz2lV3fyy8O8P+YP+LSPUDX4/" + _
                 "P3dT/N8IWPga/Fe9c0MELHoD0lzwCv8O0YcXImqfxazg/w3d9BFd6WQc/wlR+y1QGO2pgQ5d6WSe/MXoL0BZgr8KOnSlc+o3xBxZgpqMSA106Eon" + _
@@ -81,11 +86,11 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "Q1c6TTnxmBge0O48HbrSac1PwuTIoHbn6dCVTltRKqbGhrU7T4eudDpLMzE9PqLdeTp0pdNdmYuZiTHtztOhK52+6gJgaly7z3ToSqe/rhQw+srX" + _
                 "AOjQlZ0fbqsFJsfUr0nQoXsvnuf/Bu9ttOA="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_BUTTON_BMP_7682, SIZE_BUTTON_BMP_7682, COMP_BUTTON_BMP_7682)
+                __UI_ImageData = Base64_LoadResourceString(DATA_BUTTON_BMP_7682, SIZE_BUTTON_BMP_7682, COMP_BUTTON_BMP_7682)
 
-        CASE __INFORM_THEME_IMAGE_CHECKBOX
-            CONST SIZE_CHECKBOX_BMP_5530~& = 5530~&
-            CONST COMP_CHECKBOX_BMP_5530%% = -1%%
+            CASE __INFORM_THEME_IMAGE_CHECKBOX
+                CONST SIZE_CHECKBOX_BMP_5530~& = 5530~&
+                CONST COMP_CHECKBOX_BMP_5530%% = -1%%
             CONST DATA_CHECKBOX_BMP_5530 = _
                 "eNpy8p0lygAGVUCcA8S8QJwBxIwMCgzMDLjAfwiCccgAJ48e+08OJgUA2q0HGNmSKAzAsa2xYq9tb7DeaDdc27YdrO1n27bttj3W5f+6kvyZm9Tr" + _
                 "qnrmJM1b39Spc27S/zE0/M7USDVrjPKsGiN5ndHVadI3Q6Ps4wmd6RE8Prin+Yge63bvxaYDIWyNxLAzkcKeTBb780WEShVEKl2IdfXwQYPV23cY" + _
@@ -98,29 +103,29 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "TmV4PhrmNZVhX2iY81SG/aRhPlQZzkGRR9kXzoHz0+ZR2Z34PMqM0R/IlrbjwFXkUWYTEydnS72jyeTzxo4mmckYO5poMmnsaELxuLGj2R+NGjua" + _
                 "veGwsQsYUycZA3fE99pBQT3OQA=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_CHECKBOX_BMP_5530, SIZE_CHECKBOX_BMP_5530, COMP_CHECKBOX_BMP_5530)
+                __UI_ImageData = Base64_LoadResourceString(DATA_CHECKBOX_BMP_5530, SIZE_CHECKBOX_BMP_5530, COMP_CHECKBOX_BMP_5530)
 
-        CASE __INFORM_THEME_IMAGE_FRAME
-            CONST SIZE_FRAME_BMP_1882~& = 1882~&
-            CONST COMP_FRAME_BMP_1882%% = -1%%
+            CASE __INFORM_THEME_IMAGE_FRAME
+                CONST SIZE_FRAME_BMP_1882~& = 1882~&
+                CONST COMP_FRAME_BMP_1882%% = -1%%
             CONST DATA_FRAME_BMP_1882 = _
                 "eNpz8o1iZwCDKiDOAWIxIBYBYkYGBQZmBlzgPwTBOCQBmKb//0H45tVrFOP9Fy+CzUIzE8SmCB+5fBlsDqaZlOOjILMRZlITg8KDFuaCzBw1d9Tc" + _
                 "UXNHzcVV7tCqnKRZuU6reggAlatSMg=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_FRAME_BMP_1882, SIZE_FRAME_BMP_1882, COMP_FRAME_BMP_1882)
+                __UI_ImageData = Base64_LoadResourceString(DATA_FRAME_BMP_1882, SIZE_FRAME_BMP_1882, COMP_FRAME_BMP_1882)
 
-        CASE __INFORM_THEME_IMAGE_MENUCHECKMARK
-            CONST SIZE_MENUCHECKMARK_BMP_710~& = 710~&
-            CONST COMP_MENUCHECKMARK_BMP_710%% = -1%%
+            CASE __INFORM_THEME_IMAGE_MENUCHECKMARK
+                CONST SIZE_MENUCHECKMARK_BMP_710~& = 710~&
+                CONST COMP_MENUCHECKMARK_BMP_710%% = -1%%
             CONST DATA_MENUCHECKMARK_BMP_710 = _
                 "eNpy8j3GxAAGVUCcA8TsQCwKxIA+xugEQCiIYRUXcXoFlzw5yF+wxeC7Bnrkypm/DB+H42hhZnnvZ/8A9OAeQI637rIvivPeJobYO3axrzsRxXkv" + _
                 "iT09uAeQ46277As7+w+Yz6hS"
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_MENUCHECKMARK_BMP_710, SIZE_MENUCHECKMARK_BMP_710, COMP_MENUCHECKMARK_BMP_710)
+                __UI_ImageData = Base64_LoadResourceString(DATA_MENUCHECKMARK_BMP_710, SIZE_MENUCHECKMARK_BMP_710, COMP_MENUCHECKMARK_BMP_710)
 
-        CASE __INFORM_THEME_IMAGE_NOTFOUND
-            CONST SIZE_NOTFOUND_BMP_7802~& = 7802~&
-            CONST COMP_NOTFOUND_BMP_7802%% = -1%%
+            CASE __INFORM_THEME_IMAGE_NOTFOUND
+                CONST SIZE_NOTFOUND_BMP_7802~& = 7802~&
+                CONST COMP_NOTFOUND_BMP_7802%% = -1%%
             CONST DATA_NOTFOUND_BMP_7802 = _
                 "eNrt2TWSG1EQANA2XcDMdujQNzBHhiOYNDzLzHstKTcny5gsM5NYaqtnSri8+qXfwe8anq6uNwz/9ceOxwAAAB0AUAUAzwDgOQBcgqdwBY4LzHb+" + _
                 "zAUiEAikLcuKcOzJ5jhOGJkG2WT6lE/5lE/5ZmdnMRgMiuyppjDf6Ogo9vf3497enoiealFNoT7qRQXVKtenfMoXDqcPJx/OkeIbGIjhtWszWFe3" + _
@@ -130,30 +135,30 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "BZng5JubmyuycfItLS1hbW3tTuaYviYXJx/Z6urqtgOBwBsyMfJlbTu6rr8lDyNf1kbH9B1ZGPmytt3MfvtADk6+5eXlwzYmvvn5ec9mmuZHD8DI" + _
                 "V19fT7Y9Xdc/cWxfNQwjYdv2JzhH/AddXsRq"
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_NOTFOUND_BMP_7802, SIZE_NOTFOUND_BMP_7802, COMP_NOTFOUND_BMP_7802)
+                __UI_ImageData = Base64_LoadResourceString(DATA_NOTFOUND_BMP_7802, SIZE_NOTFOUND_BMP_7802, COMP_NOTFOUND_BMP_7802)
 
-        CASE __INFORM_THEME_IMAGE_PROGRESSCHUNK
-            CONST SIZE_PROGRESSCHUNK_BMP_602~& = 602~&
-            CONST COMP_PROGRESSCHUNK_BMP_602%% = -1%%
+            CASE __INFORM_THEME_IMAGE_PROGRESSCHUNK
+                CONST SIZE_PROGRESSCHUNK_BMP_602~& = 602~&
+                CONST COMP_PROGRESSCHUNK_BMP_602%% = -1%%
             CONST DATA_PROGRESSCHUNK_BMP_602 = _
                 "eNpz8o1iYgCDKiDOAWIuIOYBYkYGBQZmBlzgPwTBOGQAv2ax/8RguRei2PFLVKzzWhY3fgWi5cDY7JkCKn4KwebPULH6TQlUfEscK3Y/bw3BF6D4" + _
                 "Igzb/PdAwkn7YonGyfvi/ifvR+AUMI5HwVn707Hi7P0ZQBqMwezmwzU4ccvhWhAGs9ddWQbEywliYuMNAO7oIA0="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_PROGRESSCHUNK_BMP_602, SIZE_PROGRESSCHUNK_BMP_602, COMP_PROGRESSCHUNK_BMP_602)
+                __UI_ImageData = Base64_LoadResourceString(DATA_PROGRESSCHUNK_BMP_602, SIZE_PROGRESSCHUNK_BMP_602, COMP_PROGRESSCHUNK_BMP_602)
 
-        CASE __INFORM_THEME_IMAGE_PROGRESSTRACK
-            CONST SIZE_PROGRESSTRACK_BMP_806~& = 806~&
-            CONST COMP_PROGRESSTRACK_BMP_806%% = -1%%
+            CASE __INFORM_THEME_IMAGE_PROGRESSTRACK
+                CONST SIZE_PROGRESSTRACK_BMP_806~& = 806~&
+                CONST COMP_PROGRESSTRACK_BMP_806%% = -1%%
             CONST DATA_PROGRESSTRACK_BMP_806 = _
                 "eNpy8lVjZgCDKiDOAWJOIBYGYkYGBQagFA7wH4JgHDLAfyBYtnrN/9q6+v8ZGRkwDOYvB4oDAZguLy8HlEoGGgCEQBD99r4pAPqlUiKFO4N3jsWg" + _
                 "ZWjXa2trnlprkOrsL6V8dYKc/jDEOQeOswOz97bMWssyc07L9N4do7VlWmuWGWPc39nPzjvfMGF+GP4d7i/VUkryh3yiPEg9cs74DJ8Eqd8L2HdB" + _
                 "Rg=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_PROGRESSTRACK_BMP_806, SIZE_PROGRESSTRACK_BMP_806, COMP_PROGRESSTRACK_BMP_806)
+                __UI_ImageData = Base64_LoadResourceString(DATA_PROGRESSTRACK_BMP_806, SIZE_PROGRESSTRACK_BMP_806, COMP_PROGRESSTRACK_BMP_806)
 
-        CASE __INFORM_THEME_IMAGE_RADIOBUTTON
-            CONST SIZE_RADIOBUTTON_BMP_5530~& = 5530~&
-            CONST COMP_RADIOBUTTON_BMP_5530%% = -1%%
+            CASE __INFORM_THEME_IMAGE_RADIOBUTTON
+                CONST SIZE_RADIOBUTTON_BMP_5530~& = 5530~&
+                CONST COMP_RADIOBUTTON_BMP_5530%% = -1%%
             CONST DATA_RADIOBUTTON_BMP_5530 = _
                 "eNqc0iEOwjAYBeDHlkkkpkEge4RpdBGcYGIGgUShOAdqvnpHgITb1EyXJ/6QJwDxN3xp2vcX2tL94b4BAOAK4AxgDeBEK+zQ4ler9rGBo9VaP16P" + _
                 "Z6CBZlqsHyhYjdY2lCjTSJE6ijbOljeyJtGFWv0uyVvLk+wna/2fdVn2P0rW00TF+l6yUc4bZX6iKibJotxPJ/OFqiiSdVbv+B3HeRz35vl/fO/A" + _
@@ -171,11 +176,11 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "xGcPoLk8B+t229JoMsG8wx5tKMkUG0qKs+9o7HfPig0lxznt0UptEiamp1Vx1Cf86e3vxejEhCqOvgg/S/LiMDg6qoqjn8L/iK+fRN/wsCqOOdh3" + _
                 "tCgndkccc3DuaOD7d0GGYw7MT9ZR8qQ++kI/mcPv0dGfAFRLXXE="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_RADIOBUTTON_BMP_5530, SIZE_RADIOBUTTON_BMP_5530, COMP_RADIOBUTTON_BMP_5530)
+                __UI_ImageData = Base64_LoadResourceString(DATA_RADIOBUTTON_BMP_5530, SIZE_RADIOBUTTON_BMP_5530, COMP_RADIOBUTTON_BMP_5530)
 
-        CASE __INFORM_THEME_IMAGE_SCROLLBUTTONS
-            CONST SIZE_SCROLLBUTTONS_BMP_9370~& = 9370~&
-            CONST COMP_SCROLLBUTTONS_BMP_9370%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SCROLLBUTTONS
+                CONST SIZE_SCROLLBUTTONS_BMP_9370~& = 9370~&
+                CONST COMP_SCROLLBUTTONS_BMP_9370%% = -1%%
             CONST DATA_SCROLLBUTTONS_BMP_9370 = _
                 "eNpy8p2lAhADGFQBcQ4QCwJxBxAzMigwMDMAuC8HH7+iIIz+j43TuG7jhjXj2mFT27ZtG2vbmvZk98vmZmZxX93Jnt/TfOf55u1IZfobWsgva/hq" + _
                 "1lpjTW9uWPnDs1Zy75R9unXMPt48GgKfbx+36qcXzToazeo/G46+sidWpNo+3DE5jGqpNqt8/p2XIcB26C9/atZcaVTt88tyDB5L7Qezuo+4gXkY" + _
@@ -189,11 +194,11 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "O1LOYbwH5VxKHIgtDkSuHjT7elA96H0PImcP2vyH3nnQ5j/aJzyIsNl8yHkQ0b32JPWvoB5UD3r2DeNI9M6DNv/RPuFBhM3mQ8aDiO6lP3vQ7PMe" + _
                 "VA/6AN9nbCQ="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLBUTTONS_BMP_9370, SIZE_SCROLLBUTTONS_BMP_9370, COMP_SCROLLBUTTONS_BMP_9370)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLBUTTONS_BMP_9370, SIZE_SCROLLBUTTONS_BMP_9370, COMP_SCROLLBUTTONS_BMP_9370)
 
-        CASE __INFORM_THEME_IMAGE_SCROLLHBUTTONS
-            CONST SIZE_SCROLLHBUTTONS_BMP_9370~& = 9370~&
-            CONST COMP_SCROLLHBUTTONS_BMP_9370%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SCROLLHBUTTONS
+                CONST SIZE_SCROLLHBUTTONS_BMP_9370~& = 9370~&
+                CONST COMP_SCROLLHBUTTONS_BMP_9370%% = -1%%
             CONST DATA_SCROLLHBUTTONS_BMP_9370 = _
                 "eNpy8p2lAhADGFQBcQ4QCwJxBxAzMigwMDPgAv8hCM4BUF8OPHZFURT+j43TuG7jhjXj2mFTj23btm3bb7erryvN2dnFOeXs5Mtcre/i6I1/yeKI" + _
                 "yNqsLHeXy0RDjozWZspgZaoMVKQAk6GqNJlpKRDZXBJZGBI49sebJaTW+6uFDkGtzohMtX2iA5jgPDiYaBFZmRLUXFsRHdFnmesXmR+AOwq2AY7P" + _
@@ -206,11 +211,11 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "/diOHWAAEIZQEL7/rRcIRnis+cmLAA1AfPUgy4Nmx1FyDxojGAN55EGL4/geBBNKPYidelA96KAHcf5yGM+D8nvLg2hCmQfBhepB9aDDHkQXyj2I" + _
                 "JuR70O5AlgcFJpT/hnpQPeisB9GF8gZNyPeg3YF8D6IJ5R5EF6oHWR70AVdotFU="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLHBUTTONS_BMP_9370, SIZE_SCROLLHBUTTONS_BMP_9370, COMP_SCROLLHBUTTONS_BMP_9370)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLHBUTTONS_BMP_9370, SIZE_SCROLLHBUTTONS_BMP_9370, COMP_SCROLLHBUTTONS_BMP_9370)
 
-        CASE __INFORM_THEME_IMAGE_SCROLLHTHUMB
-            CONST SIZE_SCROLLHTHUMB_BMP_5402~& = 5402~&
-            CONST COMP_SCROLLHTHUMB_BMP_5402%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SCROLLHTHUMB
+                CONST SIZE_SCROLLHTHUMB_BMP_5402~& = 5402~&
+                CONST COMP_SCROLLHTHUMB_BMP_5402%% = -1%%
             CONST DATA_SCROLLHTHUMB_BMP_5402 = _
                 "eNpy8pUSZQCDKiDOAWIxILYBYkYGBQZmBkAvZoFrRRBE0V2xCOLsAF0GUeJoDCK4u7u7u7t/d9dLDsnFKp8OMzVUOKlianKe9avu/2YK+R9B+udQ" + _
                 "5xup9Zn6X17Vx5tHa9Hx6JzwQXb0Pr8sDXVLxEC7pr8+FKjlUfW6r0XE17snRUx+vi91vJbankvtL8mV6olP90S8uXJABI+l7g++DyrVU18eiHh1" + _
@@ -221,20 +226,20 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "p2Av8LdmVuDC2dTcaWpOchZ4cmaHTm5clgLnU5wH1izR8Nub+nz7eAq4zm5dhddzJwUCJyTO3+DlNwnofHw+1M6FPgQv8y6B4GVfMp57xtcLferg" + _
                 "nek3EP+/1HcO3s43/h3BtYFS3wQvszOF/+NNO/fZCxofUVbgwsmau3VonR6d2pbC5d2r+d41Nie/AfoYLw0="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLHTHUMB_BMP_5402, SIZE_SCROLLHTHUMB_BMP_5402, COMP_SCROLLHTHUMB_BMP_5402)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLHTHUMB_BMP_5402, SIZE_SCROLLHTHUMB_BMP_5402, COMP_SCROLLHTHUMB_BMP_5402)
 
-        CASE __INFORM_THEME_IMAGE_SCROLLHTRACK
-            CONST SIZE_SCROLLHTRACK_BMP_4746~& = 4746~&
-            CONST COMP_SCROLLHTRACK_BMP_4746%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SCROLLHTRACK
+                CONST SIZE_SCROLLHTRACK_BMP_4746~& = 4746~&
+                CONST COMP_SCROLLHTRACK_BMP_4746%% = -1%%
             CONST DATA_SCROLLHTRACK_BMP_4746 = _
                 "eNpy8u0SYgCDKiDOAWJBIHYBYkYGBQZmBlzgPwTBOGQAQLv1cOBQAEVhuP9+poWJs4ltPdss4o9zF18JB5Uyq7As+R5pxCXhe4h9LnK50OJ8nXMV" + _
                 "zrly9vk9WCdOmWG71h9WRe73CEzOU9+Dc+WsA6fMuOsQS/Z9LN71MH/VegvuooHdoz9e+YPkB8kPkh8kPwiTDpIOkg6SDgJqkctWew=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLHTRACK_BMP_4746, SIZE_SCROLLHTRACK_BMP_4746, COMP_SCROLLHTRACK_BMP_4746)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLHTRACK_BMP_4746, SIZE_SCROLLHTRACK_BMP_4746, COMP_SCROLLHTRACK_BMP_4746)
 
-        CASE __INFORM_THEME_IMAGE_SCROLLTHUMB
-            CONST SIZE_SCROLLTHUMB_BMP_5402~& = 5402~&
-            CONST COMP_SCROLLTHUMB_BMP_5402%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SCROLLTHUMB
+                CONST SIZE_SCROLLTHUMB_BMP_5402~& = 5402~&
+                CONST COMP_SCROLLTHUMB_BMP_5402%% = -1%%
             CONST DATA_SCROLLTHUMB_BMP_5402 = _
                 "eNpy8pUSZQCDKiDOAWJ+II4AYkYGBQZmBkD7ZYFbZwwE4Vv1EBX3BsVLlElcZlGZmZmZIczMzJypPv1aVQ4aynmrzMP9vOuxsnFmC2U/9iYi1FEl" + _
                 "9bWq7v1tlT2/rNJnl1Ty9KKJ94jvVPHyqho/3ZMGOqX2CsE2fb6vkOgufiFjRfS2aKLhqyYbv80ovhur+yz1NIloy3v8g20tlbrqpe6GTLxGnTVS" + _
@@ -245,20 +250,20 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "5/esh0O6emgr+1JHwVMvkQtjLKGhXjxC2V29KQ+fOV/+z8YnPBMxH8t9m1kcw1LX2Pb8J6F1k3qG/a112yuSfU7wCja659z55s43dE7C2H3y4r6N" + _
                 "yrt/2tGXOyec9yZy4b4DxCNBXw=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLTHUMB_BMP_5402, SIZE_SCROLLTHUMB_BMP_5402, COMP_SCROLLTHUMB_BMP_5402)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLTHUMB_BMP_5402, SIZE_SCROLLTHUMB_BMP_5402, COMP_SCROLLTHUMB_BMP_5402)
 
-        CASE __INFORM_THEME_IMAGE_SCROLLTRACK
-            CONST SIZE_SCROLLTRACK_BMP_4746~& = 4746~&
-            CONST COMP_SCROLLTRACK_BMP_4746%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SCROLLTRACK
+                CONST SIZE_SCROLLTRACK_BMP_4746~& = 4746~&
+                CONST COMP_SCROLLTRACK_BMP_4746%% = -1%%
             CONST DATA_SCROLLTRACK_BMP_4746 = _
                 "eNpy8u0SYgCDKiDOAWJBIHYBYkYGBQZmBlzgPwTBOGQAQDt1bYBAGARRuP9+aAGHBHd3d4cH3HbwRycTvGznC5dNH55357y9DBkyZDgavVSMQyPB" + _
                 "qZXyuvVy3Pt5mBZhXoPtAPZTOC6s8wauB7C8vQwZMmS4GnY3gt34n90f5nBawWVrt7cT3C/W42r/y7J9AA0ZMmTIkCFDhowvXIhmng=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLTRACK_BMP_4746, SIZE_SCROLLTRACK_BMP_4746, COMP_SCROLLTRACK_BMP_4746)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SCROLLTRACK_BMP_4746, SIZE_SCROLLTRACK_BMP_4746, COMP_SCROLLTRACK_BMP_4746)
 
-        CASE __INFORM_THEME_IMAGE_SLIDERDOWN
-            CONST SIZE_SLIDERDOWN_BMP_4742~& = 4742~&
-            CONST COMP_SLIDERDOWN_BMP_4742%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SLIDERDOWN
+                CONST SIZE_SLIDERDOWN_BMP_4742~& = 4742~&
+                CONST COMP_SLIDERDOWN_BMP_4742%% = -1%%
             CONST DATA_SLIDERDOWN_BMP_4742 = _
                 "eNpy8m0TYgCDKiDOAWJuIM4EYkYGBQZmBoBwgf8QBOOQAQDt1QOMnFEcBPDGrG3bto24tm3btm3bPdu2bdue3hRvlVvU2CSz/H3+Tx7KAfJ5Y27J" + _
                 "d5UxsHfCWzMLPNEzVOkMbB0QGh+PJzr69EpdfGYWwuIT4BsWLnxZjolOTUNwbJyCN3Vxh5GDMxKysunEu7x/pm8EKw9vJGXnILE0dIy0D4qJhV94" + _
@@ -271,18 +276,22 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
                 "ujnaeqzSbtY+V0fbzb/cLnBZhJHWo9FUvznnQib1HjVA7Yt1RTdXuq/CXOd5oB9hNVJkqOVwNNQt9ffri26+cX8Ieu5/vstCkTnOc+k5rxp38yPr" + _
                 "gYo/"
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SLIDERDOWN_BMP_4742, SIZE_SLIDERDOWN_BMP_4742, COMP_SLIDERDOWN_BMP_4742)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SLIDERDOWN_BMP_4742, SIZE_SLIDERDOWN_BMP_4742, COMP_SLIDERDOWN_BMP_4742)
 
-        CASE __INFORM_THEME_IMAGE_SLIDERTRACK
-            CONST SIZE_SLIDERTRACK_BMP_222~& = 222~&
-            CONST COMP_SLIDERTRACK_BMP_222%% = -1%%
+            CASE __INFORM_THEME_IMAGE_SLIDERTRACK
+                CONST SIZE_SLIDERTRACK_BMP_222~& = 222~&
+                CONST COMP_SLIDERTRACK_BMP_222%% = -1%%
             CONST DATA_SLIDERTRACK_BMP_222 = _
                 "eNpy8r3HAAFVQJwDxKxQzMigwMDMgAv8hyA4B1DJOCMwDABQ9P5zrRvUa+2l1lLbNl+cPW/7NE6l0SSWziBxfT7ZX2843G5a7TbD3ZHT/cHj/cZs" + _
                 "szPdbFmdzqzPF/7/P75QmEKpLHl6r9XtEU0mxQ+P/icARUtgHg=="
 
-            __UI_ImageData = Base64_LoadResourceString(DATA_SLIDERTRACK_BMP_222, SIZE_SLIDERTRACK_BMP_222, COMP_SLIDERTRACK_BMP_222)
+                __UI_ImageData = Base64_LoadResourceString(DATA_SLIDERTRACK_BMP_222, SIZE_SLIDERTRACK_BMP_222, COMP_SLIDERTRACK_BMP_222)
 
-        CASE ELSE
-            ERROR 51
-    END SELECT
-END FUNCTION
+            CASE ELSE
+                ERROR 51
+        END SELECT
+    END FUNCTION
+
+    '$INCLUDE:'extensions/Base64.bas'
+
+$END IF
