@@ -10,8 +10,8 @@ $IF INI_BAS = UNDEFINED THEN
     '$INCLUDE:'Ini.bi'
 
     SUB IniSortSection (file$, __section$)
-        SHARED IniCODE, IniLastKey$, IniWholeFile$
-        SHARED IniDisableAutoCommit
+        SHARED IniCODE AS LONG, IniLastKey$, IniWholeFile$
+        SHARED IniDisableAutoCommit AS _BYTE
 
         REDIM Keys(1 TO 100) AS STRING
         DIM TotalKeys, tempValue$, i AS LONG, Backup$, CommitBackup
@@ -63,7 +63,7 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     SUB IniDeleteSection (file$, __section$)
-        SHARED IniNewFile$, IniCODE, currentIniFileName$
+        SHARED IniNewFile$, IniCODE AS LONG, currentIniFileName$
         SHARED IniLF$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
 
         IniLoad file$
@@ -82,7 +82,7 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     SUB IniDeleteKey (file$, __section$, __key$)
-        SHARED IniPosition AS _UNSIGNED LONG, IniCODE
+        SHARED IniPosition AS _UNSIGNED LONG, IniCODE AS LONG
         SHARED IniLF$, IniWholeFile$, IniSectionData$
         SHARED IniLastSection$, IniLastKey$, IniNewFile$
 
@@ -119,7 +119,7 @@ $IF INI_BAS = UNDEFINED THEN
     SUB IniMoveKey (file$, __section$, __key$, __newsection$)
         'A move operation is a copy operation + a delete operation
 
-        SHARED IniCODE
+        SHARED IniCODE AS LONG
 
         DIM tempValue$
 
@@ -135,7 +135,7 @@ $IF INI_BAS = UNDEFINED THEN
 
     SUB IniCommit
         SHARED currentIniFileName$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
-        SHARED IniNewFile$, IniDisableAutoCommit, IniCODE
+        SHARED IniNewFile$, IniDisableAutoCommit AS _BYTE, IniCODE AS LONG
         SHARED LoadedFiles$
 
         IF currentIniFileName$ = "" THEN IniCODE = 18: EXIT SUB
@@ -171,7 +171,7 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     FUNCTION IniGetSection$ (__section$)
-        SHARED IniPosition AS _UNSIGNED LONG, IniCODE, currentIniFileName$
+        SHARED IniPosition AS _UNSIGNED LONG, IniCODE AS LONG, currentIniFileName$
         SHARED IniLF$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
 
         IF currentIniFileName$ = "" THEN IniCODE = 18: EXIT FUNCTION
@@ -244,7 +244,7 @@ $IF INI_BAS = UNDEFINED THEN
     END FUNCTION
 
     FUNCTION IniFormatSection$ (__section$)
-        SHARED IniCODE
+        SHARED IniCODE AS LONG
 
         DIM section$
 
@@ -265,7 +265,7 @@ $IF INI_BAS = UNDEFINED THEN
     FUNCTION ReadSetting$ (file$, __section$, __key$)
         SHARED IniLastSection$, IniLastKey$, IniWholeFile$, IniLF$
         SHARED IniPosition AS _UNSIGNED LONG, IniSectionData$
-        SHARED IniCODE, IniAllowBasicComments
+        SHARED IniCODE AS LONG, IniAllowBasicComments AS _BYTE
         SHARED currentIniFileLOF AS _UNSIGNED LONG
 
         IniLoad file$
@@ -405,7 +405,7 @@ $IF INI_BAS = UNDEFINED THEN
     END FUNCTION
 
     SUB WriteSetting (file$, __section$, __key$, __value$)
-        SHARED IniPosition AS _UNSIGNED LONG, IniCODE, currentIniFileName$
+        SHARED IniPosition AS _UNSIGNED LONG, IniCODE AS LONG, currentIniFileName$
         SHARED IniLF$, IniWholeFile$, IniSectionData$
         SHARED IniLastSection$, IniLastKey$, IniNewFile$
 
@@ -563,7 +563,7 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     SUB IniSetForceReload (state AS _BYTE)
-        SHARED IniForceReload
+        SHARED IniForceReload AS _BYTE
         IF state THEN
             IniForceReload = -1
         ELSE
@@ -572,7 +572,7 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     SUB IniClose
-        SHARED IniDisableAutoCommit, currentIniFileName$
+        SHARED IniDisableAutoCommit AS _BYTE, currentIniFileName$
         SHARED LoadedFiles$
         DIM findFile AS INTEGER, fileNum AS INTEGER
 
@@ -595,9 +595,9 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     SUB IniLoad (file$)
-        SHARED IniCODE, currentIniFileName$, IniLF$, IniWholeFile$
+        SHARED IniCODE AS LONG, currentIniFileName$, IniLF$, IniWholeFile$
         SHARED currentIniFileLOF AS _UNSIGNED LONG
-        SHARED IniForceReload
+        SHARED IniForceReload AS _BYTE
         SHARED LoadedFiles$
         DIM fileNum AS INTEGER, findFile AS INTEGER
 
@@ -655,7 +655,7 @@ $IF INI_BAS = UNDEFINED THEN
     END SUB
 
     FUNCTION IniNextKey$
-        SHARED IniCODE, IniLF$, currentIniFileName$, IniSectionData$
+        SHARED IniCODE AS LONG, IniLF$, currentIniFileName$, IniSectionData$
         SHARED IniPosition AS _UNSIGNED LONG
         STATIC lastDataBlock$, position AS _UNSIGNED LONG, tempLF$
 
@@ -698,7 +698,7 @@ $IF INI_BAS = UNDEFINED THEN
     END FUNCTION
 
     FUNCTION IniNextSection$ (file$)
-        SHARED IniCODE, IniLF$, IniWholeFile$
+        SHARED IniCODE AS LONG, IniLF$, IniWholeFile$
 
         STATIC sectionStart AS _UNSIGNED LONG
 
@@ -746,7 +746,7 @@ $IF INI_BAS = UNDEFINED THEN
     END FUNCTION
 
     FUNCTION IniINFO$
-        SHARED IniCODE
+        SHARED IniCODE AS LONG
         SELECT CASE IniCODE
             CASE 0: IniINFO$ = "Operation successful"
             CASE 1: IniINFO$ = "ERROR: File not found"

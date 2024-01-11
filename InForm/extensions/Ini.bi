@@ -9,21 +9,23 @@ $IF INI_BI = UNDEFINED THEN
 
     ' TODO:
     ' We should put all of this stuff into a single state type and then have just a single global to avoid possible name collisions.
-    ' INI routines without namespace like prefix should also be prefixed with the "Ini_" prefix
+    '   That should also let us make the library load multiple INI files at the same time like the GIFPlayer library.
+    ' INI routines without namespace like prefix should also be prefixed with the "Ini_" prefix.
 
     'Global variables declaration
-    DIM currentIniFileName$, LoadedFiles$
+    DIM currentIniFileName AS STRING
+    DIM LoadedFiles AS STRING
     DIM currentIniFileLOF AS _UNSIGNED LONG
-    DIM IniWholeFile$
-    DIM IniSectionData$
+    DIM IniWholeFile AS STRING
+    DIM IniSectionData AS STRING
     DIM IniPosition AS _UNSIGNED LONG
-    DIM IniNewFile$
-    DIM IniLastSection$
-    DIM IniLastKey$
-    DIM IniLF$
-    DIM IniDisableAutoCommit ' _BYTE?
-    DIM IniCODE ' _BYTE?
-    DIM IniAllowBasicComments ' _BYTE?
-    DIM IniForceReload ' _BYTE?
+    DIM IniNewFile AS STRING
+    DIM IniLastSection AS STRING
+    DIM IniLastKey AS STRING
+    DIM IniLF AS STRING
+    DIM IniDisableAutoCommit AS _BYTE
+    DIM IniCODE AS LONG
+    DIM IniAllowBasicComments AS _BYTE
+    DIM IniForceReload AS _BYTE
 
 $END IF

@@ -6,7 +6,7 @@ $(error "OS must be set to 'lnx', 'win', or 'osx'")
 endif
 
 ifndef QB64PE_PATH
-$(error "QB64PE_PATH must be path where QB64PE is installed")
+$(error "QB64PE_PATH must be path where QB64-PE is installed")
 endif
 
 ifeq ($(OS),lnx)
