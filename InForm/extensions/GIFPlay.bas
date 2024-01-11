@@ -335,20 +335,13 @@ $IF GIFPLAY_BAS = UNDEFINED THEN
         __GIFPlay(idx).lastFrameRendered = lastFrameRendered
 
         ' Take appropriate action based on the disposal method of the previous frame
-        DIM oldDest AS LONG: oldDest = _DEST ' this is needed for CLS. CLS in v3.9.1 does not support using image handles (can remove with v4.0)
         IF __GIFPlay(idx).frame = __GIFPlay(idx).firstFrame THEN
             ' If this is the first frame, then we do not have any previous disposal method
-            _DEST __GIFPlay(idx).image
-            'CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image ' clear the render image using the BG color
-            CLS , __GIFPlay(idx).bgColor
-            _DEST oldDest
+            CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image ' clear the render image using the BG color
         ELSE
             SELECT CASE __GIFPlayFrame(__GIFPlayFrame(__GIFPlay(idx).frame).prevFrame).disposalMethod
                 CASE 2 ' Restore to background color
-                    _DEST __GIFPlay(idx).image
-                    'CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image
-                    CLS , __GIFPlay(idx).bgColor
-                    _DEST oldDest
+                    CLS , __GIFPlay(idx).bgColor, __GIFPlay(idx).image
                     _CLEARCOLOR __GIFPlay(idx).bgColor, __GIFPlay(idx).image
 
                 CASE 3 ' Restore to previous
