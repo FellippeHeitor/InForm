@@ -60,7 +60,6 @@ DIM SHARED SpiralAngle!, KeysList$, XF!, YF!, XN!, YN!, XGun!, YGun!
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Duck Shoot.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------

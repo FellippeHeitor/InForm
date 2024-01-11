@@ -579,7 +579,7 @@ SUB __UI_Click (id AS LONG)
                 SaveForm TRUE, Control(SaveFrmOnlyCB).Value
             END IF
         CASE HelpMenuAbout
-            MessageBox "InForm GUI engine for QB64-PE" + CHR$(13) + "Fellippe Heitor, (2016 - 2022) - @FellippeHeitor" + CHR$(13) + "George McGinn, 2023 - gbytes58@gmail.com" + CHR$(13) + "Samuel Gomes, (2023 - 2024) - @a740g" + STRING$(2, 13) + UiEditorTitle$ + " v" + __UI_Version + STRING$(2, 13) + "https://github.com/a740g/InForm-PE", UiEditorTitle$ + " - About", MsgBox_Information
+            MessageBox "InForm GUI engine for QB64-PE" + CHR$(13) + "Copyright (c) 2024 Samuel Gomes - @a740g" + CHR$(13) + "Copyright (c) 2023 George McGinn - gbytes58@gmail.com" + CHR$(13) + "Copyright (c) 2022 Fellippe Heitor - @FellippeHeitor" + STRING$(2, 13) + UiEditorTitle$ + " v" + __UI_Version + STRING$(2, 13) + "https://github.com/a740g/InForm-PE", UiEditorTitle$ + " - About", MsgBox_Information
         CASE HelpMenuHelp
             MessageBox "Design a form and export the resulting code to generate an event-driven QB64-PE program.", UiEditorTitle$ + " - What's all this?", MsgBox_Information
         CASE FileMenuExit

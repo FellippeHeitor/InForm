@@ -38,7 +38,6 @@ DIM SHARED Word(1 TO 22) AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'WordClock.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------

@@ -21,12 +21,9 @@ DIM SHARED Button8 AS LONG
 DIM SHARED Button9 AS LONG
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'TicTacToe.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit

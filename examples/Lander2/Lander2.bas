@@ -65,7 +65,6 @@ DIM SHARED pbScene AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Lander2.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------

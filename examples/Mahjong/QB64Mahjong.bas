@@ -33,7 +33,6 @@ CONST XOrigin% = 40, YOrigin% = 40, YHalfTile% = 30, XHalfTile% = 20, FrameRate%
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'QB64Mahjong.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------

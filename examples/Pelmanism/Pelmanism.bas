@@ -32,7 +32,6 @@ REDIM SHARED Motion`(10, 6, 2), Choisi`(10, 6), Grid%%(10, 6)
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Pelmanism.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------------------

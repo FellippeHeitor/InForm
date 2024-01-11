@@ -37,7 +37,7 @@ Assuming your setup is like the above, do the following:
 
 - Open Terminal and change to the InForm-PE directory using an appropriate OS command
 - Run `setup_inform_lnx.sh`, `setup_inform_osx.command` or `setup_inform_win.cmd` depending on the OS you are on. This will run make with the correct parameters. If the build fails, ensure QB64-PE is installed in the **QB64pe** directory (next to the InForm-PE directory). If QB64-PE is installed elsewhere, then edit the setup scripts to change the location
-- Once InFrom-PE is compiled, you will find the UiEditor[.exe] executable in the InForm-PE directory
+- Once InForm-PE is compiled, you will find the UiEditor[.exe] executable in the InForm-PE directory
 - Run UiEditor[.exe] to start designing your forms
 - After your form looks the way you want it to, click **File > Save** to export its contents and generate a **.bas** source file. Two files are exported:
   - **.frm** - the generated form in QB64-PE code. This can be loaded back into InForm-PE's designer or manually edited in QB64-PE or any text editor later, if you want to adjust fine details
@@ -61,29 +61,15 @@ Assuming your setup is like the above, do the following:
 - *BeforeUnload*, triggered when the user tries to close the program, either via clicking the window's X button, right click in the task bar -> Close or with Alt+F4 (Windows only).
 - *FormResized*, triggered when a form with the CanResize property is resized at runtime.
 
-***The following files need to be copied to your project directory for it to compile.***
-
-> Required
+***IMPORTANT: The following files must be copied to your project directory for it to compile.***
 
 ```text
-InForm/InFormVersion.bas
 InForm/InForm.bi
 InForm/InForm.ui
+InForm/InFormCommon.bi
+InForm/InFormVersion.bi
 InForm/xp.uitheme
-```
-
-> Required only when GIF picturebox is used
-
-```text
-InForm/extensions/GIFPlay.bi
-InForm/extensions/GIFPlay.bas
-```
-
-> Required only when using legacy InForm MessageBox routines (use [QB64-PE's native common dialog functions](https://qb64phoenix.com/qb64wiki/index.php/Keyword_Reference_-_By_usage#Window_and_Desktop) when writing new code)
-
-```text
-InForm/extensions/MessageBox.bi
-InForm/extensions/MessageBox.bas
+InForm/extensions/*.*
 ```
 
 ## EXAMPLES
@@ -112,6 +98,7 @@ InForm/extensions/MessageBox.bas
 | RockPaperScissorsSpockLizard | TempodiBasic |
 | Stopwatch | Fellippe Heitor |
 | TextFetch | B+ |
+| ThemePreview | Fellippe Heitor |
 | TicTacToe | Fellippe Heitor |
 | TicTacToe2 | Fellippe Heitor |
 | Trackword | Richard Notley |

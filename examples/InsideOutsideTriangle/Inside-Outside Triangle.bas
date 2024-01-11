@@ -36,7 +36,6 @@ DIM SHARED ClickCount%, Vertices%(3, 1), A#, B#, C#, XMouse%, YMouse%
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Inside-Outside Triangle.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Functions: ---------------------------------------------------------------------

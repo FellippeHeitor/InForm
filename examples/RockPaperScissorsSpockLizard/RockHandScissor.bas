@@ -25,12 +25,9 @@ DIM SHARED assetsRPSLS_helpjpgPX AS LONG
 DIM SHARED assetsspokpngPX AS LONG
 DIM SHARED assetslizardpngPX AS LONG
 
-
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'RockHandScissor.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit

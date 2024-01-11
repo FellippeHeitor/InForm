@@ -8,6 +8,9 @@
 $IF INFORM_BI = UNDEFINED THEN
     $LET INFORM_BI = TRUE
 
+    $SCREENHIDE
+    _CONTROLCHR OFF
+
     '$INCLUDE:'InFormCommon.bi'
 
     'Control types: -----------------------------------------------
@@ -85,9 +88,6 @@ $IF INFORM_BI = UNDEFINED THEN
     __UI_Type(__UI_Type_ToggleSwitch).TurnsInto = __UI_Type_CheckBox
     __UI_Type(__UI_Type_ToggleSwitch).RestrictResize = __UI_CantResize
     '--------------------------------------------------------------
-
-    $SCREENHIDE
-    _CONTROLCHR OFF
 
     __UI_RestoreFKeys
 

@@ -17,12 +17,9 @@ DIM SHARED PlayButton AS LONG
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/extensions/GIFPlay.bi'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'GIFPlaySample.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 '$INCLUDE:'../../InForm/extensions/GIFPlay.bas'
 
 ': Event procedures: ---------------------------------------------------------------

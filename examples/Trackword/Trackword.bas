@@ -48,13 +48,9 @@ DATA 254,36541,652,12587,23698741,98523,458,56974,685
 FOR M%% = 1 TO noCells%%: READ TrackWord$(M%%): NEXT M%%
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Trackword.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
-
 
 FUNCTION snake2word$ (snakey$)
     ' Use the dim shared theWord$ to translate snake number string to letters

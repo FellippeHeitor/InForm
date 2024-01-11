@@ -72,12 +72,9 @@ DIM SHARED AS STRING helpcontents, prt_text
 
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'ebacCalculator.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit

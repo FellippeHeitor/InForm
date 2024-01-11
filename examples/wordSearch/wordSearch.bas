@@ -20,12 +20,9 @@ DIM SHARED AS STRING contents, originalcontents
 
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'wordSearch.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event procedures: ---------------------------------------------------------------
 SUB __UI_BeforeInit

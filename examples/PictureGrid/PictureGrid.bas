@@ -22,7 +22,6 @@ DIM SHARED Horiz%%, Vert%%, InPlay`, Level%%, MoveIt%%, ValidSquare`
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'PictureGrid.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures & Functions: ---------------------------------------------------------------

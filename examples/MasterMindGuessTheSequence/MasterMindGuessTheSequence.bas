@@ -28,7 +28,6 @@ DIM SHARED ma&
 
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'MasterMindGuessTheSequence.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------

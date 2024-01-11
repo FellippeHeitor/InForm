@@ -33,12 +33,9 @@ DIM SHARED PIC2MEMRB AS LONG
 DIM SHARED ResetBT AS LONG
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'BIN2INCLUDE.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Custom procedures: --------------------------------------------------------------
 FUNCTION checkExt%% (OFile$)

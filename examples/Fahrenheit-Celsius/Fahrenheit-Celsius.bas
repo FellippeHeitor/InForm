@@ -32,7 +32,6 @@ CONST TT% = 38, TB% = 668, FL% = 82, FR% = 106, CL% = 321, CR% = 345
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Fahrenheit-Celsius.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Functions: ----------------------------------------------------------------------

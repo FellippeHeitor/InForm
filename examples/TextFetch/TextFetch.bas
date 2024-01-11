@@ -9,10 +9,6 @@
 
 OPTION _EXPLICIT
 
-$IF VERSION < 3.11.0 THEN
-        $ERROR This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases
-$END IF
-
 ': Controls' IDs: ------------------------------------------------------------------
 DIM SHARED frmTextFetch AS LONG
 DIM SHARED lbCWD AS LONG
@@ -32,7 +28,6 @@ DIM SHARED lbEnd AS LONG
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'TextFetch.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 SUB loadText

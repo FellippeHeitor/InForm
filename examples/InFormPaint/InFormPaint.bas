@@ -18,7 +18,6 @@ DIM SHARED Drawing AS _BYTE, Tool AS _UNSIGNED _BYTE
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'InFormPaint.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
 
 ': Event procedures: ---------------------------------------------------------------

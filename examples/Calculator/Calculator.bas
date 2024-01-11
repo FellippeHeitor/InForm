@@ -80,12 +80,9 @@ DIM SHARED memory AS DOUBLE '               value stored in memory
 DIM SHARED nohistory AS INTEGER
 
 ': External modules: --------------------------------------------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'Calculator.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Program procedures: ------------------------------------------------------------------------------------------------
 

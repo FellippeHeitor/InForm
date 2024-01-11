@@ -196,12 +196,9 @@ DIM SHARED PlanetAnim%%, Trace%%, Wipe%%, UpArrow%%, DownArrow%%, EndArrow%%, Ar
 CONST FrameRate% = 30, Persp& = -8000, Origin& = -16000, Uscreen% = 1400, Vscreen% = 830 'Uscreen%/Vscreen% same as PictureBox1
 
 ': External modules: ---------------------------------------------------------------
-'$INCLUDE:'../../InForm/extensions/MessageBox.bi'
 '$INCLUDE:'../../InForm/InForm.bi'
 '$INCLUDE:'GravitationSimulation.frm'
-'$INCLUDE:'../../InForm/xp.uitheme'
 '$INCLUDE:'../../InForm/InForm.ui'
-'$INCLUDE:'../../InForm/extensions/MessageBox.bas'
 
 ': Event Procedures & Functions: ----------------------------------------------------
 
