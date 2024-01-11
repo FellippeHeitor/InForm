@@ -14,7 +14,6 @@ $IF INFORMCOMMON_BI = UNDEFINED THEN
 
     '$INCLUDE:'InFormVersion.bi'
     '$INCLUDE:'extensions/HashTable.bi'
-    '$INCLUDE:'extensions/MessageBox.bi'
 
     CONST FALSE%% = 0%%, TRUE%% = NOT FALSE
 
@@ -82,6 +81,39 @@ $IF INFORMCOMMON_BI = UNDEFINED THEN
     CONST __UI_CantResizeV%% = 1%%
     CONST __UI_CantResizeH%% = 2%%
     CONST __UI_CantResize%% = 3%%
+
+    'Messagebox constants
+    CONST MsgBox_OkOnly& = 1&
+    CONST MsgBox_OkCancel& = 2&
+    CONST MsgBox_AbortRetryIgnore& = 4&
+    CONST MsgBox_YesNoCancel& = 8&
+    CONST MsgBox_YesNo& = 16&
+    CONST MsgBox_RetryCancel& = 32&
+    CONST MsgBox_CancelTryAgainContinue& = 64&
+
+    CONST MsgBox_Critical& = 128&
+    CONST MsgBox_Question& = 256&
+    CONST MsgBox_Exclamation& = 512&
+    CONST MsgBox_Information& = 1024&
+
+    CONST MsgBox_DefaultButton1& = 2048&
+    CONST MsgBox_DefaultButton2& = 4096&
+    CONST MsgBox_DefaultButton3& = 8192&
+    CONST MsgBox_Defaultbutton4& = 16384&
+
+    CONST MsgBox_AppModal& = 32768&
+    CONST MsgBox_SystemModal& = 65536&
+    CONST MsgBox_SetForeground& = 131072&
+
+    CONST MsgBox_Ok& = 1&
+    CONST MsgBox_Yes& = 2&
+    CONST MsgBox_No& = 3&
+    CONST MsgBox_Cancel& = 4&
+    CONST MsgBox_Abort& = 5&
+    CONST MsgBox_Retry& = 6&
+    CONST MsgBox_Ignore& = 7&
+    CONST MsgBox_TryAgain& = 8&
+    CONST MsgBox_Continue& = 9&
 
     DECLARE LIBRARY
         FUNCTION __UI_GetPID ALIAS getpid
