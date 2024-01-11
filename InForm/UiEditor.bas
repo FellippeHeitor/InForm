@@ -336,6 +336,9 @@ $ELSE
         END DECLARE
 $END IF
 
+' This will enable the version info strings in InFormVersion.bi
+$LET UIEDITOR_BAS = TRUE
+
 '$INCLUDE:'extensions/Ini.bi'
 '$INCLUDE:'InForm.bi'
 '$INCLUDE:'UiEditor.frm'
