@@ -63,6 +63,9 @@ DIM SHARED ViewMenuPreviewDetach AS LONG
 DIM SHARED ViewMenuShowPositionAndSize AS LONG
 DIM SHARED ViewMenuShowInvisibleControls AS LONG
 DIM SHARED ViewMenuPreview AS LONG, ViewMenuLoadedFonts AS LONG
+DIM SHARED ViewMenuThemeXP AS LONG, ViewMenuThemeLight AS LONG, ViewMenuThemeDark AS LONG, ViewMenuThemeFile AS LONG
+DIM SHARED ViewMenuThemeEdit AS LONG
+DIM SHARED PreviewTheme AS STRING ' theme of the form being edited ("" = default XP)
 
 DIM SHARED InsertMenuMenuBar AS LONG, InsertMenuContextMenu AS LONG
 DIM SHARED InsertMenuMenuItem AS LONG
@@ -94,7 +97,7 @@ DIM SHARED AddCheckBox AS LONG, AddRadioButton AS LONG
 DIM SHARED AddListBox AS LONG, AddDropdownList AS LONG
 DIM SHARED AddTrackBar AS LONG, AddProgressBar AS LONG
 DIM SHARED AddPictureBox AS LONG, AddFrame AS LONG
-DIM SHARED AddToggleSwitch AS LONG
+DIM SHARED AddToggleSwitch AS LONG, AddTabControl AS LONG
 
 'Control toggles
 DIM SHARED Stretch AS LONG, HasBorder AS LONG
@@ -364,7 +367,8 @@ SUB __UI_Click (id AS LONG)
         CASE AddPictureBox: Dummy = __UI_Type_PictureBox
         CASE AddFrame: Dummy = __UI_Type_Frame
         CASE AddToggleSwitch: Dummy = __UI_Type_ToggleSwitch
-        CASE AddButton, AddLabel, AddTextBox, AddCheckBox, AddRadioButton, AddListBox, AddDropdownList, AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, AddToggleSwitch
+        CASE AddTabControl: Dummy = __UI_Type_TabControl
+        CASE AddButton, AddLabel, AddTextBox, AddCheckBox, AddRadioButton, AddListBox, AddDropdownList, AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, AddToggleSwitch, AddTabControl
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
             Send Client, b$
         CASE AddNumericBox
@@ -756,6 +760,18 @@ SUB __UI_Click (id AS LONG)
             __UI_ShowInvisibleControls = NOT __UI_ShowInvisibleControls
             Control(id).Value = __UI_ShowInvisibleControls
             SaveSettings
+        CASE ViewMenuThemeXP
+            SetPreviewTheme "xp"
+        CASE ViewMenuThemeLight
+            SetPreviewTheme "light"
+        CASE ViewMenuThemeDark
+            SetPreviewTheme "dark"
+        CASE ViewMenuThemeEdit
+            OpenThemeEditor
+        CASE ViewMenuThemeFile
+            DIM ThemeFile$
+            ThemeFile$ = _OPENFILEDIALOG$(UiEditorTitle$ + ": Open theme", CurrentPath$, "*.ini|*.INI", "InForm theme files")
+            IF LEN(ThemeFile$) THEN SetPreviewTheme ThemeFile$
         CASE FontSwitchMenuSwitch, FontLB, FontListLB
             AttemptToShowFontList = (ShowFontList = False OR BypassShowFontList = True)
             ShowFontList = NOT ShowFontList
@@ -1284,30 +1300,21 @@ SUB __UI_BeforeUpdateDisplay
     'bytesIn~&& = bytesIn~&& + LEN(incomingData$)
     'Caption(StatusBar) = "Received:" + STR$(bytesIn~&&) + " bytes | Sent:" + STR$(totalBytesSent) + " bytes"
 
-    $IF WIN THEN
-        IF PreviewAttached THEN
-            IF prevScreenX <> _SCREENX OR prevScreenY <> _SCREENY THEN
-                prevScreenX = _SCREENX
-                prevScreenY = _SCREENY
-                b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
-                Send Client, b$
-            END IF
-        ELSE
-            IF prevScreenX <> -32001 OR prevScreenY <> -32001 THEN
-                prevScreenX = -32001
-                prevScreenY = -32001
-                b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
-                Send Client, b$
-            END IF
+    IF PreviewAttached THEN
+        IF prevScreenX <> _SCREENX OR prevScreenY <> _SCREENY THEN
+            prevScreenX = _SCREENX
+            prevScreenY = _SCREENY
+            b$ = "WINDOWPOSITION>" + MKI$(_SCREENX) + MKI$(_SCREENY) + "<END>"
+            Send Client, b$
         END IF
-    $ELSE
-        IF PreviewAttached = True THEN
-            PreviewAttached = False
-            SaveSettings
+    ELSE
+        IF prevScreenX <> -32001 OR prevScreenY <> -32001 THEN
+            prevScreenX = -32001
+            prevScreenY = -32001
+            b$ = "WINDOWPOSITION>" + MKI$(-32001) + MKI$(-32001) + "<END>"
+            Send Client, b$
         END IF
-        Control(ViewMenuPreviewDetach).Disabled = True
-        Control(ViewMenuPreviewDetach).Value = False
-    $END IF
+    END IF
 
     STATIC prevAutoName AS _BYTE, prevMouseSwap AS _BYTE
     STATIC prevShowPos AS _BYTE, prevSnapLines AS _BYTE
@@ -2279,17 +2286,29 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
             CASE __UI_Type_ListBox
                 Control(AutoScroll).Disabled = False
+            CASE __UI_Type_TabControl
+                Caption(TextLB) = "Tabs"
+                Caption(ValueLB) = "Active tab"
+                Control(Transparent).Disabled = True
+                FOR i = 1 TO UBOUND(InputBox)
+                    SELECT CASE InputBox(i).ID
+                        CASE NameTB, TextTB, ValueTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
+                            Control(InputBox(i).ID).Disabled = False
+                        CASE ELSE
+                            Control(InputBox(i).ID).Disabled = True
+                    END SELECT
+                NEXT
             CASE __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
                 Control(HasBorder).Disabled = False
             CASE __UI_Type_ProgressBar
                 Control(ShowPercentage).Disabled = False
             CASE __UI_Type_Label
                 Control(WordWrap).Disabled = False
-            CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar
+            CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_TabControl
                 Control(CanHaveFocus).Disabled = False
-            CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar
+            CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_TabControl
                 Control(Disabled).Disabled = False
-            CASE __UI_Type_Frame, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
+            CASE __UI_Type_Frame, __UI_Type_TabControl, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
                 Control(Hidden).Disabled = False
             CASE __UI_Type_Label
                 Control(AlignOptions).Disabled = False
@@ -2356,7 +2375,7 @@ SUB __UI_BeforeUpdateDisplay
     'Custom cases
     Control(AutoPlayGif).Disabled = NOT Control(AddGifExtensionToggle).Value
     Control(AutoSize).Disabled = Control(WordWrap).Value
-    IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame THEN
+    IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame AND PreviewControls(FirstSelected).Type <> __UI_Type_TabControl THEN
         Control(SizeTB).Disabled = False
         Control(SizeTB).Hidden = False
         Control(SizeTB).Height = 22
@@ -2890,6 +2909,17 @@ SUB __UI_OnLoad
     LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
     LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
 
+    'Draw AddTabControl icon
+    Control(AddTabControl).HelperCanvas = _NEWIMAGE(16, 16, 32)
+    _DEST Control(AddTabControl).HelperCanvas
+    LINE (1, 5)-(14, 14), _RGB32(255, 255, 255), BF
+    LINE (1, 5)-(14, 14), _RGB32(132, 165, 189), B
+    LINE (1, 1)-(6, 5), _RGB32(255, 255, 255), BF
+    LINE (1, 1)-(6, 5), _RGB32(132, 165, 189), B
+    LINE (2, 5)-(5, 5), _RGB32(255, 255, 255)
+    LINE (7, 2)-(12, 5), _RGB32(220, 230, 240), BF
+    LINE (7, 2)-(12, 5), _RGB32(132, 165, 189), B
+
     'Draw AddNumericBox icon
     Control(AddNumericBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
     _DEST Control(AddNumericBox).HelperCanvas
@@ -3265,6 +3295,8 @@ SUB LoadPreview
     REDIM PreviewTips(0 TO CVL(b$)) AS STRING
     REDIM PreviewFonts(0 TO CVL(b$)) AS STRING
     REDIM PreviewActualFonts(0 TO CVL(b$)) AS STRING
+    PreviewTheme = "" 'sent again by the preview (-50) when the form uses a theme
+    UpdateThemeMenu
     REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
@@ -3444,6 +3476,13 @@ SUB LoadPreview
                     PreviewAutoPlayGif(Dummy) = True
                 CASE -47 'ControlIsSelected
                     PreviewControls(Dummy).ControlIsSelected = True
+                CASE -49 'TabPage
+                    b$ = ReadSequential$(FormData$, 2)
+                    PreviewControls(Dummy).TabPage = CVI(b$)
+                CASE -50 'Theme (form only)
+                    b$ = ReadSequential$(FormData$, 2)
+                    PreviewTheme = ReadSequential$(FormData$, CVI(b$))
+                    UpdateThemeMenu
                 CASE -48 'BoundTo
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
@@ -3751,6 +3790,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     CASE __UI_Type_TrackBar: a$ = a$ + "__UI_Type_TrackBar, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
                     CASE __UI_Type_ContextMenu: a$ = a$ + "__UI_Type_ContextMenu, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
                     CASE __UI_Type_ToggleSwitch: a$ = a$ + "__UI_Type_ToggleSwitch, ": IF ThisPass = 1 THEN GOTO EndOfThisPass
+                    CASE __UI_Type_TabControl: a$ = a$ + "__UI_Type_TabControl, ": IF ThisPass = 2 THEN GOTO EndOfThisPass
                 END SELECT
                 a$ = a$ + CHR$(34) + RTRIM$(PreviewControls(i).Name) + CHR$(34) + ","
                 a$ = a$ + STR$(PreviewControls(i).Width) + ","
@@ -3764,6 +3804,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 END IF
                 PRINT #TextFileNum, a$
                 PRINT #TextFileNum, "    __UI_RegisterResult = 0"
+
+                IF PreviewControls(i).Type = __UI_Type_Form AND LEN(PreviewTheme) > 0 AND LCASE$(PreviewTheme) <> "xp" THEN
+                    PRINT #TextFileNum, "    SetTheme " + CHR$(34) + PreviewTheme + CHR$(34)
+                END IF
 
                 IF PreviewControls(i).Type = __UI_Type_ContextMenu THEN
                     PRINT #TextFileNum,
@@ -3797,7 +3841,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
 
                 IF LEN(PreviewTexts(i)) > 0 THEN
                     SELECT CASE PreviewControls(i).Type
-                        CASE __UI_Type_ListBox, __UI_Type_DropdownList
+                        CASE __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TabControl
                             DIM TempCaption$, TempText$, ThisItem%
                             DIM findLF&
 
@@ -3899,12 +3943,16 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF PreviewControls(i).Value <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
                 END IF
+                IF PreviewIsTabChild(i) THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).TabPage = " + LTRIM$(STR$(PreviewControls(i).TabPage))
+                END IF
                 IF PreviewControls(i).Min <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Min = " + LTRIM$(STR$(PreviewControls(i).Min))
                 END IF
                 IF PreviewControls(i).Max <> 0 THEN
     IF PreviewControls(i).Type <> __UI_Type_ListBox AND _
-        PreviewControls(i).Type <>  __UI_Type_DropdownList THEN
+        PreviewControls(i).Type <>  __UI_Type_DropdownList AND _
+        PreviewControls(i).Type <> __UI_Type_TabControl THEN
                         PRINT #TextFileNum, "    Control(__UI_NewID).Max = " + LTRIM$(STR$(PreviewControls(i).Max))
                     END IF
                 END IF
@@ -4199,7 +4247,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 PRINT #TextFileNum, "'$INCLUDE:'InForm/extensions/GIFPlay.bi'"
             END IF
             PRINT #TextFileNum, "'$INCLUDE:'InForm/InForm.bi'"
-            PRINT #TextFileNum, "'$INCLUDE:'InForm/xp.uitheme'"
             PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 1) + ".frm'"
             IF AddGifExtension THEN
                 PRINT #TextFileNum, "'$INCLUDE:'InForm/extensions/GIFPlay.bas'"
@@ -4290,10 +4337,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         NEXT
                         PRINT #TextFileNum, "    END SELECT"
 
-                    CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
+                    CASE 13 'Dropdown list, List box, Tab control, Track bar, ToggleSwitch, CheckBox
                         PRINT #TextFileNum, "    SELECT CASE id"
                         FOR Dummy = 1 TO UBOUND(PreviewControls)
-                            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
+                            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TabControl OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
                                 PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
                                 PRINT #TextFileNum,
                             END IF
@@ -4352,8 +4399,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 checkConditionResult = True
             END IF
 
-        CASE 13 'Dropdown list, List box, Track bar, ToggleSwitch, CheckBox
-            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
+        CASE 13 'Dropdown list, List box, Tab control, Track bar, ToggleSwitch, CheckBox
+            IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TabControl OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
                 checkConditionResult = True
             END IF
     END SELECT
@@ -4416,3 +4463,63 @@ FUNCTION OutsideQuotes%% (text$, position AS LONG)
     NEXT
     OutsideQuotes%% = NOT quote%%
 END FUNCTION
+
+''' @brief _TRUE if a control in the preview belongs to a TabControl.
+FUNCTION PreviewIsTabChild%% (i AS LONG)
+    DIM j AS LONG
+    IF LEN(PreviewParentIDS(i)) = 0 THEN EXIT FUNCTION
+    FOR j = 1 TO UBOUND(PreviewControls)
+        IF PreviewControls(j).ID > 0 _ANDALSO PreviewControls(j).Type = __UI_Type_TabControl _ANDALSO RTRIM$(PreviewControls(j).Name) = PreviewParentIDS(i) THEN
+            PreviewIsTabChild = _TRUE
+            EXIT FUNCTION
+        END IF
+    NEXT
+END FUNCTION
+
+''' @brief Applies a theme to the form in the preview and remembers it for the .frm file.
+SUB SetPreviewTheme (themeName AS STRING)
+    DIM b$
+    PreviewTheme = themeName
+    b$ = "SETTHEME>" + themeName + "<END>"
+    Send Client, b$
+    UpdateThemeMenu
+END SUB
+
+''' @brief Updates the bullets of the View > Theme menu items.
+SUB UpdateThemeMenu
+    DIM t AS STRING
+    t = LCASE$(PreviewTheme)
+    Control(ViewMenuThemeXP).Value = (t = "" OR t = "xp")
+    Control(ViewMenuThemeLight).Value = (t = "light")
+    Control(ViewMenuThemeDark).Value = (t = "dark")
+    Control(ViewMenuThemeFile).Value = NOT (t = "" OR t = "xp" OR t = "light" OR t = "dark")
+END SUB
+
+''' @brief Opens the Theme Editor (with the form's theme file when it uses one) and waits for it to close.
+SUB OpenThemeEditor
+    DIM exe AS STRING, args AS STRING, t AS STRING
+
+    $IF WIN THEN
+        exe = "ThemeEditor.exe"
+    $ELSE
+        exe = "./ThemeEditor"
+    $END IF
+
+    IF NOT _FILEEXISTS(exe) THEN
+        MessageBox "The Theme Editor was not found. Build it with the setup script for your OS (it is built together with the UiEditor).", UiEditorTitle$, MsgBox_OkOnly + MsgBox_Exclamation
+        EXIT SUB
+    END IF
+
+    t = LCASE$(PreviewTheme)
+    IF LEN(PreviewTheme) > 0 AND t <> "xp" AND t <> "light" AND t <> "dark" THEN
+        IF _FILEEXISTS(PreviewTheme) THEN args = " " + CHR$(34) + PreviewTheme + CHR$(34)
+    END IF
+
+    'Wait for the Theme Editor to close; meanwhile the preview reloads the theme file whenever it is saved
+    DIM b$
+    b$ = "WATCHTHEME>" + MKI$(-1) + "<END>"
+    Send Client, b$
+    SHELL _HIDE exe + args
+    b$ = "WATCHTHEME>" + MKI$(0) + "<END>"
+    Send Client, b$
+END SUB

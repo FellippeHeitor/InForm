@@ -90,6 +90,10 @@ __UI_Type(__UI_Type_ToggleSwitch).DefaultWidth = 40
 __UI_Type(__UI_Type_ToggleSwitch).DefaultHeight = 17
 __UI_Type(__UI_Type_ToggleSwitch).TurnsInto = __UI_Type_CheckBox
 __UI_Type(__UI_Type_ToggleSwitch).RestrictResize = __UI_CantResize
+
+__UI_Type(__UI_Type_TabControl).Name = "TabControl"
+__UI_Type(__UI_Type_TabControl).DefaultWidth = 300
+__UI_Type(__UI_Type_TabControl).DefaultHeight = 200
 '--------------------------------------------------------------
 
 __UI_RestoreFKeys

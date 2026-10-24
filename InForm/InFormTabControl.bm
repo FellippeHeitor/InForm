@@ -1,0 +1,278 @@
+'-----------------------------------------------------------------------------------------------------------------------
+' InForm-PE TabControl
+' Copyright (c) 2026 Fellippe Heitor
+'
+' A TabControl is a container (like a Frame) with a strip of tabs at the top.
+'   - Tab captions live in Text(id), one per line (the same storage used by ListBox items).
+'   - .Value is the active tab (1-based) and .Max is the number of tabs.
+'   - Each child control has a .TabPage: the tab it belongs to (0 = visible on every tab).
+'-----------------------------------------------------------------------------------------------------------------------
+
+$INCLUDEONCE
+
+'$INCLUDE:'InFormCommon.bi'
+
+''' @brief _TRUE for control types that hold child controls.
+FUNCTION __UI_IsContainer%% (ControlType AS INTEGER)
+    __UI_IsContainer = ControlType = __UI_Type_Frame _ORELSE ControlType = __UI_Type_TabControl
+END FUNCTION
+
+''' @brief _TRUE if a control lives on a TabControl tab that is not the active one.
+FUNCTION __UI_IsOnHiddenTab%% (id AS LONG)
+    DIM parent AS LONG
+    IF id <= 0 _ORELSE id > UBOUND(Control) THEN EXIT FUNCTION
+    parent = Control(id).ParentID
+    IF parent <= 0 THEN EXIT FUNCTION
+    IF Control(parent).Type <> __UI_Type_TabControl THEN EXIT FUNCTION
+    __UI_IsOnHiddenTab = Control(id).TabPage > 0 _ANDALSO Control(id).TabPage <> Control(parent).Value
+END FUNCTION
+
+''' @brief Draws a container (Frame or TabControl) with its children.
+SUB __UI_DrawContainer (id AS LONG)
+    IF Control(id).Type = __UI_Type_TabControl THEN
+        __UI_DrawTabControl Control(id)
+    ELSE
+        __UI_DrawFrame Control(id)
+    END IF
+END SUB
+
+''' @brief Height of the tab strip, based on the control's font.
+FUNCTION __UI_TabStripHeight% (id AS LONG)
+    DIM prevFont AS LONG
+    prevFont = _FONT
+    IF Control(id).Font THEN _FONT Control(id).Font
+    __UI_TabStripHeight = _UFONTHEIGHT + 10
+    _FONT prevFont
+END FUNCTION
+
+''' @brief Horizontal position and width of a tab. The caller must have set _FONT to the control's font.
+SUB __UI_TabMetrics (id AS LONG, index AS LONG, tabX AS INTEGER, tabW AS INTEGER)
+    DIM i AS LONG, gap AS INTEGER
+    IF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN gap = 2
+    tabX = 2
+    FOR i = 1 TO index
+        tabW = __UI_PrintWidth(GetItem$(id, i)) + 20
+        IF i < index THEN tabX = tabX + tabW + gap
+    NEXT
+END SUB
+
+''' @brief Returns the tab under a point given relative to the control, or 0.
+FUNCTION __UI_TabAtPoint& (id AS LONG, x AS INTEGER, y AS INTEGER)
+    DIM i AS LONG, tabX AS INTEGER, tabW AS INTEGER, prevFont AS LONG
+
+    IF y < 0 _ORELSE y >= __UI_TabStripHeight(id) THEN EXIT FUNCTION
+
+    prevFont = _FONT
+    IF Control(id).Font THEN _FONT Control(id).Font
+    FOR i = 1 TO Control(id).Max
+        __UI_TabMetrics id, i, tabX, tabW
+        IF x >= tabX _ANDALSO x < tabX + tabW THEN
+            __UI_TabAtPoint = i
+            EXIT FOR
+        END IF
+    NEXT
+    _FONT prevFont
+END FUNCTION
+
+''' @brief Makes a tab the active one and fires __UI_ValueChanged if it changed.
+SUB __UI_SelectTab (id AS LONG, index AS LONG)
+    IF index < 1 _ORELSE index > Control(id).Max THEN EXIT SUB
+    IF Control(id).Value = index THEN EXIT SUB
+    Control(id).Value = index
+    Control(id).Redraw = True
+    __UI_ForceRedraw = True ' children visibility changed
+    ' Move focus away from a control that just became invisible
+    IF __UI_IsOnHiddenTab(__UI_Focus) THEN __UI_Focus = id
+    __UI_ValueChanged id
+END SUB
+
+'-----------------------------------------------------------------------------------------------------------------------
+' Public API
+'-----------------------------------------------------------------------------------------------------------------------
+
+''' @brief Adds a tab to a TabControl. The first tab added becomes the active one.
+SUB AddTab (id AS LONG, tabCaption AS STRING)
+    IF Control(id).Type <> __UI_Type_TabControl THEN EXIT SUB
+    AddItem id, tabCaption
+END SUB
+
+''' @brief Removes a tab. Controls on that tab are hidden; controls on later tabs move back one tab.
+SUB RemoveTab (id AS LONG, index AS LONG)
+    IF Control(id).Type <> __UI_Type_TabControl THEN EXIT SUB
+    RemoveItem id, index
+END SUB
+
+''' @brief Changes the caption of a tab.
+SUB SetTabCaption (id AS LONG, index AS LONG, tabCaption AS STRING)
+    IF Control(id).Type <> __UI_Type_TabControl THEN EXIT SUB
+    ReplaceItem id, index, tabCaption
+END SUB
+
+''' @brief Returns the caption of a tab.
+FUNCTION GetTabCaption$ (id AS LONG, index AS LONG)
+    IF Control(id).Type <> __UI_Type_TabControl THEN EXIT FUNCTION
+    IF index < 1 _ORELSE index > Control(id).Max THEN EXIT FUNCTION
+    GetTabCaption = GetItem$(id, index)
+END FUNCTION
+
+''' @brief Returns the number of tabs.
+FUNCTION GetTabCount& (id AS LONG)
+    IF Control(id).Type = __UI_Type_TabControl THEN GetTabCount = Control(id).Max
+END FUNCTION
+
+''' @brief Makes a tab the active one (fires __UI_ValueChanged).
+SUB SetActiveTab (id AS LONG, index AS LONG)
+    IF Control(id).Type <> __UI_Type_TabControl THEN EXIT SUB
+    __UI_SelectTab id, index
+END SUB
+
+''' @brief Moves a control to a tab of its parent TabControl (0 = show it on every tab).
+SUB SetControlTab (controlId AS LONG, page AS LONG)
+    Control(controlId).TabPage = page
+    IF Control(controlId).ParentID > 0 THEN Control(Control(controlId).ParentID).Redraw = True
+    __UI_ForceRedraw = True
+END SUB
+
+''' @brief Called after a tab was removed: fixes the children's pages and the active tab.
+SUB __UI_TabRemoved (id AS LONG, index AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ID > 0 _ANDALSO Control(i).ParentID = id THEN
+            IF Control(i).TabPage = index THEN
+                Control(i).Hidden = True
+                Control(i).TabPage = 0
+            ELSEIF Control(i).TabPage > index THEN
+                Control(i).TabPage = Control(i).TabPage - 1
+            END IF
+        END IF
+    NEXT
+    IF Control(id).Value > Control(id).Max THEN Control(id).Value = Control(id).Max
+    IF Control(id).Value < 1 _ANDALSO Control(id).Max > 0 THEN Control(id).Value = 1
+    __UI_ForceRedraw = True
+END SUB
+
+'-----------------------------------------------------------------------------------------------------------------------
+' Drawing
+'-----------------------------------------------------------------------------------------------------------------------
+
+''' @brief Draws a TabControl: tab strip, body and the children (already drawn to This.Canvas).
+SUB __UI_DrawTabControl (This AS __UI_ControlTYPE)
+    DIM TempCanvas AS LONG, strip AS INTEGER, bodyTop AS INTEGER, i AS LONG
+    DIM tabX AS INTEGER, tabW AS INTEGER, tabTop AS INTEGER, hoverTab AS LONG
+    DIM face AS _UNSIGNED LONG, r AS INTEGER, TempCaption$, activeX AS INTEGER, activeW AS INTEGER
+
+    IF This.Value < 1 _ANDALSO This.Max > 0 THEN This.Value = 1
+    IF This.Value > This.Max THEN This.Value = This.Max
+
+    IF __UI_HoveringID = This.ID _ANDALSO NOT This.Disabled THEN
+        hoverTab = __UI_TabAtPoint(This.ID, __UI_MouseLeft - This.Left, __UI_MouseTop - This.Top)
+    END IF
+
+    IF This.Redraw OR This.ChildrenRedrawn OR This.HelperCanvas = 0 OR This.Value <> This.PreviousValue OR __UI_ForceRedraw _
+       OR __UI_DesignMode OR This.PreviousFont <> This.Font OR This.HoveringTab <> hoverTab OR Text(This.ID) <> __UI_TempTexts(This.ID) _
+       OR This.FocusState <> (__UI_Focus = This.ID) OR This.PreviouslyHidden <> This.Hidden THEN
+        This.Redraw = False
+        This.ChildrenRedrawn = False
+        This.PreviousFont = This.Font
+        This.PreviousValue = This.Value
+        This.HoveringTab = hoverTab
+        This.FocusState = (__UI_Focus = This.ID)
+        This.PreviouslyHidden = This.Hidden
+        __UI_TempTexts(This.ID) = Text(This.ID)
+
+        strip = __UI_TabStripHeight(This.ID)
+        bodyTop = strip - 1
+        r = __UI_Theme.CornerRadius
+
+        TempCanvas = _NEWIMAGE(This.Width, This.Height, 32)
+        _DEST TempCanvas
+        _FONT This.Font
+        CLS , _RGBA32(0, 0, 0, 0)
+
+        IF This.Hidden = False THEN
+            IF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN
+                ' Body: a rounded panel below the tab strip
+                __UI_FlatRoundFill 0, bodyTop, This.Width, This.Height - bodyTop, r, This.BackColor
+                _PUTIMAGE (1, strip)-(This.Width - 2, This.Height - 2), This.Canvas, TempCanvas, (1, strip)-(This.Width - 2, This.Height - 2)
+                __UI_FlatRoundOutline 0, bodyTop, This.Width, This.Height - bodyTop, r, This.BorderColor
+
+                ' Tabs: plain captions; hover gets a soft background, the active tab an accent bar
+                FOR i = 1 TO This.Max
+                    __UI_TabMetrics This.ID, i, tabX, tabW
+                    IF i = hoverTab _ANDALSO i <> This.Value THEN
+                        __UI_FlatRoundFill tabX, 1, tabW, strip - 5, r, __UI_FlatShade(This.BackColor, .07)
+                    END IF
+
+                    IF This.Disabled THEN
+                        COLOR __UI_DisabledColor
+                    ELSEIF i = This.Value THEN
+                        COLOR This.ForeColor
+                    ELSE
+                        COLOR __UI_FlatMix(This.ForeColor, This.BackColor, .35)
+                    END IF
+                    TempCaption$ = GetItem$(This.ID, i)
+                    __UI_PrintString tabX + 10, (strip - 4) \ 2 - _UFONTHEIGHT \ 2 + 1, TempCaption$
+
+                    IF i = This.Value THEN
+                        activeX = tabX: activeW = tabW
+                        IF NOT This.Disabled THEN
+                            __UI_FlatRoundFill tabX + 10, strip - 5, tabW - 20, 3, 1.5, __UI_ThemeColor(__UI_ThemeColor_Accent)
+                        END IF
+                    END IF
+                NEXT
+
+                IF activeW > 0 _ANDALSO __UI_Focus = This.ID _ANDALSO __UI_KeyboardFocus THEN
+                    __UI_FlatFocusRing activeX, 0, activeW, strip - 3, r
+                END IF
+            ELSE
+                ' Tabs (drawn first; the body covers their lower edge)
+                FOR i = 1 TO This.Max
+                    __UI_TabMetrics This.ID, i, tabX, tabW
+                    IF i = This.Value THEN
+                        activeX = tabX: activeW = tabW
+                        tabTop = 0
+                        face = This.BackColor
+                    ELSE
+                        tabTop = 3
+                        face = __UI_FlatShade(This.BackColor, .05)
+                        IF i = hoverTab THEN face = __UI_FlatShade(This.BackColor, .12)
+                    END IF
+
+                    LINE (tabX, tabTop)-STEP(tabW - 1, strip - tabTop), face, BF
+                    LINE (tabX, tabTop)-STEP(tabW - 1, strip - tabTop), This.BorderColor, B
+
+                    TempCaption$ = GetItem$(This.ID, i)
+                    IF This.Disabled THEN
+                        COLOR __UI_DisabledColor
+                    ELSE
+                        COLOR This.ForeColor
+                    END IF
+                    __UI_PrintString tabX + 10, tabTop + (strip - tabTop) \ 2 - _UFONTHEIGHT \ 2, TempCaption$
+                NEXT
+
+                ' Body and children
+                LINE (0, bodyTop)-(This.Width - 1, This.Height - 1), This.BackColor, BF
+                _PUTIMAGE (1, strip)-(This.Width - 2, This.Height - 2), This.Canvas, TempCanvas, (1, strip)-(This.Width - 2, This.Height - 2)
+
+                LINE (0, bodyTop)-(This.Width - 1, This.Height - 1), This.BorderColor, B
+
+                ' Join the active tab with the body
+                IF activeW > 0 THEN
+                    LINE (activeX + 1, bodyTop)-(activeX + activeW - 2, bodyTop), This.BackColor
+
+                    ' Focus outline around the active tab's caption
+                    IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
+                        LINE (activeX + 4, 4)-(activeX + activeW - 5, strip - 3), __UI_ThemeColor(__UI_ThemeColor_FocusRing), B , 21845
+                    END IF
+                END IF
+            END IF
+        END IF
+
+        __UI_MakeHardwareImage TempCanvas
+        IF This.HelperCanvas <> 0 THEN _FREEIMAGE This.HelperCanvas
+        This.HelperCanvas = TempCanvas
+        _DEST 0
+    END IF
+
+    IF This.HelperCanvas < -1 THEN _PUTIMAGE (This.Left, This.Top), This.HelperCanvas
+END SUB

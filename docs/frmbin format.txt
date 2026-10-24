@@ -86,5 +86,9 @@ FOR EACH CONTROL (FORM INCLUDED):
     INTEGER -47 (ControlIsSelected)
     INTEGER -48 (BoundTo) + INTEGER Which control + INTEGER Which 
                 Property
+    INTEGER -49 (TabPage) + INTEGER .TabPage
+                For children of TabControl controls
+    INTEGER -50 (Theme) + INTEGER LEN(Theme) + Theme
+                For the Form, when its theme isn't the default "xp"
     -------------------
 INTEGER -1024 (End of file)

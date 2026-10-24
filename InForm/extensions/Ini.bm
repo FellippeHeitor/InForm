@@ -553,6 +553,26 @@ SUB Ini_SetForceReload (state AS _BYTE)
     __ini.forceReload = (state <> 0)
 END SUB
 
+''' @brief Closes a file's handle without writing anything. The next read loads it from disk again.
+''' Use it after reading a file that other programs may change or overwrite.
+''' @param file$ The INI file to release.
+SUB Ini_Release (file$)
+    SHARED __ini AS __IniType
+
+    DIM AS LONG findFile, fileNum, entryStart
+
+    findFile = INSTR(__ini.loadedFiles, "@" + file$ + "@")
+    IF findFile = 0 THEN EXIT SUB
+
+    ' Entries are "@" + MKI$(handle) + "@" + file name + "@"
+    fileNum = CVI(MID$(__ini.loadedFiles, findFile - 2, 2))
+    CLOSE fileNum
+    entryStart = findFile - 3
+    __ini.loadedFiles = LEFT$(__ini.loadedFiles, entryStart - 1) + MID$(__ini.loadedFiles, findFile + LEN(file$) + 2)
+
+    IF __ini.currentFileName = file$ THEN __ini.currentFileName = _STR_EMPTY
+END SUB
+
 SUB Ini_Close
     SHARED __ini AS __IniType
 

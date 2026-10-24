@@ -12,12 +12,16 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - Event-driven application design
 - Works on Windows, Linux & macOS
 - Everything is statically linked (no shared library dependencies)
+- Themes: classic XP, flat light and flat dark built in, or your own theme files ([Themes](docs/Themes.md))
+- Tab control for multi-page forms ([TabControl](docs/TabControl.md))
 
 ## DOCUMENTATION
 
 - [Wiki](https://github.com/QB64-Phoenix-Edition/InForm-PE/wiki)
 - [Tutorial](https://raw.githack.com/QB64-Phoenix-Edition/InForm-PE/refs/heads/master/docs/tutorial/index.html)
 - [Extensions](docs/Extensions.md)
+- [Themes](docs/Themes.md)
+- [TabControl](docs/TabControl.md)
 
 ## USAGE
 
@@ -37,8 +41,9 @@ Assuming your setup is like the above, do the following:
 
 - Open Terminal and change to the InForm-PE directory using an appropriate OS command
 - Run `setup_inform_lnx.sh`, `setup_inform_mac.command` or `setup_inform_win.cmd` depending on the OS you are on. This will run make with the correct parameters. If the build fails, ensure QB64-PE is installed in the **QB64pe** directory (next to the InForm-PE directory). If QB64-PE is installed elsewhere, then edit the setup scripts to change the location
-- Once InForm-PE is compiled, you will find the UiEditor[.exe] executable in the InForm-PE directory
+- Once InForm-PE is compiled, you will find the UiEditor[.exe] and ThemeEditor[.exe] executables in the InForm-PE directory
 - Run UiEditor[.exe] to start designing your forms
+- Run ThemeEditor[.exe] to create your own themes (see [Themes](docs/Themes.md))
 - After your form looks the way you want it to, click **File > Save** to export its contents and generate a **.bas** source file. Two files are exported:
   - **.frm** - the generated form in QB64-PE code. This can be loaded back into InForm-PE's designer or manually edited in QB64-PE or any text editor later, if you want to adjust fine details
   - **.bas** - the actual program you will add your code to
@@ -68,7 +73,10 @@ InForm/InForm.bi
 InForm/InForm.ui
 InForm/InFormCommon.bi
 InForm/InFormVersion.bi
+InForm/InFormTheme.bm
+InForm/InFormTabControl.bm
 InForm/xp.uitheme
+InForm/themes/*.*
 InForm/extensions/*.*
 ```
 
@@ -102,7 +110,9 @@ InForm/extensions/*.*
 | R2P | bobalooie |
 | RockPaperScissorsSpockLizard | TempodiBasic |
 | Stopwatch | Fellippe Heitor |
+| TabDemo | Fellippe Heitor |
 | TextFetch | B+ |
+| ThemeGallery | Fellippe Heitor |
 | ThemePreview | Fellippe Heitor |
 | TicTacToe | Fellippe Heitor |
 | TicTacToe2 | Fellippe Heitor |

@@ -211,7 +211,6 @@ PRINT #TextFileNum, controlIDsDIM$
 PRINT #TextFileNum,
 PRINT #TextFileNum, "': External modules: ---------------------------------------------------------------"
 PRINT #TextFileNum, "'$INCLUDE:'InForm\InForm.ui'"
-PRINT #TextFileNum, "'$INCLUDE:'InForm\xp.uitheme'"
 PRINT #TextFileNum, "'$INCLUDE:'" + newFile$ + "'"
 PRINT #TextFileNum,
 PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"

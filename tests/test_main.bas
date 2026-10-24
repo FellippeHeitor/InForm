@@ -40,6 +40,8 @@ SUB __UI_BeforeInit
     Test_InFormUIUtils
     Test_InFormUIHelpers
     Test_InFormUIUnicodeUtils
+    Test_Theme
+    Test_TabControl
 
     TEST_END_ALL
 END SUB
@@ -2029,6 +2031,227 @@ SUB Test_INI_Manager
     TEST_CHECK Ini_ReadSetting("", "Section1", "A_Key") = "A_Value", "Ini_ReadSetting should find the moved key in the new section"
 
     KILL "test.ini"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "INI_Manager: Ini_Release"
+
+    DIM releaseFile AS LONG
+    releaseFile = FREEFILE
+    OPEN "release.ini" FOR OUTPUT AS #releaseFile
+    PRINT #releaseFile, "[S]"
+    PRINT #releaseFile, "K=first"
+    CLOSE #releaseFile
+
+    TEST_CHECK Ini_ReadSetting("release.ini", "S", "K") = "first", "Value is read"
+    Ini_Release "release.ini"
+    Ini_Release "release.ini" ' releasing twice is harmless
+
+    releaseFile = FREEFILE
+    OPEN "release.ini" FOR OUTPUT AS #releaseFile
+    PRINT #releaseFile, "[S]"
+    PRINT #releaseFile, "K=second"
+    CLOSE #releaseFile
+
+    TEST_CHECK Ini_ReadSetting("release.ini", "S", "K") = "second", "Released file is read from disk again"
+    Ini_Release "release.ini"
+    KILL "release.ini"
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_Theme
+    DIM c AS _UNSIGNED LONG
+
+    TEST_CASE_BEGIN "Theme: __UI_Theme_ParseColor"
+
+    TEST_CHECK __UI_Theme_ParseColor("FF8000", c), "RRGGBB"
+    TEST_CHECK c = _RGB32(255, 128, 0), "RRGGBB value"
+    TEST_CHECK __UI_Theme_ParseColor("#ff8000", c), "#rrggbb"
+    TEST_CHECK c = _RGB32(255, 128, 0), "#rrggbb value"
+    TEST_CHECK __UI_Theme_ParseColor("10203040", c), "RRGGBBAA"
+    TEST_CHECK c = _RGBA32(16, 32, 48, 64), "RRGGBBAA value"
+    TEST_CHECK __UI_Theme_ParseColor(" 255, 128, 0 ", c), "R,G,B"
+    TEST_CHECK c = _RGB32(255, 128, 0), "R,G,B value"
+    TEST_CHECK __UI_Theme_ParseColor("1,2,3,4", c), "R,G,B,A"
+    TEST_CHECK c = _RGBA32(1, 2, 3, 4), "R,G,B,A value"
+    TEST_CHECK_FALSE __UI_Theme_ParseColor("", c), "Empty"
+    TEST_CHECK_FALSE __UI_Theme_ParseColor("GG0000", c), "Bad hex digit"
+    TEST_CHECK_FALSE __UI_Theme_ParseColor("12345", c), "Bad hex length"
+    TEST_CHECK_FALSE __UI_Theme_ParseColor("1,2", c), "Too few components"
+    TEST_CHECK_FALSE __UI_Theme_ParseColor("300,0,0", c), "Component out of range"
+    TEST_CHECK_FALSE __UI_Theme_ParseColor("1,2,3,4,5", c), "Too many components"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Theme: built-in themes"
+
+    SetTheme "dark"
+    TEST_CHECK GetTheme$ = "dark", "GetTheme$ returns the theme set"
+    TEST_CHECK __UI_Theme.Style = __UI_ThemeStyle_Flat, "Dark is a flat theme"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_WindowBack) = _RGB32(32, 32, 32), "Dark window color"
+    TEST_CHECK __UI_DefaultColor(__UI_Type_TextBox, 2) = GetThemeColor(__UI_ThemeColor_InputBack), "Text boxes use the input back color"
+    TEST_CHECK __UI_ScrollbarWidth = __UI_Theme.ScrollbarWidth, "Metrics are applied"
+
+    SetTheme "this-theme-does-not-exist.ini"
+    TEST_CHECK GetTheme$ = "dark", "An invalid theme keeps the current one"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_WindowBack) = _RGB32(32, 32, 32), "Palette is kept after an invalid theme"
+
+    SetTheme "XP"
+    TEST_CHECK __UI_Theme.Style = __UI_ThemeStyle_Bitmap, "XP is a bitmap theme"
+    TEST_CHECK __UI_DefaultColor(__UI_Type_Form, 2) = _RGB32(235, 233, 237), "XP form color is unchanged"
+    TEST_CHECK __UI_DefaultColor(__UI_Type_Form, 6) = _RGB32(255, 255, 225), "XP tool tip color is unchanged"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Theme: theme files"
+
+    DIM f AS LONG: f = FREEFILE
+    OPEN "theme_test.ini" FOR OUTPUT AS #f
+    PRINT #f, "[Theme]"
+    PRINT #f, "Name=Test theme"
+    PRINT #f, "Base=dark"
+    PRINT #f, "[Colors]"
+    PRINT #f, "Accent=112233"
+    PRINT #f, "Border=" + CHR$(34) + "#445566" + CHR$(34)
+    PRINT #f, "Caret=not a color"
+    PRINT #f, "FocusRing=0A0B0C   ; inline comment"
+    PRINT #f, "; Accent=FFFFFF (commented out)"
+    PRINT #f, "[Metrics]"
+    PRINT #f, "CornerRadius=7"
+    CLOSE #f
+
+    SetTheme "theme_test.ini"
+    TEST_CHECK GetTheme$ = "theme_test.ini", "Theme file is loaded"
+    TEST_CHECK RTRIM$(__UI_Theme.Name) = "Test theme", "Name is read"
+    TEST_CHECK __UI_Theme.Style = __UI_ThemeStyle_Flat, "Style is inherited from the base"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_Accent) = _RGB32(17, 34, 51), "Color without #"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_Border) = _RGB32(68, 85, 102), "Quoted color with #"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_Caret) = _RGB32(240, 240, 240), "Invalid color keeps the base value"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_FocusRing) = _RGB32(10, 11, 12), "Color with a comment"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_WindowBack) = _RGB32(32, 32, 32), "Missing color is inherited"
+    TEST_CHECK __UI_Theme.CornerRadius = 7, "Metric is read"
+
+    ' The file is not kept open, and changes are picked up when the theme is set again
+    f = FREEFILE
+    OPEN "theme_test.ini" FOR OUTPUT AS #f
+    PRINT #f, "[Theme]"
+    PRINT #f, "Base=dark"
+    PRINT #f, "[Colors]"
+    PRINT #f, "Accent=AABBCC"
+    CLOSE #f
+    SetTheme "theme_test.ini"
+    TEST_CHECK GetThemeColor(__UI_ThemeColor_Accent) = _RGB32(170, 187, 204), "Changed file is read again"
+
+    KILL "theme_test.ini"
+    SetTheme "xp"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "Theme: switching keeps custom colors"
+
+    DIM b1 AS LONG, b2 AS LONG
+    b1 = __UI_NewControl(__UI_Type_Button, "ThemeTestButton1", 80, 23, 0, 0, 0)
+    b2 = __UI_NewControl(__UI_Type_Button, "ThemeTestButton2", 80, 23, 0, 0, 0)
+    Control(b2).ForeColor = _RGB32(255, 0, 0)
+
+    SetTheme "dark"
+    TEST_CHECK Control(b1).ForeColor = GetThemeColor(__UI_ThemeColor_ButtonText), "Default color follows the theme"
+    TEST_CHECK Control(b1).BorderColor = GetThemeColor(__UI_ThemeColor_Border), "Default border follows the theme"
+    TEST_CHECK Control(b2).ForeColor = _RGB32(255, 0, 0), "Custom color is kept"
+
+    SetThemeColor __UI_ThemeColor_Border, _RGB32(1, 2, 3)
+    TEST_CHECK Control(b1).BorderColor = _RGB32(1, 2, 3), "SetThemeColor updates controls"
+
+    SetTheme "xp"
+    TEST_CHECK Control(b1).ForeColor = _RGB32(0, 0, 0), "Back to XP"
+    TEST_CHECK Control(b2).ForeColor = _RGB32(255, 0, 0), "Custom color is still kept"
+
+    __UI_DestroyControl Control(b1)
+    __UI_DestroyControl Control(b2)
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_TabControl
+    DIM t AS LONG, c1 AS LONG, c2 AS LONG, c3 AS LONG
+
+    TEST_CASE_BEGIN "TabControl: tabs"
+
+    t = __UI_NewControl(__UI_Type_TabControl, "TestTabs", 200, 120, 0, 0, 0)
+    TEST_CHECK __UI_IsContainer(Control(t).Type), "TabControl is a container"
+    TEST_CHECK __UI_IsContainer(__UI_Type_Frame), "Frame is a container"
+    TEST_CHECK_FALSE __UI_IsContainer(__UI_Type_Button), "Button is not a container"
+    TEST_CHECK GetTabCount(t) = 0, "No tabs yet"
+
+    AddTab t, "One"
+    AddTab t, "Two"
+    AddTab t, "Three"
+    TEST_CHECK GetTabCount(t) = 3, "Three tabs"
+    TEST_CHECK Control(t).Value = 1, "First tab is active"
+    TEST_CHECK GetTabCaption(t, 2) = "Two", "Caption of tab 2"
+    TEST_CHECK GetTabCaption(t, 4) = "", "Caption of a missing tab"
+
+    SetTabCaption t, 2, "Second"
+    TEST_CHECK GetTabCaption(t, 2) = "Second", "Caption changed"
+
+    DIM tabX AS INTEGER, tabW AS INTEGER, strip AS INTEGER
+    strip = __UI_TabStripHeight(t)
+    __UI_TabMetrics t, 2, tabX, tabW
+    TEST_CHECK tabX > 2 _ANDALSO tabW > 20, "Tab 2 comes after tab 1"
+    TEST_CHECK __UI_TabAtPoint(t, 3, strip \ 2) = 1, "Point on tab 1"
+    TEST_CHECK __UI_TabAtPoint(t, tabX + tabW \ 2, strip \ 2) = 2, "Point on tab 2"
+    TEST_CHECK __UI_TabAtPoint(t, tabX + tabW \ 2, strip + 5) = 0, "Point below the strip"
+    TEST_CHECK __UI_TabAtPoint(t, 199, strip \ 2) = 0, "Point right of the last tab"
+
+    SetActiveTab t, 3
+    TEST_CHECK Control(t).Value = 3, "Tab 3 is active"
+    SetActiveTab t, 9
+    TEST_CHECK Control(t).Value = 3, "Invalid tab is ignored"
+    SetActiveTab t, 1
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "TabControl: pages"
+
+    c1 = __UI_NewControl(__UI_Type_Button, "TestTabChild1", 80, 23, 10, 40, t)
+    c2 = __UI_NewControl(__UI_Type_Button, "TestTabChild2", 80, 23, 10, 40, t)
+    c3 = __UI_NewControl(__UI_Type_Label, "TestTabChild3", 80, 23, 10, 80, t)
+    TEST_CHECK Control(c1).TabPage = 1, "New child goes to the active tab"
+    SetControlTab c2, 2
+    SetControlTab c3, 0
+
+    TEST_CHECK_FALSE __UI_IsOnHiddenTab(c1), "Child on active tab is visible"
+    TEST_CHECK __UI_IsOnHiddenTab(c2), "Child on another tab is hidden"
+    TEST_CHECK_FALSE __UI_IsOnHiddenTab(c3), "Child on every tab is visible"
+    TEST_CHECK_FALSE __UI_IsOnHiddenTab(t), "TabControl itself is never on a tab"
+
+    SetActiveTab t, 2
+    TEST_CHECK __UI_IsOnHiddenTab(c1), "Tab 1 child hidden after switching"
+    TEST_CHECK_FALSE __UI_IsOnHiddenTab(c2), "Tab 2 child visible after switching"
+    TEST_CHECK_FALSE __UI_IsOnHiddenTab(c3), "Every-tab child still visible"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "TabControl: removing tabs"
+
+    RemoveTab t, 1
+    TEST_CHECK GetTabCount(t) = 2, "Two tabs left"
+    TEST_CHECK GetTabCaption(t, 1) = "Second", "Remaining tabs shift"
+    TEST_CHECK Control(t).Value = 1, "Active tab follows its tab"
+    TEST_CHECK Control(c1).Hidden, "Child of the removed tab is hidden"
+    TEST_CHECK Control(c2).TabPage = 1, "Child of a later tab moves back"
+    TEST_CHECK_FALSE __UI_IsOnHiddenTab(c2), "Moved child is still on the active tab"
+
+    RemoveTab t, 2
+    RemoveTab t, 1
+    TEST_CHECK GetTabCount(t) = 0, "No tabs left"
+    TEST_CHECK Control(t).Value = 0, "No active tab"
+
+    __UI_DestroyControl Control(c1)
+    __UI_DestroyControl Control(c2)
+    __UI_DestroyControl Control(c3)
+    __UI_DestroyControl Control(t)
 
     TEST_CASE_END
 END SUB
