@@ -141,6 +141,18 @@ SUB Ini_Close
 
 ***
 
+Closes a file's handle without writing anything. The next read loads the file from disk again. Use it after reading a file that other programs may change or overwrite.
+
+**Parameters:**
+
+* `file`: The INI file to release.
+
+```vb
+SUB Ini_Release (file$)
+```
+
+***
+
 By default, the library will cache the file in memory to improve performance. Use this to force a reload of the file from disk on the next `Ini_Load` call.
 
 **Parameters:**

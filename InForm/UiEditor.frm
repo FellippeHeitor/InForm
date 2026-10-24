@@ -173,7 +173,27 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Reload preview window-"
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuLoadedFonts", 116, 18, 0, 64, __UI_GetID("ViewMenu"))
-    SetCaption __UI_NewID, "&Loaded fonts"
+    SetCaption __UI_NewID, "&Loaded fonts-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuThemeXP", 160, 18, 0, 86, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "Theme: &XP (classic)"
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
+    Control(__UI_NewID).Value = -1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuThemeLight", 160, 18, 0, 104, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "Theme: Li&ght"
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuThemeDark", 160, 18, 0, 122, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "Theme: &Dark"
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuThemeFile", 160, 18, 0, 140, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "Theme from &file...-"
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "ViewMenuThemeEdit", 160, 18, 0, 158, __UI_GetID("ViewMenu"))
+    SetCaption __UI_NewID, "&Edit themes..."
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "InsertMenuMenuBar", 96, 18, 0, 4, __UI_GetID("InsertMenu"))
     SetCaption __UI_NewID, "Menu &Bar"
@@ -288,6 +308,10 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddToggleSwitch", 22, 22, 358, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New toggle switch"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddTabControl", 22, 22, 387, 10, __UI_GetID("Toolbox"))
+    ToolTip(__UI_NewID) = "New tab control"
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "NameLB", 120, 23, 10, 10, __UI_GetID("ControlProperties"))
@@ -802,6 +826,11 @@ SUB __UI_AssignIDs
     ViewMenuShowInvisibleControls = __UI_GetID("ViewMenuShowInvisibleControls")
     ViewMenuPreview = __UI_GetID("ViewMenuPreview")
     ViewMenuLoadedFonts = __UI_GetID("ViewMenuLoadedFonts")
+    ViewMenuThemeXP = __UI_GetID("ViewMenuThemeXP")
+    ViewMenuThemeLight = __UI_GetID("ViewMenuThemeLight")
+    ViewMenuThemeDark = __UI_GetID("ViewMenuThemeDark")
+    ViewMenuThemeFile = __UI_GetID("ViewMenuThemeFile")
+    ViewMenuThemeEdit = __UI_GetID("ViewMenuThemeEdit")
     InsertMenuMenuBar = __UI_GetID("InsertMenuMenuBar")
     InsertMenuContextMenu = __UI_GetID("InsertMenuContextMenu")
     InsertMenuMenuItem = __UI_GetID("InsertMenuMenuItem")
@@ -834,6 +863,7 @@ SUB __UI_AssignIDs
     AddPictureBox = __UI_GetID("AddPictureBox")
     AddFrame = __UI_GetID("AddFrame")
     AddToggleSwitch = __UI_GetID("AddToggleSwitch")
+    AddTabControl = __UI_GetID("AddTabControl")
     Stretch = __UI_GetID("Stretch")
     HasBorder = __UI_GetID("HasBorder")
     ShowPercentage = __UI_GetID("ShowPercentage")

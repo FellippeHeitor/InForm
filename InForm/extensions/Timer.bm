@@ -1,0 +1,215 @@
+'-----------------------------------------------------------------------------------------------------------------------
+' User configurable timer library
+' Copyright (c) 2025 Samuel Gomes
+'-----------------------------------------------------------------------------------------------------------------------
+
+$INCLUDEONCE
+
+'$INCLUDE:'Timer.bi'
+
+'-----------------------------------------------------------------------------------------------------------------------
+' Test code for debugging the library
+'-----------------------------------------------------------------------------------------------------------------------
+'OPTION _EXPLICIT
+
+'DIM timer1 AS LONG, timer2 AS LONG
+
+'Timer_Initialize
+
+'timer1 = Timer_Create(Timer_GetTicksFromHertz(60))
+'timer2 = Timer_Create(750)
+
+'DIM AS LONG x1, x2, fps, k
+
+'DO
+'    k = _KEYHIT
+
+'    SELECT CASE k
+'        CASE 112, 80
+'            IF Timer_IsPaused(timer1) THEN
+'                Timer_Resume timer1
+'            ELSE
+'                Timer_Pause timer1
+'            END IF
+
+'        CASE _KEY_LEFT, _KEY_DOWN
+'            IF Timer_GetInterval(timer1) > 10 THEN Timer_SetInterval timer1, Timer_GetInterval(timer1) - 10
+
+'        CASE _KEY_RIGHT, _KEY_UP
+'            Timer_SetInterval timer1, Timer_GetInterval(timer1) + 10
+'    END SELECT
+
+'    IF Timer_Poll(timer1) THEN
+'        x1 = x1 + 1
+'        fps = Time_MeasureHertz
+'    END IF
+
+'    IF Timer_Poll(timer2) THEN
+'        x2 = x2 + 1
+'    END IF
+
+'    CLS
+
+'    PRINT "Timer 1 counter:"; x1
+'    PRINT "Timer 1 frequency:"; Timer_GetHertzFromTicks(Timer_GetInterval(timer1))
+'    PRINT "Timer 1 FPS:"; fps
+'    PRINT "Timer 1 paused: "; _IIF(Timer_IsPaused(timer1), "Yes", "No")
+'    PRINT "Timer 2 counter:"; x2
+
+'    _DISPLAY
+
+'    _LIMIT 250
+'LOOP UNTIL k = _ASC_ESC
+
+'END
+'-----------------------------------------------------------------------------------------------------------------------
+
+''' @brief Initializes the timer library.
+SUB Timer_Initialize
+    SHARED __timer() AS __Timer
+    SHARED __timerLastFree AS _UNSIGNED _OFFSET
+
+    REDIM __timer(0) AS __Timer
+    __timerLastFree = 0
+END SUB
+
+''' @brief Resets the timer to the current time.
+''' @param id Timer ID.
+SUB Timer_Reset (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    IF __timer(id).active THEN
+        __timer(id).lastTick = Time_GetTicks
+        __timer(id).paused = _FALSE
+    END IF
+END SUB
+
+''' @brief Gets the timer interval in ticks.
+''' @param id Timer ID.
+''' @return Interval in ticks.
+FUNCTION Timer_GetInterval~&& (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    IF __timer(id).active THEN
+        Timer_GetInterval = __timer(id).intervalTicks
+    END IF
+END FUNCTION
+
+''' @brief Sets the timer interval in ticks.
+''' @param id Timer ID.
+''' @param intervalTicks Interval in ticks.
+SUB Timer_SetInterval (id AS _UNSIGNED _OFFSET, intervalTicks AS _UNSIGNED _INTEGER64)
+    SHARED __timer() AS __Timer
+
+    IF __timer(id).active THEN
+        __timer(id).intervalTicks = intervalTicks
+    END IF
+END SUB
+
+''' @brief Creates a new timer.
+''' @param intervalTicks Interval in ticks.
+''' @return Timer ID.
+FUNCTION Timer_Create~%& (intervalTicks AS _UNSIGNED _INTEGER64)
+    SHARED __timer() AS __Timer
+    SHARED __timerLastFree AS _UNSIGNED _OFFSET
+
+    DIM timersUB AS _UNSIGNED _OFFSET: timersUB = UBOUND(__timer)
+
+    ' Find a free slot
+    WHILE __timerLastFree <= timersUB _ANDALSO __timer(__timerLastFree).active
+        __timerLastFree = __timerLastFree + 1
+    WEND
+
+    ' If no free slot, create a new one
+    IF __timerLastFree > timersUB THEN
+        REDIM _PRESERVE __timer(0 TO __timerLastFree) AS __Timer
+    END IF
+
+    __timer(__timerLastFree).active = _TRUE ' Mark as active
+    Timer_SetInterval __timerLastFree, intervalTicks
+    Timer_Reset __timerLastFree
+
+    Timer_Create = __timerLastFree
+END FUNCTION
+
+''' @brief Deletes a timer.
+''' @param id Timer ID.
+SUB Timer_Delete (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+    SHARED __timerLastFree AS _UNSIGNED _OFFSET
+
+    IF __timer(id).active THEN
+        __timer(id).active = _FALSE
+        IF id < __timerLastFree THEN __timerLastFree = id
+    END IF
+END SUB
+
+''' @brief Checks if a timer exists.
+''' @param id Timer ID.
+''' @return _TRUE if the timer exists, _FALSE otherwise.
+FUNCTION Timer_Exists%% (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    Timer_Exists = id <= UBOUND(__timer) _ANDALSO __timer(id).active
+END FUNCTION
+
+''' @brief Polls the timer to check if the interval has elapsed.
+''' @param id Timer ID.
+''' @return _TRUE if the interval has elapsed, _FALSE otherwise.
+FUNCTION Timer_Poll%% (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    IF __timer(id).active _ANDALSO _NEGATE __timer(id).paused THEN
+        IF Time_GetTicks - __timer(id).lastTick >= __timer(id).intervalTicks THEN
+            __timer(id).lastTick = __timer(id).lastTick + __timer(id).intervalTicks
+            Timer_Poll = _TRUE
+        END IF
+    END IF
+END FUNCTION
+
+''' @brief Pauses a timer.
+''' @param id Timer ID.
+SUB Timer_Pause (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    IF __timer(id).active _ANDALSO _NEGATE __timer(id).paused THEN
+        __timer(id).paused = _TRUE
+        __timer(id).pausedTick = Time_GetTicks
+    END IF
+END SUB
+
+''' @brief Resumes a timer.
+''' @param id Timer ID.
+SUB Timer_Resume (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    IF __timer(id).active _ANDALSO __timer(id).paused THEN
+        __timer(id).paused = _FALSE
+        __timer(id).lastTick = __timer(id).lastTick + (Time_GetTicks - __timer(id).pausedTick)
+    END IF
+END SUB
+
+''' @brief Checks if a timer is paused.
+''' @param id Timer ID.
+''' @return _TRUE if the timer is paused, _FALSE otherwise.
+FUNCTION Timer_IsPaused%% (id AS _UNSIGNED _OFFSET)
+    SHARED __timer() AS __Timer
+
+    Timer_IsPaused = __timer(id).active _ANDALSO __timer(id).paused
+END FUNCTION
+
+''' @brief Calculates the number of ticks for a given hertz value.
+''' @param hertz The desired frequency in hertz.
+''' @return The number of ticks.
+FUNCTION Timer_GetTicksFromHertz~&& (hertz AS SINGLE)
+    Timer_GetTicksFromHertz = TIME_TICKS_PER_SECOND / hertz
+END FUNCTION
+
+''' @brief Calculates the hertz value for a given number of ticks.
+''' @param ticks The number of ticks.
+''' @return The frequency in hertz.
+FUNCTION Timer_GetHertzFromTicks! (ticks AS _UNSIGNED _INTEGER64)
+    Timer_GetHertzFromTicks = TIME_TICKS_PER_SECOND / ticks
+END FUNCTION
+
+'$INCLUDE:'Time.bm'

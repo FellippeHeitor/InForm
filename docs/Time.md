@@ -18,14 +18,13 @@ SLEEP 2
 DIM endTicks AS _INTEGER64
 endTicks = Time_GetTicks
 
-PRINT "Elapsed Ticks: "; endTicks - startTicks
 PRINT "Elapsed Milliseconds: "; endTicks - startTicks
 
 DO
     ' Your game loop or other frequently called code
-    
+
     PRINT "Hertz: "; Time_MeasureHertz
-LOOP WHILE INKEY$ = ""
+LOOP UNTIL _KEYHIT = _ASC_ESC
 
 '$INCLUDE:'Time.bm'
 ```

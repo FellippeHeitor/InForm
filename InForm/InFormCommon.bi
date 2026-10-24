@@ -15,6 +15,7 @@ $INCLUDEONCE
 '$INCLUDE:'extensions/Memory.bi'
 '$INCLUDE:'extensions/String.bi'
 '$INCLUDE:'extensions/HMap64.bi'
+'$INCLUDE:'extensions/Ini.bi'
 
 CONST False%% = _FALSE, True%% = _TRUE
 
@@ -137,6 +138,36 @@ CONST __INFORM_THEME_IMAGE_SLIDERTRACK~%% = 17~%%
 CONST __INFORM_DEFAULT_FONTS = "segoeui.ttf?arial.ttf?Arial.ttf?Helvetica.ttc?Geneva.ttf?truetype/liberation/LiberationSans-Regular.ttf?TTF/arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf?Courier.ttc"
 CONST __INFORM_DEFAULT_FONTS_MONO = "cour.ttf?Courier New.ttf?truetype/liberation/LiberationMono-Regular.ttf?Monaco.ttf?Courier.ttc"
 
+' Theme styles
+CONST __UI_ThemeStyle_Bitmap%% = 0%% ' controls are drawn from theme bitmaps (e.g. the classic XP look)
+CONST __UI_ThemeStyle_Flat%% = 1%% ' controls are drawn with primitives using the theme palette
+
+' Theme color roles (index into __UI_ThemeColor())
+CONST __UI_ThemeColor_WindowBack& = 1&
+CONST __UI_ThemeColor_WindowText& = 2&
+CONST __UI_ThemeColor_InputBack& = 3&
+CONST __UI_ThemeColor_InputText& = 4&
+CONST __UI_ThemeColor_ButtonFace& = 5&
+CONST __UI_ThemeColor_ButtonText& = 6&
+CONST __UI_ThemeColor_SelectedBack& = 7&
+CONST __UI_ThemeColor_SelectedText& = 8&
+CONST __UI_ThemeColor_Border& = 9&
+CONST __UI_ThemeColor_Accent& = 10&
+CONST __UI_ThemeColor_AccentText& = 11&
+CONST __UI_ThemeColor_FocusRing& = 12&
+CONST __UI_ThemeColor_Caret& = 13&
+CONST __UI_ThemeColor_DisabledText& = 14& ' 0 = derive from the form's back color
+CONST __UI_ThemeColor_TipBack& = 15&
+CONST __UI_ThemeColor_TipText& = 16&
+CONST __UI_ThemeColor_MenuBack& = 17&
+CONST __UI_ThemeColor_TrackBack& = 18&
+CONST __UI_ThemeColor_Count& = 18&
+' Role names as used in theme files (same order as the constants above)
+CONST __UI_ThemeColorNames = "WindowBack,WindowText,InputBack,InputText,ButtonFace,ButtonText,SelectedBack,SelectedText,Border,Accent,AccentText,FocusRing,Caret,DisabledText,TipBack,TipText,MenuBack,TrackBack"
+' Image names as used in theme files (same order as the __INFORM_THEME_IMAGE_* constants)
+CONST __UI_ThemeImageNames = "Arrows,Button,CheckBox,Frame,MenuCheckmark,NotFound,ProgressChunk,ProgressTrack,RadioButton,ScrollButtons,ScrollHButtons,ScrollHThumb,ScrollHTrack,ScrollThumb,ScrollTrack,SliderDown,SliderTrack"
+CONST __UI_ThemeImage_Count~%% = 17~%%
+
 'Control types:
 CONST __UI_Type_Form%% = 1%%
 CONST __UI_Type_Frame%% = 2%%
@@ -156,6 +187,7 @@ CONST __UI_Type_TrackBar%% = 15%%
 CONST __UI_Type_ContextMenu%% = 16%%
 CONST __UI_Type_Font%% = 17%%
 CONST __UI_Type_ToggleSwitch%% = 18%%
+CONST __UI_Type_TabControl%% = 19%%
 
 'Back styles:
 CONST __UI_Opaque%% = 0%%
@@ -316,6 +348,9 @@ TYPE __UI_ControlTYPE
     KeyCombo AS LONG
     BoundTo AS LONG
     BoundProperty AS LONG
+    TabPage AS INTEGER ' tab a child of a TabControl belongs to (0 = all tabs)
+    ChildCount AS LONG ' number of child controls (containers only)
+    HoveringTab AS INTEGER ' tab under the mouse (TabControl only)
 END TYPE
 
 TYPE __UI_Types
@@ -327,6 +362,18 @@ TYPE __UI_Types
     DefaultWidth AS INTEGER
     MinimumWidth AS INTEGER
     RestrictResize AS _BYTE
+END TYPE
+
+TYPE __UI_ThemeTYPE
+    Name AS STRING ' display name
+    Source AS STRING ' built-in theme name or theme file path, as passed to SetTheme
+    Style AS _BYTE ' __UI_ThemeStyle_*
+    ScrollbarWidth AS INTEGER
+    ScrollbarButtonHeight AS INTEGER
+    MenuBarOffset AS INTEGER
+    MenuItemOffset AS INTEGER
+    DefaultCaptionIndent AS INTEGER
+    CornerRadius AS INTEGER
 END TYPE
 
 TYPE __UI_WordWrapHistoryType
@@ -403,6 +450,7 @@ DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_MenuBarOffset AS INTEGER, __UI_MenuItemOffset AS INTEGER
 DIM SHARED __UI_NewMenuBarTextLeft AS INTEGER, __UI_DefaultCaptionIndent AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
+DIM SHARED __UI_IsDrawing AS _BYTE ' _TRUE while __UI_UpdateDisplay runs (input processing runs on another timer)
 DIM SHARED __UI_CurrentTitle AS STRING
 DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG
 DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
@@ -423,4 +471,8 @@ DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
 DIM SHARED __UI_ContextMenuSourceID AS LONG
 DIM SHARED __UI_FKey(1 TO 12) AS LONG
 
-DIM SHARED __UI_Type(0 TO 18) AS __UI_Types
+DIM SHARED __UI_Type(0 TO 19) AS __UI_Types
+
+DIM SHARED __UI_Theme AS __UI_ThemeTYPE
+DIM SHARED __UI_ThemeColor(1 TO __UI_ThemeColor_Count) AS _UNSIGNED LONG
+DIM SHARED __UI_ThemeImageFile(1 TO __UI_ThemeImage_Count) AS STRING ' optional image files overriding the embedded bitmaps

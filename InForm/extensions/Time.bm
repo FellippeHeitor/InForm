@@ -15,7 +15,7 @@ FUNCTION Time_MeasureHertz~&
 
     DIM currentMs AS _UNSIGNED _INTEGER64: currentMs = Time_GetTicks
 
-    IF currentMs - lastMs >= 1000 THEN
+    IF currentMs - lastMs >= TIME_TICKS_PER_SECOND THEN
         lastMs = currentMs
         finalHz = counter
         counter = 0

@@ -36,3 +36,5 @@ desktop.ini
 *.tmp[0-9]
 # Unignore macOS setup script
 !setup_inform_mac.command
+# Unignore theme files
+!InForm/themes/*.ini

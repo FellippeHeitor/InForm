@@ -7,6 +7,6 @@
 $INCLUDEONCE
 
 CONST __UI_VersionMajor = "1"
-CONST __UI_VersionMinor = "5"
-CONST __UI_VersionPatch = "8"
+CONST __UI_VersionMinor = "6"
+CONST __UI_VersionPatch = "0"
 CONST __UI_Version = __UI_VersionMajor + _CHR_FULLSTOP + __UI_VersionMinor + _CHR_FULLSTOP + __UI_VersionPatch

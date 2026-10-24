@@ -7,6 +7,7 @@
 
 OPTION _EXPLICIT
 
+DIM SHARED WatchThemeFile AS _BYTE ' _TRUE while the Theme Editor is open
 DIM SHARED UiEditorPID AS LONG, ExeIcon AS LONG
 DIM SHARED AutoNameControls AS _BYTE
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
@@ -164,6 +165,29 @@ SUB SelectNewControl (id AS LONG)
     __UI_ForceRedraw = True
 END SUB
 
+''' @brief Reloads the form's theme file if it changed on disk (for example, saved in the Theme Editor).
+''' Only runs while the UiEditor waits for the Theme Editor (see the WATCHTHEME command).
+''' @param startWatching _TRUE to remember the file's current contents as the starting point.
+SUB ReloadThemeIfChanged (startWatching AS _BYTE)
+    STATIC lastContent AS STRING
+    DIM themeFile AS STRING, content AS STRING
+
+    themeFile = GetTheme$
+    SELECT CASE LCASE$(themeFile)
+        CASE "xp", "classic", "light", "flat", "dark"
+            EXIT SUB
+    END SELECT
+    IF NOT _FILEEXISTS(themeFile) THEN EXIT SUB
+
+    content = __UI_Theme_ReadFile(themeFile)
+    IF startWatching THEN
+        lastContent = content
+    ELSEIF content <> lastContent THEN
+        lastContent = content
+        SetTheme themeFile
+    END IF
+END SUB
+
 SUB __UI_BeforeUpdateDisplay
     DIM a$, b$, TempValue AS LONG, i AS LONG, j AS LONG
     DIM FileNameToLoad$
@@ -174,6 +198,8 @@ SUB __UI_BeforeUpdateDisplay
     STATIC NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
 
     IF __UI_TotalSelectedControls < 0 THEN __UI_TotalSelectedControls = 0
+
+    IF WatchThemeFile THEN ReloadThemeIfChanged False
 
     SavePreview ToEditor
 
@@ -236,12 +262,12 @@ SUB __UI_BeforeUpdateDisplay
 
     DIM ThisContainer AS LONG, TempWidth AS INTEGER, TempHeight AS INTEGER
     DIM TempTop AS INTEGER
-    IF Control(Control(__UI_FirstSelectedID).ParentID).Type = __UI_Type_Frame THEN
+    IF __UI_IsContainer(Control(Control(__UI_FirstSelectedID).ParentID).Type) THEN
         ThisContainer = Control(__UI_FirstSelectedID).ParentID
         TempWidth = Control(Control(__UI_FirstSelectedID).ParentID).Width
         TempHeight = Control(Control(__UI_FirstSelectedID).ParentID).Height
         TempTop = TempHeight \ 2
-    ELSEIF Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+    ELSEIF __UI_IsContainer(Control(__UI_FirstSelectedID).Type) THEN
         ThisContainer = Control(__UI_FirstSelectedID).ID
         TempWidth = Control(__UI_FirstSelectedID).Width
         TempHeight = Control(__UI_FirstSelectedID).Height
@@ -274,6 +300,18 @@ SUB __UI_BeforeUpdateDisplay
                 __UI_ShowPositionAndSize = CVI(thisData$)
             CASE "SHOWINVISIBLECONTROLS"
                 __UI_ShowInvisibleControls = CVI(thisData$)
+            CASE "WATCHTHEME"
+                'Sent by the UiEditor while it waits for the Theme Editor to close
+                IF CVI(thisData$) THEN
+                    WatchThemeFile = True
+                    ReloadThemeIfChanged True
+                ELSE
+                    ReloadThemeIfChanged False 'last check, for changes saved just before closing
+                    WatchThemeFile = False
+                END IF
+            CASE "SETTHEME"
+                SaveUndoImage
+                SetTheme thisData$
             CASE "SNAPLINES"
                 __UI_SnapLines = CVI(thisData$)
             CASE "SIGNAL"
@@ -293,8 +331,8 @@ SUB __UI_BeforeUpdateDisplay
                     tempType = TempValue
                     SaveUndoImage
 
-                    'Enforce no frame inside frame:
-                    IF tempType = __UI_Type_Frame THEN
+                    'Enforce no container inside container:
+                    IF __UI_IsContainer(tempType) THEN
                         ThisContainer = 0
                         TempWidth = Control(__UI_FormID).Width
                         TempHeight = Control(__UI_FormID).Height
@@ -319,6 +357,10 @@ SUB __UI_BeforeUpdateDisplay
                     SELECT CASE tempType
                         CASE __UI_Type_ProgressBar
                             SetCaption TempValue, "\#"
+                        CASE __UI_Type_TabControl
+                            SetCaption TempValue, ""
+                            AddTab TempValue, "Tab 1"
+                            AddTab TempValue, "Tab 2"
                         CASE __UI_Type_ContextMenu
                             Control(TempValue).HelperCanvas = _COPYIMAGE(ContextMenuIcon, 32)
                             RefreshContextMenus
@@ -398,11 +440,9 @@ SUB __UI_BeforeUpdateDisplay
         IF i = _TOTALDROPPEDFILES THEN _FINISHDROP
     NEXT
 
-    $IF WIN THEN
-        IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
-            _SCREENMOVE NewWindowLeft + 612, NewWindowTop
-        END IF
-    $END IF
+    IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
+        _SCREENMOVE NewWindowLeft + 612, NewWindowTop
+    END IF
 
     'Check if the editor is still alive
     $IF WIN THEN
@@ -805,6 +845,13 @@ SUB __UI_BeforeUpdateDisplay
                                         Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                                         IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                     END IF
+                                ELSEIF Control(i).Type = __UI_Type_TabControl THEN
+                                    Text(i) = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
+                                    IF RIGHT$(Text(i), 1) = CHR$(10) THEN Text(i) = LEFT$(Text(i), LEN(Text(i)) - 1)
+                                    IF LEN(Text(i)) THEN Control(i).Max = TotalReplacements + 1 ELSE Control(i).Max = 0
+                                    IF Control(i).Value > Control(i).Max THEN Control(i).Value = Control(i).Max
+                                    IF Control(i).Value < 1 AND Control(i).Max > 0 THEN Control(i).Value = 1
+                                    __UI_ForceRedraw = True
                                 ELSEIF Control(i).Type = __UI_Type_ListBox OR Control(i).Type = __UI_Type_DropdownList THEN
                                     Text(i) = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                                     IF Control(i).Max < TotalReplacements + 1 THEN Control(i).Max = TotalReplacements + 1
@@ -1457,7 +1504,7 @@ SUB __UI_BeforeUpdateDisplay
                 TempValue = CVI(b$)
                 IF TotalLockedControls THEN
                     FOR j = 1 TO TotalLockedControls
-                        IF Control(LockedControls(j)).Type <> __UI_Type_Frame THEN
+                        IF NOT __UI_IsContainer(Control(LockedControls(j)).Type) THEN
                             Control(LockedControls(j)).BorderSize = TempValue
                             IF Control(LockedControls(j)).Type = __UI_Type_TextBox THEN
                                 tempFont = _FONT
@@ -1470,7 +1517,7 @@ SUB __UI_BeforeUpdateDisplay
                 ELSEIF __UI_TotalSelectedControls > 0 THEN
                     FOR i = 1 TO UBOUND(Control)
                         IF Control(i).ControlIsSelected THEN
-                            IF Control(i).Type <> __UI_Type_Frame THEN
+                            IF NOT __UI_IsContainer(Control(i).Type) THEN
                                 Control(i).BorderSize = TempValue
                                 IF Control(i).Type = __UI_Type_TextBox THEN
                                     tempFont = _FONT
@@ -2167,13 +2214,13 @@ END SUB
 
 SUB SelectAllControls
     DIM i AS LONG
-    IF __UI_TotalSelectedControls = 1 AND Control(__UI_FirstSelectedID).Type = __UI_Type_Frame THEN
+    IF __UI_TotalSelectedControls = 1 AND __UI_IsContainer(Control(__UI_FirstSelectedID).Type) THEN
         DIM ThisContainer AS LONG
         ThisContainer = Control(__UI_FirstSelectedID).ID
         Control(__UI_FirstSelectedID).ControlIsSelected = False
         __UI_TotalSelectedControls = 0
         FOR i = 1 TO UBOUND(Control)
-            IF Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
+            IF NOT __UI_IsContainer(Control(i).Type) AND NOT __UI_IsOnHiddenTab(i) AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
                 IF Control(i).ID > 0 AND Control(i).ParentID = ThisContainer THEN
                     Control(i).ControlIsSelected = True
                     __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
@@ -2184,7 +2231,7 @@ SUB SelectAllControls
     ELSE
         __UI_TotalSelectedControls = 0
         FOR i = 1 TO UBOUND(Control)
-            IF Control(i).Type <> __UI_Type_Frame AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
+            IF NOT __UI_IsContainer(Control(i).Type) AND NOT __UI_IsOnHiddenTab(i) AND Control(i).Type <> __UI_Type_Form AND Control(i).Type <> __UI_Type_Font AND Control(i).Type <> __UI_Type_MenuBar AND Control(i).Type <> __UI_Type_MenuItem AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_ContextMenu AND Control(i).Type <> __UI_Type_MenuItem THEN
                 IF Control(i).ID > 0 AND Control(i).ParentID = 0 THEN
                     Control(i).ControlIsSelected = True
                     __UI_TotalSelectedControls = __UI_TotalSelectedControls + 1
@@ -2217,7 +2264,7 @@ SUB DeleteSelectedControls
     'A container's contents will be deleted with it if it's
     'the only selected control.
     IF __UI_TotalSelectedControls = 1 AND _
-       (Control(__UI_FirstSelectedID).Type = __UI_Type_Frame OR _
+       (__UI_IsContainer(Control(__UI_FirstSelectedID).Type) OR _
         Control(__UI_FirstSelectedID).Type = __UI_Type_MenuBar OR _
         Control(__UI_FirstSelectedID).Type = __UI_Type_MenuItem OR _
         Control(__UI_FirstSelectedID).Type = __UI_Type_ContextMenu) THEN
@@ -2340,6 +2387,7 @@ SUB LoadPreview (Destination AS _BYTE)
             END IF
         NEXT
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
+        IF LCASE$(GetTheme$) <> "xp" THEN SetTheme "xp" 'the form being loaded sets its own theme, if any
 
         b$ = SPACE$(4): GET #BinaryFileNum, , b$
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
@@ -2359,6 +2407,7 @@ SUB LoadPreview (Destination AS _BYTE)
             END IF
         NEXT
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
+        IF LCASE$(GetTheme$) <> "xp" THEN SetTheme "xp" 'the form being loaded sets its own theme, if any
 
         b$ = ReadSequential$(Clip$, 4)
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
@@ -2681,7 +2730,7 @@ SUB LoadPreview (Destination AS _BYTE)
                 CASE -44
                     DIM RegisterResult AS _BYTE, Combo AS STRING
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
-                    IF NOT Disk THEN Combo = ReadSequential$(Clip$, CVI(b$)) ELSE Combo = SPACE$(CVI(b$)): GET #BinaryFileNum, , ContextMenuName
+                    IF NOT Disk THEN Combo = ReadSequential$(Clip$, CVI(b$)) ELSE Combo = SPACE$(CVI(b$)): GET #BinaryFileNum, , Combo
                     RegisterResult = RegisterKeyCombo(Combo, TempValue)
                     IF LogFileLoad THEN PRINT #LogFileNum, "KEY COMBO:"; Combo
                 CASE -46
@@ -2690,6 +2739,24 @@ SUB LoadPreview (Destination AS _BYTE)
                     END IF
                 CASE -47
                     Control(TempValue).ControlIsSelected = True
+                CASE -48 'BoundTo: target name + property name
+                    DIM BoundTarget$, BoundProperty$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN BoundTarget$ = ReadSequential$(Clip$, CVI(b$)) ELSE BoundTarget$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , BoundTarget$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN BoundProperty$ = ReadSequential$(Clip$, CVI(b$)) ELSE BoundProperty$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , BoundProperty$
+                    IF __UI_GetID(BoundTarget$) > 0 THEN
+                        Control(TempValue).BoundTo = __UI_GetID(BoundTarget$)
+                        Control(TempValue).BoundProperty = __UI_PropertyEnum&(BoundProperty$, 0)
+                    END IF
+                CASE -49 'TabPage
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    Control(TempValue).TabPage = CVI(b$)
+                CASE -50 'Theme (form only)
+                    DIM ThemeName$
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    IF NOT Disk THEN ThemeName$ = ReadSequential$(Clip$, CVI(b$)) ELSE ThemeName$ = SPACE$(CVI(b$)): GET #BinaryFileNum, , ThemeName$
+                    IF LCASE$(ThemeName$) <> LCASE$(GetTheme$) THEN SetTheme ThemeName$
                 CASE -1 'new control
                     IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW CONTROL: -1"
                     EXIT DO
@@ -2762,6 +2829,7 @@ SUB LoadPreviewText
             END IF
         NEXT
         IF LogFileLoad THEN PRINT #LogFileNum, "DESTROYED CONTROLS"
+        IF LCASE$(GetTheme$) <> "xp" THEN SetTheme "xp" 'the form being loaded sets its own theme, if any
 
         DO
             LINE INPUT #BinaryFileNum, b$
@@ -2788,6 +2856,7 @@ SUB LoadPreviewText
                 CASE "__UI_Type_ContextMenu": NewType = 16
                 CASE "__UI_Type_Font": NewType = 17
                 CASE "__UI_Type_ToggleSwitch": NewType = 18
+                CASE "__UI_Type_TabControl": NewType = 19
             END SELECT
             IF LogFileLoad THEN PRINT #LogFileNum, "TYPE:" + DummyText$
 
@@ -2917,6 +2986,8 @@ SUB LoadPreviewText
                             END SELECT
                         CASE "Value"
                             Control(TempValue).Value = VAL(DummyText$)
+                        CASE "TabPage"
+                            Control(TempValue).TabPage = VAL(DummyText$)
                         CASE "Min"
                             Control(TempValue).Min = VAL(DummyText$)
                         CASE "Max"
@@ -2982,6 +3053,9 @@ SUB LoadPreviewText
                         CASE "AutoSize"
                             Control(TempValue).AutoSize = (DummyText$ = "True")
                     END SELECT
+                ELSEIF LEFT$(b$, 9) = "SetTheme " THEN
+                    IF LogFileLoad THEN PRINT #LogFileNum, "SETTHEME"
+                    SetTheme RemoveQuotation$(_TRIM$(MID$(b$, 10)))
                 ELSEIF b$ = "__UI_DefaultButtonID = __UI_NewID" THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "DEFAULT BUTTON"
                     __UI_DefaultButtonID = TempValue
@@ -2991,7 +3065,7 @@ SUB LoadPreviewText
                     DummyText$ = nextParameter(b$) 'discard first parameter
                     DummyText$ = nextParameter(b$)
                     SetCaption TempValue, DummyText$
-                ELSEIF LEFT$(b$, 8) = "AddItem " THEN
+                ELSEIF LEFT$(b$, 8) = "AddItem " OR LEFT$(b$, 7) = "AddTab " THEN
                     IF LogFileLoad THEN PRINT #LogFileNum, "ADD ITEM"
                     'Caption
                     DummyText$ = nextParameter(b$) 'discard first parameter
@@ -3207,7 +3281,7 @@ SUB SavePreview (Destination AS _BYTE)
 
         DIM SelectedFrames$
         FOR i = 1 TO UBOUND(Control)
-            IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_Frame THEN
+            IF Control(i).ControlIsSelected AND __UI_IsContainer(Control(i).Type) THEN
                 SelectedFrames$ = SelectedFrames$ + ";" + RTRIM$(Control(i).Name) + ";"
             END IF
         NEXT
@@ -3244,13 +3318,13 @@ SUB SavePreview (Destination AS _BYTE)
             IF Control(i).ID > 0 AND Control(i).Type <> __UI_Type_MenuPanel AND Control(i).Type <> __UI_Type_Font AND LEN(RTRIM$(Control(i).Name)) > 0 AND LEFT$(RTRIM$(Control(i).Name), 5) <> "__UI_" THEN
                 IF ThisPass = 1 THEN
                     IF Control(i).Type <> __UI_Type_Form AND _
-                       Control(i).Type <> __UI_Type_Frame AND _
+                       NOT __UI_IsContainer(Control(i).Type) AND _
                        Control(i).Type <> __UI_Type_MenuBar THEN
                         _CONTINUE
                     END IF
                 ELSEIF ThisPass = 2 THEN
                     IF Control(i).Type = __UI_Type_Form OR _
-                       Control(i).Type = __UI_Type_Frame OR _
+                       __UI_IsContainer(Control(i).Type) OR _
                        Control(i).Type = __UI_Type_MenuBar THEN
                         _CONTINUE
                     END IF
@@ -3555,6 +3629,16 @@ SUB SavePreview (Destination AS _BYTE)
                         PUT #BinFileNum, , b$
                     ELSE
                         Clip$ = Clip$ + b$
+                    END IF
+                END IF
+                IF Control(i).Type = __UI_Type_Form AND LCASE$(GetTheme$) <> "xp" THEN
+                    b$ = MKI$(-50) + MKI$(LEN(GetTheme$)) + GetTheme$
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).ParentID > 0 THEN
+                    IF Control(Control(i).ParentID).Type = __UI_Type_TabControl THEN
+                        b$ = MKI$(-49) + MKI$(Control(i).TabPage)
+                        IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                     END IF
                 END IF
                 IF Control(i).BoundTo > 0 THEN

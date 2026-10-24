@@ -1,0 +1,372 @@
+'-----------------------------------------------------------------------------------------------------------------------
+' InForm-PE theme engine
+' Copyright (c) 2026 Fellippe Heitor
+'-----------------------------------------------------------------------------------------------------------------------
+
+$INCLUDEONCE
+
+'$INCLUDE:'InFormCommon.bi'
+
+''' @brief Called once at startup. Loads the default (XP) theme unless one was already chosen.
+SUB __UI_ThemeSetup
+    IF LEN(__UI_Theme.Source) = 0 THEN
+        IF NOT __UI_Theme_Load("xp") THEN ERROR _ERR_INTERNAL_ERROR
+    END IF
+    __UI_Theme_ApplyMetrics
+END SUB
+
+''' @brief Copies the current theme metrics to the engine globals.
+SUB __UI_Theme_ApplyMetrics
+    __UI_ScrollbarWidth = __UI_Theme.ScrollbarWidth
+    __UI_ScrollbarButtonHeight = __UI_Theme.ScrollbarButtonHeight
+    __UI_MenuBarOffset = __UI_Theme.MenuBarOffset
+    __UI_MenuItemOffset = __UI_Theme.MenuItemOffset
+    __UI_DefaultCaptionIndent = __UI_Theme.DefaultCaptionIndent
+END SUB
+
+''' @brief Loads one of the built-in themes into the current theme.
+''' @param themeName "xp", "light" or "dark" (case-insensitive).
+''' @return _TRUE if the theme exists.
+FUNCTION __UI_Theme_LoadBuiltin%% (themeName AS STRING)
+    DIM i AS LONG
+
+    SELECT CASE LCASE$(_TRIM$(themeName))
+        CASE "xp", "classic"
+            __UI_Theme_SetXP
+        CASE "light", "flat"
+            __UI_Theme_SetLight
+        CASE "dark"
+            __UI_Theme_SetDark
+        CASE ELSE
+            EXIT FUNCTION
+    END SELECT
+
+    FOR i = 1 TO __UI_ThemeImage_Count
+        __UI_ThemeImageFile(i) = _STR_EMPTY
+    NEXT i
+
+    __UI_Theme_LoadBuiltin = _TRUE
+END FUNCTION
+
+''' @brief Parses a color written as RRGGBB, RRGGBBAA (optionally prefixed with #) or R,G,B[,A].
+''' @param text The color text.
+''' @param result Receives the color when parsing succeeds.
+''' @return _TRUE if the text is a valid color.
+FUNCTION __UI_Theme_ParseColor%% (text AS STRING, result AS _UNSIGNED LONG)
+    DIM s AS STRING: s = _TRIM$(text)
+    DIM i AS LONG
+
+    ' Hex: RRGGBB or RRGGBBAA, with an optional leading # (quote it in INI files, where # starts a comment)
+    IF LEFT$(s, 1) = "#" THEN s = MID$(s, 2)
+    IF INSTR(s, ",") = 0 THEN
+        s = UCASE$(s)
+        IF LEN(s) <> 6 _ANDALSO LEN(s) <> 8 THEN EXIT FUNCTION
+        FOR i = 1 TO LEN(s)
+            IF INSTR("0123456789ABCDEF", MID$(s, i, 1)) = 0 THEN EXIT FUNCTION
+        NEXT i
+        IF LEN(s) = 6 THEN s = s + "FF"
+        result = _RGBA32(VAL("&H" + MID$(s, 1, 2)), VAL("&H" + MID$(s, 3, 2)), VAL("&H" + MID$(s, 5, 2)), VAL("&H" + MID$(s, 7, 2)))
+        __UI_Theme_ParseColor = _TRUE
+        EXIT FUNCTION
+    END IF
+
+    ' R,G,B[,A]
+    DIM part(1 TO 4) AS LONG, count AS LONG, p AS LONG, piece AS STRING
+    s = s + ","
+    DO
+        p = INSTR(s, ",")
+        IF p = 0 THEN EXIT DO
+        piece = _TRIM$(LEFT$(s, p - 1))
+        s = MID$(s, p + 1)
+        IF LEN(piece) = 0 _ORELSE NOT IsNumber(piece) THEN EXIT FUNCTION
+        count = count + 1
+        IF count > 4 THEN EXIT FUNCTION
+        part(count) = VAL(piece)
+        IF part(count) < 0 _ORELSE part(count) > 255 THEN EXIT FUNCTION
+    LOOP
+    IF count < 3 THEN EXIT FUNCTION
+    IF count = 3 THEN part(4) = 255
+
+    result = _RGBA32(part(1), part(2), part(3), part(4))
+    __UI_Theme_ParseColor = _TRUE
+END FUNCTION
+
+''' @brief Returns the n-th (1-based) item of a comma-separated list.
+FUNCTION __UI_Theme_ItemAt$ (items AS STRING, n AS LONG)
+    DIM s AS STRING: s = items + ","
+    DIM i AS LONG, p AS LONG
+    FOR i = 1 TO n - 1
+        p = INSTR(s, ",")
+        IF p = 0 THEN EXIT FUNCTION
+        s = MID$(s, p + 1)
+    NEXT i
+    p = INSTR(s, ",")
+    IF p THEN __UI_Theme_ItemAt = LEFT$(s, p - 1)
+END FUNCTION
+
+''' @brief Reads a whole text file (the file is closed right away).
+FUNCTION __UI_Theme_ReadFile$ (fileName AS STRING)
+    DIM f AS LONG, content AS STRING
+    IF NOT _FILEEXISTS(fileName) THEN EXIT FUNCTION
+    f = FREEFILE
+    OPEN fileName FOR BINARY AS #f
+    content = SPACE$(LOF(f))
+    GET #f, , content
+    CLOSE #f
+    __UI_Theme_ReadFile = content
+END FUNCTION
+
+''' @brief Loads a theme from an INI file. Missing values are inherited from the built-in theme named by [Theme] Base.
+''' @param fileName Theme file path.
+''' @return _TRUE if the file was found and its base theme exists.
+FUNCTION __UI_Theme_LoadFile%% (fileName AS STRING)
+    IF NOT _FILEEXISTS(fileName) THEN EXIT FUNCTION
+
+    DIM v AS STRING, i AS LONG, c AS _UNSIGNED LONG, styleName AS STRING, baseName AS STRING
+
+    Ini_SetForceReload _TRUE ' the file may have changed since it was last read
+    styleName = LCASE$(_TRIM$(Ini_ReadSetting(fileName, "Theme", "Style")))
+    Ini_SetForceReload _FALSE
+    baseName = _TRIM$(Ini_ReadSetting(fileName, "Theme", "Base"))
+    IF LEN(baseName) = 0 THEN
+        IF styleName = "flat" THEN baseName = "light" ELSE baseName = "xp"
+    END IF
+    IF NOT __UI_Theme_LoadBuiltin(baseName) THEN Ini_Release fileName: EXIT FUNCTION
+
+    v = _TRIM$(Ini_ReadSetting(fileName, "Theme", "Name"))
+    IF LEN(v) THEN __UI_Theme.Name = v
+
+    SELECT CASE styleName
+        CASE "flat": __UI_Theme.Style = __UI_ThemeStyle_Flat
+        CASE "bitmap": __UI_Theme.Style = __UI_ThemeStyle_Bitmap
+    END SELECT
+
+    ' Colors
+    FOR i = 1 TO __UI_ThemeColor_Count
+        v = Ini_ReadSetting(fileName, "Colors", __UI_Theme_ItemAt(__UI_ThemeColorNames, i))
+        IF LEN(v) THEN
+            IF __UI_Theme_ParseColor(v, c) THEN __UI_ThemeColor(i) = c
+        END IF
+    NEXT i
+
+    ' Metrics
+    v = Ini_ReadSetting(fileName, "Metrics", "ScrollbarWidth"): IF IsNumber(v) THEN __UI_Theme.ScrollbarWidth = VAL(v)
+    v = Ini_ReadSetting(fileName, "Metrics", "ScrollbarButtonHeight"): IF IsNumber(v) THEN __UI_Theme.ScrollbarButtonHeight = VAL(v)
+    v = Ini_ReadSetting(fileName, "Metrics", "MenuBarOffset"): IF IsNumber(v) THEN __UI_Theme.MenuBarOffset = VAL(v)
+    v = Ini_ReadSetting(fileName, "Metrics", "MenuItemOffset"): IF IsNumber(v) THEN __UI_Theme.MenuItemOffset = VAL(v)
+    v = Ini_ReadSetting(fileName, "Metrics", "DefaultCaptionIndent"): IF IsNumber(v) THEN __UI_Theme.DefaultCaptionIndent = VAL(v)
+    v = Ini_ReadSetting(fileName, "Metrics", "CornerRadius"): IF IsNumber(v) THEN __UI_Theme.CornerRadius = VAL(v)
+
+    ' Images (paths are relative to the theme file)
+    DIM themeDir AS STRING, p AS LONG
+    p = _INSTRREV(fileName, "/")
+    IF _INSTRREV(fileName, "\") > p THEN p = _INSTRREV(fileName, "\")
+    IF p THEN themeDir = LEFT$(fileName, p)
+    FOR i = 1 TO __UI_ThemeImage_Count
+        v = _TRIM$(Ini_ReadSetting(fileName, "Images", __UI_Theme_ItemAt(__UI_ThemeImageNames, i)))
+        IF LEN(v) THEN
+            IF _FILEEXISTS(themeDir + v) THEN
+                __UI_ThemeImageFile(i) = themeDir + v
+            ELSEIF _FILEEXISTS(v) THEN
+                __UI_ThemeImageFile(i) = v
+            END IF
+        END IF
+    NEXT i
+
+    ' Don't keep the file open: other programs (like the Theme Editor) may write to it
+    Ini_Release fileName
+
+    __UI_Theme_LoadFile = _TRUE
+END FUNCTION
+
+''' @brief Loads a built-in theme or a theme file into the current theme (no recoloring).
+FUNCTION __UI_Theme_Load%% (themeName AS STRING)
+    IF __UI_Theme_LoadBuiltin(themeName) THEN
+        __UI_Theme_Load = _TRUE
+    ELSEIF __UI_Theme_LoadFile(themeName) THEN
+        __UI_Theme_Load = _TRUE
+    ELSE
+        EXIT FUNCTION
+    END IF
+    __UI_Theme.Source = themeName
+END FUNCTION
+
+''' @brief Frees all cached theme images so they are reloaded from the current theme.
+SUB __UI_Theme_FreeImages
+    SHARED __UI_ThemeImages() AS HMap64
+    DIM i AS LONG
+
+    IF NOT HMap64_IsInitialized(__UI_ThemeImages()) THEN EXIT SUB
+
+    FOR i = 1 TO __UI_ThemeImage_Count
+        IF HMap64_Contains(__UI_ThemeImages(), i) THEN
+            _FREEIMAGE HMap64_GetLong(__UI_ThemeImages(), i)
+            HMap64_Remove __UI_ThemeImages(), i
+        END IF
+    NEXT i
+END SUB
+
+''' @brief Gets one of the five color properties of a control (1 = Fore, 2 = Back, 3 = SelectedFore, 4 = SelectedBack, 5 = Border).
+FUNCTION __UI_GetControlColor~& (id AS LONG, attribute AS LONG)
+    SELECT CASE attribute
+        CASE 1: __UI_GetControlColor = Control(id).ForeColor
+        CASE 2: __UI_GetControlColor = Control(id).BackColor
+        CASE 3: __UI_GetControlColor = Control(id).SelectedForeColor
+        CASE 4: __UI_GetControlColor = Control(id).SelectedBackColor
+        CASE 5: __UI_GetControlColor = Control(id).BorderColor
+    END SELECT
+END FUNCTION
+
+''' @brief Sets one of the five color properties of a control (see __UI_GetControlColor).
+SUB __UI_SetControlColor (id AS LONG, attribute AS LONG, c AS _UNSIGNED LONG)
+    SELECT CASE attribute
+        CASE 1: Control(id).ForeColor = c
+        CASE 2: Control(id).BackColor = c
+        CASE 3: Control(id).SelectedForeColor = c
+        CASE 4: Control(id).SelectedBackColor = c
+        CASE 5: Control(id).BorderColor = c
+    END SELECT
+END SUB
+
+''' @brief Returns the default color for a control type, honoring colors customized on the form.
+''' @param ControlType __UI_Type_*.
+''' @param Attribute 1 = Fore, 2 = Back, 3 = SelectedFore, 4 = SelectedBack, 5 = Border, 6 = tool tip background.
+FUNCTION __UI_DefaultColor~& (ControlType AS _BYTE, Attribute AS _BYTE)
+    DIM c AS _UNSIGNED LONG, inherited AS _BYTE
+
+    SELECT CASE Attribute
+        CASE 1: c = __UI_ThemeColor(__UI_ThemeColor_WindowText)
+        CASE 2: c = __UI_ThemeColor(__UI_ThemeColor_WindowBack)
+        CASE 3: c = __UI_ThemeColor(__UI_ThemeColor_SelectedText)
+        CASE 4: c = __UI_ThemeColor(__UI_ThemeColor_SelectedBack)
+        CASE 5: c = __UI_ThemeColor(__UI_ThemeColor_Border)
+        CASE 6: __UI_DefaultColor = __UI_ThemeColor(__UI_ThemeColor_TipBack): EXIT FUNCTION
+        CASE ELSE: EXIT FUNCTION
+    END SELECT
+
+    ' Controls inherit the form's color when it was customized
+    IF ControlType <> __UI_Type_Form _ANDALSO __UI_FormID > 0 THEN
+        IF __UI_GetControlColor(__UI_FormID, Attribute) <> c THEN
+            c = __UI_GetControlColor(__UI_FormID, Attribute)
+            inherited = _TRUE
+        END IF
+    END IF
+
+    ' Specific cases
+    SELECT CASE ControlType
+        CASE __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList
+            IF Attribute = 2 THEN c = __UI_ThemeColor(__UI_ThemeColor_InputBack)
+            IF Attribute = 1 _ANDALSO NOT inherited THEN c = __UI_ThemeColor(__UI_ThemeColor_InputText)
+        CASE __UI_Type_Button
+            IF Attribute = 1 _ANDALSO NOT inherited THEN c = __UI_ThemeColor(__UI_ThemeColor_ButtonText)
+        CASE __UI_Type_MenuPanel, __UI_Type_ContextMenu
+            IF Attribute = 2 _ANDALSO NOT inherited THEN c = __UI_ThemeColor(__UI_ThemeColor_MenuBack)
+    END SELECT
+
+    __UI_DefaultColor = c
+END FUNCTION
+
+''' @brief Color used for captions of disabled controls.
+FUNCTION __UI_DisabledColor~&
+    IF __UI_ThemeColor(__UI_ThemeColor_DisabledText) = 0 THEN
+        __UI_DisabledColor = Darken(Control(__UI_FormID).BackColor, 80)
+    ELSE
+        __UI_DisabledColor = __UI_ThemeColor(__UI_ThemeColor_DisabledText)
+    END IF
+END FUNCTION
+
+''' @brief Re-applies theme defaults to every control color that still matches the previous defaults.
+''' @param oldDefaults Snapshot taken with __UI_Theme_SnapshotDefaults before the palette changed.
+SUB __UI_Theme_Recolor (oldDefaults() AS _UNSIGNED LONG)
+    DIM i AS LONG, a AS LONG
+
+    ' The form goes first since other controls inherit from it
+    IF __UI_FormID > 0 _ANDALSO __UI_FormID <= UBOUND(oldDefaults, 1) THEN
+        FOR a = 1 TO 5
+            IF __UI_GetControlColor(__UI_FormID, a) = oldDefaults(__UI_FormID, a) THEN
+                __UI_SetControlColor __UI_FormID, a, __UI_DefaultColor(__UI_Type_Form, a)
+            END IF
+        NEXT a
+        Control(__UI_FormID).Redraw = _TRUE
+    END IF
+
+    FOR i = 1 TO UBOUND(oldDefaults, 1)
+        IF i <> __UI_FormID _ANDALSO Control(i).ID > 0 THEN
+            FOR a = 1 TO 5
+                IF __UI_GetControlColor(i, a) = oldDefaults(i, a) THEN
+                    __UI_SetControlColor i, a, __UI_DefaultColor(Control(i).Type, a)
+                END IF
+            NEXT a
+            Control(i).Redraw = _TRUE
+        END IF
+    NEXT i
+END SUB
+
+''' @brief Records the current default colors of every control.
+SUB __UI_Theme_SnapshotDefaults (oldDefaults() AS _UNSIGNED LONG)
+    DIM i AS LONG, a AS LONG
+    REDIM oldDefaults(0 TO UBOUND(Control), 1 TO 5) AS _UNSIGNED LONG
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ID > 0 THEN
+            FOR a = 1 TO 5
+                oldDefaults(i, a) = __UI_DefaultColor(Control(i).Type, a)
+            NEXT a
+        END IF
+    NEXT i
+END SUB
+
+''' @brief Switches the GUI theme at run time.
+''' @param themeName A built-in theme ("xp", "light" or "dark") or the path of a theme INI file.
+''' Controls keep any color you customized; colors still at the old theme's default follow the new theme.
+''' If the theme cannot be loaded, the current theme is kept.
+SUB SetTheme (themeName AS STRING)
+    REDIM oldDefaults(0, 0) AS _UNSIGNED LONG
+    DIM savedTheme AS __UI_ThemeTYPE, savedColors(1 TO __UI_ThemeColor_Count) AS _UNSIGNED LONG
+    DIM savedImages(1 TO __UI_ThemeImage_Count) AS STRING, i AS LONG
+
+    __UI_Theme_SnapshotDefaults oldDefaults()
+
+    savedTheme = __UI_Theme
+    FOR i = 1 TO __UI_ThemeColor_Count: savedColors(i) = __UI_ThemeColor(i): NEXT
+    FOR i = 1 TO __UI_ThemeImage_Count: savedImages(i) = __UI_ThemeImageFile(i): NEXT
+
+    IF NOT __UI_Theme_Load(themeName) THEN
+        __UI_Theme = savedTheme
+        FOR i = 1 TO __UI_ThemeColor_Count: __UI_ThemeColor(i) = savedColors(i): NEXT
+        FOR i = 1 TO __UI_ThemeImage_Count: __UI_ThemeImageFile(i) = savedImages(i): NEXT
+        EXIT SUB
+    END IF
+
+    __UI_Theme_ApplyMetrics
+    __UI_Theme_FreeImages
+    __UI_Theme_Recolor oldDefaults()
+    __UI_ForceRedraw = _TRUE
+END SUB
+
+''' @brief Returns the name or file path last passed to SetTheme ("xp" by default).
+FUNCTION GetTheme$
+    GetTheme = __UI_Theme.Source
+END FUNCTION
+
+''' @brief Returns a color of the current theme palette.
+''' @param role One of the __UI_ThemeColor_* constants.
+FUNCTION GetThemeColor~& (role AS LONG)
+    IF role >= 1 _ANDALSO role <= __UI_ThemeColor_Count THEN GetThemeColor = __UI_ThemeColor(role)
+END FUNCTION
+
+''' @brief Changes one color of the current theme palette and updates the controls that use it.
+''' @param role One of the __UI_ThemeColor_* constants.
+''' @param c The new color.
+SUB SetThemeColor (role AS LONG, c AS _UNSIGNED LONG)
+    IF role < 1 _ORELSE role > __UI_ThemeColor_Count THEN EXIT SUB
+
+    REDIM oldDefaults(0, 0) AS _UNSIGNED LONG
+    __UI_Theme_SnapshotDefaults oldDefaults()
+    __UI_ThemeColor(role) = c
+    __UI_Theme_Recolor oldDefaults()
+    __UI_ForceRedraw = _TRUE
+END SUB
+
+'$INCLUDE:'themes/xp.uitheme'
+'$INCLUDE:'themes/flat.uitheme'
+'$INCLUDE:'extensions/Ini.bm'

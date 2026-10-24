@@ -47,7 +47,7 @@ TEST_EXECUTABLE := tests/test_main$(EXTENSION)
 
 .PHONY: all release test clean
 
-all: UiEditor$(EXTENSION) InForm/UiEditorPreview$(EXTENSION) InForm/vbdos2inform$(EXTENSION)
+all: UiEditor$(EXTENSION) InForm/UiEditorPreview$(EXTENSION) InForm/vbdos2inform$(EXTENSION) ThemeEditor$(EXTENSION)
 
 UiEditor$(EXTENSION) : InForm/UiEditor.bas
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
@@ -56,6 +56,9 @@ InForm/UiEditorPreview$(EXTENSION) : InForm/UiEditorPreview.bas
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
 InForm/vbdos2inform$(EXTENSION) : InForm/vbdos2inform.bas
+	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
+
+ThemeEditor$(EXTENSION) : InForm/ThemeEditor.bas InForm/ThemeEditor.frm
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
 $(TEST_EXECUTABLE): tests/test_main.bas
@@ -69,4 +72,4 @@ test: $(TEST_EXECUTABLE)
 	$(call FIXPATH,./$(TEST_EXECUTABLE))
 
 clean:
-	-$(RM) $(call FIXPATH,UiEditor$(EXTENSION)) $(call FIXPATH,InForm/UiEditorPreview$(EXTENSION)) $(call FIXPATH,InForm/vbdos2inform$(EXTENSION)) $(call FIXPATH,$(TEST_EXECUTABLE))
+	-$(RM) $(call FIXPATH,UiEditor$(EXTENSION)) $(call FIXPATH,InForm/UiEditorPreview$(EXTENSION)) $(call FIXPATH,InForm/vbdos2inform$(EXTENSION)) $(call FIXPATH,ThemeEditor$(EXTENSION)) $(call FIXPATH,$(TEST_EXECUTABLE))
