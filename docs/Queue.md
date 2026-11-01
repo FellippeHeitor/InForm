@@ -4,7 +4,7 @@ The `Queue` library provides a generic queue implementation. It supports storing
 
 ## Usage
 
-To use the `Queue` library, you need to include `Queue.bi` and `Queue.bm` in your project.
+To use the `Queue` library, you need to include `Queue.bi` in your project.
 
 ```vb
 '$INCLUDE:'Queue.bi'
@@ -26,8 +26,6 @@ PRINT Queue_DequeueInteger(myQueue()) ' Prints 64
 
 ' Free the queue
 Queue_Free myQueue()
-
-'$INCLUDE:'Queue.bm'
 ```
 
 ## API Reference

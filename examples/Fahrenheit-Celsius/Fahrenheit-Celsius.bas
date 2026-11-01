@@ -27,7 +27,7 @@ DIM SHARED PicUpdate%%, FSetTemp!, CSetTemp!
 DIM SHARED InFahrenheit%%, InCelsius%%, TClicked%%, TempT!
 
 CONST FPos% = 12, CPos% = 31, YPos% = 20, TFPos% = 28, TCPos% = 47, TYPos% = 38, ScaleMin% = 668
-CONST TT% = 38, TB% = 668, FL% = 82, FR% = 106, CL% = 321, CR% = 345
+CONST TT% = 38, APP_TB% = 668, FL% = 82, FR% = 106, CL% = 321, CR% = 345
 
 ': External modules: ---------------------------------------------------------------
 '$INCLUDE:'../../InForm/InForm.bi'
@@ -62,7 +62,6 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    _SCREENMOVE 120, 5
 END SUB
 
 SUB __UI_BeforeUpdateDisplay
@@ -182,7 +181,7 @@ SUB __UI_BeforeUpdateDisplay
         END IF
         ': Draw Scales
         BeginDraw FahrenheitPBox
-        LINE (60, TT% - 1)-(100, TB% - 1), _RGB32(235, 233, 237), BF
+        LINE (60, TT% - 1)-(100, APP_TB% - 1), _RGB32(235, 233, 237), BF
         LINE (62, FT%)-(62, FB% + 1), _RGB32(0, 0, 0)
         LINE (63, FT%)-(63, FB% + 1), _RGB32(0, 0, 0)
         FOR N% = 0 TO (FB% - FT%) / FS%
@@ -197,7 +196,7 @@ SUB __UI_BeforeUpdateDisplay
         NEXT N%
         EndDraw FahrenheitPBox
         BeginDraw CelsiusPBox
-        LINE (0, TT% - 1)-(39, TB% - 1), _RGB32(235, 233, 237), BF
+        LINE (0, TT% - 1)-(39, APP_TB% - 1), _RGB32(235, 233, 237), BF
         LINE (38, CT%)-(38, CB% + 1), _RGB32(0, 0, 0)
         LINE (37, CT%)-(37, CB% + 1), _RGB32(0, 0, 0)
         FOR N% = 0 TO (CB% - CT%) / CS%

@@ -4,7 +4,7 @@ The `INI Manager` library provides functionality for reading and writing [INI fi
 
 ## Usage
 
-To use the `INI Manager` library in your project, you need to include `Ini.bi` and `Ini.bm`.
+To use the `INI Manager` library in your project, you need to include `Ini.bi`.
 
 ```vb
 '$INCLUDE:'Ini.bi'
@@ -16,8 +16,6 @@ Ini_WriteSetting "config.ini", "owner", "name", "John Doe"
 DIM name AS STRING
 name = Ini_ReadSetting("config.ini", "owner", "name")
 PRINT name ' Prints "John Doe"
-
-'$INCLUDE:'Ini.bm'
 ```
 
 ## API Reference

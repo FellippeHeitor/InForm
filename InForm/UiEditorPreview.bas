@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' InForm-PE GUI engine for QB64-PE
-' Copyright (c) 2025 QB64 Phoenix Edition Team
+' Copyright (c) 2026 QB64 Phoenix Edition Team
 ' Copyright (c) 2023 George McGinn
 ' Copyright (c) 2022 Fellippe Heitor
 '-----------------------------------------------------------------------------------------------------------------------
@@ -93,7 +93,6 @@ RESUME NEXT
 
 '$INCLUDE:'UiEditorPreview.frm'
 '$INCLUDE:'InForm.ui'
-'$INCLUDE:'extensions/GIFPlay.bm'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
@@ -3363,7 +3362,7 @@ SUB SavePreview (Destination AS _BYTE)
     DIM b$, i AS LONG, a$, FontSetup$
     DIM BinFileNum AS INTEGER, TxtFileNum AS INTEGER
     DIM Clip$, Disk AS _BYTE, TCP AS _BYTE, UndoBuffer AS _BYTE
-    DIM PreviewData$, Dummy AS LONG
+    DIM PreviewData$
 
     CONST Debug = False
 

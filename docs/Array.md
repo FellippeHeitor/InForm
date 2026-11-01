@@ -4,7 +4,7 @@ The `Array` library provides a generic dynamic array implementation. It supports
 
 ## Usage
 
-To use the `Array` library, you need to include `Array.bi` and `Array.bm` in your project.
+To use the `Array` library, you need to include `Array.bi` in your project.
 
 ```vb
 '$INCLUDE:'Array.bi'
@@ -34,8 +34,6 @@ PRINT Array_GetCount(arr()) ' Prints `1`
 
 ' Clean up
 Array_Free arr()
-
-'$INCLUDE:'Array.bm'
 ```
 
 ## API Reference

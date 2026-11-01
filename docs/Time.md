@@ -4,7 +4,7 @@ The `Time` library provides time-related utility functions, including a high-res
 
 ## Usage
 
-To use the `Time` library, you need to include `Time.bi` and `Time.bm` in your project.
+To use the `Time` library, you need to include `Time.bi` in your project.
 
 ```vb
 '$INCLUDE:'Time.bi'
@@ -25,8 +25,6 @@ DO
 
     PRINT "Hertz: "; Time_MeasureHertz
 LOOP UNTIL _KEYHIT = _ASC_ESC
-
-'$INCLUDE:'Time.bm'
 ```
 
 ## API Reference

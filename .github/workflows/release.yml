@@ -1,0 +1,156 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-release:
+    name: Build Release (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux-x64
+            os: ubuntu-latest
+            asset_pattern: "qb64pe_lnx-x64-*.tar.gz"
+            exe_ext: ""
+            setup_script: setup_inform_lnx.sh
+            archive_name: InForm-PE-linux-x64.tar.gz
+          - name: Windows-x64
+            os: windows-latest
+            asset_pattern: "qb64pe_win-x64-*.7z"
+            exe_ext: ".exe"
+            setup_script: setup_inform_win.cmd
+            archive_name: InForm-PE-windows-x64.zip
+          - name: Windows-arm64
+            os: windows-11-arm
+            asset_pattern: "qb64pe_win-arm64-*.7z"
+            exe_ext: ".exe"
+            setup_script: setup_inform_win.cmd
+            archive_name: InForm-PE-windows-arm64.zip
+          - name: macOS-arm64
+            os: macos-latest
+            asset_pattern: "qb64pe_osx-*.tar.gz"
+            exe_ext: ""
+            setup_script: setup_inform_mac.command
+            archive_name: InForm-PE-macos-arm64.tar.gz
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Download QB64-PE
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R QB64-Phoenix-Edition/QB64pe -p "${{ matrix.asset_pattern }}" --dir qb64_dl
+
+      - name: Extract & Setup QB64-PE (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir qb64_src
+          tar -xzf qb64_dl/*.tar.gz -C qb64_src
+          SETUP_PATH=$(find qb64_src -name "setup_lnx.sh" -o -name "setup_osx.command" | head -n 1)
+          if [ -z "$SETUP_PATH" ]; then
+            echo "Error: Setup script not found in tarball."
+            ls -R qb64_src
+            exit 1
+          fi
+          SETUP_DIR=$(dirname "$SETUP_PATH")
+          cd "$SETUP_DIR"
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            chmod +x setup_lnx.sh
+            ./setup_lnx.sh 1
+          else
+            chmod +x setup_osx.command
+            ./setup_osx.command 1
+          fi
+          echo "QB64PE_BIN_DIR=$(pwd)" >> $GITHUB_ENV
+
+      - name: Extract QB64-PE (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          7z x qb64_dl/*.7z -oqb64_src
+          $subFolder = Get-ChildItem -Path qb64_src -Directory | Select-Object -First 1
+          if ($subFolder) {
+            Move-Item -Path "$($subFolder.FullName)\*" -Destination qb64_src\
+          }
+          echo "QB64PE_BIN_DIR=$((Get-Item qb64_src).FullName)" >> $env:GITHUB_ENV
+
+      - name: Build Release
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            export QB64PE_PATH=$(pwd -W)/qb64_src
+            if [ -f "$QB64PE_PATH/internal/c/c_compiler/bin/mingw32-make.exe" ]; then
+              MAKE_CMD="$QB64PE_PATH/internal/c/c_compiler/bin/mingw32-make.exe"
+            else
+              MAKE_CMD="mingw32-make"
+            fi
+            "$MAKE_CMD" -f inform.mk release
+          else
+            export QB64PE_PATH="${{ env.QB64PE_BIN_DIR }}"
+            make -f inform.mk release
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir staging
+          cp -r docs examples InForm tests staging/
+          cp UiEditor${{ matrix.exe_ext }} ThemeEditor${{ matrix.exe_ext }} staging/
+          cp inform.mk LICENSE.txt README.md staging/
+          cp ${{ matrix.setup_script }} staging/
+          rm -f staging/tests/test_main*
+          rm -f staging/InForm/InForm.ini
+          rm -f staging/.gitignore staging/.gitattributes
+          rm -rf staging/.git staging/.github
+          find staging \( -name ".git*" -o -name ".github" \) -exec rm -rf {} + 2>/dev/null || true
+          if [[ "${{ runner.os }}" != "Windows" ]]; then
+            chmod +x staging/UiEditor staging/ThemeEditor
+            chmod +x staging/InForm/UiEditorPreview staging/InForm/vbdos2inform
+            chmod +x staging/${{ matrix.setup_script }}
+          fi
+
+          cd staging
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            7z a -tzip "../${{ matrix.archive_name }}" *
+          else
+            tar -czf "../${{ matrix.archive_name }}" *
+          fi
+          cd ..
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: asset-${{ matrix.name }}
+          path: ${{ matrix.archive_name }}
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: "asset-*"
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+          draft: true
+          prerelease: false

@@ -361,17 +361,21 @@ SUB NouveauJeu
     SetFocus ExitBT
 END SUB
 
+SUB SafeFreeImage (handle AS LONG)
+    IF handle <= -1 THEN _FREEIMAGE handle
+END SUB
+
 SUB Finale
     'Freeimages
-    _FREEIMAGE ObverseImg&
-    _FREEIMAGE Highlight&
+    SafeFreeImage ObverseImg&
+    SafeFreeImage Highlight&
     FOR N%% = 0 TO 9
-        _FREEIMAGE NosImg&(N%%, 1)
-        _FREEIMAGE NosImg&(N%%, 0)
+        SafeFreeImage NosImg&(N%%, 1)
+        SafeFreeImage NosImg&(N%%, 0)
     NEXT N%%
-    _FREEIMAGE BestImg&
+    SafeFreeImage BestImg&
     FOR N%% = 0 TO NoObjectsLess1%%
-        _FREEIMAGE Images&(N%%)
+        SafeFreeImage Images&(N%%)
     NEXT N%%
     OPEN "pelman.dat" FOR OUTPUT AS #1
     FOR N%% = 0 TO 2

@@ -4,7 +4,7 @@ The `String` library provides a collection of utility functions for string manip
 
 ## Usage
 
-To use the `String` library, include `String.bi` and `String.bm` in your project.
+To use the `String` library, include `String.bi` in your project.
 
 ```vb
 '$INCLUDE:'String.bi'
@@ -24,8 +24,6 @@ PRINT formattedString ' Prints "Name: John"
 DIM formattedNumber AS STRING
 formattedNumber = String_FormatLong("Value: %d", 123)
 PRINT formattedNumber ' Prints "Value: 123"
-
-'$INCLUDE:'String.bm'
 ```
 
 ## API Reference

@@ -383,7 +383,7 @@ SUB scene
         rgb 201
         pst i, terraH(i)
         rgb 0
-        ln i, terraH(i) + 1, i, ymax
+        DrawLine i, terraH(i) + 1, i, ymax
     NEXT
     IF flashx OR flashy THEN
         rgb 990
@@ -444,10 +444,10 @@ SUB Lander (x0, y0, rAngle) 'rebuilt from ground up literally!
     x4 = x0 + 25 * COS(rAngle)
     y4 = y0 + 25 * SIN(rAngle)
     'legs/fins
-    ln x3, y3, x1, y1
-    ln x3, y3, x2, y2
-    ln x4, y4, x1, y1
-    ln x4, y4, x2, y2
+    DrawLine x3, y3, x1, y1
+    DrawLine x3, y3, x2, y2
+    DrawLine x4, y4, x1, y1
+    DrawLine x4, y4, x2, y2
     pangle = 2 * pi / 5
     rgb 211
     FOR i = 0 TO 5
@@ -460,7 +460,7 @@ SUB Lander (x0, y0, rAngle) 'rebuilt from ground up literally!
         y1 = y4 + r * SIN(i * pangle + rAngle)
         IF i = 1 THEN sx = x1: sy = y1
         IF i = 4 THEN tx = x1: ty = y1
-        IF i <> 0 THEN ln lx, ly, x1, y1
+        IF i <> 0 THEN DrawLine lx, ly, x1, y1
         lx = x1: ly = y1
     NEXT
     PAINT (x4, y4), _RGB(80, 60, 60), _RGB32(59, 31, 31)
@@ -483,7 +483,7 @@ SUB pst (x, y)
     PSET (x, y)
 END SUB
 
-SUB ln (x1, y1, x2, y2)
+SUB DrawLine (x1, y1, x2, y2)
     LINE (x1, y1)-(x2, y2)
 END SUB
 

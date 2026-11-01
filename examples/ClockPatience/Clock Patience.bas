@@ -194,7 +194,6 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    _SCREENMOVE 50, 0
     Caption(NewGameBT) = "Deal"
     SetFocus NewGameBT
 END SUB

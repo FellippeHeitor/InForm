@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' InForm-PE GUI engine for QB64-PE
-' Copyright (c) 2025 QB64 Phoenix Edition Team
+' Copyright (c) 2026 QB64 Phoenix Edition Team
 ' Copyright (c) 2023 George McGinn
 ' Copyright (c) 2022 Fellippe Heitor
 '-----------------------------------------------------------------------------------------------------------------------
@@ -295,9 +295,6 @@ RESUME NEXT
 
 '$INCLUDE:'UiEditor.frm'
 '$INCLUDE:'InForm.ui'
-'$INCLUDE:'extensions/Pathname.bm'
-'$INCLUDE:'extensions/Ini.bm'
-'$INCLUDE:'extensions/FontMgr.bm'
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
@@ -703,7 +700,7 @@ SUB __UI_Click (id AS LONG)
 
                 IF _FILEEXISTS(LEFT$(tmpFileName, LEN(tmpFileName) - 4) + ".bas") THEN
                     b$ = LCASE$(_READFILE$(LEFT$(tmpFileName, LEN(tmpFileName) - 4) + ".bas"))
-                    IF INSTR(b$, CHR$(10) + "'$include:'inform/extensions/gifplay.bas'") > 0 THEN
+                    IF INSTR(b$, "'$include:'inform/extensions/gifplay.bi'") > 0 OR INSTR(b$, "'$include:'inform/extensions/gifplay.bm'") > 0 OR INSTR(b$, "'$include:'inform/extensions/gifplay.bas'") > 0 THEN
                         LoadedWithGifExtension = True
                     END IF
                 END IF
@@ -983,7 +980,7 @@ SUB OpenForm (frmFileName AS STRING)
 
         IF _FILEEXISTS(LEFT$(frmFileName, LEN(frmFileName) - 4) + ".bas") THEN
             DIM b$: b$ = LCASE$(_READFILE$(LEFT$(frmFileName, LEN(frmFileName) - 4) + ".bas"))
-            IF INSTR(b$, CHR$(10) + "'$include:'inform/extensions/gifplay.bas'") > 0 THEN
+            IF INSTR(b$, "'$include:'inform/extensions/gifplay.bi'") > 0 OR INSTR(b$, "'$include:'inform/extensions/gifplay.bm'") > 0 OR INSTR(b$, "'$include:'inform/extensions/gifplay.bas'") > 0 THEN
                 LoadedWithGifExtension = True
             END IF
         END IF
@@ -2744,7 +2741,7 @@ SUB __UI_OnLoad
                 b$ = SPACE$(LOF(FreeFileNum))
                 GET #FreeFileNum, 1, b$
                 SEEK #FreeFileNum, 1
-                IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm/extensions/GIFPlay.bas'") > 0 THEN
+                IF INSTR(LCASE$(b$), "'$include:'inform/extensions/gifplay.bi'") > 0 OR INSTR(LCASE$(b$), "'$include:'inform/extensions/gifplay.bm'") > 0 OR INSTR(LCASE$(b$), "'$include:'inform/extensions/gifplay.bas'") > 0 THEN
                     LoadedWithGifExtension = True
                 END IF
                 DO
@@ -2788,7 +2785,7 @@ SUB __UI_OnLoad
                         b$ = SPACE$(LOF(FreeFileNum))
                         GET #FreeFileNum, 1, b$
                         CLOSE #FreeFileNum
-                        IF INSTR(b$, CHR$(10) + "'$INCLUDE:'InForm/extensions/GIFPlay.bas'") > 0 THEN
+                        IF INSTR(LCASE$(b$), "'$include:'inform/extensions/gifplay.bi'") > 0 OR INSTR(LCASE$(b$), "'$include:'inform/extensions/gifplay.bm'") > 0 OR INSTR(LCASE$(b$), "'$include:'inform/extensions/gifplay.bas'") > 0 THEN
                             LoadedWithGifExtension = True
                         END IF
                     END IF
@@ -4298,9 +4295,6 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             END IF
             PRINT #TextFileNum, "'$INCLUDE:'InForm/InForm.bi'"
             PRINT #TextFileNum, "'$INCLUDE:'" + MID$(BaseOutputFileName, LEN(CurrentPath$) + 1) + ".frm'"
-            IF AddGifExtension THEN
-                PRINT #TextFileNum, "'$INCLUDE:'InForm/extensions/GIFPlay.bas'"
-            END IF
             PRINT #TextFileNum,
             PRINT #TextFileNum, "': Event procedures: ---------------------------------------------------------------"
             FOR i = 0 TO 14

@@ -1,5 +1,5 @@
 '-----------------------------------------------------------------------------------------------------------------------
-' General algorithm library
+' Sorting algorithms library
 ' Copyright (c) 2025 Samuel Gomes
 '-----------------------------------------------------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ $INCLUDEONCE
 ''' @param wantsAscending _TRUE = ascending, _FALSE = descending
 ''' @param caseSensitive _TRUE = case-sensitive, _FALSE = case-insensitive
 ''' @return Whether the array was changed (_TRUE or _FALSE)
-FUNCTION Algo_SortStringArrayRange%% (strArr() AS STRING, l AS _INTEGER64, u AS _INTEGER64, wantsAscending AS _BYTE, caseSensitive AS _BYTE)
+FUNCTION Sort_StringArrayRange%% (strArr() AS STRING, l AS _INTEGER64, u AS _INTEGER64, wantsAscending AS _BYTE, caseSensitive AS _BYTE)
     IF l >= u THEN EXIT FUNCTION
 
     DIM n AS _INTEGER64: n = u - l + 1
@@ -74,18 +74,18 @@ FUNCTION Algo_SortStringArrayRange%% (strArr() AS STRING, l AS _INTEGER64, u AS 
         END IF
     WEND
 
-    Algo_SortStringArrayRange = changed
+    Sort_StringArrayRange = changed
 END FUNCTION
 
 ''' @brief Sorts a string array.
 ''' @param strArr() The array of strings to sort.
 ''' @return Whether the array was changed (_TRUE or _FALSE)
-FUNCTION Algo_SortStringArray%% (strArr() AS STRING)
-    Algo_SortStringArray = Algo_SortStringArrayRange(strArr(), LBOUND(strArr), UBOUND(strArr), _TRUE, _TRUE)
+FUNCTION Sort_StringArray%% (strArr() AS STRING)
+    Sort_StringArray = Sort_StringArrayRange(strArr(), LBOUND(strArr), UBOUND(strArr), _TRUE, _TRUE)
 END FUNCTION
 
 ''' @brief Sorts a string array.
 ''' @param strArr() The array of strings to sort.
-SUB Algo_SortStringArray (strArr() AS STRING)
-    DIM ignored AS _BYTE: ignored = Algo_SortStringArrayRange(strArr(), LBOUND(strArr), UBOUND(strArr), _TRUE, _TRUE)
+SUB Sort_StringArray (strArr() AS STRING)
+    DIM ignored AS _BYTE: ignored = Sort_StringArrayRange(strArr(), LBOUND(strArr), UBOUND(strArr), _TRUE, _TRUE)
 END SUB

@@ -13,11 +13,10 @@ $LET TEST_CONSOLE_ONLY = TRUE
 '$INCLUDE:'../InForm/extensions/LList.bi'
 '$INCLUDE:'../InForm/extensions/Pathname.bi'
 '$INCLUDE:'../InForm/extensions/Queue.bi'
+'$INCLUDE:'../InForm/extensions/Sort.bi'
 '$INCLUDE:'../InForm/extensions/Stack.bi'
 '$INCLUDE:'../InForm/extensions/String.bi'
 '$INCLUDE:'../InForm/extensions/StringFile.bi'
-
-'$INCLUDE:'../InForm/extensions/CatchError.bi'
 
 '$INCLUDE:'../InForm/InForm.bi'
 
@@ -25,7 +24,7 @@ SUB __UI_BeforeInit
     TEST_BEGIN_ALL
 
     Test_Catch
-    Test_Algo
+    Test_Sort
     Test_Array
     Test_HMap
     Test_HMap64
@@ -62,7 +61,7 @@ SUB Test_Catch
     TEST_CASE_END
 END SUB
 
-SUB Test_Algo
+SUB Test_Sort
     TEST_CASE_BEGIN "Algo: Basic Sort"
     DIM strArr(0 TO 4) AS STRING
     strArr(0) = "banana"
@@ -70,7 +69,7 @@ SUB Test_Algo
     strArr(2) = "orange"
     strArr(3) = "pear"
     strArr(4) = "kiwi"
-    TEST_REQUIRE Algo_SortStringArray(strArr()), "Algo_SortStringArray should return TRUE for an unsorted array"
+    TEST_REQUIRE Sort_StringArray(strArr()), "Algo_SortStringArray should return TRUE for an unsorted array"
     TEST_CHECK strArr(0) = "apple", "Sorted array element 0 should be 'apple'"
     TEST_CHECK strArr(1) = "banana", "Sorted array element 1 should be 'banana'"
     TEST_CHECK strArr(2) = "kiwi", "Sorted array element 2 should be 'kiwi'"
@@ -83,7 +82,7 @@ SUB Test_Algo
     sortedArr(0) = "a"
     sortedArr(1) = "b"
     sortedArr(2) = "c"
-    TEST_REQUIRE_FALSE Algo_SortStringArray(sortedArr()), "Algo_SortStringArray should return FALSE for a sorted array"
+    TEST_REQUIRE_FALSE Sort_StringArray(sortedArr()), "Algo_SortStringArray should return FALSE for a sorted array"
     TEST_CHECK sortedArr(0) = "a", "Array should remain unchanged"
     TEST_CHECK sortedArr(1) = "b", "Array should remain unchanged"
     TEST_CHECK sortedArr(2) = "c", "Array should remain unchanged"
@@ -95,7 +94,7 @@ SUB Test_Algo
     reverseArr(1) = "yankee"
     reverseArr(2) = "x-ray"
     reverseArr(3) = "whiskey"
-    TEST_REQUIRE Algo_SortStringArray(reverseArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
+    TEST_REQUIRE Sort_StringArray(reverseArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
     TEST_CHECK reverseArr(0) = "whiskey", "Sorted array element 0 should be 'whiskey'"
     TEST_CHECK reverseArr(1) = "x-ray", "Sorted array element 1 should be 'x-ray'"
     TEST_CHECK reverseArr(2) = "yankee", "Sorted array element 2 should be 'yankee'"
@@ -110,7 +109,7 @@ SUB Test_Algo
     dupArr(3) = "b"
     dupArr(4) = "a"
     dupArr(5) = "c"
-    TEST_REQUIRE Algo_SortStringArray(dupArr()), "Algo_SortStringArray should return TRUE for an array with duplicates"
+    TEST_REQUIRE Sort_StringArray(dupArr()), "Algo_SortStringArray should return TRUE for an array with duplicates"
     TEST_CHECK dupArr(0) = "a", "Sorted array with duplicates element 0"
     TEST_CHECK dupArr(1) = "a", "Sorted array with duplicates element 1"
     TEST_CHECK dupArr(2) = "b", "Sorted array with duplicates element 2"
@@ -125,7 +124,7 @@ SUB Test_Algo
     emptyArr(1) = ""
     emptyArr(2) = "alpha"
     emptyArr(3) = ""
-    TEST_REQUIRE Algo_SortStringArray(emptyArr()), "Algo_SortStringArray should return TRUE for an array with empty strings"
+    TEST_REQUIRE Sort_StringArray(emptyArr()), "Algo_SortStringArray should return TRUE for an array with empty strings"
     TEST_CHECK emptyArr(0) = "", "Sorted array with empty strings element 0"
     TEST_CHECK emptyArr(1) = "", "Sorted array with empty strings element 1"
     TEST_CHECK emptyArr(2) = "alpha", "Sorted array with empty strings element 2"
@@ -135,13 +134,13 @@ SUB Test_Algo
     TEST_CASE_BEGIN "Algo: Single Element"
     DIM singleArr(0 TO 0) AS STRING
     singleArr(0) = "lonely"
-    TEST_REQUIRE_FALSE Algo_SortStringArray(singleArr()), "Algo_SortStringArray should return FALSE for a single-element array"
+    TEST_REQUIRE_FALSE Sort_StringArray(singleArr()), "Algo_SortStringArray should return FALSE for a single-element array"
     TEST_CHECK singleArr(0) = "lonely", "Single element array should remain unchanged"
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Algo: Empty Array"
     DIM zeroArr(0) AS STRING
-    TEST_REQUIRE_FALSE Algo_SortStringArray(zeroArr()), "Algo_SortStringArray should return FALSE for an empty array"
+    TEST_REQUIRE_FALSE Sort_StringArray(zeroArr()), "Algo_SortStringArray should return FALSE for an empty array"
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Algo: Sort Range"
@@ -152,7 +151,7 @@ SUB Test_Algo
     rangeArr(3) = "c"
     rangeArr(4) = "b"
     rangeArr(5) = "a"
-    TEST_REQUIRE Algo_SortStringArrayRange(rangeArr(), 1, 4, _TRUE, _TRUE), "Algo_SortStringArrayRange should return TRUE for an unsorted range"
+    TEST_REQUIRE Sort_StringArrayRange(rangeArr(), 1, 4, _TRUE, _TRUE), "Algo_SortStringArrayRange should return TRUE for an unsorted range"
     TEST_CHECK rangeArr(0) = "z", "Element before range should be untouched"
     TEST_CHECK rangeArr(1) = "b", "Range should be sorted"
     TEST_CHECK rangeArr(2) = "c", "Range should be sorted"
@@ -167,7 +166,7 @@ SUB Test_Algo
     sortedRangeArr(1) = "b"
     sortedRangeArr(2) = "c"
     sortedRangeArr(3) = "d"
-    TEST_REQUIRE_FALSE Algo_SortStringArrayRange(sortedRangeArr(), 1, 2, _TRUE, _TRUE), "Algo_SortStringArrayRange should return FALSE for a sorted range"
+    TEST_REQUIRE_FALSE Sort_StringArrayRange(sortedRangeArr(), 1, 2, _TRUE, _TRUE), "Algo_SortStringArrayRange should return FALSE for a sorted range"
     TEST_CHECK sortedRangeArr(0) = "a", "Array should remain unchanged"
     TEST_CHECK sortedRangeArr(1) = "b", "Array should remain unchanged"
     TEST_CHECK sortedRangeArr(2) = "c", "Array should remain unchanged"
@@ -183,7 +182,7 @@ SUB Test_Algo
     NEXT i
 
     TEST_CASE_BEGIN "Algo: Performance Sort (" + _TOSTR$(ALGO_PERF_COUNT) + " numbers)"
-    TEST_CHECK Algo_SortStringArray(numArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
+    TEST_CHECK Sort_StringArray(numArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Algo: Performance Sort Verification (" + _TOSTR$(ALGO_PERF_COUNT) + " numbers)"
@@ -2237,6 +2236,7 @@ SUB Test_INI_Manager
     TEST_CHECK Ini_GetCode = INI_INFO_KEY_NOT_FOUND, "Ini_ReadSetting should not find the moved key in the old section"
     TEST_CHECK Ini_ReadSetting("", "Section1", "A_Key") = "A_Value", "Ini_ReadSetting should find the moved key in the new section"
 
+    Ini_Release "test.ini"
     KILL "test.ini"
 
     TEST_CASE_END
@@ -2261,6 +2261,7 @@ SUB Test_INI_Manager
     CLOSE #releaseFile
 
     TEST_CHECK Ini_ReadSetting("release.ini", "S", "K") = "second", "Released file is read from disk again"
+
     Ini_Release "release.ini"
     KILL "release.ini"
 
@@ -2481,18 +2482,3 @@ SUB __UI_MouseUp (id AS LONG): id = id: END SUB
 SUB __UI_Click (id AS LONG): id = id: END SUB
 
 '$INCLUDE:'../InForm/InForm.ui'
-
-'$INCLUDE:'../InForm/extensions/StringFile.bm'
-'$INCLUDE:'../InForm/extensions/String.bm'
-'$INCLUDE:'../InForm/extensions/Stack.bm'
-'$INCLUDE:'../InForm/extensions/Queue.bm'
-'$INCLUDE:'../InForm/extensions/Pathname.bm'
-'$INCLUDE:'../InForm/extensions/LList.bm'
-'$INCLUDE:'../InForm/extensions/Ini.bm'
-'$INCLUDE:'../InForm/extensions/HSet.bm'
-'$INCLUDE:'../InForm/extensions/HMap64.bm'
-'$INCLUDE:'../InForm/extensions/HMap.bm'
-'$INCLUDE:'../InForm/extensions/Array.bm'
-'$INCLUDE:'../InForm/extensions/Algo.bm'
-
-'$INCLUDE:'../InForm/extensions/Catch.bm'

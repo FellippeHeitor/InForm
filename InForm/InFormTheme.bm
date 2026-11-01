@@ -6,6 +6,7 @@
 $INCLUDEONCE
 
 '$INCLUDE:'InFormCommon.bi'
+'$INCLUDE:'extensions/Ini.bi'
 
 ''' @brief Called once at startup. Loads the default (XP) theme unless one was already chosen.
 SUB __UI_ThemeSetup
@@ -369,4 +370,3 @@ END SUB
 
 '$INCLUDE:'themes/xp.uitheme'
 '$INCLUDE:'themes/flat.uitheme'
-'$INCLUDE:'extensions/Ini.bm'

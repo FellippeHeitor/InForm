@@ -680,7 +680,6 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    _SCREENMOVE 0, 0
     Control(GravitationalCollapseFR).Hidden = True
     Control(HowManyBodiesFR).Hidden = True
     Control(BodyDataFR).Hidden = True

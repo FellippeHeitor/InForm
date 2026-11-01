@@ -4,7 +4,7 @@ The `Pathname` library provides a comprehensive set of cross-platform functions 
 
 ## Usage
 
-To use the `Pathname` library, you need to include `Pathname.bi` and `Pathname.bm` in your project.
+To use the `Pathname` library, you need to include `Pathname.bi` in your project.
 
 ```vb
 '$INCLUDE:"Pathname.bi"
@@ -22,8 +22,6 @@ PRINT "Extension: "; Pathname_GetFileExtension(myPath)
 PRINT "Without Extension: "; Pathname_RemoveFileExtension(myPath)
 PRINT "Drive or Scheme: "; Pathname_GetDriveOrScheme(myPath)
 PRINT "Sanitized: "; Pathname_Sanitize("bad/file?name*")
-
-'$INCLUDE:"Pathname.bm"
 ```
 
 ## API Reference

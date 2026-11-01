@@ -4,7 +4,7 @@ The `StringFile` library provides a way to treat a standard `STRING` variable as
 
 ## Usage
 
-To use the `StringFile` library, you need to include `StringFile.bi` and `StringFile.bm` in your project.
+To use the `StringFile` library, you need to include `StringFile.bi` in your project.
 
 ```vb
 '$INCLUDE:"StringFile.bi"
@@ -26,8 +26,6 @@ PRINT "Integer: "; StringFile_ReadInteger(sf)
 IF StringFile_IsEOF(sf) THEN
     PRINT "End of file reached."
 END IF
-
-'$INCLUDE:"StringFile.bm"
 ```
 
 ## API Reference

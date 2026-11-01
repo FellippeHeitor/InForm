@@ -12,9 +12,9 @@
 * [**Queue**](./Queue.md): FIFO queue.
 * [**Stack**](./Stack.md): LIFO stack.
 
-## QBDS.bi + QBDS.bm
+## QBDS.bi
 
-The `QBDS.bi` and `QBDS.bm` file defines some **common constants and routines** shared across all `QBDS` libraries.
+The `QBDS.bi` file defines some **common constants and routines** shared across all `QBDS` libraries.
 
 ### Constants
 

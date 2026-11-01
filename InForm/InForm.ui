@@ -8,6 +8,8 @@
 $INCLUDEONCE
 
 '$INCLUDE:'InFormCommon.bi'
+'$INCLUDE:'extensions/HMap64.bi'
+'$INCLUDE:'extensions/String.bi'
 
 '---------------------------------------------------------------------------------
 FUNCTION uspacing&
@@ -5534,17 +5536,17 @@ END FUNCTION
 '---------------------------------------------------------------------------------
 FUNCTION __UI_TBXFromPos& (id AS LONG, position AS LONG)
     ' Horizontal pixel offset of a cursor position, from the start of its line
-    DIM AS LONG lineNumber, offset, prevFont
+    DIM AS LONG lineNumber, pixOffset, prevFont
 
     lineNumber = __UI_TBLineFromPos(id, position)
-    offset = position - __UI_TBLineStart(lineNumber)
-    IF offset <= 0 THEN EXIT FUNCTION
+    pixOffset = position - __UI_TBLineStart(lineNumber)
+    IF pixOffset <= 0 THEN EXIT FUNCTION
 
     prevFont = _FONT
     IF Control(id).Font THEN _FONT Control(id).Font
     __UI_CharPos MID$(Text(id), __UI_TBLineStart(lineNumber) + 1, __UI_TBLineLen(lineNumber))
-    IF offset > __UI_LastRenderedCharCount THEN offset = __UI_LastRenderedCharCount
-    __UI_TBXFromPos = __UI_ThisLineChars(offset)
+    IF pixOffset > __UI_LastRenderedCharCount THEN pixOffset = __UI_LastRenderedCharCount
+    __UI_TBXFromPos = __UI_ThisLineChars(pixOffset)
     _FONT prevFont
 END FUNCTION
 
@@ -9560,5 +9562,3 @@ $END IF
 
 '$INCLUDE:'InFormTheme.bm'
 '$INCLUDE:'InFormTabControl.bm'
-'$INCLUDE:'extensions/HMap64.bm'
-'$INCLUDE:'extensions/String.bm'
