@@ -101,7 +101,7 @@ DIM SHARED AddToggleSwitch AS LONG, AddTabControl AS LONG
 
 'Control toggles
 DIM SHARED Stretch AS LONG, HasBorder AS LONG
-DIM SHARED ShowPercentage AS LONG, PasswordMaskCB AS LONG
+DIM SHARED ShowPercentage AS LONG, PasswordMaskCB AS LONG, MultilineCB AS LONG, SearchableCB AS LONG, FuzzyCB AS LONG
 DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
 DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
@@ -124,6 +124,7 @@ DIM SHARED SourcePropertyLB AS LONG
 DIM SHARED SourcePropertyList AS LONG
 DIM SHARED TargetPropertyLB AS LONG
 DIM SHARED TargetPropertyList AS LONG
+DIM SHARED InvertBindingCB AS LONG
 DIM SHARED BindBT AS LONG
 DIM SHARED CancelBindBT AS LONG
 
@@ -203,8 +204,9 @@ REDIM SHARED PreviewActualFonts(0) AS STRING
 REDIM SHARED PreviewControls(0) AS __UI_ControlTYPE
 REDIM SHARED PreviewParentIDS(0) AS STRING
 REDIM SHARED PreviewContextMenu(0) AS STRING
-REDIM SHARED PreviewBoundTo(0) AS STRING
-REDIM SHARED PreviewBoundProperty(0) AS STRING
+'Bindings each control is part of, one record per binding:
+'MKI$(LEN(other control's name)) + name + MKI$(LEN(this control's property)) + property
+REDIM SHARED PreviewBindings(0) AS STRING
 REDIM SHARED PreviewKeyCombos(0) AS STRING
 REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
 REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
@@ -415,6 +417,15 @@ SUB __UI_Click (id AS LONG)
         CASE PasswordMaskCB
             b$ = MKI$(Control(id).Value)
             SendData b$, 33
+        CASE MultilineCB
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 45
+        CASE SearchableCB
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 46
+        CASE FuzzyCB
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 47
         CASE AutoScroll
             b$ = MKI$(Control(id).Value)
             SendData b$, 38
@@ -552,34 +563,33 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = ControlList
             ZOrderingDialogOpen = True
         CASE EditMenuBindControls
-            'Get controls' names and bound properties
-            DIM CurrentSource$
-            j = 0
+            'Get controls' names and the properties bound between them, if any
+            DIM BindSource AS LONG, BindTarget AS LONG, SourceProperty$, TargetProperty$
+            BindSource = 0: BindTarget = 0
             FOR i = 1 TO UBOUND(PreviewControls)
                 IF PreviewControls(i).ControlIsSelected THEN
-                    j = j + 1
-                    IF j = 1 THEN
-                        Caption(SourceControlNameLB) = RTRIM$(PreviewControls(i).Name)
-                        CurrentSource$ = PreviewBoundTo(i)
-                        IF LEN(PreviewBoundProperty(i)) = 0 THEN
-                            Dummy = SelectItem(SourcePropertyList, "Value")
-                        ELSE
-                            Dummy = SelectItem(SourcePropertyList, PreviewBoundProperty(i))
-                        END IF
-                    END IF
-                    IF j = 2 THEN
-                        Caption(TargetControlNameLB) = RTRIM$(PreviewControls(i).Name)
-                        IF LEN(PreviewBoundProperty(i)) = 0 THEN
-                            Dummy = SelectItem(TargetPropertyList, "Value")
-                        ELSE
-                            Dummy = SelectItem(TargetPropertyList, PreviewBoundProperty(i))
-                        END IF
+                    IF BindSource = 0 THEN
+                        BindSource = i
+                    ELSE
+                        BindTarget = i
                         EXIT FOR
                     END IF
                 END IF
             NEXT
+            IF BindTarget = 0 THEN EXIT SUB 'Bindings are set up between two controls
 
-            IF CurrentSource$ = Caption(TargetControlNameLB) THEN
+            Caption(SourceControlNameLB) = PreviewName$(BindSource)
+            Caption(TargetControlNameLB) = PreviewName$(BindTarget)
+            SourceProperty$ = PreviewBoundProperty$(BindSource, PreviewName$(BindTarget))
+            TargetProperty$ = PreviewBoundProperty$(BindTarget, PreviewName$(BindSource))
+            'An inverted binding has "NOT " in front of one of its properties
+            Control(InvertBindingCB).Value = __UI_IsInvertedProperty(SourceProperty$) XOR __UI_IsInvertedProperty(TargetProperty$)
+            IF __UI_IsInvertedProperty(SourceProperty$) THEN SourceProperty$ = MID$(LTRIM$(SourceProperty$), 5)
+            IF __UI_IsInvertedProperty(TargetProperty$) THEN TargetProperty$ = MID$(LTRIM$(TargetProperty$), 5)
+            IF LEN(SourceProperty$) = 0 THEN Dummy = SelectItem(SourcePropertyList, "Value") ELSE Dummy = SelectItem(SourcePropertyList, SourceProperty$)
+            IF LEN(TargetProperty$) = 0 THEN Dummy = SelectItem(TargetPropertyList, "Value") ELSE Dummy = SelectItem(TargetPropertyList, TargetProperty$)
+
+            IF LEN(SourceProperty$) > 0 THEN
                 Caption(BindBT) = "Rebind"
                 Caption(CancelBindBT) = "Unbind"
             ELSE
@@ -604,8 +614,9 @@ SUB __UI_Click (id AS LONG)
             b$ = b$ + MKL$(LEN(Caption(TargetControlNameLB))) + Caption(TargetControlNameLB)
             b$ = b$ + MKL$(LEN(GetItem(SourcePropertyList, Control(SourcePropertyList).Value)))
             b$ = b$ + GetItem(SourcePropertyList, Control(SourcePropertyList).Value)
-            b$ = b$ + MKL$(LEN(GetItem(TargetPropertyList, Control(TargetPropertyList).Value)))
-            b$ = b$ + GetItem(TargetPropertyList, Control(TargetPropertyList).Value)
+            TargetProperty$ = GetItem(TargetPropertyList, Control(TargetPropertyList).Value)
+            IF Control(InvertBindingCB).Value THEN TargetProperty$ = "NOT " + TargetProperty$
+            b$ = b$ + MKL$(LEN(TargetProperty$)) + TargetProperty$
             b$ = b$ + "<END>"
             Send Client, b$
         CASE CancelBindBT
@@ -614,7 +625,7 @@ SUB __UI_Click (id AS LONG)
             SetBindingDialogOpen = False
             IF Caption(CancelBindBT) = "Unbind" THEN
                 b$ = "UNBINDCONTROLS>"
-                b$ = b$ + Caption(SourceControlNameLB)
+                b$ = b$ + Caption(SourceControlNameLB) + CHR$(10) + Caption(TargetControlNameLB)
                 b$ = b$ + "<END>"
                 Send Client, b$
             END IF
@@ -1713,6 +1724,18 @@ SUB __UI_BeforeUpdateDisplay
 
     CONST PropertyUpdateDelay = .1
 
+    'Pasting into the Text field keeps line breaks as \n for multiline textboxes,
+    'and for list boxes and dropdowns, where each line becomes an item
+    __UI_PasteLineBreakAs = ""
+    IF __UI_Focus = TextTB AND FirstSelected > 0 THEN
+        SELECT CASE PreviewControls(FirstSelected).Type
+            CASE __UI_Type_ListBox, __UI_Type_DropdownList
+                __UI_PasteLineBreakAs = "\n"
+            CASE __UI_Type_TextBox
+                IF PreviewControls(FirstSelected).Multiline THEN __UI_PasteLineBreakAs = "\n"
+        END SELECT
+    END IF
+
     IF FirstSelected > 0 THEN
         DIM ThisInputBox AS LONG
         ThisInputBox = GetInputBoxFromID(__UI_Focus)
@@ -1752,7 +1775,7 @@ SUB __UI_BeforeUpdateDisplay
         END IF
 
         IF __UI_Focus <> TextTB OR (__UI_Focus = TextTB AND RevertEdit = True) THEN
-            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
+            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR (PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND PreviewControls(FirstSelected).Multiline) THEN
                 Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0)
             ELSE
                 Text(TextTB) = PreviewTexts(FirstSelected)
@@ -1766,7 +1789,9 @@ SUB __UI_BeforeUpdateDisplay
         ELSEIF __UI_Focus = TextTB THEN
             Control(TextTB).NumericOnly = PreviewControls(FirstSelected).NumericOnly
             IF PropertyFullySelected(TextTB) THEN
-                IF ((PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList) AND Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0)) OR ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
+                IF Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0) AND (PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR (PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND PreviewControls(FirstSelected).Multiline)) THEN
+                    Control(__UI_Focus).BorderColor = ShadeOfGreen
+                ELSEIF ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
                     Control(__UI_Focus).BorderColor = ShadeOfGreen
                 ELSE
                     IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
@@ -2044,6 +2069,7 @@ SUB __UI_BeforeUpdateDisplay
     Control(Hidden).Value = PreviewControls(FirstSelected).Hidden
     Control(CenteredWindow).Value = PreviewControls(FirstSelected).CenteredWindow
     Control(PasswordMaskCB).Value = PreviewControls(FirstSelected).PasswordField
+    Control(MultilineCB).Value = PreviewControls(FirstSelected).Multiline
     Control(BooleanOptions).Value = ABS(PreviewControls(FirstSelected).Value <> 0) + 1
     Control(AlignOptions).Value = PreviewControls(FirstSelected).Align + 1
     Control(VAlignOptions).Value = PreviewControls(FirstSelected).VAlign + 1
@@ -2051,6 +2077,8 @@ SUB __UI_BeforeUpdateDisplay
     Control(Transparent).Value = PreviewControls(FirstSelected).BackStyle
     Control(Resizable).Value = PreviewControls(FirstSelected).CanResize
     Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
+    Control(SearchableCB).Value = PreviewControls(FirstSelected).Searchable
+    Control(FuzzyCB).Value = PreviewControls(FirstSelected).Fuzzy
     Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
     Control(HideTicks).Value = (PreviewControls(FirstSelected).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight)
     Control(AutoPlayGif).Value = PreviewAutoPlayGif(FirstSelected)
@@ -2188,7 +2216,8 @@ SUB __UI_BeforeUpdateDisplay
             CASE __UI_Type_TextBox
                 STATIC PreviousNumericState AS _BYTE
                 Control(Transparent).Disabled = False
-                Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False)
+                Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False) OR PreviewControls(FirstSelected).Multiline
+                Control(MultilineCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False) OR PreviewControls(FirstSelected).PasswordField OR LEN(PreviewMasks(FirstSelected)) > 0
                 IF PreviousNumericState <> PreviewControls(FirstSelected).NumericOnly THEN
                     PreviousNumericState = PreviewControls(FirstSelected).NumericOnly
                     __UI_ForceRedraw = True
@@ -2286,6 +2315,9 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
             CASE __UI_Type_ListBox
                 Control(AutoScroll).Disabled = False
+            CASE __UI_Type_DropdownList
+                Control(SearchableCB).Disabled = False
+                Control(FuzzyCB).Disabled = (PreviewControls(FirstSelected).Searchable = False)
             CASE __UI_Type_TabControl
                 Caption(TextLB) = "Tabs"
                 Caption(ValueLB) = "Active tab"
@@ -2843,6 +2875,7 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = HasBorder
     i = i + 1: Toggles(i) = ShowPercentage
     i = i + 1: Toggles(i) = PasswordMaskCB
+    i = i + 1: Toggles(i) = MultilineCB
     i = i + 1: Toggles(i) = WordWrap
     i = i + 1: Toggles(i) = CanHaveFocus
     i = i + 1: Toggles(i) = Disabled
@@ -2851,6 +2884,8 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = CenteredWindow
     i = i + 1: Toggles(i) = Resizable
     i = i + 1: Toggles(i) = AutoScroll
+    i = i + 1: Toggles(i) = SearchableCB
+    i = i + 1: Toggles(i) = FuzzyCB
     i = i + 1: Toggles(i) = AutoSize
     i = i + 1: Toggles(i) = HideTicks
     i = i + 1: Toggles(i) = AutoPlayGif
@@ -3300,8 +3335,7 @@ SUB LoadPreview
     REDIM PreviewControls(0 TO CVL(b$)) AS __UI_ControlTYPE
     REDIM PreviewParentIDS(0 TO CVL(b$)) AS STRING
     REDIM PreviewContextMenu(0 TO CVL(b$)) AS STRING
-    REDIM PreviewBoundTo(0 TO CVL(b$)) AS STRING
-    REDIM PreviewBoundProperty(0 TO CVL(b$)) AS STRING
+    REDIM PreviewBindings(0 TO CVL(b$)) AS STRING
     REDIM PreviewKeyCombos(0 TO CVL(b$)) AS STRING
     REDIM PreviewAnimatedGif(0 TO CVL(b$)) AS _BYTE
     REDIM PreviewAutoPlayGif(0 TO CVL(b$)) AS _BYTE
@@ -3435,6 +3469,12 @@ SUB LoadPreview
                     PreviewControls(Dummy).VAlign = _CV(_BYTE, b$)
                 CASE -33
                     PreviewControls(Dummy).PasswordField = True
+                CASE -51
+                    PreviewControls(Dummy).Multiline = True
+                CASE -52
+                    PreviewControls(Dummy).Searchable = True
+                CASE -53
+                    PreviewControls(Dummy).Fuzzy = True
                 CASE -34
                     b$ = ReadSequential$(FormData$, 4)
                     PreviewControls(Dummy).Encoding = CVL(b$)
@@ -3483,13 +3523,13 @@ SUB LoadPreview
                     b$ = ReadSequential$(FormData$, 2)
                     PreviewTheme = ReadSequential$(FormData$, CVI(b$))
                     UpdateThemeMenu
-                CASE -48 'BoundTo
+                CASE -48 'Binding: other control's name + this control's property
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
-                    PreviewBoundTo(Dummy) = b$
+                    PreviewBindings(Dummy) = PreviewBindings(Dummy) + MKI$(LEN(b$)) + b$
                     b$ = ReadSequential$(FormData$, 2)
                     b$ = ReadSequential$(FormData$, CVI(b$))
-                    PreviewBoundProperty(Dummy) = b$
+                    PreviewBindings(Dummy) = PreviewBindings(Dummy) + MKI$(LEN(b$)) + b$
                 CASE -1 'new control
                     EXIT DO
                 CASE -1024
@@ -3940,6 +3980,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF PreviewControls(i).PasswordField = True AND PreviewControls(i).Type = __UI_Type_TextBox THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).PasswordField = True"
                 END IF
+                IF PreviewControls(i).Multiline AND PreviewControls(i).Type = __UI_Type_TextBox THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Multiline = True"
+                END IF
                 IF PreviewControls(i).Value <> 0 THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).Value = " + LTRIM$(STR$(PreviewControls(i).Value))
                 END IF
@@ -4016,6 +4059,10 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 IF PreviewControls(i).AutoScroll THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).AutoScroll = True"
                 END IF
+                IF PreviewControls(i).Searchable AND PreviewControls(i).Type = __UI_Type_DropdownList THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Searchable = True"
+                    IF PreviewControls(i).Fuzzy THEN PRINT #TextFileNum, "    Control(__UI_NewID).Fuzzy = True"
+                END IF
                 IF PreviewControls(i).AutoSize THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).AutoSize = True"
                 END IF
@@ -4026,28 +4073,31 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     NEXT ThisPass
 
     'Save control bindings
-    DIM BindingsSection AS _BYTE
-    DIM BindingDone(0 TO UBOUND(PreviewControls)) AS _BYTE
+    'Each binding is listed by both of its controls; write it once, from the first one
+    DIM BindingsSection AS _BYTE, OtherBound$, OtherProperty$, BindingRecord AS LONG
     FOR i = 1 TO UBOUND(PreviewControls)
-        IF LEN(PreviewBoundTo(i)) > 0 AND BindingDone(i) = False THEN
-            IF BindingsSection = False THEN
-                PRINT #TextFileNum, "    'Control bindings:"
-                BindingsSection = True
-            END IF
-            BindingDone(i) = True
-            PRINT #TextFileNum, "    __UI_Bind __UI_GetID(" + CHR$(34);
-            PRINT #TextFileNum, RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) + CHR$(34) + "), ";
-            PRINT #TextFileNum, "__UI_GetID(" + CHR$(34);
-            PRINT #TextFileNum, PreviewBoundTo(i) + CHR$(34) + "), ";
-            PRINT #TextFileNum, CHR$(34) + PreviewBoundProperty(i) + CHR$(34) + ", ";
-            FOR j = 1 TO UBOUND(PreviewControls)
-                IF PreviewBoundTo(j) = RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name)) THEN
-                    BindingDone(j) = True
-                    PRINT #TextFileNum, CHR$(34) + PreviewBoundProperty(j) + CHR$(34)
+        BindingRecord = 1
+        DO WHILE BindingRecord < LEN(PreviewBindings(i))
+            OtherBound$ = MID$(PreviewBindings(i), BindingRecord + 2, CVI(MID$(PreviewBindings(i), BindingRecord, 2)))
+            BindingRecord = BindingRecord + 2 + LEN(OtherBound$)
+            b$ = MID$(PreviewBindings(i), BindingRecord + 2, CVI(MID$(PreviewBindings(i), BindingRecord, 2)))
+            BindingRecord = BindingRecord + 2 + LEN(b$)
+            FOR j = i + 1 TO UBOUND(PreviewControls)
+                IF PreviewName$(j) = OtherBound$ THEN
+                    OtherProperty$ = PreviewBoundProperty$(j, PreviewName$(i))
+                    IF LEN(OtherProperty$) THEN
+                        IF BindingsSection = False THEN
+                            PRINT #TextFileNum, "    'Control bindings:"
+                            BindingsSection = True
+                        END IF
+                        PRINT #TextFileNum, "    __UI_Bind __UI_GetID(" + CHR$(34) + PreviewName$(i) + CHR$(34) + "), ";
+                        PRINT #TextFileNum, "__UI_GetID(" + CHR$(34) + OtherBound$ + CHR$(34) + "), ";
+                        PRINT #TextFileNum, CHR$(34) + b$ + CHR$(34) + ", " + CHR$(34) + OtherProperty$ + CHR$(34)
+                    END IF
                     EXIT FOR
                 END IF
             NEXT
-        END IF
+        LOOP
     NEXT
 
     PRINT #TextFileNum, "END SUB"
@@ -4523,3 +4573,20 @@ SUB OpenThemeEditor
     b$ = "WATCHTHEME>" + MKI$(0) + "<END>"
     Send Client, b$
 END SUB
+
+FUNCTION PreviewName$ (i AS LONG)
+    PreviewName$ = RTRIM$(__UI_TrimAt0$(PreviewControls(i).Name))
+END FUNCTION
+
+'The property of preview control i that's bound to the control named other$ ("" when not bound)
+FUNCTION PreviewBoundProperty$ (i AS LONG, other$)
+    DIM p AS LONG, n$, prop$
+    p = 1
+    DO WHILE p < LEN(PreviewBindings(i))
+        n$ = MID$(PreviewBindings(i), p + 2, CVI(MID$(PreviewBindings(i), p, 2)))
+        p = p + 2 + LEN(n$)
+        prop$ = MID$(PreviewBindings(i), p + 2, CVI(MID$(PreviewBindings(i), p, 2)))
+        p = p + 2 + LEN(prop$)
+        IF n$ = other$ THEN PreviewBoundProperty$ = prop$: EXIT FUNCTION
+    LOOP
+END FUNCTION

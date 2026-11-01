@@ -84,11 +84,20 @@ FOR EACH CONTROL (FORM INCLUDED):
     INTEGER -45 (Animated Gif)
     INTEGER -46 (Auto-play Gif)
     INTEGER -47 (ControlIsSelected)
-    INTEGER -48 (BoundTo) + INTEGER Which control + INTEGER Which 
-                Property
+    INTEGER -48 (Binding) + INTEGER LEN(other control's name) + name
+                + INTEGER LEN(this control's property) + property
+                One per binding the control is part of; the other
+                control lists the same binding from its side
+                A property starting with "NOT " marks an inverted binding
     INTEGER -49 (TabPage) + INTEGER .TabPage
                 For children of TabControl controls
     INTEGER -50 (Theme) + INTEGER LEN(Theme) + Theme
                 For the Form, when its theme isn't the default "xp"
+    INTEGER -51 (Multiline = True)
+                For TextBox controls
+    INTEGER -52 (Searchable = True)
+                For DropdownList controls
+    INTEGER -53 (Fuzzy = True)
+                For searchable DropdownList controls
     -------------------
 INTEGER -1024 (End of file)

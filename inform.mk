@@ -45,23 +45,27 @@ QB64PE_FLAGS := -x -w -e
 
 TEST_EXECUTABLE := tests/test_main$(EXTENSION)
 
+# The InForm engine and extensions are $INCLUDEd by every program, so a change
+# to any of them has to rebuild everything
+INFORM_SOURCES := $(wildcard InForm/*.ui InForm/*.bi InForm/*.bm InForm/extensions/*.bi InForm/extensions/*.bm)
+
 .PHONY: all release test clean
 
 all: UiEditor$(EXTENSION) InForm/UiEditorPreview$(EXTENSION) InForm/vbdos2inform$(EXTENSION) ThemeEditor$(EXTENSION)
 
-UiEditor$(EXTENSION) : InForm/UiEditor.bas
+UiEditor$(EXTENSION) : InForm/UiEditor.bas InForm/UiEditor.frm $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-InForm/UiEditorPreview$(EXTENSION) : InForm/UiEditorPreview.bas
+InForm/UiEditorPreview$(EXTENSION) : InForm/UiEditorPreview.bas InForm/UiEditorPreview.frm $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-InForm/vbdos2inform$(EXTENSION) : InForm/vbdos2inform.bas
+InForm/vbdos2inform$(EXTENSION) : InForm/vbdos2inform.bas InForm/InFormVersion.bi
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-ThemeEditor$(EXTENSION) : InForm/ThemeEditor.bas InForm/ThemeEditor.frm
+ThemeEditor$(EXTENSION) : InForm/ThemeEditor.bas InForm/ThemeEditor.frm $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-$(TEST_EXECUTABLE): tests/test_main.bas
+$(TEST_EXECUTABLE): tests/test_main.bas $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
 release: clean

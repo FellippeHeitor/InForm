@@ -736,16 +736,25 @@ SUB __UI_UpdateDisplay
                 _DEST 0
             END IF
 
-            IF i = __UI_FirstSelectedID AND Control(i).BoundTo > 0 AND __UI_DesignMode = True AND __UI_ShowInvisibleControls = True THEN
+            IF i = __UI_FirstSelectedID _ANDALSO __UI_DesignMode = True _ANDALSO __UI_ShowInvisibleControls = True _ANDALSO __UI_IsBound(i) THEN
+                'Highlight the selected control and every control bound to it
+                DIM BindingIndex AS LONG, BoundID AS LONG
                 LINE (Control(i).Left - 5 + Control(Control(i).ParentID).Left, _
                       Control(i).Top - 5 + Control(Control(i).ParentID).Top)- _
                       STEP(Control(i).Width + 10, Control(i).Height + 10), _
                       _RGB32(127, 105, 183, 50), BF
 
-                LINE (Control(Control(i).BoundTo).Left - 5 + Control(Control(Control(i).BoundTo).ParentID).Left, _
-                      Control(Control(i).BoundTo).Top - 5 + Control(Control(Control(i).BoundTo).ParentID).Top)- _
-                      STEP(Control(Control(i).BoundTo).Width + 10, Control(Control(i).BoundTo).Height + 10), _
-                      _RGB32(127, 105, 183, 50), BF
+                FOR BindingIndex = 1 TO __UI_TotalBindings
+                    BoundID = 0
+                    IF __UI_Bindings(BindingIndex).ID1 = i THEN BoundID = __UI_Bindings(BindingIndex).ID2
+                    IF __UI_Bindings(BindingIndex).ID2 = i THEN BoundID = __UI_Bindings(BindingIndex).ID1
+                    IF BoundID > 0 THEN
+                        LINE (Control(BoundID).Left - 5 + Control(Control(BoundID).ParentID).Left, _
+                              Control(BoundID).Top - 5 + Control(Control(BoundID).ParentID).Top)- _
+                              STEP(Control(BoundID).Width + 10, Control(BoundID).Height + 10), _
+                              _RGB32(127, 105, 183, 50), BF
+                    END IF
+                NEXT
             END IF
 
             IF __UI_IsOnHiddenTab(i) THEN GOTO BypassDisplay
@@ -1580,11 +1589,15 @@ SUB __UI_EventDispatcher
             IF Control(__UI_HoveringID).InputViewStart + Control(__UI_HoveringID).LastVisibleItem > Control(__UI_HoveringID).Max THEN
                 Control(__UI_HoveringID).InputViewStart = Control(__UI_HoveringID).Max - Control(__UI_HoveringID).LastVisibleItem + 1
             END IF
+            IF Control(__UI_HoveringID).InputViewStart < 1 THEN Control(__UI_HoveringID).InputViewStart = 1
         ELSEIF (__UI_ActiveDropdownList > 0 AND __UI_Focus = __UI_ActiveDropdownList AND __UI_ParentDropdownList = __UI_HoveringID) THEN
             Control(__UI_ActiveDropdownList).InputViewStart = Control(__UI_ActiveDropdownList).InputViewStart + __UI_MouseWheel
             IF Control(__UI_ActiveDropdownList).InputViewStart + Control(__UI_ActiveDropdownList).LastVisibleItem > Control(__UI_ActiveDropdownList).Max THEN
                 Control(__UI_ActiveDropdownList).InputViewStart = Control(__UI_ActiveDropdownList).Max - Control(__UI_ActiveDropdownList).LastVisibleItem + 1
             END IF
+            IF Control(__UI_ActiveDropdownList).InputViewStart < 1 THEN Control(__UI_ActiveDropdownList).InputViewStart = 1
+        ELSEIF Control(__UI_HoveringID).Type = __UI_Type_TextBox _ANDALSO Control(__UI_HoveringID).Multiline _ANDALSO NOT Control(__UI_HoveringID).Disabled THEN
+            __UI_TBScrollTo __UI_HoveringID, Control(__UI_HoveringID).FirstVisibleLine + __UI_MouseWheel * 3
         ELSEIF (Control(__UI_Focus).Type = __UI_Type_DropdownList AND NOT Control(__UI_Focus).Disabled) THEN
             Control(__UI_Focus).Value = Control(__UI_Focus).Value + __UI_MouseWheel
             IF Control(__UI_Focus).Value < 1 THEN Control(__UI_Focus).Value = 1
@@ -1593,17 +1606,6 @@ SUB __UI_EventDispatcher
                 __UI_ValueChanged __UI_Focus
                 Control(__UI_Focus).PreviousValue = Control(__UI_Focus).Value
                 Control(__UI_Focus).Redraw = True
-            END IF
-        ELSEIF Control(__UI_Focus).Type = __UI_Type_TextBox AND Control(__UI_Focus).Multiline THEN
-            DIM TotalLines AS LONG
-            TotalLines = __UI_CountLines(__UI_Focus)
-            _FONT Control(__UI_Focus).Font
-            IF TotalLines > Control(__UI_Focus).Height \ uspacing& THEN
-                Control(__UI_Focus).FirstVisibleLine = Control(__UI_Focus).FirstVisibleLine + __UI_MouseWheel
-                IF Control(__UI_Focus).FirstVisibleLine < 1 THEN Control(__UI_Focus).FirstVisibleLine = 1
-                IF Control(__UI_Focus).FirstVisibleLine > TotalLines - Control(__UI_Focus).Height \ uspacing& + 1 THEN
-                    Control(__UI_Focus).FirstVisibleLine = TotalLines - Control(__UI_Focus).Height \ uspacing& + 1
-                END IF
             END IF
         END IF
     END IF
@@ -1729,14 +1731,15 @@ SUB __UI_EventDispatcher
                     ELSE
                         Control(__UI_GetID("__UI_PreviewMenuConvertType")).Hidden = True
                     END IF
-
-                    IF Control(__UI_FirstSelectedID).BoundTo > 0 THEN
-                        Control(__UI_GetID("__UI_PreviewMenuBindControls")).Hidden = False
-                        SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Edit binding...-"
-                    END IF
                 ELSEIF __UI_TotalSelectedControls = 2 THEN
+                    'A binding is set up between two controls: offer to edit theirs, if they're bound
+                    DIM OtherSelectedID AS LONG
+                    OtherSelectedID = 0
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected AND i <> __UI_FirstSelectedID THEN OtherSelectedID = i: EXIT FOR
+                    NEXT
                     Control(__UI_GetID("__UI_PreviewMenuBindControls")).Hidden = False
-                    IF Control(__UI_FirstSelectedID).BoundTo > 0 THEN
+                    IF __UI_BindingIndex(__UI_FirstSelectedID, OtherSelectedID) > 0 THEN
                         SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Edit binding...-"
                     ELSE
                         SetCaption __UI_GetID("__UI_PreviewMenuBindControls"), "Bind selected controls...-"
@@ -1998,12 +2001,14 @@ SUB __UI_EventDispatcher
             IF NOT __UI_DesignMode THEN
                 IF Control(__UI_Focus).Type = __UI_Type_TextBox AND NOT Control(__UI_Focus).Disabled THEN
                     _FONT Control(__UI_Focus).Font
+                    __UI_TBKeepCaretX = False
                     IF Control(__UI_HoveringID).HoveringVScrollbarButton = 1 OR Control(__UI_HoveringID).HoveringVScrollbarButton = 2 OR Control(__UI_HoveringID).HoveringVScrollbarButton = 4 OR Control(__UI_HoveringID).HoveringVScrollbarButton = 5 THEN
                         __UI_MouseDownOnScrollbar = TIMER
                     ELSEIF Control(__UI_HoveringID).HoveringVScrollbarButton = 3 THEN
                         IF NOT __UI_DraggingThumb THEN
                             __UI_DraggingThumb = True
-                            __UI_ThumbDragTop = __UI_MouseTop
+                            'Remember where on the thumb it was grabbed
+                            __UI_ThumbDragTop = __UI_MouseTop - (Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).ThumbTop)
                             __UI_DraggingThumbOnID = __UI_HoveringID
                         END IF
                     ELSE
@@ -2020,37 +2025,46 @@ SUB __UI_EventDispatcher
                             END IF
                         ELSE
                             STATIC WholeWordSelection AS _BYTE, WholeWordCursor AS LONG, WholeWordSelStart AS LONG
+                            DIM HadSelection AS _BYTE
+                            HadSelection = Control(__UI_Focus).TextIsSelected
                             Control(__UI_Focus).TextIsSelected = False
                             __UI_FillSelectedText 0, 0
                             WholeWordSelection = False
                             WholeWordCursor = 0
                             WholeWordSelStart = 0
-                            IF Control(__UI_Focus).Multiline AND Control(__UI_Focus).HoveringVScrollbarButton = 0 THEN
+                            IF Control(__UI_Focus).Multiline THEN
                                 PositionCursorMultilineTB:
-                                'Multi-line textbox click (position cursor)
-                                'Calculate which line was clicked
-                                DIM ThisLine$, ThisLineLen AS LONG, ThisLineStart AS LONG
+                                'Multi-line textbox click: place the cursor; a double click selects a word
+                                STATIC LastMultilineClick#, LastMultilineClickID AS LONG, LastMultilineClickPos AS LONG
+                                DIM ClickedPosition AS LONG
 
-                                TotalLines = __UI_CountLines(__UI_Focus)
-                                Control(__UI_Focus).CurrentLine = Control(__UI_Focus).FirstVisibleLine - 1 + (__UI_MouseTop - Control(__UI_Focus).Top - Control(Control(__UI_Focus).ParentID).Top) / uspacing&
-                                IF Control(__UI_Focus).CurrentLine > TotalLines THEN Control(__UI_Focus).CurrentLine = TotalLines
-                                IF Control(__UI_Focus).CurrentLine = 0 THEN Control(__UI_Focus).CurrentLine = 1
-                                ThisLine$ = __UI_GetTextBoxLine(__UI_Focus, Control(__UI_Focus).CurrentLine, ThisLineStart)
-                                ThisLineLen = LEN(ThisLine$)
-
-                                'Print the text offscreen just to fill the right variables
-                                __UI_CharPos ThisLine$
-
-                                'New cursor position:
-                                FOR i = 1 TO __UI_LastRenderedCharCount
-                                    IF (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_Focus).Left - Control(Control(__UI_Focus).ParentID).Left) <= __UI_ThisLineChars(i) THEN
-                                        Control(__UI_Focus).Cursor = ThisLineStart + i - 2
-                                        EXIT FOR
+                                ClickedPosition = __UI_TBPosFromMouse(__UI_Focus)
+                                WholeWordSelection = False
+                                IF TIMER - LastMultilineClick# < .3 _ANDALSO LastMultilineClickID = __UI_Focus _ANDALSO ClickedPosition = LastMultilineClickPos _ANDALSO NOT __UI_IsWordSeparator(Text(__UI_Focus), ClickedPosition + 1) THEN
+                                    WholeWordCursor = __UI_TBWordStart(__UI_Focus, ClickedPosition)
+                                    WholeWordSelStart = __UI_TBWordEnd(__UI_Focus, ClickedPosition)
+                                    Control(__UI_Focus).SelectionStart = WholeWordCursor
+                                    Control(__UI_Focus).Cursor = WholeWordSelStart
+                                    Control(__UI_Focus).TextIsSelected = True
+                                    WholeWordSelection = True
+                                    LastMultilineClick# = 0
+                                ELSE
+                                    IF __UI_ShiftIsDown THEN
+                                        'Shift+click extends the selection
+                                        IF NOT HadSelection THEN Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
+                                        Control(__UI_Focus).Cursor = ClickedPosition
+                                        Control(__UI_Focus).TextIsSelected = (Control(__UI_Focus).Cursor <> Control(__UI_Focus).SelectionStart)
+                                    ELSE
+                                        Control(__UI_Focus).TextIsSelected = False
+                                        Control(__UI_Focus).Cursor = ClickedPosition
+                                        Control(__UI_Focus).SelectionStart = ClickedPosition
                                     END IF
-                                NEXT
-
-                                IF i > __UI_LastRenderedCharCount THEN Control(__UI_Focus).Cursor = ThisLineStart + ThisLineLen - 1
-                                Control(__UI_Focus).SelectionStart = Control(__UI_Focus).Cursor
+                                    LastMultilineClick# = TIMER
+                                END IF
+                                __UI_FillSelectedText 0, 0
+                                HadSelection = False
+                                LastMultilineClickID = __UI_Focus
+                                LastMultilineClickPos = ClickedPosition
                             ELSE
                                 'Position cursor in single-line textbox:
                                 STATIC LastCursorReposition#, LastCursorID AS LONG, LastCursor AS LONG
@@ -2132,7 +2146,8 @@ SUB __UI_EventDispatcher
                     ELSEIF Control(__UI_HoveringID).HoveringVScrollbarButton = 3 THEN
                         IF NOT __UI_DraggingThumb THEN
                             __UI_DraggingThumb = True
-                            __UI_ThumbDragTop = __UI_MouseTop
+                            'Remember where on the thumb it was grabbed
+                            __UI_ThumbDragTop = __UI_MouseTop - (Control(Control(__UI_HoveringID).ParentID).Top + Control(__UI_HoveringID).ThumbTop)
                             __UI_DraggingThumbOnID = __UI_HoveringID
                         END IF
                     END IF
@@ -2202,29 +2217,25 @@ SUB __UI_EventDispatcher
             IF __UI_IsSelectingText THEN
                 _FONT Control(__UI_IsSelectingTextOnID).Font
                 IF Control(__UI_IsSelectingTextOnID).Multiline THEN
-                    'Multi-line textbox click
-                    'Calculate current line
-                    TotalLines = __UI_CountLines(__UI_IsSelectingTextOnID)
-                    Control(__UI_IsSelectingTextOnID).CurrentLine = Control(__UI_IsSelectingTextOnID).FirstVisibleLine - 1 + (__UI_MouseTop - Control(__UI_IsSelectingTextOnID).Top - Control(Control(__UI_IsSelectingTextOnID).ParentID).Top) / uspacing&
-                    IF Control(__UI_IsSelectingTextOnID).CurrentLine > TotalLines THEN Control(__UI_IsSelectingTextOnID).CurrentLine = TotalLines
-                    IF Control(__UI_IsSelectingTextOnID).CurrentLine = 0 THEN Control(__UI_IsSelectingTextOnID).CurrentLine = 1
-                    ThisLine$ = __UI_GetTextBoxLine(__UI_IsSelectingTextOnID, Control(__UI_IsSelectingTextOnID).CurrentLine, ThisLineStart)
-                    ThisLineLen = LEN(ThisLine$)
-                    __UI_CharPos ThisLine$ ' print the text offscreen just to fill the right variables
-
-                    'New cursor position:
-                    FOR i = 1 TO __UI_LastRenderedCharCount
-                        IF (__UI_MouseLeft - Control(__UI_IsSelectingTextOnID).Left - Control(Control(__UI_IsSelectingTextOnID).ParentID).Left) >= __UI_ThisLineChars(i - 1) AND (__UI_MouseLeft - Control(__UI_IsSelectingTextOnID).Left - Control(Control(__UI_IsSelectingTextOnID).ParentID).Left) <= __UI_ThisLineChars(i) THEN
-                            Control(__UI_IsSelectingTextOnID).Cursor = ThisLineStart + i - 2
-                            EXIT FOR
+                    'Multi-line textbox: extend the selection to the mouse
+                    DIM DragPosition AS LONG
+                    DragPosition = __UI_TBPosFromMouse(__UI_IsSelectingTextOnID)
+                    IF WholeWordSelection THEN
+                        'Started with a double click: select whole words
+                        IF DragPosition < WholeWordCursor THEN
+                            Control(__UI_IsSelectingTextOnID).SelectionStart = WholeWordSelStart
+                            Control(__UI_IsSelectingTextOnID).Cursor = __UI_TBWordStart(__UI_IsSelectingTextOnID, DragPosition)
+                        ELSEIF DragPosition > WholeWordSelStart THEN
+                            Control(__UI_IsSelectingTextOnID).SelectionStart = WholeWordCursor
+                            Control(__UI_IsSelectingTextOnID).Cursor = __UI_TBWordEnd(__UI_IsSelectingTextOnID, DragPosition)
+                        ELSE
+                            Control(__UI_IsSelectingTextOnID).SelectionStart = WholeWordCursor
+                            Control(__UI_IsSelectingTextOnID).Cursor = WholeWordSelStart
                         END IF
-                    NEXT
-
-                    IF i > __UI_LastRenderedCharCount THEN Control(__UI_IsSelectingTextOnID).Cursor = ThisLineStart + ThisLineLen - 1
-
-                    IF Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart THEN
-                        Control(__UI_IsSelectingTextOnID).TextIsSelected = True
+                    ELSE
+                        Control(__UI_IsSelectingTextOnID).Cursor = DragPosition
                     END IF
+                    Control(__UI_IsSelectingTextOnID).TextIsSelected = (Control(__UI_IsSelectingTextOnID).Cursor <> Control(__UI_IsSelectingTextOnID).SelectionStart)
                 ELSE
                     'Print the text offscreen just to fill the right variables
                     __UI_CharPos Text(__UI_Focus)
@@ -2313,26 +2324,23 @@ SUB __UI_EventDispatcher
                             END IF
                             __UI_MouseDownOnScrollbar = TIMER - .25
                         END IF
-                    ELSEIF Control(__UI_MouseDownOnID).Type = __UI_Type_TextBox THEN
-                        _FONT Control(__UI_MouseDownOnID).Font
-                        IF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 1 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
+                    ELSEIF Control(__UI_MouseDownOnID).Type = __UI_Type_TextBox _ANDALSO Control(__UI_MouseDownOnID).Multiline _ANDALSO NOT Control(__UI_MouseDownOnID).Disabled THEN
+                        IF Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 1 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
                             'Mousedown on "up" button
-                            Control(__UI_MouseDownOnID).FirstVisibleLine = Control(__UI_MouseDownOnID).FirstVisibleLine - 1
-                            IF Control(__UI_MouseDownOnID).FirstVisibleLine < 0 THEN Control(__UI_MouseDownOnID).FirstVisibleLine = 1
-                        ELSEIF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 2 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
+                            __UI_TBScrollTo __UI_MouseDownOnID, Control(__UI_MouseDownOnID).FirstVisibleLine - 1
+                            __UI_MouseDownOnScrollbar = TIMER - .25
+                        ELSEIF Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 2 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
                             'Mousedown on "down" button
-                            IF Control(__UI_MouseDownOnID).FirstVisibleLine < __UI_CountLines(__UI_MouseDownOnID) - Control(__UI_MouseDownOnID).Height \ uspacing& + 1 THEN
-                                Control(__UI_MouseDownOnID).FirstVisibleLine = Control(__UI_MouseDownOnID).FirstVisibleLine + 1
-                            END IF
-                        ELSEIF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 4 AND TIMER - __UI_MouseDownOnScrollbar < .3 THEN
+                            __UI_TBScrollTo __UI_MouseDownOnID, Control(__UI_MouseDownOnID).FirstVisibleLine + 1
+                            __UI_MouseDownOnScrollbar = TIMER - .25
+                        ELSEIF Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 4 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
                             'Mousedown on "track" area above the thumb
-                            Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).InputViewStart - (Control(__UI_MouseDownOnID).LastVisibleItem - 1)
-                        ELSEIF NOT Control(__UI_MouseDownOnID).Disabled AND Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 5 AND TIMER - __UI_MouseDownOnScrollbar < .3 THEN
+                            __UI_TBScrollTo __UI_MouseDownOnID, Control(__UI_MouseDownOnID).FirstVisibleLine - __UI_TBVisibleLines(__UI_MouseDownOnID)
+                            __UI_MouseDownOnScrollbar = TIMER - .2
+                        ELSEIF Control(__UI_MouseDownOnID).HoveringVScrollbarButton = 5 AND TIMER - __UI_MouseDownOnScrollbar > .3 THEN
                             'Mousedown on "track" area below the thumb
-                            Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).InputViewStart + (Control(__UI_MouseDownOnID).LastVisibleItem - 1)
-                            IF Control(__UI_MouseDownOnID).InputViewStart > Control(__UI_MouseDownOnID).Max - Control(__UI_MouseDownOnID).LastVisibleItem - 1 THEN
-                                Control(__UI_MouseDownOnID).InputViewStart = Control(__UI_MouseDownOnID).Max - Control(__UI_MouseDownOnID).LastVisibleItem - 1
-                            END IF
+                            __UI_TBScrollTo __UI_MouseDownOnID, Control(__UI_MouseDownOnID).FirstVisibleLine + __UI_TBVisibleLines(__UI_MouseDownOnID)
+                            __UI_MouseDownOnScrollbar = TIMER - .2
                         END IF
                     END IF
 
@@ -2406,41 +2414,18 @@ SUB __UI_EventDispatcher
                             'DIM TempNewCursor AS LONG
                             'STATIC LastTextBoxClick AS SINGLE, LastTextBoxClickID AS LONG
 
-                            IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(__UI_HoveringID).Width - 25 + ContainerOffsetLeft THEN
-                                'Control has a vertical scrollbar and it's been clicked
-                                IF __UI_MouseTop >= Control(__UI_HoveringID).Top + ContainerOffsetTop AND NOT Control(__UI_HoveringID).Disabled AND __UI_MouseTop <= Control(__UI_HoveringID).Top + ContainerOffsetTop + __UI_ScrollbarButtonHeight THEN
-                                    'Click on "up" button
-                                    Control(__UI_MouseDownOnID).FirstVisibleLine = Control(__UI_MouseDownOnID).FirstVisibleLine - 1
-                                    IF Control(__UI_MouseDownOnID).FirstVisibleLine < 0 THEN Control(__UI_MouseDownOnID).FirstVisibleLine = 1
-                                ELSEIF __UI_MouseTop >= Control(__UI_HoveringID).VScrollbarButton2Top + ContainerOffsetTop AND NOT Control(__UI_HoveringID).Disabled THEN
-                                    'Click on "down" button
-                                    IF Control(__UI_MouseDownOnID).FirstVisibleLine < __UI_CountLines(__UI_MouseDownOnID) - Control(__UI_MouseDownOnID).Height \ uspacing& + 1 THEN
-                                        Control(__UI_MouseDownOnID).FirstVisibleLine = Control(__UI_MouseDownOnID).FirstVisibleLine + 1
-                                    END IF
-                                END IF
-                            ELSE
-                                IF TIMER - JustEnteredTextBox > .3 THEN
-                                    _FONT Control(__UI_HoveringID).Font
-                                    'IF NOT Control(__UI_HoveringID).Multiline THEN
-                                    '    'Single-line textbox
-                                    '    TempNewCursor = ((__UI_MouseLeft - (Control(__UI_HoveringID).Left + Control(Control(__UI_HoveringID).ParentID).Left)) / _FONTWIDTH) + (Control(__UI_HoveringID).InputViewStart - 1)
-                                    '    IF __UI_HoveringID = LastTextBoxClickID AND TIMER - LastTextBoxClick < .3 AND TempNewCursor = Control(__UI_HoveringID).Cursor THEN
-                                    '        'Double click in a textbox to select it all
-                                    '        IF LEN(Text(__UI_HoveringID)) > 0 THEN
-                                    '            Control(__UI_HoveringID).Cursor = LEN(Text(__UI_HoveringID))
-                                    '            Control(__UI_HoveringID).SelectionStart = 0
-                                    '            Control(__UI_HoveringID).TextIsSelected = True
-                                    '        END IF
-                                    '    ELSE
-                                    '        Control(__UI_HoveringID).Cursor = TempNewCursor
-                                    '        IF Control(__UI_HoveringID).Cursor > LEN(Text(__UI_HoveringID)) THEN Control(__UI_HoveringID).Cursor = LEN(Text(__UI_HoveringID))
-                                    '    END IF
-                                    '    LastTextBoxClick = TIMER
-                                    '    LastTextBoxClickID = __UI_HoveringID
-                                    'ELSE
-                                    '    'Multiline textbox
-                                    'END IF
-                                END IF
+                            IF Control(__UI_HoveringID).HasVScrollbar _ANDALSO Control(__UI_HoveringID).HoveringVScrollbarButton > 0 _ANDALSO NOT Control(__UI_HoveringID).Disabled THEN
+                                'Click on the vertical scrollbar
+                                SELECT CASE Control(__UI_HoveringID).HoveringVScrollbarButton
+                                    CASE 1 'Up button
+                                        __UI_TBScrollTo __UI_HoveringID, Control(__UI_HoveringID).FirstVisibleLine - 1
+                                    CASE 2 'Down button
+                                        __UI_TBScrollTo __UI_HoveringID, Control(__UI_HoveringID).FirstVisibleLine + 1
+                                    CASE 4 'Track above the thumb
+                                        __UI_TBScrollTo __UI_HoveringID, Control(__UI_HoveringID).FirstVisibleLine - __UI_TBVisibleLines(__UI_HoveringID)
+                                    CASE 5 'Track below the thumb
+                                        __UI_TBScrollTo __UI_HoveringID, Control(__UI_HoveringID).FirstVisibleLine + __UI_TBVisibleLines(__UI_HoveringID)
+                                END SELECT
                             END IF
                         CASE __UI_Type_ListBox
                             IF Control(__UI_HoveringID).HasVScrollbar AND __UI_MouseLeft >= Control(__UI_HoveringID).Left + Control(__UI_HoveringID).Width - 25 + ContainerOffsetLeft THEN
@@ -2467,7 +2452,7 @@ SUB __UI_EventDispatcher
 
                                 IF __UI_HoveringID = __UI_ActiveDropdownList THEN
                                     __UI_Focus = __UI_ParentDropdownList
-                                    Control(__UI_ParentDropdownList).Value = Control(__UI_ActiveDropdownList).Value
+                                    Control(__UI_ParentDropdownList).Value = __UI_DropdownChosenItem(Control(__UI_ActiveDropdownList).Value)
                                     IF Control(__UI_ParentDropdownList).PreviousValue <> Control(__UI_ParentDropdownList).Value THEN
                                         __UI_ValueChanged __UI_ParentDropdownList
                                         Control(__UI_ParentDropdownList).PreviousValue = Control(__UI_ParentDropdownList).Value
@@ -3093,31 +3078,21 @@ SUB __UI_EventDispatcher
     END IF
 
     IF __UI_DraggingThumb = True THEN
+        'The thumb follows the mouse; __UI_ThumbDragTop holds where on the thumb it was grabbed
+        DIM AS LONG ThumbTravel, ThumbOffset, ScrollMax
+        ThumbTravel = Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight * 2 - 2 - Control(__UI_DraggingThumbOnID).ThumbHeight
+        ThumbOffset = __UI_MouseTop - __UI_ThumbDragTop - (Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Top + 1 + __UI_ScrollbarButtonHeight)
         IF Control(__UI_DraggingThumbOnID).Type = __UI_Type_ListBox THEN
-            IF __UI_MouseTop >= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight AND __UI_MouseTop <= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
-                'Dragging in the track area
-                Control(__UI_DraggingThumbOnID).InputViewStart = Control(__UI_DraggingThumbOnID).InputViewStart + ((__UI_MouseTop - __UI_ThumbDragTop) * Control(__UI_DraggingThumbOnID).VScrollbarRatio)
-                IF Control(__UI_DraggingThumbOnID).InputViewStart + Control(__UI_DraggingThumbOnID).LastVisibleItem - 1 > Control(__UI_DraggingThumbOnID).Max THEN Control(__UI_DraggingThumbOnID).InputViewStart = Control(__UI_DraggingThumbOnID).Max - Control(__UI_DraggingThumbOnID).LastVisibleItem + 1
-                __UI_ThumbDragTop = __UI_MouseTop
-            ELSEIF __UI_MouseTop < Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight THEN
-                'Dragging above the track area
-                Control(__UI_DraggingThumbOnID).InputViewStart = 1
-            ELSEIF __UI_MouseTop > Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
-                'Dragging below the track area
-                Control(__UI_DraggingThumbOnID).InputViewStart = Control(__UI_DraggingThumbOnID).Max - Control(__UI_DraggingThumbOnID).LastVisibleItem + 1
+            ScrollMax = Control(__UI_DraggingThumbOnID).Max - Control(__UI_DraggingThumbOnID).LastVisibleItem
+            IF ThumbTravel > 0 _ANDALSO ScrollMax > 0 THEN
+                Control(__UI_DraggingThumbOnID).InputViewStart = 1 + _ROUND(ThumbOffset / ThumbTravel * ScrollMax)
+                IF Control(__UI_DraggingThumbOnID).InputViewStart < 1 THEN Control(__UI_DraggingThumbOnID).InputViewStart = 1
+                IF Control(__UI_DraggingThumbOnID).InputViewStart > ScrollMax + 1 THEN Control(__UI_DraggingThumbOnID).InputViewStart = ScrollMax + 1
             END IF
         ELSEIF Control(__UI_DraggingThumbOnID).Type = __UI_Type_TextBox THEN
-            _FONT Control(__UI_DraggingThumbOnID).Font
-            IF __UI_MouseTop >= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight AND __UI_MouseTop <= Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
-                'Dragging in the track area
-                Control(__UI_DraggingThumbOnID).FirstVisibleLine = Control(__UI_DraggingThumbOnID).FirstVisibleLine + ((__UI_MouseTop - __UI_ThumbDragTop) * Control(__UI_DraggingThumbOnID).VScrollbarRatio)
-                __UI_ThumbDragTop = __UI_MouseTop
-            ELSEIF __UI_MouseTop < Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + __UI_ScrollbarButtonHeight THEN
-                'Dragging above the track area
-                Control(__UI_DraggingThumbOnID).FirstVisibleLine = 1
-            ELSEIF __UI_MouseTop > Control(__UI_DraggingThumbOnID).Top + Control(Control(__UI_DraggingThumbOnID).ParentID).Top + Control(__UI_DraggingThumbOnID).Height - __UI_ScrollbarButtonHeight THEN
-                'Dragging below the track area
-                Control(__UI_DraggingThumbOnID).FirstVisibleLine = __UI_CountLines(__UI_DraggingThumbOnID) - Control(__UI_DraggingThumbOnID).Height \ uspacing&
+            ScrollMax = __UI_TBCountLines(__UI_DraggingThumbOnID) - __UI_TBVisibleLines(__UI_DraggingThumbOnID)
+            IF ThumbTravel > 0 _ANDALSO ScrollMax > 0 THEN
+                __UI_TBScrollTo __UI_DraggingThumbOnID, 1 + _ROUND(ThumbOffset / ThumbTravel * ScrollMax)
             END IF
         END IF
     END IF
@@ -3381,7 +3356,7 @@ SUB __UI_EventDispatcher
                 GOTO ProcessClick
             ELSEIF Control(__UI_Focus).Type = __UI_Type_ListBox AND __UI_Focus = __UI_ActiveDropdownList THEN
                 __UI_Focus = __UI_ParentDropdownList
-                Control(__UI_ParentDropdownList).Value = Control(__UI_ActiveDropdownList).Value
+                Control(__UI_ParentDropdownList).Value = __UI_DropdownChosenItem(Control(__UI_ActiveDropdownList).Value)
                 __UI_DestroyControl Control(__UI_ActiveDropdownList)
                 IF Control(__UI_Focus).PreviousValue <> Control(__UI_Focus).Value THEN
                     __UI_ValueChanged __UI_Focus
@@ -3396,6 +3371,9 @@ SUB __UI_EventDispatcher
                 __UI_Click __UI_DefaultButtonID
             END IF
         ELSE
+            'Keys typed into a searchable dropdown list go to its search
+            IF __UI_DropdownSearchKey THEN __UI_KeyHit = 0
+
             SELECT CASE Control(__UI_Focus).Type
                 CASE __UI_Type_TrackBar
                     SELECT CASE __UI_KeyHit
@@ -3686,38 +3664,33 @@ SUB __UI_EventDispatcher
                     DIM Clip$, FindLF&
                     DIM s1 AS LONG, s2 AS LONG
                     IF NOT Control(__UI_Focus).Disabled THEN
+                        'Up/Down keep aiming at the same column; anything else that moves the cursor resets that
+                        SELECT CASE __UI_KeyHit
+                            CASE _KEY_UP, _KEY_DOWN, _KEY_PAGEUP, _KEY_PAGEDOWN
+                            CASE 1 TO 99999
+                                __UI_TBKeepCaretX = False
+                        END SELECT
+
                         SELECT EVERYCASE __UI_KeyHit
-                            CASE 32 TO 254 'Printable ASCII characters
+                            CASE 13, 32 TO 254 'Printable ASCII characters, and Enter for a new line in a multiline textbox
+                                IF __UI_KeyHit = 13 _ANDALSO NOT Control(__UI_Focus).Multiline THEN __UI_KeyHit = 0
                                 IF __UI_KeyHit = __ASC_LOWER_V OR __UI_KeyHit = __ASC_UPPER_V THEN 'Paste from clipboard (Ctrl+V)
                                     IF __UI_CtrlIsDown THEN
                                         PasteIntoTextBox:
                                         IF Control(__UI_Focus).Multiline THEN
-                                            Clip$ = Replace(_CLIPBOARD$, _CHR_CR + _CHR_LF, _CHR_LF, False, 0)
+                                            'Keep line breaks, whatever their style (CR+LF, CR or LF)
+                                            Clip$ = Replace(Replace(_CLIPBOARD$, _CHR_CR + _CHR_LF, _CHR_LF, False, 0), _CHR_CR, _CHR_LF, False, 0)
                                             IF LEN(Clip$) > 0 THEN
-                                                IF NOT Control(__UI_Focus).TextIsSelected THEN
-                                                    IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                                        Text(__UI_Focus) = Text(__UI_Focus) + Clip$
-                                                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                                    ELSE
-                                                        Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + Clip$ + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
-                                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(Clip$)
-                                                    END IF
-                                                ELSE
-                                                    's1 = Control(__UI_Focus).SelectionStart
-                                                    's2 = Control(__UI_Focus).Cursor
-                                                    'IF s1 > s2 THEN SWAP s1, s2
-                                                    'Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + Clip$ + MID$(Text(__UI_Focus), s2 + 1)
-                                                    'Control(__UI_Focus).Cursor = s1 + LEN(Clip$)
-                                                    'Control(__UI_Focus).TextIsSelected = False
-                                                    '__UI_SelectedText = ""
-                                                    '__UI_SelectionLength = 0
+                                                IF Control(__UI_Focus).TextIsSelected THEN __UI_DeleteSelection
+                                                IF Control(__UI_Focus).Max > 0 THEN
+                                                    'Paste only what fits within the maximum length
+                                                    s1 = Control(__UI_Focus).Max - LEN(Text(__UI_Focus))
+                                                    IF s1 < 0 THEN s1 = 0
+                                                    Clip$ = LEFT$(Clip$, s1)
                                                 END IF
+                                                Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor) + Clip$ + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
+                                                Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + LEN(Clip$)
                                                 __UI_TextChanged __UI_Focus
-                                                IF Control(__UI_Focus).NumericOnly THEN
-                                                    Control(__UI_Focus).Value = VAL(Text(__UI_Focus))
-
-                                                    __UI_ValidateBounds __UI_Focus
-                                                END IF
                                             END IF
                                             IF ContextMenuPaste THEN
                                                 ContextMenuPaste = False
@@ -3726,10 +3699,16 @@ SUB __UI_EventDispatcher
                                             __UI_KeyHit = 0
                                         ELSE
                                             Clip$ = _CLIPBOARD$
-                                            FindLF& = INSTR(Clip$, _CHR_CR)
-                                            IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
-                                            FindLF& = INSTR(Clip$, _CHR_LF)
-                                            IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
+                                            IF LEN(__UI_PasteLineBreakAs) > 0 _ANDALSO LEN(Mask(__UI_Focus)) = 0 THEN
+                                                'Keep every line, with line breaks (CR+LF, CR or LF) spelled out
+                                                Clip$ = Replace(Replace(Clip$, _CHR_CR + _CHR_LF, _CHR_LF, False, 0), _CHR_CR, _CHR_LF, False, 0)
+                                                Clip$ = Replace(Clip$, _CHR_LF, __UI_PasteLineBreakAs, False, 0)
+                                            ELSE
+                                                FindLF& = INSTR(Clip$, _CHR_CR)
+                                                IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
+                                                FindLF& = INSTR(Clip$, _CHR_LF)
+                                                IF FindLF& > 0 THEN Clip$ = LEFT$(Clip$, FindLF& - 1)
+                                            END IF
                                             IF LEN(Clip$) > 0 THEN
                                                 IF LEN(Mask(__UI_Focus)) > 0 THEN
                                                     'Paste only numbers and only up until the limit of
@@ -3914,15 +3893,9 @@ SUB __UI_EventDispatcher
                                     IF LEN(Text(__UI_Focus)) > 0 THEN
                                         IF NOT Control(__UI_Focus).TextIsSelected THEN
                                             IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
-                                                IF Control(__UI_Focus).Multiline AND RIGHT$(Text(__UI_Focus), 1) = _CHR_LF THEN
-                                                    Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
-                                                END IF
                                                 Text(__UI_Focus) = LEFT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
                                                 Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                             ELSEIF Control(__UI_Focus).Cursor >= 1 THEN
-                                                IF Control(__UI_Focus).Multiline AND MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor, 1) = _CHR_LF THEN
-                                                    Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
-                                                END IF
                                                 Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor - 1) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
                                                 Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                             END IF
@@ -3943,9 +3916,6 @@ SUB __UI_EventDispatcher
                                             Text(__UI_Focus) = LEFT$(Text(__UI_Focus), LEN(Text(__UI_Focus)) - 1)
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                         ELSEIF Control(__UI_Focus).Cursor >= 1 THEN
-                                            IF Control(__UI_Focus).Multiline AND MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor, 1) = _CHR_LF THEN
-                                                Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
-                                            END IF
                                             Text(__UI_Focus) = LEFT$(Text(__UI_Focus), Control(__UI_Focus).Cursor - 1) + MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1)
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                         END IF
@@ -3962,7 +3932,7 @@ SUB __UI_EventDispatcher
                                     END IF
                                 END IF
                             CASE _KEY_DELETE 'Delete
-                                IF LEN(Mask(__UI_Focus)) = 0 THEN
+                                IF LEN(Mask(__UI_Focus)) = 0 _ORELSE Control(__UI_Focus).Multiline THEN
                                     IF NOT Control(__UI_Focus).TextIsSelected THEN
                                         IF LEN(Text(__UI_Focus)) > 0 THEN
                                             IF Control(__UI_Focus).Cursor = 0 THEN
@@ -4018,20 +3988,19 @@ SUB __UI_EventDispatcher
                                         DO
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                             IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
-                                        LOOP UNTIL INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+                                        LOOP UNTIL INSTR(SEP$ + _CHR_LF, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
 
                                         'Find the beginning of a word
                                         DO
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                             IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
-                                        LOOP WHILE INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+                                        LOOP WHILE INSTR(SEP$ + _CHR_LF, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
 
                                         Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                     END IF
                                 ELSE
                                     IF Control(__UI_Focus).Cursor > 0 THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                 END IF
-                                IF MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1) = _CHR_LF THEN Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
                             CASE _KEY_RIGHT 'Right arrow key
                                 __UI_CheckSelection __UI_Focus
                                 IF __UI_CtrlIsDown THEN
@@ -4039,67 +4008,46 @@ SUB __UI_EventDispatcher
                                         DO
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                             IF Control(__UI_Focus).Cursor > LEN(Text(__UI_Focus)) THEN EXIT DO
-                                        LOOP WHILE INSTR(SEP$, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+                                        LOOP WHILE INSTR(SEP$ + _CHR_LF, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
                                         Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                        IF Control(__UI_Focus).Cursor > LEN(Text(__UI_Focus)) THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                     END IF
                                 ELSE
                                     IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                 END IF
-                                IF MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor, 1) = _CHR_LF THEN Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine + 1
-                            CASE _KEY_UP 'Up arrow key
+                            CASE _KEY_UP, _KEY_DOWN, _KEY_PAGEUP, _KEY_PAGEDOWN
                                 IF Control(__UI_Focus).Multiline THEN
-                                    IF Control(__UI_Focus).CurrentLine > 1 THEN
-                                        Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine - 1
-                                    END IF
-                                END IF
-                            CASE _KEY_DOWN 'Down arrow key
-                                IF Control(__UI_Focus).Multiline THEN
-                                    IF Control(__UI_Focus).CurrentLine < __UI_CountLines(__UI_Focus) THEN
-                                        Control(__UI_Focus).CurrentLine = Control(__UI_Focus).CurrentLine + 1
-                                    END IF
-                                END IF
-                            CASE _KEY_UP, _KEY_DOWN 'For both up and down keys
-                                IF Control(__UI_Focus).Multiline THEN
-                                    ThisLineLen = LEN(__UI_GetTextBoxLine(__UI_Focus, Control(__UI_Focus).CurrentLine, ThisLineStart))
-                                    Control(__UI_Focus).Cursor = ThisLineStart + Control(__UI_Focus).VisibleCursor - 1
-                                    IF Control(__UI_Focus).Cursor > ThisLineStart + ThisLineLen - 1 THEN
-                                        Control(__UI_Focus).Cursor = ThisLineStart + ThisLineLen - 1
-                                    END IF
+                                    __UI_CheckSelection __UI_Focus
+                                    SELECT CASE __UI_KeyHit
+                                        CASE _KEY_UP
+                                            __UI_TBMoveLines __UI_Focus, -1
+                                        CASE _KEY_DOWN
+                                            __UI_TBMoveLines __UI_Focus, 1
+                                        CASE _KEY_PAGEUP
+                                            __UI_TBScrollTo __UI_Focus, Control(__UI_Focus).FirstVisibleLine - __UI_TBVisibleLines(__UI_Focus)
+                                            __UI_TBMoveLines __UI_Focus, -__UI_TBVisibleLines(__UI_Focus)
+                                        CASE _KEY_PAGEDOWN
+                                            __UI_TBScrollTo __UI_Focus, Control(__UI_Focus).FirstVisibleLine + __UI_TBVisibleLines(__UI_Focus)
+                                            __UI_TBMoveLines __UI_Focus, __UI_TBVisibleLines(__UI_Focus)
+                                    END SELECT
                                 END IF
                             CASE _KEY_HOME 'Home
                                 __UI_CheckSelection __UI_Focus
-                                IF Control(__UI_Focus).Multiline THEN
-                                    IF __UI_CtrlIsDown THEN
-                                        Control(__UI_Focus).Cursor = 0
-                                        Control(__UI_Focus).CurrentLine = 1
-                                    ELSE
-                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - Control(__UI_Focus).VisibleCursor
-                                    END IF
+                                IF Control(__UI_Focus).Multiline _ANDALSO NOT __UI_CtrlIsDown THEN
+                                    'Start of the line (Ctrl+Home: start of the text)
+                                    Control(__UI_Focus).Cursor = __UI_TBLineStart(__UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
                                 ELSE
                                     Control(__UI_Focus).Cursor = 0
                                 END IF
                             CASE _KEY_END 'End
                                 __UI_CheckSelection __UI_Focus
-                                IF Control(__UI_Focus).Multiline THEN
-                                    IF __UI_CtrlIsDown THEN
-                                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
-                                        Control(__UI_Focus).CurrentLine = __UI_CountLines(__UI_Focus)
-                                    ELSE
-                                        ThisLineLen = LEN(__UI_GetTextBoxLine(__UI_Focus, Control(__UI_Focus).CurrentLine, ThisLineStart))
-                                        Control(__UI_Focus).Cursor = ThisLineStart + ThisLineLen - 1
-                                    END IF
+                                IF Control(__UI_Focus).Multiline _ANDALSO NOT __UI_CtrlIsDown THEN
+                                    'End of the line (Ctrl+End: end of the text)
+                                    Control(__UI_Focus).Cursor = __UI_TBLineEnd(__UI_Focus, __UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
                                 ELSE
                                     Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                 END IF
                         END SELECT
-                        IF Control(__UI_Focus).Multiline THEN
-                            _FONT Control(__UI_Focus).Font
-                            IF Control(__UI_Focus).CurrentLine < Control(__UI_Focus).FirstVisibleLine THEN
-                                Control(__UI_Focus).FirstVisibleLine = Control(__UI_Focus).CurrentLine
-                            ELSEIF Control(__UI_Focus).CurrentLine + 1 > Control(__UI_Focus).FirstVisibleLine + Control(__UI_Focus).Height \ uspacing& THEN
-                                Control(__UI_Focus).FirstVisibleLine = Control(__UI_Focus).CurrentLine - Control(__UI_Focus).Height \ uspacing& + 1
-                            END IF
-                        END IF
                     END IF
             END SELECT
         END IF
@@ -4930,8 +4878,13 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
         __UI_TempTips(This.ID) = _STR_EMPTY
         Mask(This.ID) = _STR_EMPTY
 
+        __UI_UnBind This.ID
+
         IF This.Type = __UI_Type_ListBox THEN
             IF __UI_ActiveDropdownList = This.ID THEN
+                IF __UI_ParentDropdownList > 0 THEN Control(__UI_ParentDropdownList).Redraw = True
+                __UI_DropdownSearch = _STR_EMPTY
+                __UI_DropdownSearchMap = _STR_EMPTY
                 __UI_ActiveDropdownList = 0
                 __UI_ParentDropdownList = 0
             END IF
@@ -5233,16 +5186,14 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_CheckSelection (id)
-    IF NOT Control(id).Multiline THEN
-        IF __UI_ShiftIsDown THEN
-            IF NOT Control(id).TextIsSelected THEN
-                Control(id).TextIsSelected = True
-                Control(id).SelectionStart = Control(id).Cursor
-            END IF
-        ELSE
-            Control(id).TextIsSelected = False
-            __UI_FillSelectedText 0, 0
+    IF __UI_ShiftIsDown THEN
+        IF NOT Control(id).TextIsSelected THEN
+            Control(id).TextIsSelected = True
+            Control(id).SelectionStart = Control(id).Cursor
         END IF
+    ELSE
+        Control(id).TextIsSelected = False
+        __UI_FillSelectedText 0, 0
     END IF
 END SUB
 
@@ -5284,15 +5235,13 @@ END SUB
 SUB __UI_DeleteSelection
     DIM s1 AS LONG, s2 AS LONG
 
-    IF NOT Control(__UI_Focus).Multiline THEN
-        s1 = Control(__UI_Focus).SelectionStart
-        s2 = Control(__UI_Focus).Cursor
-        IF s1 > s2 THEN SWAP s1, s2
-        Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + MID$(Text(__UI_Focus), s2 + 1)
-        Control(__UI_Focus).TextIsSelected = False
-        __UI_FillSelectedText 0, 0
-        Control(__UI_Focus).Cursor = s1
-    END IF
+    s1 = Control(__UI_Focus).SelectionStart
+    s2 = Control(__UI_Focus).Cursor
+    IF s1 > s2 THEN SWAP s1, s2
+    Text(__UI_Focus) = LEFT$(Text(__UI_Focus), s1) + MID$(Text(__UI_Focus), s2 + 1)
+    Control(__UI_Focus).TextIsSelected = False
+    __UI_FillSelectedText 0, 0
+    Control(__UI_Focus).Cursor = s1
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -5312,15 +5261,19 @@ END SUB
 SUB __UI_CursorAdjustments (This AS LONG)
     IF Control(This).Type = __UI_Type_TextBox THEN
         IF Control(This).Multiline THEN
-            'DIM ThisLineStart AS LONG, ThisLineLen AS LONG
-            'ThisLineLen = LEN(__UI_GetTextBoxLine(This, Control(This).CurrentLine, ThisLineStart))
-            'IF Control(This).VisibleCursor > ThisLineLen THEN Control(This).VisibleCursor = ThisLineLen
-            'IF Control(This).VisibleCursor > Control(This).PrevVisibleCursor THEN
-            '    IF Control(This).VisibleCursor - Control(This).InputViewStart + 2 > Control(This).FieldArea THEN Control(This).InputViewStart = (Control(This).VisibleCursor - Control(This).FieldArea) + 2
-            'ELSEIF Control(This).VisibleCursor < Control(This).PrevVisibleCursor THEN
-            '    IF Control(This).VisibleCursor < Control(This).InputViewStart - 1 THEN Control(This).InputViewStart = Control(This).VisibleCursor
-            'END IF
-            'IF Control(This).InputViewStart < 1 THEN Control(This).InputViewStart = 1
+            IF Control(This).Cursor > LEN(Text(This)) THEN Control(This).Cursor = LEN(Text(This))
+            IF Control(This).Cursor < 0 THEN Control(This).Cursor = 0
+            IF Control(This).SelectionStart > LEN(Text(This)) THEN Control(This).SelectionStart = LEN(Text(This))
+            IF Control(This).SelectionStart < 0 THEN Control(This).SelectionStart = 0
+
+            'Keep the cursor in view as it moves or the text changes
+            IF Control(This).Cursor <> Control(This).PrevCursor _ORELSE Text(This) <> __UI_TempTexts(This) THEN
+                IF __UI_Focus = This THEN
+                    __UI_TBScrollToCaret This
+                ELSE
+                    __UI_TBScrollTo This, Control(This).FirstVisibleLine + 0
+                END IF
+            END IF
         ELSE
             IF Control(This).VisibleCursor >= (Control(This).Width - ((Control(This).BorderSize + __UI_DefaultCaptionIndent) * ABS(Control(This).HasBorder))) THEN
                 Control(This).InputViewStart = __UI_FocusedTextBoxChars(Control(This).Cursor) - Control(This).Width / 2 'Control(This).InputViewStart + Control(This).Width / 4
@@ -5410,53 +5363,318 @@ FUNCTION Replace$ (sourceText AS STRING, target AS STRING, replacement AS STRING
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_CountLines& (id AS LONG)
-    IF LEN(Text(id)) = 0 THEN EXIT FUNCTION
-
-    DIM AS LONG FindLF, TotalLines
-
-    DO
-        FindLF = INSTR(FindLF + 1, Text(id), _CHR_LF)
-        IF FindLF THEN TotalLines = TotalLines + 1
-    LOOP WHILE FindLF > 0
-
-    IF ASC(Text(id), LEN(Text(id))) <> _ASC_LF THEN TotalLines = TotalLines + 1
-
-    __UI_CountLines = TotalLines
+' Multiline textbox helpers
+'
+' A multiline textbox shows Text(id) as visual lines: the text is split at line
+' breaks (_CHR_LF) and lines too long for the box wrap at the last space that fits.
+' __UI_TBLayout fills __UI_TBLineStart()/__UI_TBLineLen() for one textbox and
+' caches the result; every helper below calls it first. Cursor positions are
+' 0-based offsets into Text(id), like .Cursor and .SelectionStart.
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBPadding& (id AS LONG)
+    ' Space between the control's edge and its text
+    __UI_TBPadding = __UI_DefaultCaptionIndent
+    IF Control(id).HasBorder THEN __UI_TBPadding = __UI_DefaultCaptionIndent + Control(id).BorderSize
 END FUNCTION
 
 '---------------------------------------------------------------------------------
-FUNCTION __UI_GetTextBoxLine$ (id AS LONG, LineNumber AS LONG, StartPosition AS LONG)
-    'StartPosition is a return parameter
-    DIM This AS __UI_ControlTYPE, FindLF AS LONG, LastLF AS LONG, i AS LONG
+FUNCTION __UI_TBLineHeight& (id AS LONG)
+    DIM prevFont AS LONG: prevFont = _FONT
+    IF Control(id).Font THEN _FONT Control(id).Font
+    __UI_TBLineHeight = uspacing&
+    _FONT prevFont
+END FUNCTION
 
-    This = Control(id)
-    StartPosition = 0 ' default: not found
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBVisibleLines& (id AS LONG)
+    ' Number of whole lines that fit in the box
+    DIM n AS LONG
+    n = (Control(id).Height - __UI_TBPadding(id) * 2) \ __UI_TBLineHeight(id)
+    IF n < 1 THEN n = 1
+    __UI_TBVisibleLines = n
+END FUNCTION
 
-    IF This.Multiline THEN
-        FOR i = 1 TO LineNumber
-            FindLF = INSTR(LastLF + 1, Text(id), _CHR_LF)
+'---------------------------------------------------------------------------------
+SUB __UI_TBLayout (id AS LONG)
+    DIM AS LONG pad, prevFont, wrapWidth
 
-            IF i = LineNumber THEN
-                StartPosition = LastLF + 1
-                IF FindLF > 0 THEN
-                    __UI_GetTextBoxLine = MID$(Text(id), StartPosition, FindLF - LastLF - 1)
-                ELSE
-                    __UI_GetTextBoxLine = MID$(Text(id), StartPosition)
-                END IF
-                EXIT FUNCTION
+    pad = __UI_TBPadding(id)
+    IF id = __UI_TBLayoutID _ANDALSO Control(id).Width = __UI_TBLayoutWidth _ANDALSO Control(id).Height = __UI_TBLayoutHeight _ANDALSO _
+        Control(id).Font = __UI_TBLayoutFont _ANDALSO pad = __UI_TBLayoutBorder _ANDALSO __UI_ScrollbarWidth = __UI_TBLayoutScrollbarWidth _ANDALSO _
+        Text(id) = __UI_TBLayoutText THEN EXIT SUB
+
+    __UI_TBLayoutID = id
+    __UI_TBLayoutText = Text(id)
+    __UI_TBLayoutWidth = Control(id).Width
+    __UI_TBLayoutHeight = Control(id).Height
+    __UI_TBLayoutFont = Control(id).Font
+    __UI_TBLayoutBorder = pad
+    __UI_TBLayoutScrollbarWidth = __UI_ScrollbarWidth
+
+    prevFont = _FONT
+    IF Control(id).Font THEN _FONT Control(id).Font
+
+    ' Wrap to the full width first; only make room for a scrollbar if one is needed
+    wrapWidth = Control(id).Width - pad * 2
+    __UI_TBWrap id, wrapWidth
+    __UI_TBNeedsScrollbar = __UI_TBLineCount > __UI_TBVisibleLines(id)
+    IF __UI_TBNeedsScrollbar THEN __UI_TBWrap id, wrapWidth - __UI_ScrollbarWidth
+
+    _FONT prevFont
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_TBWrap (id AS LONG, wrapWidth AS LONG)
+    ' Splits Text(id) into visual lines no wider than wrapWidth (current font)
+    DIM AS LONG lineStart, lineEnd, textLen, n, u, k, j, brk
+
+    textLen = LEN(Text(id))
+    __UI_TBLineCount = 0
+    lineStart = 0
+
+    DO
+        lineEnd = INSTR(lineStart + 1, Text(id), _CHR_LF) - 1 ' offset of the line break
+        IF lineEnd < 0 THEN lineEnd = textLen
+        n = lineEnd - lineStart
+
+        IF n = 0 THEN
+            __UI_TBAddLine lineStart, 0
+        ELSE
+            __UI_CharPos MID$(Text(id), lineStart + 1, n)
+            IF __UI_LastRenderedCharCount < n THEN
+                __UI_TBAddLine lineStart, n ' can't measure it; don't wrap
+            ELSE
+                u = 0 ' characters of this line already placed
+                DO
+                    IF __UI_ThisLineChars(n) - __UI_ThisLineChars(u) <= wrapWidth THEN
+                        __UI_TBAddLine lineStart + u, n - u
+                        EXIT DO
+                    END IF
+
+                    ' How many characters fit (always at least one)
+                    k = 1
+                    DO WHILE u + k < n _ANDALSO __UI_ThisLineChars(u + k + 1) - __UI_ThisLineChars(u) <= wrapWidth
+                        k = k + 1
+                    LOOP
+
+                    ' Break after the last space that fits (a space just past the edge may hang)
+                    brk = 0
+                    FOR j = k + 1 TO 1 STEP -1
+                        IF ASC(Text(id), lineStart + u + j) = 32 THEN brk = j: EXIT FOR
+                    NEXT
+                    IF brk = 0 THEN brk = k ' a single word wider than the box gets split
+                    DO WHILE u + brk < n _ANDALSO ASC(Text(id), lineStart + u + brk + 1) = 32
+                        brk = brk + 1 ' spaces stay at the end of the line they follow
+                    LOOP
+
+                    IF u + brk >= n THEN
+                        __UI_TBAddLine lineStart + u, n - u
+                        EXIT DO
+                    END IF
+                    __UI_TBAddLine lineStart + u, brk
+                    u = u + brk
+                LOOP
             END IF
-
-            IF FindLF = 0 THEN EXIT FUNCTION ' ran out of lines
-            LastLF = FindLF
-        NEXT
-    ELSE
-        IF LineNumber = 1 THEN
-            StartPosition = 1
-            __UI_GetTextBoxLine = Text(id)
         END IF
-        EXIT FUNCTION
+
+        IF lineEnd >= textLen THEN EXIT DO
+        lineStart = lineEnd + 1
+    LOOP
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_TBAddLine (lineStart AS LONG, lineLen AS LONG)
+    __UI_TBLineCount = __UI_TBLineCount + 1
+    IF __UI_TBLineCount > UBOUND(__UI_TBLineStart) THEN
+        REDIM _PRESERVE __UI_TBLineStart(1 TO __UI_TBLineCount + 99) AS LONG
+        REDIM _PRESERVE __UI_TBLineLen(1 TO __UI_TBLineCount + 99) AS LONG
     END IF
+    __UI_TBLineStart(__UI_TBLineCount) = lineStart
+    __UI_TBLineLen(__UI_TBLineCount) = lineLen
+END SUB
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBCountLines& (id AS LONG)
+    ' Number of visual lines in a multiline textbox
+    __UI_TBLayout id
+    __UI_TBCountLines = __UI_TBLineCount
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBLineFromPos& (id AS LONG, position AS LONG)
+    ' Visual line a cursor position is on. A position where a line wraps belongs
+    ' to the line below.
+    DIM AS LONG lo, hi, middle
+
+    __UI_TBLayout id
+    lo = 1
+    hi = __UI_TBLineCount
+    DO WHILE lo < hi
+        middle = (lo + hi + 1) \ 2
+        IF __UI_TBLineStart(middle) <= position THEN lo = middle ELSE hi = middle - 1
+    LOOP
+    __UI_TBLineFromPos = lo
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBLineEnd& (id AS LONG, lineNumber AS LONG)
+    ' Last cursor position on a visual line. A wrapped line ends before its last
+    ' character (usually the space it wrapped at): the position after it is on the
+    ' next line.
+    DIM lineEnd AS LONG
+
+    __UI_TBLayout id
+    lineEnd = __UI_TBLineStart(lineNumber) + __UI_TBLineLen(lineNumber)
+    IF lineNumber < __UI_TBLineCount _ANDALSO __UI_TBLineLen(lineNumber) > 0 THEN
+        IF __UI_TBLineStart(lineNumber + 1) = lineEnd THEN lineEnd = lineEnd - 1
+    END IF
+    __UI_TBLineEnd = lineEnd
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBXFromPos& (id AS LONG, position AS LONG)
+    ' Horizontal pixel offset of a cursor position, from the start of its line
+    DIM AS LONG lineNumber, offset, prevFont
+
+    lineNumber = __UI_TBLineFromPos(id, position)
+    offset = position - __UI_TBLineStart(lineNumber)
+    IF offset <= 0 THEN EXIT FUNCTION
+
+    prevFont = _FONT
+    IF Control(id).Font THEN _FONT Control(id).Font
+    __UI_CharPos MID$(Text(id), __UI_TBLineStart(lineNumber) + 1, __UI_TBLineLen(lineNumber))
+    IF offset > __UI_LastRenderedCharCount THEN offset = __UI_LastRenderedCharCount
+    __UI_TBXFromPos = __UI_ThisLineChars(offset)
+    _FONT prevFont
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBPosFromX& (id AS LONG, lineNumber AS LONG, x AS LONG)
+    ' Cursor position on a visual line closest to x pixels from the line's start
+    DIM AS LONG ln, lastOffset, i, prevFont
+
+    __UI_TBLayout id
+    ln = lineNumber
+    IF ln < 1 THEN ln = 1
+    IF ln > __UI_TBLineCount THEN ln = __UI_TBLineCount
+    lastOffset = __UI_TBLineEnd(id, ln) - __UI_TBLineStart(ln)
+
+    prevFont = _FONT
+    IF Control(id).Font THEN _FONT Control(id).Font
+    __UI_CharPos MID$(Text(id), __UI_TBLineStart(ln) + 1, __UI_TBLineLen(ln))
+    IF lastOffset > __UI_LastRenderedCharCount THEN lastOffset = __UI_LastRenderedCharCount
+    FOR i = 0 TO lastOffset - 1
+        IF x < (__UI_ThisLineChars(i) + __UI_ThisLineChars(i + 1)) / 2 THEN EXIT FOR
+    NEXT
+    _FONT prevFont
+
+    __UI_TBPosFromX = __UI_TBLineStart(ln) + i
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBPosFromPoint& (id AS LONG, x AS LONG, y AS LONG)
+    ' Cursor position closest to a point given relative to the control's top-left
+    ' corner. Points above or below the visible lines land on the line just
+    ' outside, so dragging past an edge scrolls.
+    DIM AS LONG pad, firstLine, ln
+
+    __UI_TBLayout id
+    pad = __UI_TBPadding(id)
+    firstLine = Control(id).FirstVisibleLine
+    IF firstLine < 1 THEN firstLine = 1
+    ln = firstLine + INT((y - pad) / __UI_TBLineHeight(id))
+    IF ln < 1 THEN ln = 1
+    IF ln > __UI_TBLineCount THEN ln = __UI_TBLineCount
+    __UI_TBPosFromPoint = __UI_TBPosFromX(id, ln, x - pad)
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBPosFromMouse& (id AS LONG)
+    __UI_TBPosFromMouse = __UI_TBPosFromPoint(id, __UI_MouseLeft - Control(id).Left - Control(Control(id).ParentID).Left, _
+        __UI_MouseTop - Control(id).Top - Control(Control(id).ParentID).Top)
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+SUB __UI_TBScrollTo (id AS LONG, firstLine AS LONG)
+    ' Scrolls a multiline textbox so firstLine is at the top, as far as possible
+    DIM AS LONG maxFirst, newFirst
+
+    maxFirst = __UI_TBCountLines(id) - __UI_TBVisibleLines(id) + 1
+    IF maxFirst < 1 THEN maxFirst = 1
+    newFirst = firstLine
+    IF newFirst > maxFirst THEN newFirst = maxFirst
+    IF newFirst < 1 THEN newFirst = 1
+    Control(id).FirstVisibleLine = newFirst
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_TBScrollToCaret (id AS LONG)
+    ' Scrolls a multiline textbox just enough to show the line with the cursor
+    DIM AS LONG ln, visibleLines
+
+    ln = __UI_TBLineFromPos(id, Control(id).Cursor)
+    Control(id).CurrentLine = ln
+    visibleLines = __UI_TBVisibleLines(id)
+    IF ln < Control(id).FirstVisibleLine THEN
+        __UI_TBScrollTo id, ln
+    ELSEIF ln > Control(id).FirstVisibleLine + visibleLines - 1 THEN
+        __UI_TBScrollTo id, ln - visibleLines + 1
+    ELSE
+        __UI_TBScrollTo id, Control(id).FirstVisibleLine + 0 ' stay in range after the text shrinks
+    END IF
+END SUB
+
+'---------------------------------------------------------------------------------
+SUB __UI_TBMoveLines (id AS LONG, delta AS LONG)
+    ' Moves the cursor of a multiline textbox up (delta < 0) or down by visual
+    ' lines. Consecutive moves aim at the x position where the first one started.
+    DIM AS LONG ln, target
+
+    ln = __UI_TBLineFromPos(id, Control(id).Cursor)
+    IF NOT __UI_TBKeepCaretX THEN
+        Control(id).VisibleCursor = __UI_TBXFromPos(id, Control(id).Cursor)
+        __UI_TBKeepCaretX = _TRUE
+    END IF
+
+    target = ln + delta
+    IF target < 1 THEN
+        IF ln = 1 THEN Control(id).Cursor = 0: EXIT SUB ' Up on the first line goes to the start
+        target = 1
+    ELSEIF target > __UI_TBLineCount THEN
+        IF ln = __UI_TBLineCount THEN Control(id).Cursor = LEN(Text(id)): EXIT SUB ' and Down on the last, to the end
+        target = __UI_TBLineCount
+    END IF
+    Control(id).Cursor = __UI_TBPosFromX(id, target, Control(id).VisibleCursor)
+END SUB
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_IsWordSeparator%% (text AS STRING, position AS LONG)
+    ' True if the character at position (1-based) separates words. Outside the text counts as a separator.
+    IF position < 1 _ORELSE position > LEN(text) THEN __UI_IsWordSeparator = _TRUE: EXIT FUNCTION
+    __UI_IsWordSeparator = INSTR(" ,.?!;:()=+-*/" + _CHR_LF + CHR$(9), MID$(text, position, 1)) > 0
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBWordStart& (id AS LONG, position AS LONG)
+    ' Start of the word at (or just before) a cursor position
+    DIM p AS LONG: p = position
+    DO WHILE NOT __UI_IsWordSeparator(Text(id), p)
+        p = p - 1
+    LOOP
+    __UI_TBWordStart = p
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+FUNCTION __UI_TBWordEnd& (id AS LONG, position AS LONG)
+    ' End of the word at a cursor position, plus the spaces after it
+    DIM p AS LONG: p = position
+    DO WHILE NOT __UI_IsWordSeparator(Text(id), p + 1)
+        p = p + 1
+    LOOP
+    DO WHILE MID$(Text(id), p + 1, 1) = " "
+        p = p + 1
+    LOOP
+    __UI_TBWordEnd = p
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -5908,7 +6126,12 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         Control(__UI_ActiveDropdownList).Height = (uspacing& + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3) * (MaxVisible + .5)
 
         IF Control(__UI_ActiveDropdownList).Top + Control(__UI_ActiveDropdownList).Height > Control(__UI_FormID).Height THEN
-            Control(__UI_ActiveDropdownList).Top = Control(__UI_FormID).Height - Control(__UI_ActiveDropdownList).Height
+            IF This.Top + Control(This.ParentID).Top - Control(__UI_ActiveDropdownList).Height >= 0 THEN
+                'No room below, so open above, keeping the dropdown box (and its search) visible
+                Control(__UI_ActiveDropdownList).Top = This.Top + Control(This.ParentID).Top - Control(__UI_ActiveDropdownList).Height
+            ELSE
+                Control(__UI_ActiveDropdownList).Top = Control(__UI_FormID).Height - Control(__UI_ActiveDropdownList).Height
+            END IF
         END IF
         Control(__UI_ActiveDropdownList).Max = This.Max
         Control(__UI_ActiveDropdownList).Value = This.Value
@@ -5925,6 +6148,12 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         Control(__UI_ActiveDropdownList).LastVisibleItem = MaxVisible
         __UI_Focus = __UI_ActiveDropdownList
 
+        IF This.Searchable THEN
+            'Start with an empty search, which shows every item
+            __UI_DropdownSearch = _STR_EMPTY
+            __UI_FilterDropdownList
+        END IF
+
         'Adjust view:
         IF Control(__UI_Focus).Value < Control(__UI_Focus).InputViewStart THEN
             Control(__UI_Focus).InputViewStart = Control(__UI_Focus).Value
@@ -5933,6 +6162,223 @@ SUB __UI_ActivateDropdownlist (This AS __UI_ControlTYPE)
         END IF
     END IF
 END SUB
+
+'---------------------------------------------------------------------------------
+'True when item$ contains every space-separated word in search$, in any order,
+'ignoring case. An empty search matches everything.
+FUNCTION __UI_MatchesSearch%% (item$, search$)
+    __UI_MatchesSearch = (__UI_SearchScore(item$, search$, False) > 0)
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'How well item$ matches search$: 0 when it doesn't, higher for better matches.
+'Every space-separated word in search$ has to match, in any order, ignoring case.
+'Plain search: a word matches when the item contains it.
+'Fuzzy search: a word also matches when its letters appear in the item in the
+'same order with other letters in between ("rs10" matches "Resistor 10k").
+FUNCTION __UI_SearchScore& (item$, search$, fuzzy AS _BYTE)
+    DIM u$, s$, p AS LONG, q AS LONG, wordScore AS LONG, total AS LONG
+
+    u$ = UCASE$(item$)
+    s$ = UCASE$(search$)
+    total = 1 'An empty search matches everything
+    p = 1
+    DO
+        DO WHILE MID$(s$, p, 1) = " ": p = p + 1: LOOP
+        IF p > LEN(s$) THEN EXIT DO
+        q = INSTR(p, s$, " ")
+        IF q = 0 THEN q = LEN(s$) + 1
+        IF fuzzy THEN
+            wordScore = __UI_FuzzyWordScore(u$, MID$(s$, p, q - p))
+        ELSE
+            wordScore = ABS(INSTR(u$, MID$(s$, p, q - p)) > 0)
+        END IF
+        IF wordScore = 0 THEN EXIT FUNCTION
+        total = total + wordScore
+        p = q
+    LOOP
+    __UI_SearchScore = total
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'Fuzzy score of one search word (both already in capitals); 0 when its letters
+'can't be found in order. Whole-word hits score highest, then letters that
+'follow each other or start words.
+FUNCTION __UI_FuzzyWordScore& (u$, w$)
+    DIM found AS LONG, i AS LONG, j AS LONG, lastHit AS LONG, score AS LONG
+
+    found = INSTR(u$, w$)
+    IF found THEN
+        score = 1000 - found
+        IF __UI_StartsWord(u$, found) THEN score = score + 100
+        __UI_FuzzyWordScore = score
+        EXIT FUNCTION
+    END IF
+
+    j = 1
+    FOR i = 1 TO LEN(w$)
+        DO WHILE j <= LEN(u$)
+            IF ASC(u$, j) = ASC(w$, i) THEN EXIT DO
+            j = j + 1
+        LOOP
+        IF j > LEN(u$) THEN EXIT FUNCTION 'Letter not found
+        score = score + 10
+        IF lastHit > 0 AND j = lastHit + 1 THEN score = score + 15
+        IF __UI_StartsWord(u$, j) THEN score = score + 10
+        lastHit = j
+        j = j + 1
+    NEXT
+    IF score > 999 THEN score = 999 'Always below a whole-word hit
+    __UI_FuzzyWordScore = score
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'True when position p of text$ starts a word
+FUNCTION __UI_StartsWord%% (text$, p AS LONG)
+    IF p <= 1 THEN __UI_StartsWord = True: EXIT FUNCTION
+    SELECT CASE ASC(text$, p - 1)
+        CASE 48 TO 57, 65 TO 90, 97 TO 122
+        CASE ELSE
+            __UI_StartsWord = True
+    END SELECT
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'Fills the open dropdown list with the items of its dropdown that match
+'__UI_DropdownSearch. The dropdown's current item stays selected if it's shown.
+'With a fuzzy search, the best matches come first and the best one is selected.
+SUB __UI_FilterDropdownList
+    DIM listID AS LONG, parentID AS LONG, fuzzy AS _BYTE
+    DIM items$, filtered$, p AS LONG, q AS LONG, n AS LONG, kept AS LONG, selected AS LONG
+    DIM i AS LONG, j AS LONG, score AS LONG
+    REDIM itemStart(1 TO 64) AS LONG, itemLen(1 TO 64) AS LONG, itemNumber(1 TO 64) AS LONG, itemScore(1 TO 64) AS LONG
+
+    listID = __UI_ActiveDropdownList
+    parentID = __UI_ParentDropdownList
+    IF listID = 0 OR parentID = 0 THEN EXIT SUB
+    fuzzy = (Control(parentID).Fuzzy <> False)
+
+    items$ = Replace(Text(parentID), _CHR_CR + _CHR_LF, _CHR_LF, False, 0)
+    p = 1
+    DO WHILE p <= LEN(items$)
+        q = INSTR(p, items$, _CHR_LF)
+        IF q = 0 THEN q = LEN(items$) + 1
+        n = n + 1
+        score = __UI_SearchScore(MID$(items$, p, q - p), __UI_DropdownSearch, fuzzy)
+        IF score > 0 THEN
+            kept = kept + 1
+            IF kept > UBOUND(itemStart) THEN
+                REDIM _PRESERVE itemStart(1 TO kept * 2) AS LONG, itemLen(1 TO kept * 2) AS LONG
+                REDIM _PRESERVE itemNumber(1 TO kept * 2) AS LONG, itemScore(1 TO kept * 2) AS LONG
+            END IF
+            'Fuzzy: insert by score, best first, keeping the list order for equal scores
+            i = kept
+            IF fuzzy THEN
+                DO WHILE i > 1
+                    IF itemScore(i - 1) >= score THEN EXIT DO
+                    itemStart(i) = itemStart(i - 1): itemLen(i) = itemLen(i - 1)
+                    itemNumber(i) = itemNumber(i - 1): itemScore(i) = itemScore(i - 1)
+                    i = i - 1
+                LOOP
+            END IF
+            itemStart(i) = p: itemLen(i) = q - p: itemNumber(i) = n: itemScore(i) = score
+        END IF
+        p = q + 1
+    LOOP
+
+    __UI_DropdownSearchMap = _STR_EMPTY
+    FOR j = 1 TO kept
+        IF j > 1 THEN filtered$ = filtered$ + _CHR_LF
+        filtered$ = filtered$ + MID$(items$, itemStart(j), itemLen(j))
+        __UI_DropdownSearchMap = __UI_DropdownSearchMap + MKL$(itemNumber(j))
+        IF itemNumber(j) = Control(parentID).Value THEN selected = j
+    NEXT
+
+    IF fuzzy AND LEN(_TRIM$(__UI_DropdownSearch)) > 0 THEN selected = 0
+    IF selected = 0 AND kept > 0 THEN selected = 1
+    Text(listID) = filtered$
+    Control(listID).Max = kept
+    Control(listID).Value = selected
+    Control(listID).HasVScrollbar = False 'Worked out again when the list is drawn
+    Control(listID).InputViewStart = 1
+    IF selected > Control(listID).LastVisibleItem THEN
+        Control(listID).InputViewStart = selected - Control(listID).LastVisibleItem + 1
+    END IF
+    Control(listID).Redraw = True
+    Control(parentID).Redraw = True 'The dropdown box shows the search text
+END SUB
+
+'---------------------------------------------------------------------------------
+'Turns an item number of the open dropdown list into the matching item number of
+'its dropdown, which differ when the list has been filtered by a search
+FUNCTION __UI_DropdownChosenItem& (ListValue AS _FLOAT)
+    DIM parentID AS LONG
+
+    parentID = __UI_ParentDropdownList
+    IF LEN(__UI_DropdownSearchMap) = 0 AND LEN(__UI_DropdownSearch) = 0 THEN
+        'The list wasn't filtered
+        __UI_DropdownChosenItem = ListValue
+    ELSEIF ListValue >= 1 AND ListValue <= LEN(__UI_DropdownSearchMap) \ 4 THEN
+        __UI_DropdownChosenItem = CVL(MID$(__UI_DropdownSearchMap, (ListValue - 1) * 4 + 1, 4))
+    ELSE
+        'Nothing matched or nothing picked: keep what was selected
+        __UI_DropdownChosenItem = Control(parentID).Value
+    END IF
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'Typing into a searchable dropdown list filters its items. Typing on a closed one
+'opens it. Returns True when the key was used for the search.
+FUNCTION __UI_DropdownSearchKey%%
+    DIM parentID AS LONG, Typed$, Search$
+
+    IF __UI_AltIsDown THEN EXIT FUNCTION
+    IF __UI_ActiveDropdownList > 0 _ANDALSO __UI_Focus = __UI_ActiveDropdownList THEN
+        parentID = __UI_ParentDropdownList
+    ELSEIF Control(__UI_Focus).Type = __UI_Type_DropdownList THEN
+        parentID = __UI_Focus
+    ELSE
+        EXIT FUNCTION
+    END IF
+    IF Control(parentID).Searchable = False OR Control(parentID).Disabled THEN EXIT FUNCTION
+
+    Search$ = __UI_DropdownSearch
+    IF __UI_ActiveDropdownList = 0 THEN Search$ = _STR_EMPTY
+
+    IF __UI_CtrlIsDown THEN
+        SELECT CASE __UI_KeyHit
+            CASE __ASC_LOWER_V, __ASC_UPPER_V 'Paste the first line of the clipboard
+                Typed$ = _CLIPBOARD$
+                IF INSTR(Typed$, _CHR_CR) THEN Typed$ = LEFT$(Typed$, INSTR(Typed$, _CHR_CR) - 1)
+                IF INSTR(Typed$, _CHR_LF) THEN Typed$ = LEFT$(Typed$, INSTR(Typed$, _CHR_LF) - 1)
+                IF LEN(Typed$) = 0 THEN EXIT FUNCTION
+                Search$ = Search$ + Typed$
+            CASE 8, 127 'Ctrl+Backspace clears the search
+                IF __UI_ActiveDropdownList = 0 THEN EXIT FUNCTION
+                Search$ = _STR_EMPTY
+            CASE ELSE
+                EXIT FUNCTION
+        END SELECT
+    ELSE
+        SELECT CASE __UI_KeyHit
+            CASE 32 TO 254
+                'Space doesn't open a closed dropdown; the search starts with a word
+                IF __UI_KeyHit = 32 AND __UI_ActiveDropdownList = 0 THEN EXIT FUNCTION
+                Search$ = Search$ + CHR$(__UI_KeyHit)
+            CASE 8 'Backspace
+                IF __UI_ActiveDropdownList = 0 THEN EXIT FUNCTION
+                IF LEN(Search$) THEN Search$ = LEFT$(Search$, LEN(Search$) - 1)
+            CASE ELSE
+                EXIT FUNCTION
+        END SELECT
+    END IF
+
+    IF __UI_ActiveDropdownList = 0 THEN __UI_ActivateDropdownlist Control(parentID)
+    IF __UI_ActiveDropdownList = 0 THEN EXIT FUNCTION
+    __UI_DropdownSearch = Search$
+    __UI_FilterDropdownList
+    __UI_DropdownSearchKey = True
+END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB __UI_CloseAllMenus
@@ -6013,7 +6459,9 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
         END IF
 
         'Calculate panel's width and position the menu items
+        CONST __UI_MenuItemMinHeight = 24 'leaves room around 16px menu icons
         ItemHeight = _ULINESPACING + (((_FONT = 8) * -1) * __UI_Font8Offset + ((_FONT = 16) * -1) * __UI_Font16Offset) + 3
+        IF ItemHeight < __UI_MenuItemMinHeight THEN ItemHeight = __UI_MenuItemMinHeight
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Height = (((_FONT = 8) * -1) * 3 + _ULINESPACING) / 4
         Control(__UI_ActiveMenu(__UI_TotalActiveMenus)).Width = 0
         CurrentGroup = 1
@@ -6629,32 +7077,26 @@ FUNCTION __UI_StrUsing$ (format$, value##)
     __UI_StrUsing$ = temp$
 END FUNCTION
 
+'Binds a property of control id to a property of control targetID, so that changing
+'either one changes the other. id takes targetID's current value. A control can be
+'bound to several others; binding the same two controls again replaces their binding.
+'Starting either property name with "NOT " inverts the binding: a non-zero value
+'sets the other property to 0, and 0 sets it to True (in both directions).
 SUB __UI_Bind (id AS LONG, targetID AS LONG, __PropertyID$, __PropertyTargetID$)
-    DIM PropertyID$, PropertyTargetID$
+    DIM prop AS LONG, targetProp AS LONG, inverted AS _BYTE
 
-    PropertyID$ = UCASE$(__PropertyID$)
-    PropertyTargetID$ = UCASE$(__PropertyTargetID$)
+    IF id <= 0 OR targetID <= 0 OR id = targetID THEN EXIT SUB
+    prop = __UI_BindPropertyEnum(__PropertyID$)
+    targetProp = __UI_BindPropertyEnum(__PropertyTargetID$)
+    IF prop = 0 OR targetProp = 0 THEN EXIT SUB
+    inverted = __UI_IsInvertedProperty(__PropertyID$) XOR __UI_IsInvertedProperty(__PropertyTargetID$)
 
-    'Clear eventual previous bindings
-    IF Control(id).BoundTo > 0 THEN
-        Control(Control(id).BoundTo).BoundTo = 0
-    END IF
+    __UI_AddBinding id, prop, targetID, targetProp, inverted
 
-    IF Control(targetID).BoundTo > 0 THEN
-        Control(Control(targetID).BoundTo).BoundTo = 0
-    END IF
-
-
-    Control(id).BoundTo = targetID
-    Control(id).BoundProperty = __UI_PropertyEnum(PropertyID$, 0)
-    IF Control(id).BoundProperty = 0 THEN Control(id).BoundTo = 0: EXIT SUB
-    Control(targetID).BoundTo = id
-    Control(targetID).BoundProperty = __UI_PropertyEnum(PropertyTargetID$, 0)
-    IF Control(targetID).BoundProperty = 0 THEN
-        Control(id).BoundTo = 0
-        Control(targetID).BoundTo = 0
-    END IF
-    __UI_CheckBinding targetID 'acquire current value of targetID
+    'Acquire the current value of targetID
+    __UI_SetBoundValue id, prop, __UI_BoundValue(__UI_GetBoundValue(targetID, targetProp), inverted)
+    Control(id).Redraw = True
+    Control(targetID).Redraw = True
 END SUB
 
 FUNCTION __UI_PropertyEnum& (__property$, index AS LONG)
@@ -6698,31 +7140,146 @@ FUNCTION __UI_PropertyEnum& (__property$, index AS LONG)
     DATA Top,Left,Width,Height,Bordersize,Padding,Value
     DATA Min,Max,Interval,MinInterval,Stretch,HasBorder,ShowPercentage
     DATA AutoScroll,AutoSize,PasswordMask,Disabled,Hidden
+    DATA Searchable,Fuzzy
     DATA *
 END FUNCTION
 
-SUB __UI_UnBind (id AS LONG)
-    IF Control(id).BoundTo > 0 THEN
-        Control(Control(id).BoundTo).Redraw = True
-        Control(Control(id).BoundTo).BoundTo = 0
-        Control(id).BoundTo = 0
-        Control(id).Redraw = True
-    END IF
+'Records a binding without copying any values (props are __UI_PropertyEnum values).
+'Replaces an existing binding between the same two controls.
+SUB __UI_AddBinding (id AS LONG, prop AS LONG, targetID AS LONG, targetProp AS LONG, inverted AS _BYTE)
+    IF id <= 0 OR targetID <= 0 OR id = targetID OR prop = 0 OR targetProp = 0 THEN EXIT SUB
+    __UI_UnBindPair id, targetID
+    __UI_TotalBindings = __UI_TotalBindings + 1
+    IF __UI_TotalBindings > UBOUND(__UI_Bindings) THEN REDIM _PRESERVE __UI_Bindings(1 TO __UI_TotalBindings * 2) AS __UI_BindingTYPE
+    __UI_Bindings(__UI_TotalBindings).ID1 = id
+    __UI_Bindings(__UI_TotalBindings).Property1 = prop
+    __UI_Bindings(__UI_TotalBindings).ID2 = targetID
+    __UI_Bindings(__UI_TotalBindings).Property2 = targetProp
+    __UI_Bindings(__UI_TotalBindings).Inverted = (inverted <> False)
 END SUB
 
+'True when a bound property's name starts with "NOT " (an inverted binding)
+FUNCTION __UI_IsInvertedProperty%% (name$)
+    __UI_IsInvertedProperty = (UCASE$(LEFT$(LTRIM$(name$), 4)) = "NOT ")
+END FUNCTION
+
+'__UI_PropertyEnum value of a bound property's name, ignoring a "NOT " in front
+FUNCTION __UI_BindPropertyEnum& (name$)
+    IF __UI_IsInvertedProperty(name$) THEN
+        __UI_BindPropertyEnum = __UI_PropertyEnum(MID$(LTRIM$(name$), 5), 0)
+    ELSE
+        __UI_BindPropertyEnum = __UI_PropertyEnum(name$, 0)
+    END IF
+END FUNCTION
+
+'A value on its way through a binding
+FUNCTION __UI_BoundValue## (value AS _FLOAT, inverted AS _BYTE)
+    IF inverted THEN
+        __UI_BoundValue = (value = 0)
+    ELSE
+        __UI_BoundValue = value
+    END IF
+END FUNCTION
+
+'Removes every binding control id is part of
+SUB __UI_UnBind (id AS LONG)
+    DIM i AS LONG
+    i = 1
+    DO WHILE i <= __UI_TotalBindings
+        IF __UI_Bindings(i).ID1 = id OR __UI_Bindings(i).ID2 = id THEN
+            __UI_RemoveBinding i
+        ELSE
+            i = i + 1
+        END IF
+    LOOP
+END SUB
+
+'Removes the binding between two controls, if any
+SUB __UI_UnBindPair (id AS LONG, otherID AS LONG)
+    DIM i AS LONG
+    i = __UI_BindingIndex(id, otherID)
+    IF i > 0 THEN __UI_RemoveBinding i
+END SUB
+
+SUB __UI_RemoveBinding (index AS LONG)
+    DIM i AS LONG
+    IF index < 1 OR index > __UI_TotalBindings THEN EXIT SUB
+    Control(__UI_Bindings(index).ID1).Redraw = True
+    Control(__UI_Bindings(index).ID2).Redraw = True
+    FOR i = index TO __UI_TotalBindings - 1
+        __UI_Bindings(i) = __UI_Bindings(i + 1)
+    NEXT
+    __UI_TotalBindings = __UI_TotalBindings - 1
+END SUB
+
+'Position in __UI_Bindings of the binding between two controls (in either
+'direction), or 0 when they aren't bound
+FUNCTION __UI_BindingIndex& (id AS LONG, otherID AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO __UI_TotalBindings
+        IF (__UI_Bindings(i).ID1 = id AND __UI_Bindings(i).ID2 = otherID) OR (__UI_Bindings(i).ID1 = otherID AND __UI_Bindings(i).ID2 = id) THEN
+            __UI_BindingIndex = i
+            EXIT FUNCTION
+        END IF
+    NEXT
+END FUNCTION
+
+'True when control id is bound to any other control
+FUNCTION __UI_IsBound%% (id AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO __UI_TotalBindings
+        IF __UI_Bindings(i).ID1 = id OR __UI_Bindings(i).ID2 = id THEN __UI_IsBound = True: EXIT FUNCTION
+    NEXT
+END FUNCTION
+
+'Name of the property of control id that's bound to otherID ("" when not bound).
+'For an inverted binding, the second control's property comes with "NOT " in front,
+'as it's written in __UI_Bind.
+FUNCTION __UI_BoundPropertyName$ (id AS LONG, otherID AS LONG)
+    DIM i AS LONG, prop AS LONG, name$
+    i = __UI_BindingIndex(id, otherID)
+    IF i = 0 THEN EXIT FUNCTION
+    IF __UI_Bindings(i).ID1 = id THEN prop = __UI_Bindings(i).Property1 ELSE prop = __UI_Bindings(i).Property2
+    IF __UI_PropertyEnum(name$, prop) THEN
+        IF __UI_Bindings(i).Inverted AND __UI_Bindings(i).ID2 = id THEN name$ = "NOT " + name$
+        __UI_BoundPropertyName = name$
+    END IF
+END FUNCTION
+
+'Two controls swapped places in Control() (the editor's z-ordering): keep their
+'bindings attached to them
+SUB __UI_SwapBindingIDs (id1 AS LONG, id2 AS LONG)
+    DIM i AS LONG
+    FOR i = 1 TO __UI_TotalBindings
+        IF __UI_Bindings(i).ID1 = id1 THEN
+            __UI_Bindings(i).ID1 = id2
+        ELSEIF __UI_Bindings(i).ID1 = id2 THEN
+            __UI_Bindings(i).ID1 = id1
+        END IF
+        IF __UI_Bindings(i).ID2 = id1 THEN
+            __UI_Bindings(i).ID2 = id2
+        ELSEIF __UI_Bindings(i).ID2 = id2 THEN
+            __UI_Bindings(i).ID2 = id1
+        END IF
+    NEXT
+END SUB
+
+'Copies the bound properties of control id to every control it's bound to
 SUB __UI_CheckBinding (id AS LONG)
-    DIM BindTarget AS LONG, Temp AS _FLOAT
+    DIM i AS LONG
+    FOR i = 1 TO __UI_TotalBindings
+        IF __UI_Bindings(i).ID1 = id THEN
+            __UI_SetBoundValue __UI_Bindings(i).ID2, __UI_Bindings(i).Property2, __UI_BoundValue(__UI_GetBoundValue(id, __UI_Bindings(i).Property1), __UI_Bindings(i).Inverted)
+        ELSEIF __UI_Bindings(i).ID2 = id THEN
+            __UI_SetBoundValue __UI_Bindings(i).ID1, __UI_Bindings(i).Property1, __UI_BoundValue(__UI_GetBoundValue(id, __UI_Bindings(i).Property2), __UI_Bindings(i).Inverted)
+        END IF
+    NEXT
+END SUB
 
-    BindTarget = Control(id).BoundTo
-    IF BindTarget = 0 THEN EXIT SUB
+FUNCTION __UI_GetBoundValue## (id AS LONG, prop AS LONG)
+    DIM Temp AS _FLOAT
 
-    'IF Control(id).BoundProperty = Control(BindTarget).BoundProperty AND _
-    '   Control(id).BoundProperty = __UI_PropertyEnum&("Value", 0) THEN
-    '    Control(id).Min = Control(BindTarget).Min
-    '    Control(id).Max = Control(BindTarget).Max
-    'END IF
-
-    SELECT CASE Control(id).BoundProperty
+    SELECT CASE prop
         CASE __UI_PropertyEnum&("Top", 0)
             Temp = Control(id).Top
         CASE __UI_PropertyEnum&("Left", 0)
@@ -6743,7 +7300,7 @@ SUB __UI_CheckBinding (id AS LONG)
             Temp = Control(id).Max
         CASE __UI_PropertyEnum&("Interval", 0)
             Temp = Control(id).Interval
-        CASE __UI_PropertyEnum&("Mininterval", 0)
+        CASE __UI_PropertyEnum&("MinInterval", 0)
             Temp = Control(id).MinInterval
         CASE __UI_PropertyEnum&("Stretch", 0)
             Temp = Control(id).Stretch
@@ -6755,57 +7312,66 @@ SUB __UI_CheckBinding (id AS LONG)
             Temp = Control(id).AutoScroll
         CASE __UI_PropertyEnum&("AutoSize", 0)
             Temp = Control(id).AutoSize
-        CASE __UI_PropertyEnum&("PasswordField", 0)
+        CASE __UI_PropertyEnum&("PasswordMask", 0)
             Temp = Control(id).PasswordField
         CASE __UI_PropertyEnum&("Disabled", 0)
             Temp = Control(id).Disabled
         CASE __UI_PropertyEnum&("Hidden", 0)
             Temp = Control(id).Hidden
+        CASE __UI_PropertyEnum&("Searchable", 0)
+            Temp = Control(id).Searchable
+        CASE __UI_PropertyEnum&("Fuzzy", 0)
+            Temp = Control(id).Fuzzy
     END SELECT
+    __UI_GetBoundValue = Temp
+END FUNCTION
 
-    SELECT CASE Control(BindTarget).BoundProperty
+SUB __UI_SetBoundValue (id AS LONG, prop AS LONG, Temp AS _FLOAT)
+    SELECT CASE prop
         CASE __UI_PropertyEnum&("Top", 0)
-            Control(BindTarget).Top = Temp
+            Control(id).Top = Temp
         CASE __UI_PropertyEnum&("Left", 0)
-            Control(BindTarget).Left = Temp
+            Control(id).Left = Temp
         CASE __UI_PropertyEnum&("Width", 0)
-            Control(BindTarget).Width = Temp
+            Control(id).Width = Temp
         CASE __UI_PropertyEnum&("Height", 0)
-            Control(BindTarget).Height = Temp
+            Control(id).Height = Temp
         CASE __UI_PropertyEnum&("BorderSize", 0)
-            Control(BindTarget).BorderSize = Temp
+            Control(id).BorderSize = Temp
         CASE __UI_PropertyEnum&("Padding", 0)
-            Control(BindTarget).Padding = Temp
+            Control(id).Padding = Temp
         CASE __UI_PropertyEnum&("Value", 0)
-            Control(BindTarget).Value = Temp
+            Control(id).Value = Temp
         CASE __UI_PropertyEnum&("Min", 0)
-            Control(BindTarget).Min = Temp
+            Control(id).Min = Temp
         CASE __UI_PropertyEnum&("Max", 0)
-            Control(BindTarget).Max = Temp
+            Control(id).Max = Temp
         CASE __UI_PropertyEnum&("Interval", 0)
-            Control(BindTarget).Interval = Temp
+            Control(id).Interval = Temp
         CASE __UI_PropertyEnum&("MinInterval", 0)
-            Control(BindTarget).MinInterval = Temp
+            Control(id).MinInterval = Temp
         CASE __UI_PropertyEnum&("Stretch", 0)
-            Control(BindTarget).Stretch = Temp
+            Control(id).Stretch = (Temp <> 0)
         CASE __UI_PropertyEnum&("HasBorder", 0)
-            Control(BindTarget).HasBorder = Temp
+            Control(id).HasBorder = (Temp <> 0)
         CASE __UI_PropertyEnum&("ShowPercentage", 0)
-            Control(BindTarget).ShowPercentage = Temp
+            Control(id).ShowPercentage = (Temp <> 0)
         CASE __UI_PropertyEnum&("AutoScroll", 0)
-            Control(BindTarget).AutoScroll = Temp
+            Control(id).AutoScroll = (Temp <> 0)
         CASE __UI_PropertyEnum&("AutoSize", 0)
-            Control(BindTarget).AutoSize = Temp
-        CASE __UI_PropertyEnum&("PasswordField", 0)
-            Control(BindTarget).PasswordField = Temp
+            Control(id).AutoSize = (Temp <> 0)
+        CASE __UI_PropertyEnum&("PasswordMask", 0)
+            Control(id).PasswordField = (Temp <> 0)
         CASE __UI_PropertyEnum&("Disabled", 0)
-            Control(BindTarget).Disabled = Temp
+            Control(id).Disabled = (Temp <> 0)
         CASE __UI_PropertyEnum&("Hidden", 0)
-            Control(BindTarget).Hidden = Temp
+            Control(id).Hidden = (Temp <> 0)
+        CASE __UI_PropertyEnum&("Searchable", 0)
+            Control(id).Searchable = (Temp <> 0)
+        CASE __UI_PropertyEnum&("Fuzzy", 0)
+            Control(id).Fuzzy = (Temp <> 0)
     END SELECT
-
     Control(id).Redraw = True
-    Control(BindTarget).Redraw = True
 END SUB
 
 'Control drawing: -------------------------------------------------------------
@@ -7400,7 +7966,7 @@ SUB __UI_DrawProgressBar (This AS __UI_ControlTYPE, ControlState AS _BYTE)
         IF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN
             DIM FlatFraction AS SINGLE
             IF This.Max > 0 THEN FlatFraction = This.Value / This.Max
-            __UI_FlatProgressBar This.Width, This.Height, FlatFraction, This.Disabled, This.SelectedBackColor, This.BorderColor
+            __UI_FlatProgressBar This.Width, This.Height, FlatFraction, This.Disabled, This.SelectedBackColor
         ELSE
             'Draw track
             'Back
@@ -7716,112 +8282,70 @@ SUB __UI_DrawTextBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         IF This.Multiline THEN
             'Multi line textbox
-            DIM ThisTop AS INTEGER, TempLine AS STRING
-            DIM TotalLines AS INTEGER
-            'DIM ThisLine AS LONG, ThisLineStart AS LONG
-            DIM s1 AS LONG, s2 AS LONG
-            STATIC PrevTotalLines AS LONG
+            DIM AS LONG pad, lineH, firstLine, lastLine, ln, lineStart, lineLen, caretLine, caretOffset
+            DIM AS LONG s1, s2, hs, he, x1, x2, y
+            DIM lineText AS STRING
+
+            __UI_TBLayout This.ID
+            pad = __UI_TBPadding(This.ID)
+            lineH = uspacing&
+
+            IF This.FirstVisibleLine < 1 THEN This.FirstVisibleLine = 1
+            firstLine = This.FirstVisibleLine
+            lastLine = firstLine + (This.Height - pad) \ lineH ' includes a partly visible line
+            IF lastLine > __UI_TBLineCount THEN lastLine = __UI_TBLineCount
+            caretLine = __UI_TBLineFromPos(This.ID, This.Cursor)
 
             IF This.TextIsSelected THEN
-                s1 = This.SelectionStart + 1
-                s2 = This.Cursor + 1
-
+                s1 = This.SelectionStart
+                s2 = This.Cursor
                 IF s1 > s2 THEN SWAP s1, s2
             END IF
-
-            ThisTop = CaptionIndent - uspacing&
-            TempCaption$ = __UI_TrimAt0$(__UI_WordWrap(Text(This.ID), This.Width - __UI_ScrollbarWidth - 5, 0, TotalLines))
-
-            IF This.HelperCanvas = 0 OR PrevTotalLines <> TotalLines THEN
-                PrevTotalLines = TotalLines
-                IF This.HelperCanvas < -1 THEN _FREEIMAGE This.HelperCanvas
-                This.HelperCanvas = _NEWIMAGE(This.Width - __UI_ScrollbarWidth, TotalLines * uspacing& + uspacing& / 2)
-            END IF
-
-            _DEST This.HelperCanvas
-            _FONT This.Font
-            CLS , This.BackColor
 
             IF TIMER - SetCursor# > .3 THEN
                 SetCursor# = TIMER
                 cursorBlink%% = NOT cursorBlink%%
             END IF
+            IF _WINDOWHASFOCUS = False THEN cursorBlink%% = False
 
-            'FOR ThisLine = 1 TO TotalLines
-            '    ThisTop = ThisTop + uspacing&
-            '    TempLine = __UI_GetTextBoxLine$(This.ID, ThisLine, ThisLineStart)
+            IF LEN(Text(This.ID)) = 0 THEN
+                'Show the caption as a placeholder
+                COLOR __UI_DisabledColor, This.BackColor
+                __UI_PrintString pad, pad, TempCaption$
+                IF NOT This.Disabled THEN COLOR This.ForeColor, This.BackColor
+            END IF
 
-            '    IF LEN(TempLine) THEN
-            '        __UI_PrintString CaptionIndent, ThisTop, MID$(TempLine, This.InputViewStart)
-            '    END IF
+            FOR ln = firstLine TO lastLine
+                y = pad + (ln - firstLine) * lineH
+                lineStart = __UI_TBLineStart(ln)
+                lineLen = __UI_TBLineLen(ln)
+                lineText = MID$(Text(This.ID), lineStart + 1, lineLen)
 
-            '    IF This.TextIsSelected THEN
-            '        IF s1 >= ThisLineStart AND s2 < ThisLineStart + LEN(TempLine) THEN
-            '            'Only a portion of this line is selected
-            '            LINE (CaptionIndent + __UI_ThisLineChars(s1 - ThisLineStart), ThisTop)-(__UI_ThisLineChars(s2 - ThisLineStart + 1), ThisTop + uspacing& - 1), c, BF
-            '        ELSEIF s1 >= ThisLineStart AND s1 <= ThisLineStart + LEN(TempLine) THEN
-            '            'The beginning of the selection is in this line waiting to be highlighted.
-            '            LINE (CaptionIndent + __UI_ThisLineChars(s1 - ThisLineStart), ThisTop)-STEP(This.Width, uspacing& - 1), c, BF
-            '        ELSEIF s1 < ThisLineStart AND s2 > ThisLineStart + LEN(TempLine) THEN
-            '            'This whole line is selected
-            '            LINE (CaptionIndent, ThisTop)-STEP(This.Width, uspacing& - 1), c, BF
-            '        ELSEIF s1< ThisLineStart AND s2 <= ThisLineStart + LEN(TempLine) THEN
-            '            'Selection ends in this line
-            '            LINE (CaptionIndent, ThisTop)-STEP(__UI_ThisLineChars(s2 - ThisLineStart), uspacing& - 1), c, BF
-            '        END IF
-            '    END IF
+                IF lineLen THEN __UI_PrintString pad, y, lineText
+                __UI_CharPos lineText
 
-            '    'IF ThisLine = This.CurrentLine THEN
-            '    '    IF cursorBlink%% AND __UI_Focus = This.ID AND This.CurrentLine >= This.FirstVisibleLine AND This.CurrentLine <= This.FirstVisibleLine + This.Height \ uspacing& THEN
-            '    '        LINE (CaptionIndent + __UI_ThisLineChars(This.VisibleCursor - (This.InputViewStart - 1)), ThisTop)-STEP(0, uspacing&), __UI_ThemeColor(__UI_ThemeColor_Caret)
-            '    '    END IF
-            '    'END IF
-            'NEXT
-            DO WHILE LEN(TempCaption$)
-                DIM ThisLine%, TextTop%, FindSep&, FindLF&, CaptionLeft AS INTEGER
-                ThisLine% = ThisLine% + 1
-
-                TextTop% = CaptionIndent + ThisLine% * uspacing& - uspacing&
-
-                FindSep& = INSTR(TempCaption$, _CHR_SOH) 'Search for soft breaks
-                FindLF& = INSTR(TempCaption$, _CHR_LF) 'Search for hard breaks
-                IF (FindSep& > 0 AND FindLF& > 0 AND FindSep& < FindLF&) OR (FindSep& > 0 AND FindLF& = 0) THEN
-                    TempLine$ = LEFT$(TempCaption$, FindSep& - 1)
-                    TempCaption$ = MID$(TempCaption$, FindSep& + 1)
-                ELSEIF FindSep& = 0 THEN
-                    IF FindLF& > 0 THEN
-                        TempLine$ = LEFT$(TempCaption$, FindLF& - 1)
-                        TempCaption$ = MID$(TempCaption$, FindLF& + 1)
-                    ELSE
-                        TempLine$ = TempCaption$
-                        TempCaption$ = ""
-                    END IF
+                IF This.TextIsSelected _ANDALSO s1 < s2 _ANDALSO s1 <= lineStart + lineLen _ANDALSO s2 > lineStart THEN
+                    hs = s1 - lineStart: IF hs < 0 THEN hs = 0
+                    he = s2 - lineStart: IF he > lineLen THEN he = lineLen
+                    IF he > __UI_LastRenderedCharCount THEN he = __UI_LastRenderedCharCount
+                    IF hs > he THEN hs = he
+                    x1 = pad + __UI_ThisLineChars(hs)
+                    x2 = pad + __UI_ThisLineChars(he)
+                    'A selected line break shows as a little extra highlight
+                    IF s2 > lineStart + lineLen _ANDALSO MID$(Text(This.ID), lineStart + lineLen + 1, 1) = _CHR_LF THEN x2 = x2 + lineH \ 3
+                    IF x2 > x1 THEN LINE (x1, y)-(x2 - 1, y + lineH - 1), c, BF
                 END IF
 
-                CaptionLeft = CaptionIndent
+                IF ln = caretLine _ANDALSO __UI_Focus = This.ID _ANDALSO cursorBlink%% _ANDALSO NOT This.Disabled THEN
+                    caretOffset = This.Cursor - lineStart
+                    IF caretOffset > __UI_LastRenderedCharCount THEN caretOffset = __UI_LastRenderedCharCount
+                    IF caretOffset < 0 THEN caretOffset = 0
+                    LINE (pad + __UI_ThisLineChars(caretOffset), y)-STEP(0, lineH), __UI_ThemeColor(__UI_ThemeColor_Caret)
+                END IF
+            NEXT
 
-                __UI_PrintString CaptionLeft, TextTop%, TempLine$
-            LOOP
-
-            IF This.ID = __UI_Focus THEN
-                FOR i = Control(__UI_Focus).Cursor TO 0 STEP -1
-                    IF MID$(Text(__UI_Focus), i, 1) = _CHR_LF OR i = 0 THEN
-                        Control(__UI_Focus).VisibleCursor = Control(__UI_Focus).Cursor - i
-                        EXIT FOR
-                    END IF
-                NEXT
-            END IF
-
-            _DEST This.Canvas
-            _PUTIMAGE (0, 0), This.HelperCanvas
-
-            IF TotalLines > This.Height \ uspacing& THEN
-                This.HasVScrollbar = True
-                __UI_DrawVScrollBar This, ControlState
-            ELSE
-                This.HasVScrollbar = False
-                __UI_DrawVScrollBar This, 4 'ControlState = 4 (Disabled)
-            END IF
+            This.HasVScrollbar = __UI_TBNeedsScrollbar
+            IF This.HasVScrollbar THEN __UI_DrawVScrollBar This, ControlState
         ELSE
             ' Single line textbox
             DIM ThisTempText$
@@ -8011,6 +8535,10 @@ SUB __UI_DrawListBox (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             ELSE
                 This.HasVScrollbar = False
             END IF
+        ELSEIF This.ID = __UI_ActiveDropdownList AND LEN(__UI_DropdownSearch) > 0 THEN
+            'A searchable dropdown list whose search matched nothing
+            COLOR __UI_DisabledColor
+            __UI_PrintString CaptionIndent * 2, CaptionIndent + 2, "No matches"
         END IF
 
         IF This.HasBorder THEN
@@ -8052,8 +8580,10 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     _FONT This.Font
 
+    DIM Visible AS LONG ' items or lines shown at once
     IF This.Type = __UI_Type_ListBox THEN
         This.Min = 0
+        Visible = This.LastVisibleItem
         This.Max = This.Max - This.LastVisibleItem
         This.Value = This.InputViewStart - 1
         This.Left = This.Width - __UI_ScrollbarWidth - 1
@@ -8062,8 +8592,8 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Width = __UI_ScrollbarWidth
     ELSEIF This.Type = __UI_Type_TextBox THEN
         This.Min = 0
-        This.Max = __UI_CountLines(This.ID) - This.Height \ uspacing&
-        'IF This.HasHScrollbar THEN This.Height = This.Height - __UI_ScrollbarWidth
+        Visible = __UI_TBVisibleLines(This.ID)
+        This.Max = __UI_TBCountLines(This.ID) - Visible
         This.Value = This.FirstVisibleLine - 1
         This.Left = This.Width - __UI_ScrollbarWidth - 1
         This.Top = 1
@@ -8072,12 +8602,20 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
     END IF
 
     'Scrollbar measurements:
+    'The thumb is to the track what the visible part is to the whole contents.
+    'Ratio is how far the view scrolls per pixel the thumb moves.
     TrackHeight = This.Height - __UI_ScrollbarButtonHeight * 2 - 1
-    Ratio = (This.Max) / TrackHeight
-    ThumbHeight = TrackHeight - This.Height * Ratio
-    IF ThumbHeight < 22 THEN ThumbHeight = 22
-    IF ThumbHeight > TrackHeight THEN ThumbHeight = TrackHeight
-    ThumbTop = This.Top + (TrackHeight - ThumbHeight) * (This.Value / This.Max)
+    IF This.Max < 1 _ORELSE Visible < 1 THEN
+        ThumbHeight = TrackHeight
+        Ratio = 0
+        ThumbTop = This.Top
+    ELSE
+        ThumbHeight = TrackHeight * Visible / (This.Max + Visible)
+        IF ThumbHeight < 22 THEN ThumbHeight = 22
+        IF ThumbHeight > TrackHeight THEN ThumbHeight = TrackHeight
+        IF TrackHeight > ThumbHeight THEN Ratio = This.Max / (TrackHeight - ThumbHeight) ELSE Ratio = 0
+        ThumbTop = This.Top + (TrackHeight - ThumbHeight) * (This.Value / This.Max)
+    END IF
     TempThis.ThumbTop = TempThis.Top + ThumbTop + __UI_ScrollbarButtonHeight
 
     IF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN
@@ -8252,7 +8790,28 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         DIM TempText$, ThisItem%, FindLF&, ThisItemTop%
 
-        IF This.Value > 0 THEN
+        IF This.Searchable AND This.ID = __UI_ParentDropdownList AND __UI_ActiveDropdownList > 0 THEN
+            'While the list is open, the box is its search field
+            DIM SearchLeft AS INTEGER, SearchRoom AS INTEGER, CaretLeft AS INTEGER
+            ThisItemTop% = This.Height \ 2 - uspacing& \ 2 + 1
+            SearchLeft = CaptionIndent * 2
+            SearchRoom = This.Width - (__UI_ScrollbarWidth + 2) - SearchLeft - CaptionIndent - 2
+            IF LEN(__UI_DropdownSearch) THEN
+                'Show the end of the search when it doesn't fit
+                TempCaption$ = __UI_DropdownSearch
+                DO WHILE LEN(TempCaption$) > 1 AND __UI_PrintWidth(TempCaption$) > SearchRoom
+                    TempCaption$ = MID$(TempCaption$, 2)
+                LOOP
+                COLOR This.ForeColor
+                __UI_PrintString SearchLeft, ThisItemTop%, TempCaption$
+                CaretLeft = SearchLeft + __UI_PrintWidth(TempCaption$)
+            ELSE
+                COLOR __UI_DisabledColor
+                __UI_PrintString SearchLeft, ThisItemTop%, "Search..."
+                CaretLeft = SearchLeft
+            END IF
+            LINE (CaretLeft, ThisItemTop%)-STEP(0, uspacing& - 2), This.ForeColor
+        ELSEIF This.Value > 0 THEN
             IF LEN(Text(This.ID)) THEN
                 TempText$ = Text(This.ID)
                 ThisItem% = 0
@@ -8279,7 +8838,8 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
                         IF __UI_Focus = This.ID THEN
                             COLOR This.SelectedForeColor
-                            LINE (CaptionIndent, 3)-STEP(This.Width - CaptionIndent * 2, This.Height - 7), This.SelectedBackColor, BF
+                            'Stop the highlight short of the dropdown button
+                            LINE (CaptionIndent, 3)-(This.Width - (__UI_ScrollbarWidth + 2) - 2, This.Height - 4), This.SelectedBackColor, BF
                         END IF
 
                         SELECT CASE This.Align
@@ -8288,7 +8848,7 @@ SUB __UI_DrawDropdownList (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                             CASE __UI_Center
                                 __UI_PrintString (This.Width \ 2 - __UI_PrintWidth(TempCaption$) \ 2), ThisItemTop%, TempCaption$
                             CASE __UI_Right
-                                __UI_PrintString (This.Width - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
+                                __UI_PrintString (This.Width - (__UI_ScrollbarWidth + 2) - __UI_PrintWidth(TempCaption$)) - CaptionIndent, ThisItemTop%, TempCaption$
                         END SELECT
                         EXIT DO
                     END IF

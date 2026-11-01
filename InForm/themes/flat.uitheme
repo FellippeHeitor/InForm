@@ -407,7 +407,7 @@ SUB __UI_FlatRadioButton (x AS INTEGER, y AS INTEGER, size AS INTEGER, state AS 
 END SUB
 
 ''' @brief Draws a progress bar track and its filled part.
-SUB __UI_FlatProgressBar (w AS INTEGER, h AS INTEGER, fraction AS SINGLE, disabled AS _BYTE, accent AS _UNSIGNED LONG, border AS _UNSIGNED LONG)
+SUB __UI_FlatProgressBar (w AS INTEGER, h AS INTEGER, fraction AS SINGLE, disabled AS _BYTE, accent AS _UNSIGNED LONG)
     DIM fillW AS SINGLE, a AS _UNSIGNED LONG, r AS SINGLE
     a = accent
     IF disabled THEN a = __UI_FlatMix(accent, __UI_ThemeColor(__UI_ThemeColor_WindowBack), .6)

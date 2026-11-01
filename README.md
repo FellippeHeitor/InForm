@@ -103,12 +103,14 @@ InForm/extensions/*.*
 | Lander1 | B+ |
 | Lander2 | B+ |
 | Mahjong | Richard Notley |
+| MultilineDemo | Fellippe Heitor |
 | MasterMindGuessTheSequence | TempodiBasic |
 | Pelmanism | Richard Notley |
 | PictureGrid | Richard Notley |
 | PlayFX | Samuel Gomes |
 | R2P | bobalooie |
 | RockPaperScissorsSpockLizard | TempodiBasic |
+| SearchableDropdownDemo | Fellippe Heitor |
 | Stopwatch | Fellippe Heitor |
 | TabDemo | Fellippe Heitor |
 | TextFetch | B+ |
