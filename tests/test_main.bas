@@ -17,6 +17,7 @@ $LET TEST_CONSOLE_ONLY = TRUE
 '$INCLUDE:'../InForm/extensions/Stack.bi'
 '$INCLUDE:'../InForm/extensions/String.bi'
 '$INCLUDE:'../InForm/extensions/StringFile.bi'
+'$INCLUDE:'../InForm/extensions/Timer.bi'
 
 '$INCLUDE:'../InForm/InForm.bi'
 
@@ -42,6 +43,7 @@ SUB __UI_BeforeInit
     Test_InFormUIUnicodeUtils
     Test_Theme
     Test_TabControl
+    Test_Timer
 
     TEST_END_ALL
 END SUB
@@ -2460,6 +2462,73 @@ SUB Test_TabControl
     __UI_DestroyControl Control(c2)
     __UI_DestroyControl Control(c3)
     __UI_DestroyControl Control(t)
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_Timer
+    TEST_CASE_BEGIN "Timer"
+
+    Timer_Initialize
+
+    ' Invalid handles should safely return false / 0
+    TEST_CHECK_FALSE Timer_Exists(0), "Handle 0 should not exist"
+    TEST_CHECK_FALSE Timer_Exists(-1), "Negative handle should not exist"
+    TEST_CHECK_FALSE Timer_Exists(999), "Out of bounds handle should not exist"
+    TEST_CHECK_FALSE Timer_Poll(0), "Poll on handle 0 should return false"
+    TEST_CHECK_FALSE Timer_Poll(999), "Poll on out-of-bounds handle should return false"
+    TEST_CHECK_FALSE Timer_IsPaused(0), "Handle 0 is not paused"
+    TEST_CHECK Timer_GetInterval(0) = 0, "Handle 0 interval is 0"
+    TEST_CHECK Timer_GetRemainingTicks(0) = 0, "Handle 0 remaining ticks is 0"
+
+    ' Frequency conversion helpers
+    TEST_CHECK Timer_GetTicksFromHertz(50) = 20, "50 Hz should be 20 ticks (1000/50)"
+    TEST_CHECK Timer_GetTicksFromHertz(0) = 0, "0 Hz should return 0 ticks"
+    TEST_CHECK Timer_GetTicksFromHertz(-10) = 0, "Negative Hz should return 0 ticks"
+    TEST_CHECK Timer_GetHertzFromTicks(20) = 50!, "20 ticks should be 50 Hz"
+    TEST_CHECK Timer_GetHertzFromTicks(0) = 0!, "0 ticks should return 0 Hz"
+
+    ' Create periodic timer
+    DIM t1 AS LONG: t1 = Timer_Create(100)
+    TEST_REQUIRE t1 > 0, "Timer_Create should return handle > 0"
+    TEST_CHECK Timer_Exists(t1), "Created timer should exist"
+    TEST_CHECK Timer_GetInterval(t1) = 100, "Timer interval should be 100"
+    TEST_CHECK_FALSE Timer_IsOneShot(t1), "Default timer should not be one-shot"
+    TEST_CHECK_FALSE Timer_IsPaused(t1), "Timer should not be paused initially"
+
+    ' Set interval
+    Timer_SetInterval t1, 250
+    TEST_CHECK Timer_GetInterval(t1) = 250, "Updated timer interval should be 250"
+
+    ' Pause and resume
+    Timer_Pause t1
+    TEST_CHECK Timer_IsPaused(t1), "Timer should be paused after Timer_Pause"
+    TEST_CHECK_FALSE Timer_Poll(t1), "Paused timer should not fire in Timer_Poll"
+
+    Timer_Resume t1
+    TEST_CHECK_FALSE Timer_IsPaused(t1), "Timer should not be paused after Timer_Resume"
+
+    ' One-shot timer
+    DIM tOne AS LONG: tOne = Timer_CreateOneShot(30)
+    TEST_REQUIRE tOne > 0, "Timer_CreateOneShot should return handle > 0"
+    TEST_CHECK Timer_Exists(tOne), "One-shot timer should exist"
+    TEST_CHECK Timer_IsOneShot(tOne), "One-shot timer should be flagged as one-shot"
+
+    ' Short delay to test polling and one-shot auto-deactivation
+    _DELAY 0.05 ' 50 ms delay
+    TEST_CHECK Timer_Poll(tOne), "One-shot timer should fire after interval elapsed"
+    TEST_CHECK_FALSE Timer_Exists(tOne), "One-shot timer should automatically deactivate after firing"
+    TEST_CHECK_FALSE Timer_Poll(tOne), "Deactivated one-shot timer should not fire again"
+
+    ' Delete timer
+    Timer_Delete t1
+    TEST_CHECK_FALSE Timer_Exists(t1), "Deleted timer should not exist"
+    TEST_CHECK_FALSE Timer_Poll(t1), "Deleted timer should not fire"
+
+    ' Slot reuse
+    DIM tReuse AS LONG: tReuse = Timer_Create(50)
+    TEST_CHECK tReuse = t1, "Newly created timer should reuse deleted slot"
+    Timer_Delete tReuse
 
     TEST_CASE_END
 END SUB
