@@ -7447,6 +7447,32 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
             __UI_FlatButtonSurface 0, 0, This.Width, This.Height, TempControlState, FlatFace, This.BorderColor, FlatPrimary
         ELSE
             _PUTIMAGE (0, 3)-(This.Width - 1, This.Height - 4), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 3)-STEP(11, ButtonHeight - 7)
+
+            'Top and bottom edges
+            _PUTIMAGE (3, 0)-STEP(This.Width - 6, 3), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight)-STEP(11, 3)
+            _PUTIMAGE (3, This.Height - 3)-STEP(This.Width - 6, 3), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 18)-STEP(11, 3)
+
+            'Left edges and corners:
+            _PUTIMAGE (0, 2)-STEP(2, This.Height - 4), ControlImage, , (0, TempControlState * ButtonHeight - ButtonHeight + 2)-STEP(2, ButtonHeight - 6)
+            _PUTIMAGE (0, 0), ControlImage, , (0, TempControlState * ButtonHeight - ButtonHeight)-STEP(2, 2)
+            _PUTIMAGE (0, This.Height - 3), ControlImage, , (0, TempControlState * ButtonHeight - 3)-STEP(2, 2)
+
+            'Right edges and corners:
+            _PUTIMAGE (This.Width - 3, 2)-STEP(2, This.Height - 4), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - ButtonHeight + 2)-STEP(2, ButtonHeight - 6)
+            _PUTIMAGE (This.Width - 2, 0), ControlImage, , (ButtonWidth - 2, TempControlState * ButtonHeight - ButtonHeight)-STEP(2, 2)
+            _PUTIMAGE (This.Width - 3, This.Height - 3), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - 3)-STEP(2, 2)
+
+            'The theme image has its own face color, so a custom BackColor is painted over it (keeping the outer edges)
+            IF This.BackColor <> __UI_DefaultColor(__UI_Type_Button, 2) THEN
+                DIM CustomFace AS _UNSIGNED LONG
+                CustomFace = This.BackColor
+                SELECT CASE TempControlState
+                    CASE 2: CustomFace = __UI_FlatShade(CustomFace, .08)
+                    CASE 3: CustomFace = __UI_FlatShade(CustomFace, .18)
+                    CASE 4: CustomFace = __UI_FlatMix(CustomFace, Control(__UI_FormID).BackColor, .5)
+                END SELECT
+                LINE (2, 2)-(This.Width - 3, This.Height - 3), CustomFace, BF
+            END IF
         END IF
 
         'Does this button have a helper canvas (icon)?
@@ -7468,22 +7494,6 @@ SUB __UI_DrawButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)
                 IconWidth = _WIDTH(This.HelperCanvas) * (IconHeight / _HEIGHT(This.HelperCanvas))
                 _PUTIMAGE (This.Width \ 2 - ((IconWidth \ 2)) + PictureOffsetX, This.Height / 2 - ((This.Height - 4) / 2) + 1 + PictureOffsetY)-STEP(IconWidth - 1, IconHeight - 1), This.HelperCanvas
             END IF
-        END IF
-
-        IF __UI_Theme.Style <> __UI_ThemeStyle_Flat THEN
-            'Top and bottom edges
-            _PUTIMAGE (3, 0)-STEP(This.Width - 6, 3), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight)-STEP(11, 3)
-            _PUTIMAGE (3, This.Height - 3)-STEP(This.Width - 6, 3), ControlImage, , (3, TempControlState * ButtonHeight - ButtonHeight + 18)-STEP(11, 3)
-
-            'Left edges and corners:
-            _PUTIMAGE (0, 2)-STEP(2, This.Height - 4), ControlImage, , (0, TempControlState * ButtonHeight - ButtonHeight + 2)-STEP(2, ButtonHeight - 6)
-            _PUTIMAGE (0, 0), ControlImage, , (0, TempControlState * ButtonHeight - ButtonHeight)-STEP(2, 2)
-            _PUTIMAGE (0, This.Height - 3), ControlImage, , (0, TempControlState * ButtonHeight - 3)-STEP(2, 2)
-
-            'Right edges and corners:
-            _PUTIMAGE (This.Width - 3, 2)-STEP(2, This.Height - 4), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - ButtonHeight + 2)-STEP(2, ButtonHeight - 6)
-            _PUTIMAGE (This.Width - 2, 0), ControlImage, , (ButtonWidth - 2, TempControlState * ButtonHeight - ButtonHeight)-STEP(2, 2)
-            _PUTIMAGE (This.Width - 3, This.Height - 3), ControlImage, , (ButtonWidth - 3, TempControlState * ButtonHeight - 3)-STEP(2, 2)
         END IF
 
         'Caption:
