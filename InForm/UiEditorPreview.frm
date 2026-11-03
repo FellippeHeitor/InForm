@@ -10,6 +10,7 @@ SUB __UI_LoadForm
     $RESIZE:ON
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "Form1", 300, 300, 0, 0, 0)
+    SetTheme "light"
 
 END SUB
 

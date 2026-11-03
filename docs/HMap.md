@@ -4,7 +4,7 @@ The `HMap` library provides a generic hash map implementation. It allows you to 
 
 ## Usage
 
-To use the `HMap` library, include `HMap.bi` and `HMap.bm` in your project.
+To use the `HMap` library, include `HMap.bi` in your project.
 
 ```vb
 '$INCLUDE:'HMap.bi'
@@ -24,8 +24,6 @@ PRINT HMap_GetInteger(myMap(), "age")
 
 ' Free the map
 HMap_Free myMap()
-
-'$INCLUDE:'HMap.bm'
 ```
 
 ## API Reference

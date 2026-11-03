@@ -2,6 +2,14 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
+rem Builds InForm-PE. Any make targets or variables given are passed on to make.
+rem   --rebuild, /rebuild   delete the built programs first, then build everything again
+set "MAKE_ARGS=%*"
+if defined MAKE_ARGS (
+    set "MAKE_ARGS=!MAKE_ARGS:--rebuild=rebuild!"
+    set "MAKE_ARGS=!MAKE_ARGS:/rebuild=rebuild!"
+)
+
 set "USER_QB64PE_PATH="
 for %%a in (%*) do (
     echo %%a | findstr /B /I "QB64PE_PATH=" >nul
@@ -41,4 +49,4 @@ if not exist "%MAKE_CMD%" (
 )
 
 echo Using make from: %MAKE_CMD%
-"%MAKE_CMD%" -f inform.mk %*
+"%MAKE_CMD%" -f inform.mk !MAKE_ARGS!

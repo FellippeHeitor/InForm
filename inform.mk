@@ -45,27 +45,35 @@ QB64PE_FLAGS := -x -w -e
 
 TEST_EXECUTABLE := tests/test_main$(EXTENSION)
 
-.PHONY: all release test clean
+# The InForm engine and extensions are $INCLUDEd by every program, so a change
+# to any of them has to rebuild everything
+INFORM_SOURCES := $(wildcard InForm/*.ui InForm/*.bi InForm/*.bm InForm/extensions/*.bi InForm/extensions/*.bm)
+
+.PHONY: all release rebuild test clean
 
 all: UiEditor$(EXTENSION) InForm/UiEditorPreview$(EXTENSION) InForm/vbdos2inform$(EXTENSION) ThemeEditor$(EXTENSION)
 
-UiEditor$(EXTENSION) : InForm/UiEditor.bas
+UiEditor$(EXTENSION) : InForm/UiEditor.bas InForm/UiEditor.frm $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-InForm/UiEditorPreview$(EXTENSION) : InForm/UiEditorPreview.bas
+InForm/UiEditorPreview$(EXTENSION) : InForm/UiEditorPreview.bas InForm/UiEditorPreview.frm $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-InForm/vbdos2inform$(EXTENSION) : InForm/vbdos2inform.bas
+InForm/vbdos2inform$(EXTENSION) : InForm/vbdos2inform.bas InForm/InFormVersion.bi
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-ThemeEditor$(EXTENSION) : InForm/ThemeEditor.bas InForm/ThemeEditor.frm
+ThemeEditor$(EXTENSION) : InForm/ThemeEditor.bas InForm/ThemeEditor.frm $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
-$(TEST_EXECUTABLE): tests/test_main.bas
+$(TEST_EXECUTABLE): tests/test_main.bas $(INFORM_SOURCES)
 	$(QB64PE) $(QB64PE_FLAGS) $< -o $@
 
 release: clean
 	$(MAKE) -f inform.mk all QB64PE_FLAGS="$(QB64PE_FLAGS) -f:OptimizeCppProgram=true"
+
+# Deletes the built programs and builds them all again
+rebuild: clean
+	$(MAKE) -f inform.mk all
 
 test: $(TEST_EXECUTABLE)
 	@echo "Running tests..."

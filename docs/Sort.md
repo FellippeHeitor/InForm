@@ -1,12 +1,14 @@
-# Algorithm Library
+# Sort Library
 
-The `Algo` library provides general-purpose algorithms.
+The `Sort` library provides sorting algorithms.
 
 ## Usage
 
-To use the `Algo` library, you need to include `Algo.bm` in your project.
+To use the `Sort` library, you need to include `Sort.bi` in your project.
 
 ```vb
+'$INCLUDE:'Sort.bi'
+
 DIM names(1 TO 5) AS STRING
 names(1) = "John"
 names(2) = "jane"
@@ -14,22 +16,20 @@ names(3) = "Peter"
 names(4) = "sue"
 names(5) = "pete"
 
-Algo_SortStringArray names()
+Sort_StringArray names()
 
 DIM i AS LONG
 FOR i = LBOUND(names) TO UBOUND(names)
     PRINT names(i)
 NEXT
 
-IF Algo_SortStringArrayRange(names(), 2, 4, _FALSE, _FALSE) THEN
+IF Sort_StringArrayRange(names(), 2, 4, _FALSE, _FALSE) THEN
     PRINT "Array was changed"
 END IF
 
 FOR i = LBOUND(names) TO UBOUND(names)
     PRINT names(i)
 NEXT
-
-'$INCLUDE:'Algo.bm'
 ```
 
 ## API Reference
@@ -52,7 +52,7 @@ Sorts a string array using a non-recursive QuickSort algorithm.
 `_TRUE` if the array was modified, `_FALSE` otherwise.
 
 ```vb
-FUNCTION Algo_SortStringArrayRange%% (strArr() AS STRING, l AS _INTEGER64, u AS _INTEGER64, wantsAscending AS _BYTE, caseSensitive AS _BYTE)
+FUNCTION Sort_StringArrayRange%% (strArr() AS STRING, l AS _INTEGER64, u AS _INTEGER64, wantsAscending AS _BYTE, caseSensitive AS _BYTE)
 ```
 
 ***
@@ -67,7 +67,7 @@ A convenience function that sorts the entire string array in ascending, case-sen
 `_TRUE` if the array was modified, `_FALSE` otherwise.
 
 ```vb
-FUNCTION Algo_SortStringArray%% (strArr() AS STRING)
+FUNCTION Sort_StringArray%% (strArr() AS STRING)
 ```
 
 ***
@@ -79,5 +79,5 @@ A convenience SUB that sorts the entire string array in ascending, case-sensitiv
 * `strArr()`: The array of strings to sort.
 
 ```vb
-SUB Algo_SortStringArray (strArr() AS STRING)
+SUB Sort_StringArray (strArr() AS STRING)
 ```

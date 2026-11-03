@@ -163,7 +163,6 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    _SCREENMOVE 50, 5
     Control(SetKeysFR).Left = GoldX% - 200
     Control(SetKeysFR).Top = 250
     Control(SelectKeyFR).Left = GoldX% + 30
@@ -1126,7 +1125,7 @@ SUB MadameZora
         WEND
     WEND
     _SNDCLOSE AllTheFunoftheFair&
-    _FREEIMAGE Quacker&
+    IF Quacker& < -1 THEN _FREEIMAGE Quacker&
     CALL WeAreDone
     SYSTEM
 END SUB

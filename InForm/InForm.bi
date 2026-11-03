@@ -1,6 +1,6 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' InForm-PE GUI engine for QB64-PE
-' Copyright (c) 2025 QB64 Phoenix Edition Team
+' Copyright (c) 2026 QB64 Phoenix Edition Team
 ' Copyright (c) 2023 George McGinn
 ' Copyright (c) 2022 Fellippe Heitor
 '-----------------------------------------------------------------------------------------------------------------------
@@ -114,7 +114,8 @@ __UI_Init
 
 'Main loop
 DO
-    _LIMIT 1
+    __UI_DoEvents
+    _LIMIT __UI_LoopRate
 LOOP
 
 SYSTEM

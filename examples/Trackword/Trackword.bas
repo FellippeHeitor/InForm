@@ -289,9 +289,6 @@ SUB __UI_Click (id AS LONG)
                 MID$(theWord$, 9, 1) = Text(TextBox9)
                 OPEN "tanswers.rnd" FOR RANDOM AS #1 LEN = 9
                 FIELD #1, 9 AS TWord$
-                'Search Time Tweak Suggested by Fellippe
-                TIMER(__UI_EventsTimer) OFF
-                TIMER(__UI_RefreshTimer) OFF
                 REDIM S1$(1)
                 FOR D& = 0 TO nSnakes& - 1 'Go through all snake patterns
                     S1$(0) = snake2word$(snakes$(D&))
@@ -341,8 +338,6 @@ SUB __UI_Click (id AS LONG)
                         NEXT Upper%
                     WEND
                 WEND
-                TIMER(__UI_EventsTimer) ON
-                TIMER(__UI_RefreshTimer) ON
                 FOR N1% = 1 TO NoAnswers%
                     GET #1, N1%
                     NewWord$ = RTRIM$(TWord$)

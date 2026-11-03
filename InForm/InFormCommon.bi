@@ -1,10 +1,10 @@
 '-----------------------------------------------------------------------------------------------------------------------
 ' Common InForm-PE header
-' Copyright (c) 2025 QB64 Phoenix Edition Team
+' Copyright (c) 2026 QB64 Phoenix Edition Team
 ' Copyright (c) 2022 Fellippe Heitor
 '-----------------------------------------------------------------------------------------------------------------------
 
-$IF VERSION < 4.2.0 THEN
+$IF VERSION < 4.6.0 THEN
     $ERROR 'This requires the latest version of QB64-PE from https://github.com/QB64-Phoenix-Edition/QB64pe/releases/latest'
 $END IF
 
@@ -16,6 +16,7 @@ $INCLUDEONCE
 '$INCLUDE:'extensions/String.bi'
 '$INCLUDE:'extensions/HMap64.bi'
 '$INCLUDE:'extensions/Ini.bi'
+'$INCLUDE:'extensions/Time.bi'
 
 CONST False%% = _FALSE, True%% = _TRUE
 
@@ -133,6 +134,9 @@ CONST __INFORM_THEME_IMAGE_SCROLLTHUMB~%% = 14~%%
 CONST __INFORM_THEME_IMAGE_SCROLLTRACK~%% = 15~%%
 CONST __INFORM_THEME_IMAGE_SLIDERDOWN~%% = 16~%%
 CONST __INFORM_THEME_IMAGE_SLIDERTRACK~%% = 17~%%
+CONST __INFORM_THEME_IMAGE_BUILTIN_COUNT~%% = 17~%% ' images above this one have no built-in bitmap; themes may supply them
+CONST __INFORM_THEME_IMAGE_TOGGLETRACK~%% = 18~%%
+CONST __INFORM_THEME_IMAGE_TOGGLEKNOB~%% = 19~%%
 
 ' Default font list
 CONST __INFORM_DEFAULT_FONTS = "segoeui.ttf?arial.ttf?Arial.ttf?Helvetica.ttc?Geneva.ttf?truetype/liberation/LiberationSans-Regular.ttf?TTF/arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf?Courier.ttc"
@@ -165,8 +169,8 @@ CONST __UI_ThemeColor_Count& = 18&
 ' Role names as used in theme files (same order as the constants above)
 CONST __UI_ThemeColorNames = "WindowBack,WindowText,InputBack,InputText,ButtonFace,ButtonText,SelectedBack,SelectedText,Border,Accent,AccentText,FocusRing,Caret,DisabledText,TipBack,TipText,MenuBack,TrackBack"
 ' Image names as used in theme files (same order as the __INFORM_THEME_IMAGE_* constants)
-CONST __UI_ThemeImageNames = "Arrows,Button,CheckBox,Frame,MenuCheckmark,NotFound,ProgressChunk,ProgressTrack,RadioButton,ScrollButtons,ScrollHButtons,ScrollHThumb,ScrollHTrack,ScrollThumb,ScrollTrack,SliderDown,SliderTrack"
-CONST __UI_ThemeImage_Count~%% = 17~%%
+CONST __UI_ThemeImageNames = "Arrows,Button,CheckBox,Frame,MenuCheckmark,NotFound,ProgressChunk,ProgressTrack,RadioButton,ScrollButtons,ScrollHButtons,ScrollHThumb,ScrollHTrack,ScrollThumb,ScrollTrack,SliderDown,SliderTrack,ToggleTrack,ToggleKnob"
+CONST __UI_ThemeImage_Count~%% = 19~%%
 
 'Control types:
 CONST __UI_Type_Form%% = 1%%
@@ -318,13 +322,15 @@ TYPE __UI_ControlTYPE
     PreviousFieldArea AS LONG
     TextIsSelected AS _BYTE
     BypassSelectOnFocus AS _BYTE
-    Multiline AS _BYTE
+    Multiline AS _BYTE ' textbox takes several lines of text (Enter adds a line break; long lines wrap)
     NumericOnly AS _BYTE
-    FirstVisibleLine AS LONG
+    Searchable AS _BYTE ' dropdown list: typing while it's open filters its items
+    Fuzzy AS _BYTE ' searchable dropdown list: letters of a word may have others in between; best matches first
+    FirstVisibleLine AS LONG ' multiline textbox: topmost visual line shown (1-based)
     PrevFirstVisibleLine AS LONG
-    CurrentLine AS LONG
+    CurrentLine AS LONG ' multiline textbox: visual line the cursor is on (1-based)
     PrevCurrentLine AS LONG
-    VisibleCursor AS LONG
+    VisibleCursor AS LONG ' textbox: cursor x position in pixels
     PrevVisibleCursor AS LONG
     ControlIsSelected AS _BYTE
     LeftOffsetFromFirstSelected AS INTEGER
@@ -341,16 +347,24 @@ TYPE __UI_ControlTYPE
     ControlState AS _BYTE
     ChildrenRedrawn AS _BYTE
     FocusState AS LONG
-    LastChange AS SINGLE
+    LastChange AS DOUBLE
     Redraw AS _BYTE
     BulletStyle AS _BYTE
     MenuItemGroup AS INTEGER
     KeyCombo AS LONG
-    BoundTo AS LONG
-    BoundProperty AS LONG
     TabPage AS INTEGER ' tab a child of a TabControl belongs to (0 = all tabs)
     ChildCount AS LONG ' number of child controls (containers only)
     HoveringTab AS INTEGER ' tab under the mouse (TabControl only)
+END TYPE
+
+' Two control properties kept in sync (see __UI_Bind). Properties are
+' __UI_PropertyEnum values.
+TYPE __UI_BindingTYPE
+    ID1 AS LONG
+    Property1 AS LONG
+    ID2 AS LONG
+    Property2 AS LONG
+    Inverted AS _BYTE ' values pass through NOT: non-zero becomes 0, and 0 becomes True
 END TYPE
 
 TYPE __UI_Types
@@ -438,7 +452,7 @@ DIM SHARED __UI_HasInput AS _BYTE, __UI_ProcessInputTimer AS SINGLE
 DIM SHARED __UI_UnloadSignal AS _BYTE, __UI_HasResized AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
 DIM SHARED __UI_Loaded AS _BYTE
-DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
+DIM SHARED __UI_LastFrameTicks AS _UNSIGNED _INTEGER64 ' when __UI_UpdateDisplay last ran, in ms (see __UI_DrawFrameIfDue)
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
 DIM SHARED __UI_TotalActiveMenus AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
 DIM SHARED __UI_SubMenuDelay AS SINGLE, __UI_HoveringSubMenu AS _BYTE
@@ -450,7 +464,7 @@ DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_MenuBarOffset AS INTEGER, __UI_MenuItemOffset AS INTEGER
 DIM SHARED __UI_NewMenuBarTextLeft AS INTEGER, __UI_DefaultCaptionIndent AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
-DIM SHARED __UI_IsDrawing AS _BYTE ' _TRUE while __UI_UpdateDisplay runs (input processing runs on another timer)
+DIM SHARED __UI_IsDrawing AS _BYTE ' _TRUE while __UI_UpdateDisplay runs (so it isn't entered again from __UI_BeforeUpdateDisplay)
 DIM SHARED __UI_CurrentTitle AS STRING
 DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG
 DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG
@@ -470,6 +484,28 @@ DIM SHARED __UI_KeepScreenHidden AS _BYTE, __UI_MaxBorderSize AS INTEGER
 DIM SHARED __UI_InternalContextMenus AS LONG, __UI_DidClick AS _BYTE
 DIM SHARED __UI_ContextMenuSourceID AS LONG
 DIM SHARED __UI_FKey(1 TO 12) AS LONG
+
+' Multiline textbox layout (see __UI_TBLayout). Holds the visual lines of one
+' textbox at a time; offsets are 0-based positions into Text(id).
+REDIM SHARED __UI_TBLineStart(1 TO 100) AS LONG ' where each visual line starts
+REDIM SHARED __UI_TBLineLen(1 TO 100) AS LONG ' characters on the line, not counting a line break
+DIM SHARED __UI_TBLineCount AS LONG
+DIM SHARED __UI_TBNeedsScrollbar AS _BYTE
+DIM SHARED __UI_TBLayoutID AS LONG, __UI_TBLayoutText AS STRING
+DIM SHARED __UI_TBLayoutWidth AS LONG, __UI_TBLayoutHeight AS LONG, __UI_TBLayoutFont AS LONG
+DIM SHARED __UI_TBLayoutBorder AS LONG, __UI_TBLayoutScrollbarWidth AS LONG
+DIM SHARED __UI_TBKeepCaretX AS _BYTE ' Up/Down keep aiming at the same x (stored in .VisibleCursor)
+' When set, pasting into a single-line textbox replaces line breaks with this text
+' instead of keeping only the first line (UiEditor uses "\n")
+DIM SHARED __UI_PasteLineBreakAs AS STRING
+
+' Searchable dropdown lists (see __UI_FilterDropdownList). While one is open,
+' the dropdown box shows the search text and the list shows only matching items.
+DIM SHARED __UI_DropdownSearch AS STRING ' what has been typed so far
+DIM SHARED __UI_DropdownSearchMap AS STRING
+
+REDIM SHARED __UI_Bindings(1 TO 10) AS __UI_BindingTYPE
+DIM SHARED __UI_TotalBindings AS LONG ' MKL$ of the dropdown's item number for each item shown
 
 DIM SHARED __UI_Type(0 TO 19) AS __UI_Types
 

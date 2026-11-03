@@ -4,7 +4,7 @@ The `FontMgr` library is a cross-platform helper for finding and retrieving info
 
 ## Usage
 
-To use the `FontMgr` library, you need to include `FontMgr.bi` and `FontMgr.bm` in your project.
+To use the `FontMgr` library, you need to include `FontMgr.bi` in your project.
 
 ```vb
 '$CONSOLE:ONLY
@@ -32,8 +32,6 @@ IF FontMgr_BuildList(fontFileList()) > 0 THEN
 ELSE
     PRINT "No fonts found or failed to build font list!"
 END IF
-
-'$INCLUDE:'FontMgr.bm'
 ```
 
 ## API Reference

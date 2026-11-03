@@ -13,11 +13,11 @@ $LET TEST_CONSOLE_ONLY = TRUE
 '$INCLUDE:'../InForm/extensions/LList.bi'
 '$INCLUDE:'../InForm/extensions/Pathname.bi'
 '$INCLUDE:'../InForm/extensions/Queue.bi'
+'$INCLUDE:'../InForm/extensions/Sort.bi'
 '$INCLUDE:'../InForm/extensions/Stack.bi'
 '$INCLUDE:'../InForm/extensions/String.bi'
 '$INCLUDE:'../InForm/extensions/StringFile.bi'
-
-'$INCLUDE:'../InForm/extensions/CatchError.bi'
+'$INCLUDE:'../InForm/extensions/Timer.bi'
 
 '$INCLUDE:'../InForm/InForm.bi'
 
@@ -25,7 +25,7 @@ SUB __UI_BeforeInit
     TEST_BEGIN_ALL
 
     Test_Catch
-    Test_Algo
+    Test_Sort
     Test_Array
     Test_HMap
     Test_HMap64
@@ -39,9 +39,11 @@ SUB __UI_BeforeInit
     Test_INI_Manager
     Test_InFormUIUtils
     Test_InFormUIHelpers
+    Test_DropdownSearch
     Test_InFormUIUnicodeUtils
     Test_Theme
     Test_TabControl
+    Test_Timer
 
     TEST_END_ALL
 END SUB
@@ -61,7 +63,7 @@ SUB Test_Catch
     TEST_CASE_END
 END SUB
 
-SUB Test_Algo
+SUB Test_Sort
     TEST_CASE_BEGIN "Algo: Basic Sort"
     DIM strArr(0 TO 4) AS STRING
     strArr(0) = "banana"
@@ -69,7 +71,7 @@ SUB Test_Algo
     strArr(2) = "orange"
     strArr(3) = "pear"
     strArr(4) = "kiwi"
-    TEST_REQUIRE Algo_SortStringArray(strArr()), "Algo_SortStringArray should return TRUE for an unsorted array"
+    TEST_REQUIRE Sort_StringArray(strArr()), "Algo_SortStringArray should return TRUE for an unsorted array"
     TEST_CHECK strArr(0) = "apple", "Sorted array element 0 should be 'apple'"
     TEST_CHECK strArr(1) = "banana", "Sorted array element 1 should be 'banana'"
     TEST_CHECK strArr(2) = "kiwi", "Sorted array element 2 should be 'kiwi'"
@@ -82,7 +84,7 @@ SUB Test_Algo
     sortedArr(0) = "a"
     sortedArr(1) = "b"
     sortedArr(2) = "c"
-    TEST_REQUIRE_FALSE Algo_SortStringArray(sortedArr()), "Algo_SortStringArray should return FALSE for a sorted array"
+    TEST_REQUIRE_FALSE Sort_StringArray(sortedArr()), "Algo_SortStringArray should return FALSE for a sorted array"
     TEST_CHECK sortedArr(0) = "a", "Array should remain unchanged"
     TEST_CHECK sortedArr(1) = "b", "Array should remain unchanged"
     TEST_CHECK sortedArr(2) = "c", "Array should remain unchanged"
@@ -94,7 +96,7 @@ SUB Test_Algo
     reverseArr(1) = "yankee"
     reverseArr(2) = "x-ray"
     reverseArr(3) = "whiskey"
-    TEST_REQUIRE Algo_SortStringArray(reverseArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
+    TEST_REQUIRE Sort_StringArray(reverseArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
     TEST_CHECK reverseArr(0) = "whiskey", "Sorted array element 0 should be 'whiskey'"
     TEST_CHECK reverseArr(1) = "x-ray", "Sorted array element 1 should be 'x-ray'"
     TEST_CHECK reverseArr(2) = "yankee", "Sorted array element 2 should be 'yankee'"
@@ -109,7 +111,7 @@ SUB Test_Algo
     dupArr(3) = "b"
     dupArr(4) = "a"
     dupArr(5) = "c"
-    TEST_REQUIRE Algo_SortStringArray(dupArr()), "Algo_SortStringArray should return TRUE for an array with duplicates"
+    TEST_REQUIRE Sort_StringArray(dupArr()), "Algo_SortStringArray should return TRUE for an array with duplicates"
     TEST_CHECK dupArr(0) = "a", "Sorted array with duplicates element 0"
     TEST_CHECK dupArr(1) = "a", "Sorted array with duplicates element 1"
     TEST_CHECK dupArr(2) = "b", "Sorted array with duplicates element 2"
@@ -124,7 +126,7 @@ SUB Test_Algo
     emptyArr(1) = ""
     emptyArr(2) = "alpha"
     emptyArr(3) = ""
-    TEST_REQUIRE Algo_SortStringArray(emptyArr()), "Algo_SortStringArray should return TRUE for an array with empty strings"
+    TEST_REQUIRE Sort_StringArray(emptyArr()), "Algo_SortStringArray should return TRUE for an array with empty strings"
     TEST_CHECK emptyArr(0) = "", "Sorted array with empty strings element 0"
     TEST_CHECK emptyArr(1) = "", "Sorted array with empty strings element 1"
     TEST_CHECK emptyArr(2) = "alpha", "Sorted array with empty strings element 2"
@@ -134,13 +136,13 @@ SUB Test_Algo
     TEST_CASE_BEGIN "Algo: Single Element"
     DIM singleArr(0 TO 0) AS STRING
     singleArr(0) = "lonely"
-    TEST_REQUIRE_FALSE Algo_SortStringArray(singleArr()), "Algo_SortStringArray should return FALSE for a single-element array"
+    TEST_REQUIRE_FALSE Sort_StringArray(singleArr()), "Algo_SortStringArray should return FALSE for a single-element array"
     TEST_CHECK singleArr(0) = "lonely", "Single element array should remain unchanged"
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Algo: Empty Array"
     DIM zeroArr(0) AS STRING
-    TEST_REQUIRE_FALSE Algo_SortStringArray(zeroArr()), "Algo_SortStringArray should return FALSE for an empty array"
+    TEST_REQUIRE_FALSE Sort_StringArray(zeroArr()), "Algo_SortStringArray should return FALSE for an empty array"
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Algo: Sort Range"
@@ -151,7 +153,7 @@ SUB Test_Algo
     rangeArr(3) = "c"
     rangeArr(4) = "b"
     rangeArr(5) = "a"
-    TEST_REQUIRE Algo_SortStringArrayRange(rangeArr(), 1, 4, _TRUE, _TRUE), "Algo_SortStringArrayRange should return TRUE for an unsorted range"
+    TEST_REQUIRE Sort_StringArrayRange(rangeArr(), 1, 4, _TRUE, _TRUE), "Algo_SortStringArrayRange should return TRUE for an unsorted range"
     TEST_CHECK rangeArr(0) = "z", "Element before range should be untouched"
     TEST_CHECK rangeArr(1) = "b", "Range should be sorted"
     TEST_CHECK rangeArr(2) = "c", "Range should be sorted"
@@ -166,7 +168,7 @@ SUB Test_Algo
     sortedRangeArr(1) = "b"
     sortedRangeArr(2) = "c"
     sortedRangeArr(3) = "d"
-    TEST_REQUIRE_FALSE Algo_SortStringArrayRange(sortedRangeArr(), 1, 2, _TRUE, _TRUE), "Algo_SortStringArrayRange should return FALSE for a sorted range"
+    TEST_REQUIRE_FALSE Sort_StringArrayRange(sortedRangeArr(), 1, 2, _TRUE, _TRUE), "Algo_SortStringArrayRange should return FALSE for a sorted range"
     TEST_CHECK sortedRangeArr(0) = "a", "Array should remain unchanged"
     TEST_CHECK sortedRangeArr(1) = "b", "Array should remain unchanged"
     TEST_CHECK sortedRangeArr(2) = "c", "Array should remain unchanged"
@@ -182,7 +184,7 @@ SUB Test_Algo
     NEXT i
 
     TEST_CASE_BEGIN "Algo: Performance Sort (" + _TOSTR$(ALGO_PERF_COUNT) + " numbers)"
-    TEST_CHECK Algo_SortStringArray(numArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
+    TEST_CHECK Sort_StringArray(numArr()), "Algo_SortStringArray should return TRUE for a reverse-sorted array"
     TEST_CASE_END
 
     TEST_CASE_BEGIN "Algo: Performance Sort Verification (" + _TOSTR$(ALGO_PERF_COUNT) + " numbers)"
@@ -1776,54 +1778,110 @@ SUB Test_InFormUIUtils
 END SUB
 
 SUB Test_InFormUIHelpers
-    TEST_CASE_BEGIN "InFormUIHelpers: __UI_CountLines"
+    TEST_CASE_BEGIN "InFormUIHelpers: multiline textbox layout"
 
-    TEST_CHECK __UI_CountLines(0) = 0, "Empty string"
-    Text(0) = _CHR_LF
-    TEST_CHECK __UI_CountLines(0) = 1, "One line"
-    Text(0) = "Line 1" + _CHR_LF + "Line 2" + _CHR_LF + "Line 3"
-    TEST_CHECK __UI_CountLines(0) = 3, "Three lines"
-    Text(0) = "Line 1" + _CHR_LF + "Line 2" + _CHR_LF + "Line 3" + _CHR_LF
-    TEST_CHECK __UI_CountLines(0) = 3, "Three lines"
-    Text(0) = _CHR_LF + "Line 1" + _CHR_LF + "Line 2" + _CHR_LF + "Line 3"
-    TEST_CHECK __UI_CountLines(0) = 4, "Four lines"
+    'Built-in font 8 is 8 pixels per character; no border and no padding,
+    'so an 80-pixel-wide box fits 10 characters per line
+    DIM AS LONG tb, lineH, testImage, prevDest, prevIndent, prevScrollbar
+    prevDest = _DEST
+    testImage = _NEWIMAGE(320, 240, 32)
+    _DEST testImage
+    prevIndent = __UI_DefaultCaptionIndent: __UI_DefaultCaptionIndent = 0
+    prevScrollbar = __UI_ScrollbarWidth: __UI_ScrollbarWidth = 16
+
+    tb = __UI_NewControl(__UI_Type_TextBox, "TestMultilineTB", 80, 200, 0, 0, 0)
+    Control(tb).Multiline = _TRUE
+    Control(tb).Font = 8
+    Control(tb).HasBorder = _FALSE
+    lineH = __UI_TBLineHeight(tb)
+
+    Text(tb) = ""
+    TEST_CHECK __UI_TBCountLines(tb) = 1, "Empty text is one line"
+    TEST_CHECK __UI_TBLineStart(1) = 0 _ANDALSO __UI_TBLineLen(1) = 0, "Empty line"
+
+    Text(tb) = "hello world foo"
+    TEST_CHECK __UI_TBCountLines(tb) = 2, "Wraps at a space"
+    TEST_CHECK __UI_TBLineStart(1) = 0 _ANDALSO __UI_TBLineLen(1) = 6, "First line keeps its trailing space"
+    TEST_CHECK __UI_TBLineStart(2) = 6 _ANDALSO __UI_TBLineLen(2) = 9, "Second line"
+    TEST_CHECK_FALSE __UI_TBNeedsScrollbar, "Everything fits"
+    TEST_CHECK __UI_TBLineFromPos(tb, 5) = 1, "Position on line 1"
+    TEST_CHECK __UI_TBLineFromPos(tb, 6) = 2, "Wrap position belongs to the next line"
+    TEST_CHECK __UI_TBLineFromPos(tb, 15) = 2, "End of text"
+    TEST_CHECK __UI_TBLineEnd(tb, 1) = 5, "Wrapped line ends before its last space"
+    TEST_CHECK __UI_TBLineEnd(tb, 2) = 15, "Last line ends at the end of the text"
+    TEST_CHECK __UI_TBXFromPos(tb, 3) = 24, "x of position 3"
+    TEST_CHECK __UI_TBXFromPos(tb, 8) = 16, "x on the second line"
+    TEST_CHECK __UI_TBPosFromX(tb, 2, 17) = 8, "Closest position to x"
+    TEST_CHECK __UI_TBPosFromX(tb, 1, 1000) = 5, "Past the end of a wrapped line"
+    TEST_CHECK __UI_TBPosFromPoint(tb, 17, lineH + 1) = 8, "Point on line 2"
+    TEST_CHECK __UI_TBPosFromPoint(tb, 0, -50) = 0, "Point above the text"
+    TEST_CHECK __UI_TBPosFromPoint(tb, 1000, 1000) = 15, "Point below the text"
+
+    Text(tb) = "ab" + _CHR_LF + _CHR_LF + "cd"
+    TEST_CHECK __UI_TBCountLines(tb) = 3, "Line breaks, including an empty line"
+    TEST_CHECK __UI_TBLineStart(2) = 3 _ANDALSO __UI_TBLineLen(2) = 0, "Empty middle line"
+    TEST_CHECK __UI_TBLineStart(3) = 4 _ANDALSO __UI_TBLineLen(3) = 2, "Last line"
+    TEST_CHECK __UI_TBLineFromPos(tb, 2) = 1, "Position before a line break"
+    TEST_CHECK __UI_TBLineEnd(tb, 1) = 2, "Line ends at its line break"
+
+    Text(tb) = "ab" + _CHR_LF
+    TEST_CHECK __UI_TBCountLines(tb) = 2, "A final line break starts an empty line"
+    TEST_CHECK __UI_TBLineFromPos(tb, 3) = 2, "Cursor after the final line break"
+
+    Text(tb) = "abcdefghijklmnop"
+    TEST_CHECK __UI_TBCountLines(tb) = 2, "A long word is split"
+    TEST_CHECK __UI_TBLineLen(1) = 10 _ANDALSO __UI_TBLineStart(2) = 10, "Split where the box ends"
 
     TEST_CASE_END
 
-    TEST_CASE_BEGIN "InFormUIHelpers: __UI_GetTextBoxLine"
+    TEST_CASE_BEGIN "InFormUIHelpers: multiline textbox navigation"
 
-    DIM startPos AS LONG
+    Text(tb) = "hello world foo"
+    Control(tb).Cursor = 3
+    __UI_TBKeepCaretX = _FALSE
+    __UI_TBMoveLines tb, 1
+    TEST_CHECK Control(tb).Cursor = 9, "Down keeps the column"
+    __UI_TBMoveLines tb, -1
+    TEST_CHECK Control(tb).Cursor = 3, "Up keeps the column"
+    __UI_TBMoveLines tb, -1
+    TEST_CHECK Control(tb).Cursor = 0, "Up on the first line goes to the start"
+    __UI_TBKeepCaretX = _FALSE
+    Control(tb).Cursor = 9
+    __UI_TBMoveLines tb, 1
+    TEST_CHECK Control(tb).Cursor = 15, "Down on the last line goes to the end"
+    __UI_TBKeepCaretX = _FALSE
 
-    Text(0) = _CHR_LF + "Line 1" + _CHR_LF + "Line 2" + _CHR_LF + "Line 3"
+    'One visible line: the text needs a scrollbar and wraps narrower (8 characters)
+    Control(tb).Height = lineH
+    TEST_CHECK __UI_TBVisibleLines(tb) = 1, "One visible line"
+    TEST_CHECK __UI_TBCountLines(tb) = 3, "Rewrapped beside the scrollbar"
+    TEST_CHECK __UI_TBNeedsScrollbar, "Needs a scrollbar"
+    TEST_CHECK __UI_TBLineStart(2) = 6 _ANDALSO __UI_TBLineStart(3) = 12, "Lines after rewrapping"
 
-    TEST_CHECK __UI_GetTextBoxLine(0, 0, startPos) = "", "Empty string"
-    TEST_CHECK startPos = 0, "Expected 0"
+    __UI_TBScrollTo tb, 10
+    TEST_CHECK Control(tb).FirstVisibleLine = 3, "Scrolling stops at the last line"
+    __UI_TBScrollTo tb, -5
+    TEST_CHECK Control(tb).FirstVisibleLine = 1, "Scrolling stops at the first line"
+    Control(tb).Cursor = 13
+    __UI_TBScrollToCaret tb
+    TEST_CHECK Control(tb).FirstVisibleLine = 3 _ANDALSO Control(tb).CurrentLine = 3, "Scrolls to show the cursor"
+    Control(tb).Cursor = 0
+    __UI_TBScrollToCaret tb
+    TEST_CHECK Control(tb).FirstVisibleLine = 1, "Scrolls back up"
 
-    TEST_CHECK __UI_GetTextBoxLine(0, 1, startPos) = Text(0), "Complete string"
-    TEST_CHECK startPos = 1, "Expected 1"
+    Text(tb) = "foo bar baz"
+    TEST_CHECK __UI_TBWordStart(tb, 5) = 4, "Word start"
+    TEST_CHECK __UI_TBWordEnd(tb, 5) = 8, "Word end includes the following space"
+    TEST_CHECK __UI_TBWordEnd(tb, 9) = 11, "Last word"
+    TEST_CHECK __UI_IsWordSeparator(Text(tb), 4), "Space separates words"
+    TEST_CHECK_FALSE __UI_IsWordSeparator(Text(tb), 5), "Letter is part of a word"
+    TEST_CHECK __UI_IsWordSeparator(_CHR_LF, 1), "Line break separates words"
 
-    TEST_CHECK __UI_GetTextBoxLine(0, 2, startPos) = "", "Empty string"
-    TEST_CHECK startPos = 0, "Expected 0"
-
-    Control(0).Multiline = _TRUE
-
-    TEST_CHECK __UI_GetTextBoxLine(0, 0, startPos) = "", "Empty string"
-    TEST_CHECK startPos = 0, "Expected 0"
-
-    TEST_CHECK __UI_GetTextBoxLine(0, 1, startPos) = "", "Empty line"
-    TEST_CHECK startPos = 1, "Expected 1"
-
-    TEST_CHECK __UI_GetTextBoxLine(0, 2, startPos) = "Line 1", "Line 1"
-    TEST_CHECK startPos = 2, "Expected 2"
-
-    TEST_CHECK __UI_GetTextBoxLine(0, 3, startPos) = "Line 2", "Line 2"
-    TEST_CHECK startPos = 9, "Expected 9"
-
-    TEST_CHECK __UI_GetTextBoxLine(0, 4, startPos) = "Line 3", "Line 3"
-    TEST_CHECK startPos = 16, "Expected 16"
-
-    TEST_CHECK __UI_GetTextBoxLine(0, 5, startPos) = "", "Empty string"
-    TEST_CHECK startPos = 0, "Expected 0"
+    __UI_DestroyControl Control(tb)
+    __UI_DefaultCaptionIndent = prevIndent
+    __UI_ScrollbarWidth = prevScrollbar
+    _DEST prevDest
+    _FREEIMAGE testImage
 
     TEST_CASE_END
 
@@ -1906,6 +1964,156 @@ SUB Test_InFormUIHelpers
 
     TEST_CHECK ASC(RestoreCHR$("\0;"), 1) = 0, "RestoreCHR$ should produce CHR$(0) for \0;"
     TEST_CHECK ASC(RestoreCHR$("\65;"), 1) = 65, "RestoreCHR$ should produce CHR$(65) for \65;"
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_DropdownSearch
+    TEST_CASE_BEGIN "InFormUIHelpers: searchable dropdown list"
+
+    TEST_CHECK __UI_MatchesSearch("Resistor 10k 1/4W", ""), "Empty search matches everything"
+    TEST_CHECK __UI_MatchesSearch("Resistor 10k 1/4W", "   "), "Blank search matches everything"
+    TEST_CHECK __UI_MatchesSearch("Resistor 10k 1/4W", "10k"), "One word"
+    TEST_CHECK __UI_MatchesSearch("Resistor 10k 1/4W", "10K resist"), "Words in any order, any case"
+    TEST_CHECK __UI_MatchesSearch("Resistor 10k 1/4W", "  res   1/4  "), "Extra spaces are ignored"
+    TEST_CHECK NOT __UI_MatchesSearch("Resistor 10k 1/4W", "res 22k"), "Every word must match"
+    TEST_CHECK NOT __UI_MatchesSearch("", "a"), "Empty item doesn't match a word"
+
+    'The list needs a graphics surface to measure its font on
+    DIM AS LONG dd, listID, testImage, prevDest
+    prevDest = _DEST
+    testImage = _NEWIMAGE(320, 240, 32)
+    _DEST testImage
+
+    dd = __UI_NewControl(__UI_Type_DropdownList, "TestSearchDD", 200, 23, 0, 0, 0)
+    Control(dd).Font = 8
+    Control(dd).Searchable = _TRUE
+    AddItem dd, "Resistor 10k"
+    AddItem dd, "Resistor 22k"
+    AddItem dd, "Capacitor 10uF"
+    AddItem dd, "Capacitor 22pF"
+    Control(dd).Value = 4
+
+    __UI_ActivateDropdownlist Control(dd)
+    listID = __UI_ActiveDropdownList
+    TEST_CHECK listID > 0, "List opens"
+    TEST_CHECK Control(listID).Max = 4 _ANDALSO Control(listID).Value = 4, "Empty search shows every item, current one selected"
+
+    __UI_DropdownSearch = "22"
+    __UI_FilterDropdownList
+    TEST_CHECK Control(listID).Max = 2, "Two items contain 22"
+    TEST_CHECK Text(listID) = "Resistor 22k" + CHR$(10) + "Capacitor 22pF", "Filtered items keep their order"
+    TEST_CHECK Control(listID).Value = 2, "Current item stays selected when shown"
+    TEST_CHECK __UI_DropdownChosenItem(1) = 2 _ANDALSO __UI_DropdownChosenItem(2) = 4, "Shown items map back to the dropdown's items"
+
+    __UI_DropdownSearch = "cap 10"
+    __UI_FilterDropdownList
+    TEST_CHECK Control(listID).Max = 1 _ANDALSO Text(listID) = "Capacitor 10uF", "Several words narrow the list"
+    TEST_CHECK Control(listID).Value = 1, "First item selected when the current one is hidden"
+    TEST_CHECK __UI_DropdownChosenItem(1) = 3, "Picks the right item"
+
+    __UI_DropdownSearch = "inductor"
+    __UI_FilterDropdownList
+    TEST_CHECK Control(listID).Max = 0 _ANDALSO Control(listID).Value = 0, "No matches"
+    TEST_CHECK __UI_DropdownChosenItem(0) = 4, "Nothing picked keeps the current item"
+
+    'Fuzzy search
+    TEST_CHECK __UI_SearchScore("Resistor 10k", "rs10", _FALSE) = 0, "Plain search needs the letters together"
+    TEST_CHECK __UI_SearchScore("Resistor 10k", "rs10", _TRUE) > 0, "Fuzzy search takes letters in order"
+    TEST_CHECK __UI_SearchScore("Resistor 10k", "01", _TRUE) = 0, "Fuzzy search keeps the letters' order"
+    TEST_CHECK __UI_SearchScore("Capacitor 22pF ceramic", "cer 22p", _TRUE) > 0, "Fuzzy words in any order"
+    TEST_CHECK __UI_SearchScore("Capacitor 22pF ceramic", "cer xyz", _TRUE) = 0, "Fuzzy: every word must match"
+    TEST_CHECK __UI_SearchScore("Resistor", "res", _TRUE) > __UI_SearchScore("Resistor", "rst", _TRUE), "Letters together beat scattered ones"
+    TEST_CHECK __UI_SearchScore("LED red", "red", _TRUE) > __UI_SearchScore("Shredder", "red", _TRUE), "Word starts beat the middle of a word"
+    TEST_CHECK __UI_SearchScore("anything", "", _TRUE) > 0, "Empty fuzzy search matches everything"
+
+    Control(dd).Fuzzy = _TRUE
+    __UI_DropdownSearch = "cp"
+    __UI_FilterDropdownList
+    TEST_CHECK Control(listID).Max = 2, "Fuzzy finds both capacitors"
+    __UI_DropdownSearch = "10"
+    __UI_FilterDropdownList
+    TEST_CHECK Text(listID) = "Resistor 10k" + CHR$(10) + "Capacitor 10uF", "Earlier hits come first"
+    __UI_DropdownSearch = "pf"
+    __UI_FilterDropdownList
+    TEST_CHECK Text(listID) = "Capacitor 22pF" + CHR$(10) + "Capacitor 10uF", "Best match first, even when it's later in the list"
+    TEST_CHECK Control(listID).Value = 1 _ANDALSO __UI_DropdownChosenItem(1) = 4, "Best match is selected and maps back"
+    __UI_DropdownSearch = "zz"
+    __UI_FilterDropdownList
+    TEST_CHECK Control(listID).Max = 0, "Fuzzy: no matches"
+
+    __UI_DestroyControl Control(listID)
+    TEST_CHECK __UI_ActiveDropdownList = 0 _ANDALSO LEN(__UI_DropdownSearch) = 0 _ANDALSO LEN(__UI_DropdownSearchMap) = 0, "Closing clears the search"
+    'Searchable and Fuzzy can be bound to another control's value
+    DIM cb AS LONG
+    cb = __UI_NewControl(__UI_Type_CheckBox, "TestSearchCB", 100, 20, 0, 40, 0)
+    Control(dd).Searchable = _TRUE
+    __UI_Bind cb, dd, "Value", "Searchable"
+    TEST_CHECK Control(cb).Value <> _FALSE, "Binding starts from Searchable's current state"
+    Control(dd).Searchable = _FALSE
+    Control(cb).Value = _TRUE
+    __UI_CheckBinding cb
+    TEST_CHECK Control(dd).Searchable <> _FALSE, "Binding sets Searchable from a checkbox"
+    Control(cb).Value = _FALSE
+    __UI_CheckBinding cb
+    TEST_CHECK Control(dd).Searchable = _FALSE, "Binding clears Searchable"
+    __UI_Bind cb, dd, "Value", "Fuzzy"
+    Control(cb).Value = 7 'Any non-zero value turns it on
+    __UI_CheckBinding cb
+    TEST_CHECK Control(dd).Fuzzy = _TRUE, "Binding sets Fuzzy"
+    __UI_UnBind cb
+
+    'A control can be bound to several others through different properties
+    DIM cb2 AS LONG
+    cb2 = __UI_NewControl(__UI_Type_CheckBox, "TestSearchCB2", 100, 20, 0, 70, 0)
+    Control(cb).Value = _FALSE: Control(cb2).Value = _FALSE
+    Control(dd).Disabled = _FALSE: Control(dd).Searchable = _FALSE
+    __UI_Bind dd, cb, "Disabled", "Value"
+    __UI_Bind dd, cb2, "Searchable", "Value"
+    TEST_CHECK __UI_TotalBindings = 2, "Two bindings on one control"
+    TEST_CHECK __UI_BoundPropertyName$(dd, cb) = "Disabled" _ANDALSO __UI_BoundPropertyName$(cb2, dd) = "Value", "Each binding keeps its own properties"
+    Control(cb).Value = _TRUE
+    __UI_CheckBinding cb
+    TEST_CHECK Control(dd).Disabled <> _FALSE _ANDALSO Control(dd).Searchable = _FALSE, "First binding changes only its property"
+    Control(cb2).Value = _TRUE
+    __UI_CheckBinding cb2
+    TEST_CHECK Control(dd).Searchable <> _FALSE, "Second binding works too"
+    Control(dd).Disabled = _FALSE
+    __UI_CheckBinding dd
+    TEST_CHECK Control(cb).Value = _FALSE _ANDALSO Control(cb2).Value <> _FALSE, "Changes flow from the dropdown to each bound control"
+    __UI_Bind dd, cb, "Hidden", "Value"
+    TEST_CHECK __UI_TotalBindings = 2 _ANDALSO __UI_BoundPropertyName$(dd, cb) = "Hidden", "Binding the same two controls again replaces their binding"
+    __UI_UnBindPair cb, dd
+    TEST_CHECK __UI_TotalBindings = 1 _ANDALSO __UI_BindingIndex(dd, cb2) > 0, "Unbinding a pair keeps the other bindings"
+    __UI_DestroyControl Control(cb2)
+    TEST_CHECK __UI_TotalBindings = 0, "Destroying a control removes its bindings"
+
+    'Inverted (NOT) bindings
+    Control(cb).Value = _TRUE
+    __UI_Bind dd, cb, "Disabled", "NOT Value"
+    TEST_CHECK Control(dd).Disabled = _FALSE, "NOT: a checked box leaves the dropdown enabled"
+    TEST_CHECK __UI_BoundPropertyName$(cb, dd) = "NOT Value" _ANDALSO __UI_BoundPropertyName$(dd, cb) = "Disabled", "NOT is kept with the property, as written"
+    Control(cb).Value = _FALSE
+    __UI_CheckBinding cb
+    TEST_CHECK Control(dd).Disabled = _TRUE, "NOT: zero sets True"
+    Control(cb).Value = 5
+    __UI_CheckBinding cb
+    TEST_CHECK Control(dd).Disabled = _FALSE, "NOT: any non-zero value sets zero"
+    Control(dd).Disabled = _TRUE
+    __UI_CheckBinding dd
+    TEST_CHECK Control(cb).Value = _FALSE, "NOT works in both directions"
+    __UI_Bind dd, cb, "NOT Disabled", "Value"
+    TEST_CHECK __UI_Bindings(__UI_BindingIndex(dd, cb)).Inverted, "NOT can go on either property"
+    __UI_Bind dd, cb, "NOT Disabled", "NOT Value"
+    TEST_CHECK __UI_Bindings(__UI_BindingIndex(dd, cb)).Inverted = _FALSE, "NOT on both sides cancels out"
+    __UI_UnBind dd
+
+    __UI_DestroyControl Control(cb)
+
+    __UI_DestroyControl Control(dd)
+
+    _DEST prevDest
+    _FREEIMAGE testImage
 
     TEST_CASE_END
 END SUB
@@ -2030,6 +2238,7 @@ SUB Test_INI_Manager
     TEST_CHECK Ini_GetCode = INI_INFO_KEY_NOT_FOUND, "Ini_ReadSetting should not find the moved key in the old section"
     TEST_CHECK Ini_ReadSetting("", "Section1", "A_Key") = "A_Value", "Ini_ReadSetting should find the moved key in the new section"
 
+    Ini_Release "test.ini"
     KILL "test.ini"
 
     TEST_CASE_END
@@ -2054,6 +2263,7 @@ SUB Test_INI_Manager
     CLOSE #releaseFile
 
     TEST_CHECK Ini_ReadSetting("release.ini", "S", "K") = "second", "Released file is read from disk again"
+
     Ini_Release "release.ini"
     KILL "release.ini"
 
@@ -2256,6 +2466,73 @@ SUB Test_TabControl
     TEST_CASE_END
 END SUB
 
+SUB Test_Timer
+    TEST_CASE_BEGIN "Timer"
+
+    Timer_Initialize
+
+    ' Invalid handles should safely return false / 0
+    TEST_CHECK_FALSE Timer_Exists(0), "Handle 0 should not exist"
+    TEST_CHECK_FALSE Timer_Exists(-1), "Negative handle should not exist"
+    TEST_CHECK_FALSE Timer_Exists(999), "Out of bounds handle should not exist"
+    TEST_CHECK_FALSE Timer_Poll(0), "Poll on handle 0 should return false"
+    TEST_CHECK_FALSE Timer_Poll(999), "Poll on out-of-bounds handle should return false"
+    TEST_CHECK_FALSE Timer_IsPaused(0), "Handle 0 is not paused"
+    TEST_CHECK Timer_GetInterval(0) = 0, "Handle 0 interval is 0"
+    TEST_CHECK Timer_GetRemainingTicks(0) = 0, "Handle 0 remaining ticks is 0"
+
+    ' Frequency conversion helpers
+    TEST_CHECK Timer_GetTicksFromHertz(50) = 20, "50 Hz should be 20 ticks (1000/50)"
+    TEST_CHECK Timer_GetTicksFromHertz(0) = 0, "0 Hz should return 0 ticks"
+    TEST_CHECK Timer_GetTicksFromHertz(-10) = 0, "Negative Hz should return 0 ticks"
+    TEST_CHECK Timer_GetHertzFromTicks(20) = 50!, "20 ticks should be 50 Hz"
+    TEST_CHECK Timer_GetHertzFromTicks(0) = 0!, "0 ticks should return 0 Hz"
+
+    ' Create periodic timer
+    DIM t1 AS LONG: t1 = Timer_Create(100)
+    TEST_REQUIRE t1 > 0, "Timer_Create should return handle > 0"
+    TEST_CHECK Timer_Exists(t1), "Created timer should exist"
+    TEST_CHECK Timer_GetInterval(t1) = 100, "Timer interval should be 100"
+    TEST_CHECK_FALSE Timer_IsOneShot(t1), "Default timer should not be one-shot"
+    TEST_CHECK_FALSE Timer_IsPaused(t1), "Timer should not be paused initially"
+
+    ' Set interval
+    Timer_SetInterval t1, 250
+    TEST_CHECK Timer_GetInterval(t1) = 250, "Updated timer interval should be 250"
+
+    ' Pause and resume
+    Timer_Pause t1
+    TEST_CHECK Timer_IsPaused(t1), "Timer should be paused after Timer_Pause"
+    TEST_CHECK_FALSE Timer_Poll(t1), "Paused timer should not fire in Timer_Poll"
+
+    Timer_Resume t1
+    TEST_CHECK_FALSE Timer_IsPaused(t1), "Timer should not be paused after Timer_Resume"
+
+    ' One-shot timer
+    DIM tOne AS LONG: tOne = Timer_CreateOneShot(30)
+    TEST_REQUIRE tOne > 0, "Timer_CreateOneShot should return handle > 0"
+    TEST_CHECK Timer_Exists(tOne), "One-shot timer should exist"
+    TEST_CHECK Timer_IsOneShot(tOne), "One-shot timer should be flagged as one-shot"
+
+    ' Short delay to test polling and one-shot auto-deactivation
+    _DELAY 0.05 ' 50 ms delay
+    TEST_CHECK Timer_Poll(tOne), "One-shot timer should fire after interval elapsed"
+    TEST_CHECK_FALSE Timer_Exists(tOne), "One-shot timer should automatically deactivate after firing"
+    TEST_CHECK_FALSE Timer_Poll(tOne), "Deactivated one-shot timer should not fire again"
+
+    ' Delete timer
+    Timer_Delete t1
+    TEST_CHECK_FALSE Timer_Exists(t1), "Deleted timer should not exist"
+    TEST_CHECK_FALSE Timer_Poll(t1), "Deleted timer should not fire"
+
+    ' Slot reuse
+    DIM tReuse AS LONG: tReuse = Timer_Create(50)
+    TEST_CHECK tReuse = t1, "Newly created timer should reuse deleted slot"
+    Timer_Delete tReuse
+
+    TEST_CASE_END
+END SUB
+
 SUB __UI_LoadForm: END SUB
 SUB __UI_AssignIDs: END SUB
 SUB __UI_OnLoad: END SUB
@@ -2274,18 +2551,3 @@ SUB __UI_MouseUp (id AS LONG): id = id: END SUB
 SUB __UI_Click (id AS LONG): id = id: END SUB
 
 '$INCLUDE:'../InForm/InForm.ui'
-
-'$INCLUDE:'../InForm/extensions/StringFile.bm'
-'$INCLUDE:'../InForm/extensions/String.bm'
-'$INCLUDE:'../InForm/extensions/Stack.bm'
-'$INCLUDE:'../InForm/extensions/Queue.bm'
-'$INCLUDE:'../InForm/extensions/Pathname.bm'
-'$INCLUDE:'../InForm/extensions/LList.bm'
-'$INCLUDE:'../InForm/extensions/Ini.bm'
-'$INCLUDE:'../InForm/extensions/HSet.bm'
-'$INCLUDE:'../InForm/extensions/HMap64.bm'
-'$INCLUDE:'../InForm/extensions/HMap.bm'
-'$INCLUDE:'../InForm/extensions/Array.bm'
-'$INCLUDE:'../InForm/extensions/Algo.bm'
-
-'$INCLUDE:'../InForm/extensions/Catch.bm'

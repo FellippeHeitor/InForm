@@ -331,7 +331,7 @@ END SUB
 
 SUB NouveauJeu
     DoNewGame` = False
-    _DELAY 0.1
+    __UI_Delay 0.1
     FrameRate% = 40
     SetFrameRate FrameRate%
     Control(__UI_FormID).Width = 310
@@ -361,17 +361,21 @@ SUB NouveauJeu
     SetFocus ExitBT
 END SUB
 
+SUB SafeFreeImage (handle AS LONG)
+    IF handle <= -1 THEN _FREEIMAGE handle
+END SUB
+
 SUB Finale
     'Freeimages
-    _FREEIMAGE ObverseImg&
-    _FREEIMAGE Highlight&
+    SafeFreeImage ObverseImg&
+    SafeFreeImage Highlight&
     FOR N%% = 0 TO 9
-        _FREEIMAGE NosImg&(N%%, 1)
-        _FREEIMAGE NosImg&(N%%, 0)
+        SafeFreeImage NosImg&(N%%, 1)
+        SafeFreeImage NosImg&(N%%, 0)
     NEXT N%%
-    _FREEIMAGE BestImg&
+    SafeFreeImage BestImg&
     FOR N%% = 0 TO NoObjectsLess1%%
-        _FREEIMAGE Images&(N%%)
+        SafeFreeImage Images&(N%%)
     NEXT N%%
     OPEN "pelman.dat" FOR OUTPUT AS #1
     FOR N%% = 0 TO 2
@@ -483,7 +487,7 @@ SUB MakePairs
     LINE (4, 4)-(2 + GameLevel%%(Level%%, 0) * 107, 2 + GameLevel%%(Level%%, 1) * 107), , B
     Background& = MakeHardware&(TempImg&)
     _FREEIMAGE Blight&
-    _DELAY 0.1
+    __UI_Delay 0.1
     WHILE InPlay`
         _LIMIT 2 * FrameRate%
         XMouse% = __UI_MouseLeft: YMouse% = __UI_MouseTop

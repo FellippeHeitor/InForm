@@ -290,7 +290,6 @@ SUB __UI_BeforeInit
 END SUB
 
 SUB __UI_OnLoad
-    _SCREENMOVE 100, 50
     Caption(ExitBT) = "Start"
     Control(ScoreLB).Hidden = True
     Control(ScoringLB).Hidden = True

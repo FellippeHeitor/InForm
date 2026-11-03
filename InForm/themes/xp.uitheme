@@ -7,6 +7,7 @@
 $INCLUDEONCE
 
 '$INCLUDE:'../InFormCommon.bi'
+'$INCLUDE:'../extensions/Resource.bi'
 
 ''' @brief Loads the classic XP palette and metrics. Controls are drawn from the embedded bitmaps below.
 SUB __UI_Theme_SetXP
@@ -279,5 +280,3 @@ FUNCTION __UI_ImageData$ (id AS _UNSIGNED _BYTE)
             ERROR _ERR_INTERNAL_ERROR
     END SELECT
 END FUNCTION
-
-'$INCLUDE:'../extensions/Resource.bm'

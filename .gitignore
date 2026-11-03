@@ -27,8 +27,6 @@
 # Ignore Windows stuff
 Thumbs.db
 desktop.ini
-# Unignore wiki
-!docs/wiki
 # Ignore all ini files
 *.ini
 # Other temp files

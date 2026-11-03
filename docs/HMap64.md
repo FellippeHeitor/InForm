@@ -4,7 +4,7 @@ The `HMap64` library provides a simple hash map implementation, using `_UNSIGNED
 
 ## Usage
 
-To use the `HMap64` library, you need to include `HMap64.bi` and `HMap64.bm` in your project.
+To use the `HMap64` library, you need to include `HMap64.bi` in your project.
 
 ```vb
 '$INCLUDE:'HMap64.bi'
@@ -24,8 +24,6 @@ PRINT HMap64_GetInteger(myMap(), 100)
 
 ' Free the map
 HMap64_Free myMap()
-
-'$INCLUDE:'HMap64.bm'
 ```
 
 ## API Reference

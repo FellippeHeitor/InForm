@@ -4,7 +4,7 @@ The `LList` library provides a generic doubly-linked list implementation. It sup
 
 ## Usage
 
-To use the `LList` library, you need to include `LList.bi` and `LList.bm` in your project.
+To use the `LList` library, you need to include `LList.bi` in your project.
 
 ```vb
 '$INCLUDE:'LList.bi'
@@ -29,8 +29,6 @@ WEND
 
 ' Free the list
 LList_Free myList()
-
-'$INCLUDE:'LList.bm'
 ```
 
 ## API Reference

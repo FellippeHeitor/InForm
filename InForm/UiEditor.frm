@@ -8,6 +8,7 @@ SUB __UI_LoadForm
     DIM __UI_NewID AS LONG
 
     __UI_NewID = __UI_NewControl(__UI_Type_Form, "UiEditor", 600, 601, 0, 0, 0)
+    SetTheme "light"
     SetCaption __UI_NewID, UiEditorTitle$
     Control(__UI_NewID).Font = SetFont(__INFORM_DEFAULT_FONTS, 12)
 
@@ -585,6 +586,10 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Password mask"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "MultilineCB", 181, 20, 12, 78, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Multiline"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "WordWrap", 181, 20, 12, 100, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Word wrap"
     Control(__UI_NewID).CanHaveFocus = True
@@ -615,6 +620,14 @@ SUB __UI_LoadForm
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Resizable", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Resizable"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "SearchableCB", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Searchable"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "FuzzyCB", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Fuzzy search"
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoScroll", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
@@ -764,6 +777,8 @@ SUB __UI_LoadForm
     AddItem __UI_NewID, "PasswordMask"
     AddItem __UI_NewID, "Disabled"
     AddItem __UI_NewID, "Hidden"
+    AddItem __UI_NewID, "Searchable"
+    AddItem __UI_NewID, "Fuzzy"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 7
     Control(__UI_NewID).CanHaveFocus = True
@@ -776,6 +791,10 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Value = 7
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).BorderSize = 1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "InvertBindingCB", 380, 20, 35, 190, __UI_GetID("SetControlBinding"))
+    SetCaption __UI_NewID, "Invert (NOT): non-zero sets zero, zero sets True"
+    Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "BindBT", 80, 23, 248, 220, __UI_GetID("SetControlBinding"))
     SetCaption __UI_NewID, "Bind"
@@ -868,6 +887,7 @@ SUB __UI_AssignIDs
     HasBorder = __UI_GetID("HasBorder")
     ShowPercentage = __UI_GetID("ShowPercentage")
     PasswordMaskCB = __UI_GetID("PasswordMaskCB")
+    MultilineCB = __UI_GetID("MultilineCB")
     WordWrap = __UI_GetID("WordWrap")
     CanHaveFocus = __UI_GetID("CanHaveFocus")
     Disabled = __UI_GetID("Disabled")
@@ -935,6 +955,8 @@ SUB __UI_AssignIDs
     FontSwitchMenuSwitch = __UI_GetID("FontSwitchMenuSwitch")
     FontSwitchMenu = __UI_GetID("FontSwitchMenu")
     AutoScroll = __UI_GetID("AutoScroll")
+    SearchableCB = __UI_GetID("SearchableCB")
+    FuzzyCB = __UI_GetID("FuzzyCB")
     PasteListBT = __UI_GetID("PasteListBT")
     EditMenuConvertType = __UI_GetID("EditMenuConvertType")
     AutoSize = __UI_GetID("AutoSize")
@@ -966,6 +988,7 @@ SUB __UI_AssignIDs
     SourcePropertyList = __UI_GetID("SourcePropertyList")
     TargetPropertyLB = __UI_GetID("TargetPropertyLB")
     TargetPropertyList = __UI_GetID("TargetPropertyList")
+    InvertBindingCB = __UI_GetID("InvertBindingCB")
     BindBT = __UI_GetID("BindBT")
     CancelBindBT = __UI_GetID("CancelBindBT")
 

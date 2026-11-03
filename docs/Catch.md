@@ -1,14 +1,13 @@
 # Catch Library
 
-The `Catch` library provides a minimalistic test framework, inspired by Catch2 for C++. It allows you to write test cases and assertions to verify the correctness of your code.
+The `Catch` library provides a minimalistic test framework for QB64-PE, inspired by Catch2 for C++. It allows you to write test cases and assertions to verify the correctness of your code.
 
 ## Usage
 
-To use the `Catch` library, include `Catch.bi`, `Catch.bm`, and optionally `CatchError.bi` in your project.
+To use the `Catch` library, include `Catch.bi` in your project.
 
 ```vb
 '$INCLUDE:'Catch.bi'
-'$INCLUDE:'CatchError.bi' ' Optional: for runtime error handling
 
 TEST_BEGIN_ALL
 
@@ -20,11 +19,9 @@ TEST_BEGIN_ALL
     TEST_CASE_END
 
 TEST_END_ALL
-
-'$INCLUDE:'Catch.bm'
 ```
 
-Including `CatchError.bi` enables runtime error handling and lets your test program exit cleanly if a runtime error occurs.
+Runtime error handling is built-in and enabled by default, allowing your test program to exit cleanly if a runtime error occurs.
 
 ## API Reference
 
@@ -132,14 +129,14 @@ SUB TEST_SET_RNG_SEED (rngSeed AS _UNSIGNED _INTEGER64)
 
 ### Preprocessor Variables
 
-Setting this to TRUE changes the default type to LONG and forces explicit variable declarations. This must be set before including `Catch.bi`.
-
 ```vb
 $LET TEST_STRICT = TRUE
 ```
 
-Setting this to TRUE disables the QB64 graphics window. This must be set before including `Catch.bi`.
+Setting this to TRUE changes the default type to LONG and forces explicit variable declarations. This must be set before including `Catch.bi`.
 
 ```vb
 $LET TEST_CONSOLE_ONLY = TRUE
 ```
+
+Setting this to TRUE disables the QB64 graphics window. This must be set before including `Catch.bi`.

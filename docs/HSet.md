@@ -4,7 +4,7 @@ The `HSet` library provides a generic hash set implementation. It supports stori
 
 ## Usage
 
-To use the `HSet` library, you need to include `HSet.bi` and `HSet.bm` in your project.
+To use the `HSet` library, you need to include `HSet.bi` in your project.
 
 ```vb
 '$INCLUDE:'HSet.bi'
@@ -34,8 +34,6 @@ PRINT HSet_ContainsString(mySet(), "Banana") ' Prints 0 (False)
 
 ' Clean up
 HSet_Free mySet()
-
-'$INCLUDE:'HSet.bm'
 ```
 
 ## API Reference

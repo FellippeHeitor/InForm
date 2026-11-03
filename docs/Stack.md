@@ -4,7 +4,7 @@ The `Stack` library provides a generic stack implementation. It supports storing
 
 ## Usage
 
-To use the `Stack` library, you need to include `Stack.bi` and `Stack.bm` in your project.
+To use the `Stack` library, you need to include `Stack.bi` in your project.
 
 ```vb
 '$INCLUDE:'Stack.bi'
@@ -26,8 +26,6 @@ PRINT Stack_PopString(myStack()) ' Prints "Hello"
 
 ' Free the stack
 Stack_Free myStack()
-
-'$INCLUDE:'Stack.bm'
 ```
 
 ## API Reference
