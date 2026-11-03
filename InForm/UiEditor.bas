@@ -283,15 +283,10 @@ $ELSE
     END DECLARE
 $END IF
 
-ON ERROR GOTO __UI_ErrorHandler
-
 '$INCLUDE:'extensions/Pathname.bi'
 '$INCLUDE:'extensions/Ini.bi'
 '$INCLUDE:'extensions/FontMgr.bi'
 '$INCLUDE:'InForm.bi'
-
-__UI_ErrorHandler:
-RESUME NEXT
 
 '$INCLUDE:'UiEditor.frm'
 '$INCLUDE:'InForm.ui'
@@ -4394,8 +4389,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 PRINT #TextFileNum, "END SUB"
                 PRINT #TextFileNum,
             NEXT
+            PRINT #TextFileNum, "'$INCLUDE:'InForm/InForm.ui'"
         END IF
-        PRINT #TextFileNum, "'$INCLUDE:'InForm/InForm.ui'"
         CLOSE #TextFileNum
     END IF
 

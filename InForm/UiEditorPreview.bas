@@ -78,8 +78,6 @@ $END IF
 
 CONST EDITOR_IMAGE_CONTEXTMENU = 1
 
-ON ERROR GOTO __UI_ErrorHandler
-
 'Load context menu icon image:
 ContextMenuIcon = LoadEditorImage(EDITOR_IMAGE_CONTEXTMENU)
 __UI_ClearColor ContextMenuIcon, 0, 0
@@ -87,9 +85,6 @@ __UI_ClearColor ContextMenuIcon, 0, 0
 '$INCLUDE:'extensions/Pathname.bi'
 '$INCLUDE:'extensions/GIFPlay.bi'
 '$INCLUDE:'InForm.bi'
-
-__UI_ErrorHandler:
-RESUME NEXT
 
 '$INCLUDE:'UiEditorPreview.frm'
 '$INCLUDE:'InForm.ui'
