@@ -41,6 +41,7 @@ Assuming your setup is like the above, do the following:
 
 - Open Terminal and change to the InForm-PE directory using an appropriate OS command
 - Run `setup_inform_lnx.sh`, `setup_inform_mac.command` or `setup_inform_win.cmd` depending on the OS you are on. This will run make with the correct parameters. If the build fails, ensure QB64-PE is installed in the **QB64pe** directory (next to the InForm-PE directory). If QB64-PE is installed elsewhere, then edit the setup scripts to change the location
+- To delete the built programs and build everything again in one go, run the setup script with `--rebuild` (for example `./setup_inform_mac.command --rebuild`)
 - Once InForm-PE is compiled, you will find the UiEditor[.exe] and ThemeEditor[.exe] executables in the InForm-PE directory
 - Run UiEditor[.exe] to start designing your forms
 - Run ThemeEditor[.exe] to create your own themes (see [Themes](docs/Themes.md))

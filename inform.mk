@@ -49,7 +49,7 @@ TEST_EXECUTABLE := tests/test_main$(EXTENSION)
 # to any of them has to rebuild everything
 INFORM_SOURCES := $(wildcard InForm/*.ui InForm/*.bi InForm/*.bm InForm/extensions/*.bi InForm/extensions/*.bm)
 
-.PHONY: all release test clean
+.PHONY: all release rebuild test clean
 
 all: UiEditor$(EXTENSION) InForm/UiEditorPreview$(EXTENSION) InForm/vbdos2inform$(EXTENSION) ThemeEditor$(EXTENSION)
 
@@ -70,6 +70,10 @@ $(TEST_EXECUTABLE): tests/test_main.bas $(INFORM_SOURCES)
 
 release: clean
 	$(MAKE) -f inform.mk all QB64PE_FLAGS="$(QB64PE_FLAGS) -f:OptimizeCppProgram=true"
+
+# Deletes the built programs and builds them all again
+rebuild: clean
+	$(MAKE) -f inform.mk all
 
 test: $(TEST_EXECUTABLE)
 	@echo "Running tests..."
