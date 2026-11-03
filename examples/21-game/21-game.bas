@@ -145,7 +145,7 @@ SUB __UI_Click (id AS LONG)
                 Total = Total + 1
                 IF Total >= 21 THEN EXIT SUB
                 Turn = CPU
-                _DELAY .5
+                __UI_Delay .5
                 chooseAI
                 IF Total >= 21 THEN EXIT SUB
                 Turn = Player
@@ -155,7 +155,7 @@ SUB __UI_Click (id AS LONG)
                 Total = Total + 2
                 IF Total >= 21 THEN EXIT SUB
                 Turn = CPU
-                _DELAY .5
+                __UI_Delay .5
                 chooseAI
                 IF Total >= 21 THEN EXIT SUB
                 Turn = Player
@@ -165,7 +165,7 @@ SUB __UI_Click (id AS LONG)
                 Total = Total + 3
                 IF Total >= 21 THEN EXIT SUB
                 Turn = CPU
-                _DELAY .5
+                __UI_Delay .5
                 chooseAI
                 IF Total >= 21 THEN EXIT SUB
                 Turn = Player

@@ -47,7 +47,7 @@
    <li><a href="#__CtrlIsDown, __UI_ShiftIsDown, __UI_AltIsDown" >&nbsp;&nbsp;&nbsp; __CtrlIsDown, __UI_ShiftIsDown, __UI_AltIsDown</a></li>
    <li><a href="#__UI_UnloadSignal" >&nbsp;&nbsp;&nbsp;__UI_UnloadSignal</a></li>
    <li><a href="#__UI_KeepScreenHidden" >&nbsp;&nbsp;&nbsp;__UI_KeepScreenHidden</a></li>
-   <li><a href="#__UI_EventsTimer __UI_RefreshTimer" >&nbsp;&nbsp;&nbsp;__UI_EventsTimer __UI_RefreshTimer</a> Time critical</li>
+   <li><a href="#__UI_DoEvents __UI_Delay" >&nbsp;&nbsp;&nbsp;__UI_DoEvents __UI_Delay</a> Long events</li>
 
    </ul>
  </div>
@@ -252,30 +252,29 @@ If you want to trigger a redraw for only a specific control, use the Redraw prop
 
 
 <script language="javascript" src="common/top.js"></script>
-<a name="__UI_EventsTimer __UI_RefreshTimer"></a>
-<h2>__UI_EventsTimer __UI_RefreshTimer</h2>
+<a name="__UI_DoEvents __UI_Delay"></a>
+<h2>__UI_DoEvents __UI_Delay</h2>
 
-<p>For timer critical issues:</p>
+<p>InForm runs a main loop that processes input and redraws the form. While one of your events is
+ running, that loop is waiting for it to return, so the form isn't updated. Most events return quickly
+ and you don't need to do anything. For events that take longer:</p>
 
 <pre style="width:60%">
 <code tabindex="0">
-'Try adding this before your search routine:
+'Inside a long loop, keep the form responsive (other events can fire meanwhile):
+DO
+    '...one step of your work...
+    __UI_DoEvents
+LOOP UNTIL done
 
-Code: QB64: [Select]
-        TIMER(__UI_EventsTimer) OFF
-        TIMER(__UI_RefreshTimer) OFF
-
-'Just don't forget to turn those timers back on after you're done:
-
-Code: QB64: [Select]
-        TIMER(__UI_EventsTimer) ON
-        TIMER(__UI_RefreshTimer) ON
+'Wait while the form keeps being redrawn (use it instead of _DELAY in events,
+'so changes made before the wait show up on screen):
+Caption(StatusLB) = "Thinking..."
+__UI_Delay .5
 </code>
 </pre>
 
-<p>InForm's events and repaint routines are timer-based, and that surely takes up some cycles.
- The trade-off of the above method is that your interface will remain unresponsive while the
- calculations take place. You must judge if the speed gain is considerable enough to justify the tweak.</p>
+<p>For speed-critical calculations, simply don't call either: the form stays as it is until your event returns.</p>
 
 
 

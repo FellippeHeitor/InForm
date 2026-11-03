@@ -16,6 +16,7 @@ $INCLUDEONCE
 '$INCLUDE:'extensions/String.bi'
 '$INCLUDE:'extensions/HMap64.bi'
 '$INCLUDE:'extensions/Ini.bi'
+'$INCLUDE:'extensions/Time.bi'
 
 CONST False%% = _FALSE, True%% = _TRUE
 
@@ -448,7 +449,7 @@ DIM SHARED __UI_HasInput AS _BYTE, __UI_ProcessInputTimer AS SINGLE
 DIM SHARED __UI_UnloadSignal AS _BYTE, __UI_HasResized AS _BYTE
 DIM SHARED __UI_ExitTriggered AS _BYTE
 DIM SHARED __UI_Loaded AS _BYTE
-DIM SHARED __UI_EventsTimer AS INTEGER, __UI_RefreshTimer AS INTEGER
+DIM SHARED __UI_LastFrameTicks AS _UNSIGNED _INTEGER64 ' when __UI_UpdateDisplay last ran, in ms (see __UI_DrawFrameIfDue)
 DIM SHARED __UI_ActiveDropdownList AS LONG, __UI_ParentDropdownList AS LONG
 DIM SHARED __UI_TotalActiveMenus AS LONG, __UI_ActiveMenuIsContextMenu AS _BYTE
 DIM SHARED __UI_SubMenuDelay AS SINGLE, __UI_HoveringSubMenu AS _BYTE
@@ -460,7 +461,7 @@ DIM SHARED __UI_ScrollbarWidth AS INTEGER, __UI_ScrollbarButtonHeight AS INTEGER
 DIM SHARED __UI_MenuBarOffset AS INTEGER, __UI_MenuItemOffset AS INTEGER
 DIM SHARED __UI_NewMenuBarTextLeft AS INTEGER, __UI_DefaultCaptionIndent AS INTEGER
 DIM SHARED __UI_ForceRedraw AS _BYTE, __UI_AutoRefresh AS _BYTE
-DIM SHARED __UI_IsDrawing AS _BYTE ' _TRUE while __UI_UpdateDisplay runs (input processing runs on another timer)
+DIM SHARED __UI_IsDrawing AS _BYTE ' _TRUE while __UI_UpdateDisplay runs (so it isn't entered again from __UI_BeforeUpdateDisplay)
 DIM SHARED __UI_CurrentTitle AS STRING
 DIM SHARED __UI_DesignMode AS _BYTE, __UI_FirstSelectedID AS LONG
 DIM SHARED __UI_WaitMessage AS STRING, __UI_TotalSelectedControls AS LONG

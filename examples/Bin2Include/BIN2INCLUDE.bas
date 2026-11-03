@@ -552,11 +552,11 @@ SUB __UI_Click (id AS LONG)
         CASE SelectedFileTB
         CASE OpenBT
             IF Control(BIN2BASRB).Value = True THEN
-                _DELAY 0.2 ' delay a bit to allow InFrom to draw and refresh all comtrols before the modal dialog box takes over
+                __UI_Delay 0.2 ' delay a bit to allow InForm to draw and refresh all comtrols before the modal dialog box takes over
                 DIM oFile$: oFile$ = _OPENFILEDIALOG$(Caption(BIN2INCLUDE) + ": Open")
                 Control(PIC2MEMRB).Disabled = True
             ELSEIF Control(PIC2MEMRB).Value = True THEN
-                _DELAY 0.2 ' delay a bit to allow InFrom to draw and refresh all comtrols before the modal dialog box takes over
+                __UI_Delay 0.2 ' delay a bit to allow InForm to draw and refresh all comtrols before the modal dialog box takes over
                 oFile$ = _OPENFILEDIALOG$(Caption(BIN2INCLUDE) + ": Open", , "*.BMP|*.bmp|*.JPG|*.jpg|*.JPEG|*.jpeg|*.PNG|*.png|*.GIF|*.gif", "Supported image files")
                 Control(BIN2BASRB).Disabled = True
             END IF

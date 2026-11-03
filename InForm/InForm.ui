@@ -221,18 +221,13 @@ END SUB
 '---------------------------------------------------------------------------------
 SUB SetFrameRate (FPS AS _UNSIGNED INTEGER)
     __UI_FrameRate = _IIF(FPS < 30, 1 / 30, 1 / FPS)
-
-    IF __UI_RefreshTimer = 0 THEN
-        __UI_RefreshTimer = _FREETIMER
-        ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
-    ELSE
-        TIMER(__UI_RefreshTimer) OFF
-        TIMER(__UI_RefreshTimer) FREE
-        __UI_RefreshTimer = _FREETIMER
-        ON TIMER(__UI_RefreshTimer, __UI_FrameRate) __UI_UpdateDisplay
-        TIMER(__UI_RefreshTimer) ON
-    END IF
 END SUB
+
+'---------------------------------------------------------------------------------
+''' @brief How many times per second the main loop runs: at least 60, so input stays responsive at low frame rates.
+FUNCTION __UI_LoopRate!
+    __UI_LoopRate = _IIF(__UI_FrameRate > 1 / 60, 60, 1 / __UI_FrameRate)
+END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB SetFocus (id AS LONG)
@@ -310,11 +305,6 @@ SUB __UI_Init
 
     __UI_AssignIDs
     __UI_OnLoad
-
-    __UI_EventsTimer = _FREETIMER
-    ON TIMER(__UI_EventsTimer, .016) __UI_DoEvents
-    TIMER(__UI_EventsTimer) ON
-    TIMER(__UI_RefreshTimer) ON
 
     __UI_AutoRefresh = True
     __UI_Loaded = True
@@ -617,8 +607,8 @@ SUB __UI_ProcessInput
     'Resize event:
     '(Triggered either programmatically or by directly resizing the form):
     DIM CheckResize AS _BYTE
-    'Replacing the screen while __UI_UpdateDisplay is drawing would free the image it is drawing to,
-    'so this waits for the next tick (the resize flag is only read when it can be handled)
+    'Replacing the screen while __UI_UpdateDisplay is drawing would free the image it is drawing to (when
+    '__UI_BeforeUpdateDisplay calls __UI_DoEvents), so this waits for the next call (the resize flag is only read when it can be handled)
     IF NOT __UI_IsDrawing THEN
         CheckResize = _RESIZE
         IF (CheckResize AND Control(__UI_FormID).CanResize) OR (CheckResize AND __UI_DesignMode) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
@@ -679,7 +669,7 @@ SUB __UI_UpdateDisplay
 
     IF __UI_AutoRefresh = False THEN EXIT SUB
 
-    'The input timer must not replace the screen while controls are being drawn (see __UI_ProcessInput)
+    IF __UI_IsDrawing THEN EXIT SUB 'called again from __UI_BeforeUpdateDisplay (for example, through __UI_DoEvents)
     __UI_IsDrawing = True
 
     __UI_BeforeUpdateDisplay
@@ -3458,7 +3448,7 @@ SUB __UI_EventDispatcher
                                                 __UI_KeyHit = 0
                                                 __UI_Focus = Control(i).ID
                                                 __UI_ForceRedraw = True
-                                                _DELAY .1
+                                                __UI_Delay .1
                                                 __UI_ActivateMenu Control(i), True
                                             ELSE
                                                 __UI_Focus = __UI_PreviousFocus
@@ -6536,11 +6526,39 @@ SUB __UI_ActivateMenu (This AS __UI_ControlTYPE, SelectFirstItem AS _BYTE)
 END SUB
 
 '---------------------------------------------------------------------------------
+''' @brief Processes pending input, then redraws the form if a frame is due.
+''' The main loop calls it continuously. Programs can also call it from a long loop
+''' inside an event to keep the form responsive (the user can then trigger other events).
 SUB __UI_DoEvents
     __UI_ProcessInput
     IF __UI_HasInput THEN
         __UI_EventDispatcher
     END IF
+    __UI_DrawFrameIfDue
+END SUB
+
+'---------------------------------------------------------------------------------
+''' @brief Redraws the form if enough time has passed since the last frame (see SetFrameRate).
+SUB __UI_DrawFrameIfDue
+    DIM now AS _UNSIGNED _INTEGER64: now = Time_GetTicks
+
+    ' Frames are allowed slightly early so the main loop's own timing jitter doesn't skip any
+    IF now - __UI_LastFrameTicks >= __UI_FrameRate * 750 THEN
+        __UI_LastFrameTicks = now
+        __UI_UpdateDisplay
+    END IF
+END SUB
+
+'---------------------------------------------------------------------------------
+''' @brief Waits while the form keeps being redrawn, without processing input.
+''' Use it instead of _DELAY inside events, so changes made before the wait show up on screen.
+''' @param seconds How long to wait.
+SUB __UI_Delay (seconds AS SINGLE)
+    DIM start AS _UNSIGNED _INTEGER64: start = Time_GetTicks
+    DO
+        __UI_DrawFrameIfDue
+        _LIMIT __UI_LoopRate
+    LOOP WHILE Time_GetTicks - start < seconds * 1000
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -9450,7 +9468,7 @@ FUNCTION MessageBox& (message AS STRING, caption AS STRING, setup AS LONG)
         $END IF
     END IF
 
-    _DELAY 0.2 ' delay a bit so that the interface can redraw before the messagebox kicks in
+    __UI_Delay 0.2 ' let the interface redraw before the messagebox kicks in
 
     DIM returnValue AS LONG: returnValue = _MESSAGEBOX(__caption, Replace(message, "\n", _CHR_LF, False, 0), dialogType, iconType, defaultButton)
 

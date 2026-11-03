@@ -331,7 +331,7 @@ END SUB
 
 SUB NouveauJeu
     DoNewGame` = False
-    _DELAY 0.1
+    __UI_Delay 0.1
     FrameRate% = 40
     SetFrameRate FrameRate%
     Control(__UI_FormID).Width = 310
@@ -487,7 +487,7 @@ SUB MakePairs
     LINE (4, 4)-(2 + GameLevel%%(Level%%, 0) * 107, 2 + GameLevel%%(Level%%, 1) * 107), , B
     Background& = MakeHardware&(TempImg&)
     _FREEIMAGE Blight&
-    _DELAY 0.1
+    __UI_Delay 0.1
     WHILE InPlay`
         _LIMIT 2 * FrameRate%
         XMouse% = __UI_MouseLeft: YMouse% = __UI_MouseTop

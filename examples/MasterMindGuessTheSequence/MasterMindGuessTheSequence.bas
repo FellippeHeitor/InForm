@@ -64,7 +64,7 @@ END SUB
 SUB VictorY
     Caption(SecretSequenceLB) = "YOU GOT IT. YOU WIN!!"
     BEEP
-    _DELAY 2
+    __UI_Delay 2
     BEEP
     Caption(StartBT) = "Start"
     ResetList ListBox1
@@ -132,7 +132,7 @@ SUB __UI_Click (id AS LONG)
             ELSE
                 BEEP
                 Caption(SecretSequenceLB) = "Add " + STR$(MaxSequence - LEN(Text(WriteSequenceToTestTB))) + " Digits"
-                _DELAY 3
+                __UI_Delay 3
                 BEEP
                 Caption(SecretSequenceLB) = LTRIM$(STR$(MaxSequence)) + " Digits"
             END IF

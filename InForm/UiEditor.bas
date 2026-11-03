@@ -264,9 +264,6 @@ DIM SHARED CurrentPath$, ThisFileName$
 CONST EDITOR_IMAGE_COMMONCONTROLS~%% = 1~%%
 CONST EDITOR_IMAGE_DISK~%% = 2~%%
 
-'CheckPreviewTimer = _FREETIMER
-'ON TIMER(CheckPreviewTimer, .003) CheckPreview
-
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
         FUNCTION OpenProcess& (BYVAL dwDesiredAccess AS LONG, BYVAL bInheritHandle AS LONG, BYVAL dwProcessId AS LONG)
@@ -432,7 +429,7 @@ SUB __UI_Click (id AS LONG)
             SendData b$, 44
         CASE AddGifExtensionToggle
             IF Control(AddGifExtensionToggle).Value = False AND TotalGifLoaded > 0 THEN
-                _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Removing the GIF extension will load the existing animations as static frames. Proceed?", "yesno", "question", 0)
+                __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Removing the GIF extension will load the existing animations as static frames. Proceed?", "yesno", "question", 0)
                 IF Answer = 0 THEN
                     Control(AddGifExtensionToggle).Value = True
                 ELSE
@@ -462,7 +459,7 @@ SUB __UI_Click (id AS LONG)
             END IF
         CASE FileMenuNew
             IF Edited THEN
-                _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
+                __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                 IF Answer = 0 THEN
                     EXIT SUB
                 ELSEIF Answer = 1 THEN
@@ -498,7 +495,7 @@ SUB __UI_Click (id AS LONG)
 
             Caption(StatusBar) = "Specify the name under which to save the current form..."
 
-            _DELAY COMMDLG_DELAY
+            __UI_Delay COMMDLG_DELAY
             DIM tmpFileName AS STRING: tmpFileName = _SAVEFILEDIALOG$(UiEditorTitle$ + ": Save As", CurrentPath$, "*.frm|*.FRM|*.Frm", "InForm form files")
 
             IF LEN(tmpFileName) THEN
@@ -524,7 +521,7 @@ SUB __UI_Click (id AS LONG)
             MessageBox "Design a form and export the resulting code to generate an event-driven QB64-PE program.", UiEditorTitle$ + " - What's all this?", MsgBox_Information
         CASE FileMenuExit
             IF Edited THEN
-                _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
+                __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
                 IF Answer = 0 THEN
                     EXIT SUB
                 ELSEIF Answer = 1 THEN
@@ -632,7 +629,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
             SendData b$, 211
-            _DELAY .1
+            __UI_Delay .1
             Moving = True: GOSUB ReloadZList
             Moving = False
             Control(ControlList).Value = PrevListValue - 1
@@ -642,7 +639,7 @@ SUB __UI_Click (id AS LONG)
             PrevListValue = Control(ControlList).Value
             b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
             SendData b$, 212
-            _DELAY .1
+            __UI_Delay .1
             Moving = True: GOSUB ReloadZList
             Moving = False
             Control(ControlList).Value = PrevListValue + 1
@@ -651,7 +648,7 @@ SUB __UI_Click (id AS LONG)
 
         CASE FileMenuOpen
             IF Edited THEN
-                _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
+                __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                 IF Answer = 0 THEN
                     EXIT SUB
                 ELSEIF Answer = 1 THEN
@@ -666,7 +663,7 @@ SUB __UI_Click (id AS LONG)
 
             Caption(StatusBar) = "Select a form file to load..."
 
-            _DELAY COMMDLG_DELAY
+            __UI_Delay COMMDLG_DELAY
             tmpFileName = _OPENFILEDIALOG$(UiEditorTitle$ + ": Open", CurrentPath$, "*.frm|*.FRM|*.Frm", "InForm form files")
 
             OpenForm tmpFileName
@@ -682,7 +679,7 @@ SUB __UI_Click (id AS LONG)
             tmpFileName = ToolTip(id)
             IF _FILEEXISTS(tmpFileName) THEN
                 IF Edited THEN
-                    _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
+                    __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                     IF Answer = 0 THEN
                         EXIT SUB
                     ELSEIF Answer = 1 THEN
@@ -1120,7 +1117,7 @@ SUB SelectFontInList (FontSetup$)
     BypassShowFontList = True
     IF AttemptToShowFontList THEN
         AttemptToShowFontList = False
-        _DELAY COMMDLG_DELAY: i = _MESSAGEBOX(UiEditorTitle$, "The current font isn't a system font.\nReset this control to the built-in font?", "yesno", "question", 1)
+        __UI_Delay COMMDLG_DELAY: i = _MESSAGEBOX(UiEditorTitle$, "The current font isn't a system font.\nReset this control to the built-in font?", "yesno", "question", 1)
         IF i = 1 THEN
             thisFile$ = ",16"
             thisFile$ = MKL$(LEN(thisFile$)) + thisFile$
@@ -1263,7 +1260,7 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
 
                     IF Edited THEN
-                        _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
+                        __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
                         IF Answer = 0 THEN
                             CLOSE InstanceClient
                             InstanceClient = 0
@@ -2498,7 +2495,7 @@ END SUB
 SUB __UI_BeforeUnload
     DIM Answer AS _BYTE
     IF Edited THEN
-        _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
+        __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
         IF Answer = 0 THEN
             __UI_UnloadSignal = False
         ELSEIF Answer = 1 THEN
@@ -3305,8 +3302,6 @@ SUB LoadPreview
     DIM FormData$
     STATIC PrevTotalGifLoaded AS LONG
 
-    TIMER(__UI_EventsTimer) OFF
-    TIMER(__UI_RefreshTimer) OFF
 
     FormData$ = LastFormData$
 
@@ -3533,12 +3528,10 @@ SUB LoadPreview
         LOOP
     LOOP UNTIL __UI_EOF
     LoadError:
-    TIMER(__UI_EventsTimer) ON
-    TIMER(__UI_RefreshTimer) ON
     IF LoadedWithGifExtension = 1 THEN LoadedWithGifExtension = False
     IF PrevTotalGifLoaded <> TotalGifLoaded THEN
         IF PrevTotalGifLoaded = 0 AND LoadedWithGifExtension = False THEN
-            _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "You loaded an animated GIF file.\nDo you want to include the GIF extension?", "yesno", "question", 1)
+            __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "You loaded an animated GIF file.\nDo you want to include the GIF extension?", "yesno", "question", 1)
             IF Answer = 1 THEN
                 Control(AddGifExtensionToggle).Value = True
             ELSE
@@ -3619,7 +3612,6 @@ SUB CheckPreview
             ELSE
                 'Preview was closed.
 
-                TIMER(__UI_EventsTimer) OFF
 
                 __UI_WaitMessage = "Reloading preview window..."
                 UiPreviewPID = 0
@@ -3651,14 +3643,12 @@ SUB CheckPreview
                     TotalUndoImages = 0
                 END IF
 
-                TIMER(__UI_EventsTimer) ON
             END IF
         END IF
     $ELSE
         IF UiPreviewPID > 0 THEN
             IF PROCESS_CLOSED(UiPreviewPID, 0) THEN
                 'Preview was closed.
-                TIMER(__UI_EventsTimer) OFF
                 Control(ViewMenuPreview).Disabled = False
                 __UI_WaitMessage = "Reloading preview window..."
                 UiPreviewPID = 0
@@ -3690,7 +3680,6 @@ SUB CheckPreview
                     TotalUndoImages = 0
                 END IF
 
-                TIMER(__UI_EventsTimer) ON
             ELSE
                 'Preview is active.
                 Control(ViewMenuPreview).Disabled = True
@@ -3733,14 +3722,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
 
     IF LEN(b$) > 0 THEN
-        _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
+        __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
         IF Answer = 0 THEN EXIT SUB
     END IF
 
     AddGifExtension = Control(AddGifExtensionToggle).Value
 
     IF (AddGifExtension OR Control(AddGifExtensionToggle).Value) AND LoadedWithGifExtension = False AND TotalGifLoaded = 0 THEN
-        _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Are you sure you want to include the GIF extension?\n(no animated GIFs have been added to this form)", "yesno", "question", 0)
+        __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Are you sure you want to include the GIF extension?\n(no animated GIFs have been added to this form)", "yesno", "question", 0)
         AddGifExtension = (Answer = 1)
     END IF
 
@@ -4403,14 +4392,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     IF ExitToQB64 AND NOT SaveOnlyFrm THEN
         IF _FILEEXISTS(QB64PEExePath) THEN
             b$ = b$ + CHR$(10) + CHR$(10) + "Exit to " + QB64_DISPLAY + "?"
-            _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
+            __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
             IF Answer = 0 THEN Edited = False: EXIT SUB
             IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
             SHELL _DONTWAIT QB64PEExePath + " " + GetQuotedFileName(BaseOutputFileName + ".bas")
             SYSTEM
         ELSE
             b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
-            _DELAY COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
+            __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
             IF Answer = 0 THEN Edited = False: EXIT SUB
         END IF
     ELSE

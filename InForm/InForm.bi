@@ -114,7 +114,8 @@ __UI_Init
 
 'Main loop
 DO
-    _LIMIT 1
+    __UI_DoEvents
+    _LIMIT __UI_LoopRate
 LOOP
 
 SYSTEM
