@@ -148,6 +148,7 @@ SUB __UI_LoadForm
     AddItem __UI_NewID, "Light"
     AddItem __UI_NewID, "Dark"
     AddItem __UI_NewID, "Midnight (theme file)"
+    AddItem __UI_NewID, "Cupertino (theme file)"
     Control(__UI_NewID).Value = 1
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).BorderSize = 1

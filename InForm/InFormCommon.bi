@@ -134,6 +134,9 @@ CONST __INFORM_THEME_IMAGE_SCROLLTHUMB~%% = 14~%%
 CONST __INFORM_THEME_IMAGE_SCROLLTRACK~%% = 15~%%
 CONST __INFORM_THEME_IMAGE_SLIDERDOWN~%% = 16~%%
 CONST __INFORM_THEME_IMAGE_SLIDERTRACK~%% = 17~%%
+CONST __INFORM_THEME_IMAGE_BUILTIN_COUNT~%% = 17~%% ' images above this one have no built-in bitmap; themes may supply them
+CONST __INFORM_THEME_IMAGE_TOGGLETRACK~%% = 18~%%
+CONST __INFORM_THEME_IMAGE_TOGGLEKNOB~%% = 19~%%
 
 ' Default font list
 CONST __INFORM_DEFAULT_FONTS = "segoeui.ttf?arial.ttf?Arial.ttf?Helvetica.ttc?Geneva.ttf?truetype/liberation/LiberationSans-Regular.ttf?TTF/arial.ttf?InForm/resources/NotoMono-Regular.ttf?cour.ttf?Courier.ttc"
@@ -166,8 +169,8 @@ CONST __UI_ThemeColor_Count& = 18&
 ' Role names as used in theme files (same order as the constants above)
 CONST __UI_ThemeColorNames = "WindowBack,WindowText,InputBack,InputText,ButtonFace,ButtonText,SelectedBack,SelectedText,Border,Accent,AccentText,FocusRing,Caret,DisabledText,TipBack,TipText,MenuBack,TrackBack"
 ' Image names as used in theme files (same order as the __INFORM_THEME_IMAGE_* constants)
-CONST __UI_ThemeImageNames = "Arrows,Button,CheckBox,Frame,MenuCheckmark,NotFound,ProgressChunk,ProgressTrack,RadioButton,ScrollButtons,ScrollHButtons,ScrollHThumb,ScrollHTrack,ScrollThumb,ScrollTrack,SliderDown,SliderTrack"
-CONST __UI_ThemeImage_Count~%% = 17~%%
+CONST __UI_ThemeImageNames = "Arrows,Button,CheckBox,Frame,MenuCheckmark,NotFound,ProgressChunk,ProgressTrack,RadioButton,ScrollButtons,ScrollHButtons,ScrollHThumb,ScrollHTrack,ScrollThumb,ScrollTrack,SliderDown,SliderTrack,ToggleTrack,ToggleKnob"
+CONST __UI_ThemeImage_Count~%% = 19~%%
 
 'Control types:
 CONST __UI_Type_Form%% = 1%%
@@ -344,7 +347,7 @@ TYPE __UI_ControlTYPE
     ControlState AS _BYTE
     ChildrenRedrawn AS _BYTE
     FocusState AS LONG
-    LastChange AS SINGLE
+    LastChange AS DOUBLE
     Redraw AS _BYTE
     BulletStyle AS _BYTE
     MenuItemGroup AS INTEGER

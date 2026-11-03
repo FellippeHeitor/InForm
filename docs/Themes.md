@@ -82,7 +82,12 @@ Load it with its path:
 SetTheme "themes/midnight.uitheme.ini"
 ```
 
-A complete example is in [`InForm/themes/midnight.uitheme.ini`](../InForm/themes/midnight.uitheme.ini).
+Two complete examples ship with InForm-PE:
+
+- [`InForm/themes/midnight.uitheme.ini`](../InForm/themes/midnight.uitheme.ini): a flat dark theme made only of colors and metrics.
+- [`InForm/themes/cupertino.uitheme.ini`](../InForm/themes/cupertino.uitheme.ini): a bitmap theme inspired by the macOS look. It replaces the built-in images with the PNG files in [`InForm/themes/cupertino`](../InForm/themes/cupertino), so it's a good starting point for your own image-based theme.
+
+Theme images are loaded at run time, so ship the image files alongside your program together with the theme file.
 
 ### Colors
 
@@ -122,7 +127,14 @@ Colors can be written as `RRGGBB`, `RRGGBBAA` or `R,G,B[,A]`. In INI files `#` s
 
 ### Images
 
-Bitmap themes can replace any of the built-in images: `Arrows`, `Button`, `CheckBox`, `Frame`, `MenuCheckmark`, `NotFound`, `ProgressChunk`, `ProgressTrack`, `RadioButton`, `ScrollButtons`, `ScrollHButtons`, `ScrollHThumb`, `ScrollHTrack`, `ScrollThumb`, `ScrollTrack`, `SliderDown` and `SliderTrack`. The new image must use the same layout as the original (the `ThemePreview` example shows them).
+Bitmap themes can replace any of the built-in images: `Arrows`, `Button`, `CheckBox`, `Frame`, `MenuCheckmark`, `NotFound`, `ProgressChunk`, `ProgressTrack`, `RadioButton`, `ScrollButtons`, `ScrollHButtons`, `ScrollHThumb`, `ScrollHTrack`, `ScrollThumb`, `ScrollTrack`, `SliderDown` and `SliderTrack`. The new image must use the same size and layout as the original (the `ThemePreview` example shows them). Any image format `_LOADIMAGE` supports works; PNG files with an alpha channel give smooth, antialiased edges. Images left out keep the built-in look.
+
+Two more images are optional and have no built-in version; when a bitmap theme supplies both, toggle switches are drawn from them instead of the classic square look:
+
+- `ToggleTrack`: 4 cells of the same size stacked vertically: off, on, off (disabled) and on (disabled). The left and right ends of each cell (half the cell height wide) are kept as they are and the part in between is stretched, so the switch can have any width.
+- `ToggleKnob`: 3 square cells stacked vertically: normal, pressed and disabled. The knob slides from one end of the track to the other.
+
+Both are scaled to the height of the switch, so draw them at the height you use most (the designer's default is 17 pixels). See `InForm/themes/cupertino` for an example.
 
 ## API reference
 

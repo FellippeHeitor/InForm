@@ -2401,7 +2401,7 @@ SUB __UI_EventDispatcher
                         CASE __UI_Type_CheckBox, __UI_Type_ToggleSwitch
                             Control(__UI_HoveringID).Value = NOT Control(__UI_HoveringID).Value
                             __UI_ValueChanged __UI_HoveringID
-                            Control(__UI_HoveringID).LastChange = TIMER
+                            Control(__UI_HoveringID).LastChange = TIMER(.001)
                         CASE __UI_Type_TextBox
                             'DIM TempNewCursor AS LONG
                             'STATIC LastTextBoxClick AS SINGLE, LastTextBoxClickID AS LONG
@@ -3207,7 +3207,7 @@ SUB __UI_EventDispatcher
                 ELSEIF Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_CheckBox OR Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_ToggleSwitch THEN
                     Control(__UI_KeyCombo(i).ControlID).Value = NOT Control(__UI_KeyCombo(i).ControlID).Value
                     __UI_ValueChanged __UI_KeyCombo(i).ControlID
-                    Control(__UI_KeyCombo(i).ControlID).LastChange = TIMER
+                    Control(__UI_KeyCombo(i).ControlID).LastChange = TIMER(.001)
                 ELSEIF Control(__UI_KeyCombo(i).ControlID).Type = __UI_Type_MenuItem THEN
                     IF Control(__UI_KeyCombo(i).ControlID).BulletStyle = __UI_Bullet THEN SetRadioButtonValue __UI_KeyCombo(i).ControlID
                 END IF
@@ -3527,7 +3527,7 @@ SUB __UI_EventDispatcher
                                            Control(__UI_KeyDownOnID).Type = __UI_Type_ToggleSwitch THEN
                                         Control(__UI_KeyDownOnID).Value = NOT Control(__UI_KeyDownOnID).Value
                                         __UI_ValueChanged __UI_KeyDownOnID
-                                        Control(__UI_KeyDownOnID).LastChange = TIMER
+                                        Control(__UI_KeyDownOnID).LastChange = TIMER(.001)
                                     END IF
                                     __UI_KeyDownOnID = 0
                                     __UI_KeyIsDown = False
@@ -5126,7 +5126,11 @@ FUNCTION __UI_LoadThemeImage& (id AS _UNSIGNED _BYTE)
     IF id <= __UI_ThemeImage_Count _ANDALSO LEN(__UI_ThemeImageFile(id)) > 0 THEN
         imageHandle = _LOADIMAGE(__UI_ThemeImageFile(id), 32)
     END IF
-    IF imageHandle >= -1 THEN imageHandle = _LOADIMAGE(__UI_ImageData(id), 32, "memory")
+    IF imageHandle >= -1 THEN
+        ' Optional images (like the toggle switch ones) have no built-in bitmap: report that they are missing
+        IF id > __INFORM_THEME_IMAGE_BUILTIN_COUNT THEN __UI_LoadThemeImage = -1: EXIT FUNCTION
+        imageHandle = _LOADIMAGE(__UI_ImageData(id), 32, "memory")
+    END IF
 
     IF imageHandle < -1 THEN
         ' These images use their top-left pixel as the transparent color
@@ -7688,7 +7692,13 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     'ControlImage = __UI_LoadThemeImage("radiobutton.png")
 
-    IF This.Redraw OR This.ControlState <> ControlState OR TIMER - This.LastChange < .5 OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID _
+    'Knob animation: TIMER(.001) instead of TIMER, whose default 1/18 s resolution gave only a few frames
+    CONST AnimationDuration = .22
+    DIM AnimationElapsed AS DOUBLE
+    AnimationElapsed = TIMER(.001) - This.LastChange
+    IF AnimationElapsed < 0 THEN AnimationElapsed = AnimationElapsed + 86400 'TIMER went past midnight
+
+    IF This.Redraw OR This.ControlState <> ControlState OR AnimationElapsed < AnimationDuration + .05 OR This.FocusState <> (__UI_Focus = This.ID) OR Caption(This.ID) <> __UI_TempCaptions(This.ID) OR This.Value <> This.PreviousValue OR This.PreviousParentID <> This.ParentID _
        OR __UI_ForceRedraw OR This.PreviousFont <> This.Font THEN
         'Last time this control was drawn it had a different state/caption, so it'll be redrawn
         This.Redraw = False
@@ -7723,12 +7733,19 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         CaptionIndent = 0
 
-        DIM AnimationOffset AS SINGLE
-        AnimationOffset = __UI_MAP(TIMER - This.LastChange, 0, .2, This.Width / 2, 0)
-        IF AnimationOffset < 0 THEN AnimationOffset = 0
-        IF AnimationOffset > This.Width / 2 THEN AnimationOffset = This.Width / 2
+        'AnimationOffset goes from Width / 2 (just toggled) to 0 (at rest), easing out (cubic)
+        DIM AnimationOffset AS SINGLE, AnimationProgress AS SINGLE
+        AnimationProgress = AnimationElapsed / AnimationDuration
+        IF AnimationProgress < 0 THEN AnimationProgress = 0
+        IF AnimationProgress > 1 THEN AnimationProgress = 1
+        AnimationOffset = (This.Width / 2) * (1 - AnimationProgress) ^ 3
 
-        IF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN
+        DIM UsedImages AS _BYTE
+        IF __UI_Theme.Style = __UI_ThemeStyle_Bitmap THEN UsedImages = __UI_DrawToggleSwitchImages(This, ControlState, AnimationOffset)
+
+        IF UsedImages THEN
+            'Drawn from the theme's ToggleTrack and ToggleKnob images
+        ELSEIF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN
             DIM FlatKnob AS INTEGER, FlatKnobX AS SINGLE, FlatTravel AS SINGLE
             DIM FlatFill AS _UNSIGNED LONG, FlatKnobColor AS _UNSIGNED LONG, FlatBorder AS _UNSIGNED LONG
             FlatKnob = This.Height - 6
@@ -7771,7 +7788,7 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
         'Focus outline
         IF __UI_Focus = This.ID AND __UI_KeyboardFocus THEN
-            IF __UI_Theme.Style = __UI_ThemeStyle_Flat THEN
+            IF __UI_Theme.Style = __UI_ThemeStyle_Flat OR UsedImages THEN
                 __UI_FlatFocusRing 0, 0, This.Width, This.Height, This.Height / 2
             ELSE
                 LINE (1, 1)-STEP(This.Width - 2, This.Height - 2), __UI_ThemeColor(__UI_ThemeColor_FocusRing), B , 21845
@@ -7785,6 +7802,52 @@ SUB __UI_DrawToggleSwitch (This AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     IF This.Canvas THEN _PUTIMAGE (This.Left, This.Top), This.Canvas
 END SUB
+
+''' @brief Draws a toggle switch from the theme's ToggleTrack and ToggleKnob images, if the theme has them.
+''' ToggleTrack holds 4 cells stacked vertically: off, on, off (disabled), on (disabled). Each cell's left and
+''' right ends (half the cell height wide) are kept as they are; the part in between is stretched to fit.
+''' ToggleKnob holds 3 square cells stacked vertically: normal, pressed, disabled.
+''' Both are scaled to the control height.
+''' @return _TRUE if the switch was drawn, _FALSE if the theme has no toggle images.
+FUNCTION __UI_DrawToggleSwitchImages%% (This AS __UI_ControlTYPE, ControlState AS _BYTE, AnimationOffset AS SINGLE)
+    DIM track AS LONG, knob AS LONG
+    DIM imgW AS LONG, cellH AS LONG, capW AS LONG, destCap AS LONG, sy AS LONG, state AS LONG
+    DIM knobCell AS LONG, travel AS SINGLE, knobX AS SINGLE
+
+    IF LEN(__UI_ThemeImageFile(__INFORM_THEME_IMAGE_TOGGLETRACK)) = 0 _ORELSE LEN(__UI_ThemeImageFile(__INFORM_THEME_IMAGE_TOGGLEKNOB)) = 0 THEN EXIT FUNCTION
+    track = __UI_LoadThemeImage(__INFORM_THEME_IMAGE_TOGGLETRACK)
+    knob = __UI_LoadThemeImage(__INFORM_THEME_IMAGE_TOGGLEKNOB)
+    IF track >= -1 _ORELSE knob >= -1 THEN EXIT FUNCTION
+
+    'Track
+    imgW = _WIDTH(track)
+    cellH = _HEIGHT(track) \ 4
+    capW = cellH \ 2
+    IF imgW <= capW * 2 THEN EXIT FUNCTION
+    state = 1
+    IF This.Value THEN state = 2
+    IF This.Disabled THEN state = state + 2
+    sy = (state - 1) * cellH
+    destCap = capW * This.Height / cellH
+    _PUTIMAGE (0, 0)-(destCap - 1, This.Height - 1), track, , (0, sy)-(capW - 1, sy + cellH - 1)
+    _PUTIMAGE (destCap, 0)-(This.Width - destCap - 1, This.Height - 1), track, , (capW, sy)-(imgW - capW - 1, sy + cellH - 1)
+    _PUTIMAGE (This.Width - destCap, 0)-(This.Width - 1, This.Height - 1), track, , (imgW - capW, sy)-(imgW - 1, sy + cellH - 1)
+
+    'Knob (slides from one end to the other while animating)
+    knobCell = _WIDTH(knob)
+    travel = This.Width - This.Height
+    IF This.Value THEN
+        knobX = travel - AnimationOffset * travel / (This.Width / 2)
+    ELSE
+        knobX = AnimationOffset * travel / (This.Width / 2)
+    END IF
+    state = 1
+    IF ControlState = 3 THEN state = 2
+    IF This.Disabled THEN state = 3
+    _PUTIMAGE (knobX, 0)-STEP(This.Height - 1, This.Height - 1), knob, , (0, (state - 1) * knobCell)-STEP(knobCell - 1, knobCell - 1)
+
+    __UI_DrawToggleSwitchImages = _TRUE
+END FUNCTION
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawRadioButton (This AS __UI_ControlTYPE, ControlState AS _BYTE)

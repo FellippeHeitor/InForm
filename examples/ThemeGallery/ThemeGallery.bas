@@ -37,12 +37,12 @@ DIM SHARED ThemeDD AS LONG
 '$INCLUDE:'ThemeGallery.frm'
 
 ': Helpers: ------------------------------------------------------------------------
-FUNCTION MidnightThemeFile$
+FUNCTION ThemeFile$ (fileName AS STRING)
     ' The example can be run from the repository root or from its own folder
-    IF _FILEEXISTS("InForm/themes/midnight.uitheme.ini") THEN
-        MidnightThemeFile = "InForm/themes/midnight.uitheme.ini"
+    IF _FILEEXISTS("InForm/themes/" + fileName) THEN
+        ThemeFile = "InForm/themes/" + fileName
     ELSE
-        MidnightThemeFile = "../../InForm/themes/midnight.uitheme.ini"
+        ThemeFile = "../../InForm/themes/" + fileName
     END IF
 END FUNCTION
 
@@ -110,7 +110,8 @@ SUB __UI_ValueChanged (id AS LONG)
                 CASE 1: SetTheme "xp"
                 CASE 2: SetTheme "light"
                 CASE 3: SetTheme "dark"
-                CASE 4: SetTheme MidnightThemeFile
+                CASE 4: SetTheme ThemeFile("midnight.uitheme.ini")
+                CASE 5: SetTheme ThemeFile("cupertino.uitheme.ini")
             END SELECT
         CASE Track1
             Control(Prog1).Value = Control(Track1).Value * 10
