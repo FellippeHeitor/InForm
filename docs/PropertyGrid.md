@@ -83,7 +83,7 @@ A frame that becomes a grid after the `.bas` was first exported gets its `__UI_V
 ## Rows
 
 | Add with | Control | Value |
-|---|---|---|
+| --- | --- | --- |
 | `PropertyGrid_AddText` | text box | the text |
 | `PropertyGrid_AddInteger` | text box for numbers | the number, rounded when committed |
 | `PropertyGrid_AddFloat` | text box for numbers | the number |

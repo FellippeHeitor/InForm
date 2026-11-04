@@ -8,7 +8,7 @@ Anchors let controls move and stretch on their own when a form is resized, so a 
 2. Select a control. Under Control toggles, the **Anchor** picker shows the control as a box inside its parent, with a bar from each side to the parent's edge. Click a side to anchor the control to that edge (the bar turns solid) or to release it (the bar turns dotted). The line under the picker says what the control will do, e.g. "Sticks to the bottom-right corner of the form."
 
 | Anchored to | When the form gets wider, the control... |
-|-------------|------------------------------------------|
+| ------------- | ------------------------------------------ |
 | Left (default) | stays where it is |
 | Right | moves right with the edge |
 | Left + right | gets wider |

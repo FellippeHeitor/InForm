@@ -116,7 +116,7 @@ FUNCTION FontMgr_GetSizeRange%% (filePath AS STRING, fontIndex AS _UNSIGNED LONG
 The `nameId` parameter of the `FontMgr_GetName` function accepts the following constants (defined in `FontMgr.bi`):
 
 | Constant | Description |
-|-|-|
+| - | - |
 | `FONTMGR_NAME_COPYRIGHT` | Copyright notice |
 | `FONTMGR_NAME_FAMILY` | Font Family name |
 | `FONTMGR_NAME_STYLE` | Font Subfamily name |

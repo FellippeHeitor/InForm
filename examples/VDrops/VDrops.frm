@@ -87,7 +87,7 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_ListBox, "CircuitLB", 493, 479, 400, 90, 0)
     __UI_RegisterResult = 0
     AddItem __UI_NewID, "LP-1    1000    234     200.6   1000 kcmil  10.66   1.5     10.5 "
-    Control(__UI_NewID).Font = SetFont("C:\windows\Fonts\lucon.ttf", 12)
+    Control(__UI_NewID).Font = SetFont("lucon.ttf", 12)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
     Control(__UI_NewID).BorderSize = 1

@@ -22,7 +22,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 
 - [Wiki](https://github.com/QB64-Phoenix-Edition/InForm-PE/wiki)
 - [Tutorial](https://raw.githack.com/QB64-Phoenix-Edition/InForm-PE/refs/heads/master/docs/tutorial/index.html)
-- [Extensions](docs/Extensions.md)
+- [Extensions](docs/)
 - [Themes](docs/Themes.md)
 - [TabControl](docs/TabControl.md)
 - [Anchors](docs/Anchors.md)
@@ -94,7 +94,7 @@ InForm/extensions/*.*
 ## EXAMPLES
 
 | Name | Author |
-|------|-------------|
+| ------ | ------------- |
 | 21-game | TempodiBasic |
 | AnchorsDemo | Fellippe Heitor |
 | Bin2Include | Zachary Spriggs |
@@ -113,7 +113,7 @@ InForm/extensions/*.*
 | GravitationSimulation | Richard Notley |
 | GX-Map-Maker | boxgaming |
 | InFormPaint | Fellippe Heitor |
-| InsideOutsideTriangle |  Richard Notley |
+| InsideOutsideTriangle | Richard Notley |
 | Lander1 | B+ |
 | Lander2 | B+ |
 | Mahjong | Richard Notley |

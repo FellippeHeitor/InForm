@@ -65,14 +65,14 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "ConvertedValueLB", 105, 20, 480, 300, 0)
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "Converted Value:"
-    Control(__UI_NewID).Font = SetFont("C:\WINDOWS\Fonts\segoeuib.ttf", 12)
+    Control(__UI_NewID).Font = SetFont("segoeuib.ttf", 12)
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).VAlign = __UI_Middle
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "AnswerLB", 170, 27, 443, 338, 0)
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "Answer"
-    Control(__UI_NewID).Font = SetFont("C:\WINDOWS\Fonts\segoeuib.ttf", 16)
+    Control(__UI_NewID).Font = SetFont("segoeuib.ttf", 16)
     Control(__UI_NewID).ForeColor = _RGB32(255, 41, 40)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Align = __UI_Left

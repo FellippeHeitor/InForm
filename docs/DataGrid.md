@@ -48,7 +48,7 @@ The `DataGridDemo` example shows a complete form, with buttons to add, delete an
 ## Columns
 
 | Add with | Cells hold | Edited with |
-|---|---|---|
+| --- | --- | --- |
 | `DataGrid_AddTextColumn` | any text | a text box |
 | `DataGrid_AddIntegerColumn` | a whole number, rounded when kept | a text box for numbers |
 | `DataGrid_AddFloatColumn` | a number | a text box for numbers |
@@ -127,7 +127,7 @@ END SUB
 The options are added together:
 
 | Option | Loading | Saving |
-|---|---|---|
+| --- | --- | --- |
 | `__UI_DataGrid_CSVHeader` | The first line holds captions: each field goes to the column with its caption (in any case), in whatever order the file has them. Fields with no column are left out, and columns with no field get their default. | The captions are written first. |
 | `__UI_DataGrid_CSVTags` | Each line's first field is its row's tag (see `DataGrid_SetRowTag`), for example a record's ID. | Each row's tag is written first (its caption is `Tag`). |
 | `__UI_DataGrid_CSVAppend` | The rows are added to the ones the grid has. Without it, they replace them. | |

@@ -80,7 +80,7 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "MessageLB", 275, 45, 9, 92, __UI_GetID("Frame1"))
     __UI_RegisterResult = 0
     SetCaption __UI_NewID, "Message"
-    Control(__UI_NewID).Font = SetFont("C:\WINDOWS\Fonts\segoeui.ttf", 12)
+    Control(__UI_NewID).Font = SetFont("segoeui.ttf", 12)
     Control(__UI_NewID).HasBorder = False
     Control(__UI_NewID).WordWrap = True
     Control(__UI_NewID).BorderSize = 1
