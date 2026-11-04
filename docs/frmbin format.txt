@@ -101,5 +101,8 @@ FOR EACH CONTROL (FORM INCLUDED):
                 For searchable DropdownList controls
     INTEGER -54 (Reorderable = True)
                 For ListBox controls
+    INTEGER -55 (Anchor) + INTEGER flags
+                __UI_Anchor_Left = 1, _Top = 2, _Right = 4, _Bottom = 8;
+                only written when not the default (left + top)
     -------------------
 INTEGER -1024 (End of file)

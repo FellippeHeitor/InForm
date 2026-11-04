@@ -213,6 +213,12 @@ CONST __UI_NumericWithBounds%% = 2%%
 CONST __UI_CheckMark%% = 0%%
 CONST __UI_Bullet%% = 1%%
 
+'Anchor (bit flags; 0 behaves like __UI_Anchor_Left OR __UI_Anchor_Top)
+CONST __UI_Anchor_Left%% = 1%%
+CONST __UI_Anchor_Top%% = 2%%
+CONST __UI_Anchor_Right%% = 4%%
+CONST __UI_Anchor_Bottom%% = 8%%
+
 'General constants
 CONST __UI_ToolTipTimeOut! = 0.8!
 CONST __UI_CantResizeV%% = 1%%
@@ -326,6 +332,11 @@ TYPE __UI_ControlTYPE
     NumericOnly AS _BYTE
     Searchable AS _BYTE ' dropdown list: typing while it's open filters its items
     Fuzzy AS _BYTE ' searchable dropdown list: letters of a word may have others in between; best matches first
+    Anchor AS _BYTE ' edges of the parent the control follows when the parent is resized (__UI_Anchor_* flags)
+    AnchorWidth AS LONG ' size the anchors aim for; can be smaller than 1 while the parent is too small to fit the control
+    AnchorHeight AS LONG
+    AnchorSetWidth AS INTEGER ' size the anchors last gave the control (0 = not yet), to notice when code changes it
+    AnchorSetHeight AS INTEGER
     Reorderable AS _BYTE ' list box: items can be dragged to a new position
     FirstVisibleLine AS LONG ' multiline textbox: topmost visual line shown (1-based)
     PrevFirstVisibleLine AS LONG
@@ -504,6 +515,9 @@ DIM SHARED __UI_PasteLineBreakAs AS STRING
 ' the dropdown box shows the search text and the list shows only matching items.
 DIM SHARED __UI_DropdownSearch AS STRING ' what has been typed so far
 DIM SHARED __UI_DropdownSearchMap AS STRING
+
+' Anchors (see __UI_ApplyAnchors): the form size the anchored controls were last laid out for
+DIM SHARED __UI_AnchorFormWidth AS LONG, __UI_AnchorFormHeight AS LONG
 
 ' Reorderable list boxes (see __UI_ReorderBegin). While an item is being dragged,
 ' a line in the list shows the gap it will drop into.

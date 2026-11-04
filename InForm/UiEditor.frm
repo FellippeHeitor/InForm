@@ -653,6 +653,14 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Reorderable"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "AnchorLB", 52, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Anchor"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "AnchorPicker", 128, 62, 66, 232, __UI_GetID("ControlToggles"))
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "AnchorInfoLB", 184, 34, 12, 298, __UI_GetID("ControlToggles"))
+    Control(__UI_NewID).WordWrap = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoScroll", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Auto-scroll"
     Control(__UI_NewID).CanHaveFocus = True
@@ -983,6 +991,9 @@ SUB __UI_AssignIDs
     FontSwitchMenu = __UI_GetID("FontSwitchMenu")
     AutoScroll = __UI_GetID("AutoScroll")
     ReorderableCB = __UI_GetID("ReorderableCB")
+    AnchorLB = __UI_GetID("AnchorLB")
+    AnchorPicker = __UI_GetID("AnchorPicker")
+    AnchorInfoLB = __UI_GetID("AnchorInfoLB")
     SearchableCB = __UI_GetID("SearchableCB")
     FuzzyCB = __UI_GetID("FuzzyCB")
     PasteListBT = __UI_GetID("PasteListBT")

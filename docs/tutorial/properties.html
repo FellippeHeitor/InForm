@@ -61,6 +61,7 @@
 <a href="#Property arrays you directly manipulate" >&nbsp;&nbsp;&nbsp;Property arrays</a>
 
 <a href="#Align" >Align</a>
+<a href="#Anchor" >Anchor</a>
 <a href="#BackStyle" >BackStyle</a>
 <a href="#BorderSize" >BorderSize</a>
 <a href="#Caption" >Caption</a>
@@ -136,6 +137,25 @@ ToolTip(ControlID) = "Desired Tool tip"
 <p>To add a hot-key indicator to captions, use the <a href="methods.html#SetCaption">SetCaption</a> method.</p>
 <p>Changes to properties are typically applied immediately, but eventually, you may need to use  __UI_ForceRedraw.</p>
 
+
+<a name="Anchor"></a>
+<h2>Anchor</h2>
+
+<p>The Anchor property sets which edges of its parent a control follows when the parent is resized. The parent is the form, or the <b>Frame</b> or <b>TabControl</b> the control is in. It's most useful on forms that can be resized by the user (the form's <b>Resizable</b> toggle), but it also applies when you change the form's Width or Height in code.</p>
+
+<ul>
+<li>Anchored to the left and right edges: the control gets wider or narrower with its parent.</li>
+<li>Anchored to the right edge only: the control moves along with the parent's right edge.</li>
+<li>Top and bottom work the same way for the height.</li>
+</ul>
+
+<p>The default (0) means left + top: the control stays where it is. In the designer, click the sides of the <b>Anchor</b> picker in Control toggles: solid bars are anchored edges, and the line below it describes what the control will do.</p>
+
+<pre ><code tabindex="0">Control(OkButton).Anchor = __UI_Anchor_Right OR __UI_Anchor_Bottom
+Control(NotesBox).Anchor = __UI_Anchor_Left OR __UI_Anchor_Top OR __UI_Anchor_Right OR __UI_Anchor_Bottom
+</code></pre>
+
+<p>Controls are laid out before __UI_FormResized is called, so code in it can still adjust them.</p>
 
 <a name="BackStyle"></a>
 <h2>BackStyle</h2>

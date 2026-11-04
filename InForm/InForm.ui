@@ -247,6 +247,8 @@ SUB __UI_Init
     _DISPLAY
 
     __UI_AssignIDs
+    __UI_AnchorFormWidth = Control(__UI_FormID).Width
+    __UI_AnchorFormHeight = Control(__UI_FormID).Height
     __UI_OnLoad
 
     __UI_AutoRefresh = True
@@ -555,7 +557,6 @@ SUB __UI_ProcessInput
     IF NOT __UI_IsDrawing THEN
         CheckResize = _RESIZE
         IF (CheckResize AND Control(__UI_FormID).CanResize) OR (CheckResize AND __UI_DesignMode) OR __UI_CurrentBackColor <> Control(__UI_FormID).BackColor OR Control(__UI_FormID).Width <> _WIDTH(0) OR Control(__UI_FormID).Height <> _HEIGHT(0) THEN
-            _DELAY .1
             IF CheckResize THEN
                 Control(__UI_FormID).Width = _RESIZEWIDTH
                 Control(__UI_FormID).Height = _RESIZEHEIGHT
@@ -585,6 +586,15 @@ SUB __UI_ProcessInput
                 _DEST 0
 
                 IF LEN(__UI_CurrentTitle) THEN _TITLE __UI_CurrentTitle
+
+                'Lay out anchored controls now, so the next frame drawn already fits the new size
+                IF __UI_AnchorFormWidth > 0 AND NOT __UI_DesignMode THEN
+                    __UI_ApplyAnchors Control(__UI_FormID).Width - __UI_AnchorFormWidth, Control(__UI_FormID).Height - __UI_AnchorFormHeight
+                END IF
+                IF __UI_AnchorFormWidth > 0 THEN
+                    __UI_AnchorFormWidth = Control(__UI_FormID).Width
+                    __UI_AnchorFormHeight = Control(__UI_FormID).Height
+                END IF
 
                 __UI_HasResized = True
                 __UI_HasInput = True
@@ -1028,6 +1038,29 @@ SUB __UI_UpdateDisplay
         _DEST 0
     END IF
 
+    'Anchor markers: selected controls that don't keep the default left + top anchors
+    'show a pin on each edge they follow (part of "Show invisible elements" in the editor).
+    'Hidden while dragging or resizing, so they don't get in the way of the snap lines.
+    IF __UI_DesignMode AND __UI_ShowInvisibleControls AND __UI_IsDragging = False AND __UI_IsResizing = False AND Control(__UI_FormID).Width > 0 AND Control(__UI_FormID).Height > 0 THEN
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ID = 0 OR NOT Control(i).ControlIsSelected THEN _CONTINUE
+            IF Control(i).Anchor = 0 OR Control(i).Anchor = (__UI_Anchor_Left OR __UI_Anchor_Top) THEN _CONTINUE
+            IF __UI_IsOnHiddenTab(i) THEN _CONTINUE
+            IF OverlayReset = False THEN
+                OverlayReset = True
+                IF Control(__UI_FormID).HelperCanvas <> 0 THEN _FREEIMAGE Control(__UI_FormID).HelperCanvas
+                Control(__UI_FormID).HelperCanvas = _NEWIMAGE(Control(__UI_FormID).Width, Control(__UI_FormID).Height, 32)
+                _DEST Control(__UI_FormID).HelperCanvas
+                CLS , _RGBA32(0, 0, 0, 0)
+            ELSE
+                _DEST Control(__UI_FormID).HelperCanvas
+            END IF
+            OverlayIsVisible = True
+            __UI_DrawAnchorMarkers i
+            _DEST 0
+        NEXT
+    END IF
+
     'Size and position indicator:
     IF __UI_TotalSelectedControls > 0 AND __UI_Snapped = False AND __UI_ShowPositionAndSize THEN
         IF Control(__UI_FormID).Width > 0 AND Control(__UI_FormID).Height > 0 THEN
@@ -1313,6 +1346,10 @@ SUB __UI_EventDispatcher
     DIM i AS LONG, j AS LONG, ThisItem%, TempParent AS LONG
     DIM ContainerOffsetLeft AS INTEGER, ContainerOffsetTop AS INTEGER
 
+    'Have we had a resize? (handled even when the mouse is outside the window and nothing has focus;
+    'anchored controls were already laid out by __UI_ProcessInput)
+    IF __UI_HasResized THEN __UI_FormResized: __UI_HasResized = False
+
     IF __UI_HoveringID = 0 AND __UI_Focus = 0 THEN EXIT SUB
 
     IF Control(__UI_HoveringID).ParentID > 0 AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem THEN
@@ -1326,8 +1363,6 @@ SUB __UI_EventDispatcher
         IF __UI_UnloadSignal THEN SYSTEM
     END IF
 
-    'Have we had a resize?
-    IF __UI_HasResized THEN __UI_FormResized: __UI_HasResized = False
 
     'Hover actions
     IF __UI_LastHoveringID <> __UI_HoveringID OR __UI_HoveringID = __UI_ActiveDropdownList THEN
@@ -5804,6 +5839,115 @@ SUB MoveItem (WhichListBox AS LONG, ItemToMove AS LONG, NewPosition AS LONG)
 END SUB
 
 '---------------------------------------------------------------------------------
+'Anchors: moves and stretches controls after their parent grew by dW x dH pixels
+'(negative when it shrank). Top-level controls follow the form; controls inside a
+'frame or tab control follow that container, which is laid out first.
+'Anchored left and right: the width changes; right only: the control moves.
+'The same goes for top/bottom and the height. Anchor = 0 means left + top.
+'Each control keeps the size the anchors aim for (.AnchorWidth/.AnchorHeight) apart
+'from its real size, which never goes below 1 pixel. That way shrinking the parent
+'past what fits and growing it back returns the control to its original size.
+SUB __UI_ApplyAnchors (dW AS LONG, dH AS LONG)
+    DIM i AS LONG, pass AS LONG, p AS LONG, cdW AS LONG, cdH AS LONG
+    DIM OldL AS LONG, OldT AS LONG, OldW AS LONG, OldH AS LONG, OldAW AS LONG, OldAH AS LONG
+    DIM aW AS LONG, aH AS LONG
+    REDIM ContainerDW(0 TO UBOUND(Control)) AS LONG, ContainerDH(0 TO UBOUND(Control)) AS LONG
+
+    IF dW = 0 AND dH = 0 THEN EXIT SUB
+
+    FOR pass = 1 TO 2
+        FOR i = 1 TO UBOUND(Control)
+            IF Control(i).ID = 0 THEN _CONTINUE
+            SELECT CASE Control(i).Type
+                CASE __UI_Type_Form, __UI_Type_MenuBar, __UI_Type_MenuItem, __UI_Type_MenuPanel, __UI_Type_ContextMenu, __UI_Type_Font
+                    _CONTINUE
+            END SELECT
+
+            p = Control(i).ParentID
+            IF pass = 1 THEN
+                IF p <> 0 THEN _CONTINUE
+                cdW = dW: cdH = dH
+            ELSE
+                IF p = 0 THEN _CONTINUE
+                IF p < 0 OR p > UBOUND(Control) THEN _CONTINUE
+                cdW = ContainerDW(p): cdH = ContainerDH(p)
+            END IF
+            IF cdW = 0 AND cdH = 0 THEN _CONTINUE
+
+            'Start from the real size the first time, or when code has changed it since
+            IF Control(i).AnchorSetWidth = 0 OR Control(i).Width <> Control(i).AnchorSetWidth THEN Control(i).AnchorWidth = Control(i).Width
+            IF Control(i).AnchorSetHeight = 0 OR Control(i).Height <> Control(i).AnchorSetHeight THEN Control(i).AnchorHeight = Control(i).Height
+
+            OldL = Control(i).Left: OldT = Control(i).Top
+            OldW = Control(i).Width: OldH = Control(i).Height
+            OldAW = Control(i).AnchorWidth: OldAH = Control(i).AnchorHeight
+            aW = OldAW: aH = OldAH
+            __UI_AnchorOne Control(i).Anchor, cdW, cdH, Control(i).Left, Control(i).Top, aW, aH
+            Control(i).AnchorWidth = aW: Control(i).AnchorHeight = aH
+            IF aW < 1 THEN Control(i).Width = 1 ELSE Control(i).Width = aW
+            IF aH < 1 THEN Control(i).Height = 1 ELSE Control(i).Height = aH
+            Control(i).AnchorSetWidth = Control(i).Width
+            Control(i).AnchorSetHeight = Control(i).Height
+
+            IF Control(i).Left <> OldL OR Control(i).Top <> OldT OR Control(i).Width <> OldW OR Control(i).Height <> OldH THEN Control(i).Redraw = True
+            IF pass = 1 THEN
+                'Children follow the size their container aims for, not its clamped one
+                ContainerDW(i) = aW - OldAW
+                ContainerDH(i) = aH - OldAH
+            END IF
+        NEXT
+    NEXT
+END SUB
+
+'Design mode: draws a pin just outside each edge control id is anchored to
+SUB __UI_DrawAnchorMarkers (id AS LONG)
+    CONST PinLength = 6, CapHalf = 4
+    DIM a AS LONG, x1 AS LONG, y1 AS LONG, x2 AS LONG, y2 AS LONG, cx AS LONG, cy AS LONG
+    DIM c AS _UNSIGNED LONG
+
+    a = Control(id).Anchor
+    IF a = 0 THEN a = __UI_Anchor_Left OR __UI_Anchor_Top
+    x1 = Control(Control(id).ParentID).Left + Control(id).Left
+    y1 = Control(Control(id).ParentID).Top + Control(id).Top
+    x2 = x1 + Control(id).Width - 1
+    y2 = y1 + Control(id).Height - 1
+    cx = (x1 + x2) \ 2: cy = (y1 + y2) \ 2
+    c = __UI_ThemeColor(__UI_ThemeColor_Accent)
+
+    IF (a AND __UI_Anchor_Left) THEN
+        LINE (x1 - PinLength - 1, cy - 1)-(x1 - 2, cy + 1), c, BF
+        LINE (x1 - PinLength - 2, cy - CapHalf)-(x1 - PinLength - 1, cy + CapHalf), c, BF
+    END IF
+    IF (a AND __UI_Anchor_Right) THEN
+        LINE (x2 + 2, cy - 1)-(x2 + PinLength + 1, cy + 1), c, BF
+        LINE (x2 + PinLength + 1, cy - CapHalf)-(x2 + PinLength + 2, cy + CapHalf), c, BF
+    END IF
+    IF (a AND __UI_Anchor_Top) THEN
+        LINE (cx - 1, y1 - PinLength - 1)-(cx + 1, y1 - 2), c, BF
+        LINE (cx - CapHalf, y1 - PinLength - 2)-(cx + CapHalf, y1 - PinLength - 1), c, BF
+    END IF
+    IF (a AND __UI_Anchor_Bottom) THEN
+        LINE (cx - 1, y2 + 2)-(cx + 1, y2 + PinLength + 1), c, BF
+        LINE (cx - CapHalf, y2 + PinLength + 1)-(cx + CapHalf, y2 + PinLength + 2), c, BF
+    END IF
+END SUB
+
+'Applies one anchor setting to a position and the size the anchors aim for (also used by the tests).
+'The size isn't clamped here: it can go below 1 while the parent is too small.
+SUB __UI_AnchorOne (Anchor AS _BYTE, dW AS LONG, dH AS LONG, cLeft AS INTEGER, cTop AS INTEGER, aWidth AS LONG, aHeight AS LONG)
+    DIM a AS LONG
+    a = Anchor
+    IF a = 0 THEN a = __UI_Anchor_Left OR __UI_Anchor_Top
+
+    IF (a AND __UI_Anchor_Right) THEN
+        IF (a AND __UI_Anchor_Left) THEN aWidth = aWidth + dW ELSE cLeft = cLeft + dW
+    END IF
+
+    IF (a AND __UI_Anchor_Bottom) THEN
+        IF (a AND __UI_Anchor_Top) THEN aHeight = aHeight + dH ELSE cTop = cTop + dH
+    END IF
+END SUB
+
 'Reorderable list boxes: pressing on an item starts a drag; while the mouse moves
 'a line shows the gap the item will drop into; releasing moves the item there,
 'selects it and fires __UI_ValueChanged (with __UI_MovedItemFrom/To set).

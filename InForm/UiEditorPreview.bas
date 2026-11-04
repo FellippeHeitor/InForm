@@ -1631,6 +1631,19 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 END IF
+            CASE 49 'Anchor: an edge flag and whether it's on
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                b$ = ReadSequential$(Property$, 2)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        SetAnchorFlag LockedControls(j), TempValue, CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN SetAnchorFlag i, TempValue, CVI(b$)
+                    NEXT
+                END IF
             CASE 44 'Auto-play (GIF extension)
                 b$ = ReadSequential$(Property$, 2)
                 IF TotalLockedControls THEN
@@ -2747,6 +2760,10 @@ SUB LoadPreview (Destination AS _BYTE)
                 CASE -54
                     Control(TempValue).Reorderable = True
                     IF LogFileLoad THEN PRINT #LogFileNum, "REORDERABLE"
+                CASE -55
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    Control(TempValue).Anchor = CVI(b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "ANCHOR"; Control(TempValue).Anchor
                 CASE -34
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
                     Control(TempValue).Encoding = CVL(b$)
@@ -3133,6 +3150,13 @@ SUB LoadPreviewText
                             Control(TempValue).Fuzzy = (DummyText$ = "True")
                         CASE "Reorderable"
                             Control(TempValue).Reorderable = (DummyText$ = "True")
+                        CASE "Anchor"
+                            Control(TempValue).Anchor = 0
+                            IF INSTR(DummyText$, "__UI_Anchor_Left") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Left
+                            IF INSTR(DummyText$, "__UI_Anchor_Top") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Top
+                            IF INSTR(DummyText$, "__UI_Anchor_Right") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Right
+                            IF INSTR(DummyText$, "__UI_Anchor_Bottom") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Bottom
+                            IF Control(TempValue).Anchor = 0 THEN Control(TempValue).Anchor = VAL(DummyText$)
                         CASE "Encoding"
                             Control(TempValue).Encoding = VAL(DummyText$)
                         CASE "NumericOnly"
@@ -3595,6 +3619,10 @@ SUB SavePreview (Destination AS _BYTE)
                 END IF
                 IF Control(i).Reorderable AND Control(i).Type = __UI_Type_ListBox THEN
                     b$ = MKI$(-54)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Anchor <> 0 AND Control(i).Anchor <> (__UI_Anchor_Left OR __UI_Anchor_Top) THEN
+                    b$ = MKI$(-55) + MKI$(Control(i).Anchor)
                     IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
                 IF Control(i).Encoding > 0 THEN
@@ -4276,4 +4304,18 @@ SUB RefreshMenusAfterZOrder (MenuItemID AS LONG)
     ELSE
         __UI_CloseAllMenus
     END IF
+END SUB
+
+'Turns one anchor edge on or off for control id, keeping its other edges
+SUB SetAnchorFlag (id AS LONG, Flag AS INTEGER, IsOn AS INTEGER)
+    DIM a AS LONG
+    SELECT CASE Control(id).Type
+        CASE __UI_Type_Form, __UI_Type_MenuBar, __UI_Type_MenuItem, __UI_Type_MenuPanel, __UI_Type_ContextMenu, __UI_Type_Font
+            EXIT SUB
+    END SELECT
+    a = Control(id).Anchor
+    IF a = 0 THEN a = __UI_Anchor_Left OR __UI_Anchor_Top
+    IF IsOn THEN a = a OR Flag ELSE a = a AND NOT Flag
+    IF a = (__UI_Anchor_Left OR __UI_Anchor_Top) THEN a = 0
+    Control(id).Anchor = a
 END SUB
