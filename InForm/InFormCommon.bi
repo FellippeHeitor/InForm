@@ -452,6 +452,7 @@ DIM SHARED __UI_DefaultButtonID AS LONG
 DIM SHARED __UI_KeyHit AS LONG, __UI_KeepFocus AS _BYTE
 DIM SHARED __UI_Focus AS LONG, __UI_PreviousFocus AS LONG, __UI_KeyboardFocus AS _BYTE
 DIM SHARED __UI_HoveringID AS LONG, __UI_LastHoveringID AS LONG, __UI_BelowHoveringID AS LONG
+DIM SHARED __UI_InputLocked AS _BYTE ' mouse and keyboard are ignored (the designer's preview, while the editor shows a dialog for it)
 DIM SHARED __UI_IsDragging AS _BYTE, __UI_DraggingID AS LONG
 DIM SHARED __UI_IsResizing AS _BYTE, __UI_ResizingID AS LONG
 DIM SHARED __UI_ResizeHandleHover AS _BYTE
@@ -539,3 +540,4 @@ DIM SHARED __UI_ThemeColor(1 TO __UI_ThemeColor_Count) AS _UNSIGNED LONG
 DIM SHARED __UI_ThemeImageFile(1 TO __UI_ThemeImage_Count) AS STRING ' optional image files overriding the embedded bitmaps
 
 '$INCLUDE:'InFormPropertyGrid.bi'
+'$INCLUDE:'InFormDataGrid.bi'

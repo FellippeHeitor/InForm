@@ -51,22 +51,23 @@ Any frame can be a property grid without writing code to build it. The quickest 
 To turn a frame of your own into a property grid:
 
 1. Add a frame to your form.
-2. Right-click the frame and pick **Add property** and then a kind of row (text box, integer box, number box, choice, toggle or button). Each row is added with a key that isn't used yet (`text1`, `choice2`...), and the frame keeps its size: rows that don't fit get a scrollbar, which you can scroll with the mouse wheel. You can also type the rows straight into the frame's **Rows** property, one per line. Separate lines with `\n`, or paste several lines with the paste button next to the box.
+2. Right-click the frame and pick **Add property** and then a kind of row (text box, integer box, number box, choice, toggle or button). Each row is added with a key that isn't used yet (`text1`, `choice2`...), and the frame keeps its size: rows that don't fit get a scrollbar, which you can scroll with the mouse wheel.
+   To change the rows, double-click the frame in the preview, or click the **Rows** button in its properties. It opens a table with one line per row and columns for the key, kind, label and items or value (see [DataGrid](DataGrid.md)). Edit the cells in place, use the buttons to go to the first, previous, next or last row and to add, delete or move rows (Shift or dragging selects several), and press **Ctrl+Z**/**Ctrl+Y** to undo or redo changes in the table. The preview shows the rows as you change them. **OK** keeps the changes as one step you can undo in the designer; **Cancel** (or Esc) puts the rows back as they were.
 3. The designer draws the rows the way they will look. When the program starts, they become real rows, before `__UI_OnLoad` runs.
 
-Each line is `key|kind|label|items`:
+The rows are kept in the frame's Text, one per line, as `key|kind|label|extra`:
 
 ```text
 label|text|Label
-size|integer|Size
+size|integer|Size|120
 color|choice|Color|Red,Green,Blue
-filled|toggle|Filled
+filled|toggle|Filled|-1
 reset|button|Defaults|Reset
 Notes
 ```
 
 - **kind** is `text`, `integer`, `float`, `choice`, `toggle` or `button`. Leave it out for a text row.
-- **items** are a choice's items, separated by commas, or a button's caption.
+- **extra** is a choice's items, separated by commas, a button's caption, or the starting value of a text, integer, float or toggle row (a toggle starts checked when it isn't `0`). In the designer's table, a toggle row's value is a check box.
 - A line with only a label (`Notes` above) makes a text row whose key is that label.
 
 Then use the rows from code exactly as below, for example `PropertyGrid_SetValue ShapeFrame, "size", "120"` in `__UI_OnLoad`.

@@ -16,6 +16,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - Tab control for multi-page forms ([TabControl](docs/TabControl.md))
 - Anchors: controls move and stretch with resizable forms ([Anchors](docs/Anchors.md))
 - Property grids: label/value rows with built-in editing, like the designer's properties panel ([PropertyGrid](docs/PropertyGrid.md))
+- Data grids: tables with column headers, keyboard navigation, editing in place, sideways scrolling and CSV loading and saving, set up in code or in the designer ([DataGrid](docs/DataGrid.md))
 
 ## DOCUMENTATION
 
@@ -26,6 +27,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - [TabControl](docs/TabControl.md)
 - [Anchors](docs/Anchors.md)
 - [PropertyGrid](docs/PropertyGrid.md)
+- [DataGrid](docs/DataGrid.md)
 
 ## USAGE
 
@@ -82,6 +84,8 @@ InForm/InFormTheme.bm
 InForm/InFormTabControl.bm
 InForm/InFormPropertyGrid.bi
 InForm/InFormPropertyGrid.bm
+InForm/InFormDataGrid.bi
+InForm/InFormDataGrid.bm
 InForm/xp.uitheme
 InForm/themes/*.*
 InForm/extensions/*.*
@@ -98,6 +102,8 @@ InForm/extensions/*.*
 | Calculator | Terry Ritchie |
 | ClickTheVoid | Fellippe Heitor |
 | ClockPatience | Richard Notley |
+| DataGridCSVDemo | Fellippe Heitor |
+| DataGridDemo | Fellippe Heitor |
 | DuckShoot | Richard Notley |
 | ebacCalculator | George McGinn |
 | EncryptDecrypt | TempodiBasic |

@@ -327,6 +327,10 @@ SUB __UI_LoadForm
     ToolTip(__UI_NewID) = "New tab control"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddDataGrid", 22, 22, 445, 10, __UI_GetID("Toolbox"))
+    ToolTip(__UI_NewID) = "New data grid (a table of columns and rows)"
+    Control(__UI_NewID).CanHaveFocus = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "AddPropertyGrid", 22, 22, 416, 10, __UI_GetID("Toolbox"))
     ToolTip(__UI_NewID) = "New property grid (rows of labels and values; double-click it to edit its rows)"
     Control(__UI_NewID).CanHaveFocus = True
@@ -582,6 +586,24 @@ SUB __UI_LoadForm
     Control(__UI_NewID).VAlign = __UI_Middle
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "KeyboardComboBT", 230, 23, 129, 362, __UI_GetID("ControlProperties"))
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "ColumnsLB", 120, 23, 10, 384, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Columns"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "EditColumnsBT", 230, 23, 129, 384, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Edit columns..."
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "RowsLB", 120, 23, 10, 384, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Rows"
+    Control(__UI_NewID).HasBorder = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "EditRowsBT", 230, 23, 129, 384, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "Edit rows..."
     Control(__UI_NewID).CanHaveFocus = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "Stretch", 181, 20, 12, 12, __UI_GetID("ControlToggles"))
@@ -841,6 +863,68 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Cancel"
     Control(__UI_NewID).CanHaveFocus = True
 
+    'Property grid rows dialog: the table (RowsGrid) is a frame of its own placed over the dialog,
+    'as frames can't hold frames
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "EditRowsDialog", 563, 440, -600, -600, 0)
+    SetCaption __UI_NewID, "Property grid rows"
+    Control(__UI_NewID).HasBorder = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "RowsDescriptionLB", 533, 46, 15, 12, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "Each line becomes a row of the frame's property grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; Ctrl+Z undoes."
+    Control(__UI_NewID).WordWrap = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsFirstBT", 32, 26, 15, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "|<"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsPrevBT", 32, 26, 51, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "<"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "RowsPositionLB", 100, 26, 87, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "No rows"
+    Control(__UI_NewID).Align = __UI_Center
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsNextBT", 32, 26, 191, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, ">"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsLastBT", 32, 26, 227, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, ">|"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsAddBT", 56, 26, 320, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "Add"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsDeleteBT", 60, 26, 380, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "Delete"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsUpBT", 50, 26, 444, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "Up"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsDownBT", 50, 26, 498, 332, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "Down"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "RowsHintLB", 533, 34, 15, 364, __UI_GetID("EditRowsDialog"))
+    Control(__UI_NewID).WordWrap = True
+    Control(__UI_NewID).VAlign = __UI_Middle
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsOKBT", 80, 23, 196, 405, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "OK"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "RowsCancelBT", 80, 23, 287, 405, __UI_GetID("EditRowsDialog"))
+    SetCaption __UI_NewID, "Cancel"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Frame, "RowsGrid", 533, 260, -600, -600, 0)
+
 END SUB
 
 SUB __UI_AssignIDs
@@ -922,6 +1006,7 @@ SUB __UI_AssignIDs
     AddFrame = __UI_GetID("AddFrame")
     AddToggleSwitch = __UI_GetID("AddToggleSwitch")
     AddTabControl = __UI_GetID("AddTabControl")
+    AddDataGrid = __UI_GetID("AddDataGrid")
     AddPropertyGrid = __UI_GetID("AddPropertyGrid")
     Stretch = __UI_GetID("Stretch")
     HasBorder = __UI_GetID("HasBorder")
@@ -1037,5 +1122,24 @@ SUB __UI_AssignIDs
     InvertBindingCB = __UI_GetID("InvertBindingCB")
     BindBT = __UI_GetID("BindBT")
     CancelBindBT = __UI_GetID("CancelBindBT")
+    ColumnsLB = __UI_GetID("ColumnsLB")
+    EditColumnsBT = __UI_GetID("EditColumnsBT")
+    RowsLB = __UI_GetID("RowsLB")
+    EditRowsBT = __UI_GetID("EditRowsBT")
+    EditRowsDialog = __UI_GetID("EditRowsDialog")
+    RowsDescriptionLB = __UI_GetID("RowsDescriptionLB")
+    RowsFirstBT = __UI_GetID("RowsFirstBT")
+    RowsPrevBT = __UI_GetID("RowsPrevBT")
+    RowsPositionLB = __UI_GetID("RowsPositionLB")
+    RowsNextBT = __UI_GetID("RowsNextBT")
+    RowsLastBT = __UI_GetID("RowsLastBT")
+    RowsAddBT = __UI_GetID("RowsAddBT")
+    RowsDeleteBT = __UI_GetID("RowsDeleteBT")
+    RowsUpBT = __UI_GetID("RowsUpBT")
+    RowsDownBT = __UI_GetID("RowsDownBT")
+    RowsHintLB = __UI_GetID("RowsHintLB")
+    RowsOKBT = __UI_GetID("RowsOKBT")
+    RowsCancelBT = __UI_GetID("RowsCancelBT")
+    RowsGrid = __UI_GetID("RowsGrid")
 
 END SUB

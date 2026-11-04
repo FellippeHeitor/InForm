@@ -600,7 +600,8 @@ END SUB
 ' A frame whose Text holds row definitions (one per line) becomes a grid when the program starts:
 '   key|kind|label|extra
 ' kind is text, integer, float, choice, toggle or button (text if left out); extra is a choice's items
-' separated by commas, or a button's caption. A line with just a label makes a text row keyed by that label.
+' separated by commas, a button's caption, or the starting value of the other kinds (a toggle is checked
+' when it isn't 0). A line with just a label makes a text row keyed by that label.
 '-----------------------------------------------------------------------------------------------------------------------
 
 ''' @brief Splits one row definition. Returns _FALSE for a blank line.
@@ -633,6 +634,17 @@ FUNCTION __UI_PGParseLine%% (pgLine AS STRING, pgKey AS STRING, pgKind AS _BYTE,
     __UI_PGParseLine = _TRUE
 END FUNCTION
 
+''' @brief The starting value a row definition gives a text, number or toggle row ("" for none), the way the row stores it.
+FUNCTION __UI_PGStartValue$ (pgKind AS _BYTE, pgExtra AS STRING)
+    IF LEN(pgExtra) = 0 THEN EXIT FUNCTION
+    SELECT CASE pgKind
+        CASE __UI_PropertyGrid_Integer: __UI_PGStartValue = _TRIM$(STR$(_ROUND(VAL(pgExtra))))
+        CASE __UI_PropertyGrid_Float: __UI_PGStartValue = _TRIM$(STR$(VAL(pgExtra)))
+        CASE __UI_PropertyGrid_Toggle: IF VAL(pgExtra) <> 0 THEN __UI_PGStartValue = "-1" ELSE __UI_PGStartValue = "0"
+        CASE __UI_PropertyGrid_Text: __UI_PGStartValue = pgExtra
+    END SELECT
+END FUNCTION
+
 ''' @brief A frame's row definitions with line breaks as CHR$(10), whether they came from a .frm file (\10;) or code (\n).
 FUNCTION __UI_PGDefinitions$ (frameID AS LONG)
     DIM pgText AS STRING
@@ -650,6 +662,7 @@ SUB __UI_PropertyGridsFromForm
     FOR pgID = 1 TO UBOUND(Control)
         IF Control(pgID).ID = 0 _ORELSE Control(pgID).Type <> __UI_Type_Frame _ORELSE LEN(Text(pgID)) = 0 THEN _CONTINUE
         IF __UI_PGFind(pgID) > 0 THEN _CONTINUE 'built already (or set up by the program)
+        IF __UI_IsDataGridFrame(pgID) THEN _CONTINUE 'a data grid's columns and rows (see InFormDataGrid.bm)
         pgText = __UI_PGDefinitions(pgID) + CHR$(10)
         DO
             pgPos = INSTR(pgText, CHR$(10))
@@ -667,6 +680,7 @@ SUB __UI_PropertyGridsFromForm
                         PropertyGrid_AddButton pgID, pgKey, pgLabel, pgExtra
                     CASE ELSE: PropertyGrid_AddText pgID, pgKey, pgLabel
                 END SELECT
+                IF LEN(__UI_PGStartValue(pgKind, pgExtra)) THEN PropertyGrid_SetValue pgID, pgKey, __UI_PGStartValue(pgKind, pgExtra)
             END IF
         LOOP
     NEXT
@@ -702,6 +716,7 @@ FUNCTION __UI_PropertyGridMockWheel%% (hoverID AS LONG, pgWheel AS LONG)
     DIM pgBefore AS LONG
     IF hoverID <= 0 _ORELSE hoverID > UBOUND(Control) THEN EXIT FUNCTION
     IF Control(hoverID).Type <> __UI_Type_Frame _ORELSE LEN(Text(hoverID)) = 0 THEN EXIT FUNCTION
+    IF __UI_IsDataGridFrame(hoverID) THEN EXIT FUNCTION
     pgBefore = __UI_PGMockScroll(hoverID)
     __UI_PGMockScrollY(hoverID) = pgBefore + pgWheel * __UI_PG_MockSpacing
     IF __UI_PGMockScroll(hoverID) = pgBefore THEN EXIT FUNCTION
@@ -718,6 +733,7 @@ SUB __UI_PropertyGridDrawMock (frameID AS LONG)
     DIM pgScroll AS LONG, pgMax AS LONG, pgViewHeight AS LONG, pgSbLeft AS INTEGER, pgBar AS __UI_ControlTYPE
 
     IF Control(frameID).Type <> __UI_Type_Frame _ORELSE LEN(Text(frameID)) = 0 _ORELSE Control(frameID).Canvas = 0 THEN EXIT SUB
+    IF __UI_IsDataGridFrame(frameID) THEN EXIT SUB 'drawn as the data grid it is (see InFormDataGrid.bm)
 
     'Measured the way __UI_PGLayout does with the default layout
     pgViewHeight = Control(frameID).Height - __UI_PG_MockFirstTop - 4
@@ -752,6 +768,14 @@ SUB __UI_PropertyGridDrawMock (frameID AS LONG)
             pgY = pgTop + (__UI_PG_MockHeight - 13) \ 2
             LINE (10, pgY)-(22, pgY + 12), __UI_DefaultColor(__UI_Type_CheckBox, 2), BF
             LINE (10, pgY)-(22, pgY + 12), __UI_DefaultColor(__UI_Type_CheckBox, 5), B
+            IF VAL(pgExtra) <> 0 THEN
+                'Checked
+                pgColor = __UI_DefaultColor(__UI_Type_CheckBox, 1)
+                LINE (13, pgY + 6)-(15, pgY + 8), pgColor
+                LINE (15, pgY + 8)-(19, pgY + 3), pgColor
+                LINE (13, pgY + 7)-(15, pgY + 9), pgColor
+                LINE (15, pgY + 9)-(19, pgY + 4), pgColor
+            END IF
             COLOR __UI_DefaultColor(__UI_Type_CheckBox, 1)
             __UI_PrintString 28, pgTop + pgTextTop, pgLabel
         ELSE
@@ -782,9 +806,15 @@ SUB __UI_PropertyGridDrawMock (frameID AS LONG)
                     IF LEN(pgExtra) = 0 THEN pgExtra = pgLabel
                     COLOR __UI_DefaultColor(__UI_Type_Button, 1)
                     __UI_PrintString (pgEditLeft + pgRight) \ 2 - __UI_PrintWidth(pgExtra) \ 2, pgTop + pgTextTop, pgExtra
-                CASE __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
+                CASE __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float, __UI_PropertyGrid_Text
+                    'The starting value (numbers show 0 without one)
+                    pgExtra = __UI_PGStartValue(pgKind, pgExtra)
+                    IF LEN(pgExtra) = 0 _ANDALSO pgKind <> __UI_PropertyGrid_Text THEN pgExtra = "0"
+                    DO WHILE LEN(pgExtra) > 0 _ANDALSO __UI_PrintWidth(pgExtra) > pgRight - pgEditLeft - 8
+                        pgExtra = LEFT$(pgExtra, LEN(pgExtra) - 1)
+                    LOOP
                     COLOR __UI_DefaultColor(__UI_Type_TextBox, 1)
-                    __UI_PrintString pgEditLeft + 5, pgTop + pgTextTop, "0"
+                    __UI_PrintString pgEditLeft + 5, pgTop + pgTextTop, pgExtra
             END SELECT
         END IF
         pgTop = pgTop + __UI_PG_MockSpacing

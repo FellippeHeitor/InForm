@@ -265,6 +265,7 @@ SUB __UI_Init
 
     __UI_AssignIDs
     __UI_PropertyGridsFromForm
+    __UI_DataGridsFromForm
     __UI_AnchorFormWidth = Control(__UI_FormID).Width
     __UI_AnchorFormHeight = Control(__UI_FormID).Height
     __UI_OnLoad
@@ -646,6 +647,10 @@ SUB __UI_UpdateDisplay
 
     __UI_BeforeUpdateDisplay
     __UI_PropertyGridsUpdate
+    __UI_DataGridsUpdate
+
+    'The notice shown while input is locked is drawn over everything: the window is redrawn whole, so it doesn't pile up
+    IF __UI_InputLocked THEN __UI_ForceRedraw = True
 
     IF _SCREENX = -32000 _ANDALSO _SCREENY = -32000 THEN
         'Window was minimized
@@ -671,6 +676,9 @@ SUB __UI_UpdateDisplay
             IF Control(Control(i).ParentID).Type = __UI_Type_Frame THEN Control(Control(i).ParentID).Value = Control(Control(i).ParentID).Value + 1
         END IF
     NEXT
+
+    'Data grids are drawn on their frames' canvases first, so the controls that edit their cells go on top
+    __UI_DataGridsDraw
 
     _DEST 0
 
@@ -1345,6 +1353,8 @@ SUB __UI_UpdateDisplay
         IF _EXIT THEN SYSTEM 'Can't force user to wait...
         _PUTIMAGE , __UI_WaitMessageHandle
     END IF
+    IF __UI_InputLocked THEN __UI_DrawInputLockedNotice
+
     FOR i = 1 TO 2
         IF ControlDrawOrder(UBOUND(ControlDrawOrder)) = 0 THEN __UI_ExpandControlDrawOrder -1
     NEXT i 'run that a couple times for good measure
@@ -1381,6 +1391,14 @@ SUB __UI_EventDispatcher
         __UI_UnloadSignal = True
         __UI_BeforeUnload
         IF __UI_UnloadSignal THEN SYSTEM
+    END IF
+
+    'Input locked: no clicks, keys or wheel reach the controls (the window can still be closed)
+    IF __UI_InputLocked THEN
+        __UI_KeyHit = 0
+        __UI_MouseWheel = 0
+        __UI_LastHoveringID = __UI_HoveringID
+        EXIT SUB
     END IF
 
 
@@ -1483,6 +1501,11 @@ SUB __UI_EventDispatcher
         END IF
     END IF
 
+    'Tab moves from cell to cell in a data grid
+    IF __UI_KeyHit = 9 AND __UI_IsDragging = False AND NOT __UI_CtrlIsDown AND NOT __UI_DesignMode THEN
+        IF __UI_DataGridTab THEN __UI_KeyHit = 0
+    END IF
+
     IF __UI_KeyHit = 9 AND __UI_IsDragging = False THEN 'TAB
         IF __UI_DesignMode THEN
 
@@ -1576,10 +1599,16 @@ SUB __UI_EventDispatcher
 
     'MouseWheel
     IF __UI_MouseWheel _ANDALSO __UI_DesignMode THEN
-        'The designer scrolls the rows of a frame's property grid that don't fit
-        IF __UI_PropertyGridMockWheel(__UI_HoveringID, __UI_MouseWheel) THEN __UI_ForceRedraw = True
+        'The designer scrolls the rows of a frame's property grid or data grid that don't fit
+        IF __UI_PropertyGridMockWheel(__UI_HoveringID, __UI_MouseWheel) THEN
+            __UI_ForceRedraw = True
+        ELSEIF __UI_DataGridWheel(__UI_HoveringID, __UI_MouseWheel) THEN
+            __UI_ForceRedraw = True
+        END IF
     ELSEIF __UI_MouseWheel THEN
-        IF (Control(__UI_HoveringID).Type = __UI_Type_ListBox AND NOT Control(__UI_HoveringID).Disabled) THEN
+        IF __UI_DataGridWheel(__UI_HoveringID, __UI_MouseWheel) THEN
+            'A data grid under the mouse was scrolled
+        ELSEIF (Control(__UI_HoveringID).Type = __UI_Type_ListBox AND NOT Control(__UI_HoveringID).Disabled) THEN
             Control(__UI_HoveringID).InputViewStart = Control(__UI_HoveringID).InputViewStart + __UI_MouseWheel
             IF Control(__UI_HoveringID).InputViewStart + Control(__UI_HoveringID).LastVisibleItem > Control(__UI_HoveringID).Max THEN
                 Control(__UI_HoveringID).InputViewStart = Control(__UI_HoveringID).Max - Control(__UI_HoveringID).LastVisibleItem + 1
@@ -1820,7 +1849,7 @@ SUB __UI_EventDispatcher
                 END IF
 
                 'Property grid rows can be added to one frame at a time
-                Control(__UI_GetID("__UI_PreviewMenuAddRow")).Hidden = (__UI_TotalSelectedControls <> 1 _ORELSE Control(__UI_FirstSelectedID).Type <> __UI_Type_Frame)
+                Control(__UI_GetID("__UI_PreviewMenuAddRow")).Hidden = (__UI_TotalSelectedControls <> 1 _ORELSE Control(__UI_FirstSelectedID).Type <> __UI_Type_Frame _ORELSE __UI_IsDataGridFrame(__UI_FirstSelectedID))
 
                 IF LEFT$(_CLIPBOARD$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
                     Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = False
@@ -1956,8 +1985,9 @@ SUB __UI_EventDispatcher
                             END IF
                         ELSE
                             IF __UI_IsContainer(Control(__UI_FirstSelectedID).Type) AND (TIMER - __UI_LastMouseDownEvent < .5 AND (__UI_MouseTop = __UI_MouseDownTop AND __UI_MouseLeft = __UI_MouseDownLeft)) THEN
-                                'Select all controls inside a frame
-                                __UI_KeyPress 221
+                                'Double-click on a container: the designer selects the controls inside it
+                                '(or opens a frame's property grid rows)
+                                __UI_KeyPress 236
                             END IF
                         END IF
                     END IF
@@ -1990,6 +2020,7 @@ SUB __UI_EventDispatcher
             __UI_MouseIsDown = True
             __UI_MouseDownOnID = __UI_HoveringID
             __UI_PropertyGridMouseDown
+            __UI_DataGridMouseDown
 
             IF __UI_DesignMode AND __UI_MouseDownOnID = __UI_FormID THEN
                 __UI_SelectionRectangle = True
@@ -3356,6 +3387,7 @@ SUB __UI_EventDispatcher
 
     IF __UI_Focus > 0 AND __UI_KeyHit <> 0 AND __UI_DesignMode = False THEN
         __UI_PropertyGridKey
+        __UI_DataGridKey
         __UI_KeyPress __UI_Focus
         __UI_KeyboardFocus = True
 
@@ -4901,6 +4933,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
 
         __UI_UnBind This.ID
         __UI_PropertyGridForget This.ID
+        __UI_DataGridForget This.ID
 
         IF This.Type = __UI_Type_ListBox THEN
             IF __UI_ActiveDropdownList = This.ID THEN
@@ -6876,6 +6909,42 @@ FUNCTION __UI_TrimAt0$ (text AS STRING)
 END FUNCTION
 
 '---------------------------------------------------------------------------------
+
+''' @brief While input is locked (the designer's preview, while the editor shows a dialog for it), the form is
+''' dimmed a little and a notice says where to go, so it doesn't look like it stopped responding.
+''' Drawn on the software screen: the preview draws everything there (forms that run use hardware images).
+SUB __UI_DrawInputLockedNotice
+    DIM prevDest AS LONG, prevFont AS LONG, line1$, line2$, w AS LONG, h AS LONG, x AS LONG, y AS LONG, lh AS LONG
+    DIM back AS _UNSIGNED LONG, fore AS _UNSIGNED LONG
+
+    prevDest = _DEST
+    prevFont = _FONT
+    _DEST 0
+    IF Control(__UI_FormID).Font THEN _FONT Control(__UI_FormID).Font
+    _PRINTMODE _KEEPBACKGROUND
+    LINE (0, 0)-(_WIDTH - 1, _HEIGHT - 1), _RGBA32(0, 0, 0, 60), BF
+
+    line1$ = "Editing in UiEditor"
+    line2$ = "Click OK or Cancel in its dialog to edit here again"
+    lh = _UFONTHEIGHT
+    w = _MAX(__UI_PrintWidth(line1$), __UI_PrintWidth(line2$)) + 32
+    IF w > _WIDTH - 8 THEN w = _WIDTH - 8
+    h = lh * 2 + 20
+    x = (_WIDTH - w) \ 2
+    y = _HEIGHT - h - 12
+    IF y < 4 THEN y = 4
+    back = __UI_ThemeColor(__UI_ThemeColor_Accent)
+    fore = __UI_ThemeColor(__UI_ThemeColor_AccentText)
+    LINE (x + 2, y + 3)-STEP(w - 1, h - 1), _RGBA32(0, 0, 0, 70), BF
+    LINE (x, y)-STEP(w - 1, h - 1), back, BF
+    COLOR fore
+    __UI_PrintString x + (w - __UI_PrintWidth(line1$)) \ 2, y + 8, line1$
+    __UI_PrintString x + (w - __UI_PrintWidth(line2$)) \ 2, y + 10 + lh, line2$
+
+    _FONT prevFont
+    _DEST prevDest
+END SUB
+
 SUB __UI_MakeHardwareImage (This AS LONG)
     IF This >= -1 _ORELSE __UI_DesignMode THEN EXIT SUB
 
@@ -9989,3 +10058,4 @@ $END IF
 '$INCLUDE:'InFormTheme.bm'
 '$INCLUDE:'InFormTabControl.bm'
 '$INCLUDE:'InFormPropertyGrid.bm'
+'$INCLUDE:'InFormDataGrid.bm'
