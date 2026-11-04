@@ -21,6 +21,9 @@ $LET TEST_CONSOLE_ONLY = TRUE
 
 '$INCLUDE:'../InForm/InForm.bi'
 
+'Counts the __UI_ValueChanged events fired while a test runs (see Test_PropertyGrid)
+DIM SHARED TestValueChangedCount AS LONG, TestValueChangedID AS LONG
+
 SUB __UI_BeforeInit
     TEST_BEGIN_ALL
 
@@ -46,6 +49,11 @@ SUB __UI_BeforeInit
     Test_Theme
     Test_TabControl
     Test_Timer
+    Test_PropertyGrid
+    Test_DataGrid
+    Test_DataGridScrolling
+    Test_DataGridDefinitions
+    Test_DataGridCSV
 
     TEST_END_ALL
 END SUB
@@ -2641,13 +2649,1017 @@ SUB Test_Timer
     TEST_CASE_END
 END SUB
 
+''' @brief Gives a textbox focus the way the grid sees it: focus moves, then the screen updates.
+SUB TestPGFocus (id AS LONG)
+    __UI_Focus = id
+    __UI_PropertyGridsUpdate
+END SUB
+
+''' @brief Presses Enter (13) or Esc (27) in the focused control, as far as the grid is concerned.
+SUB TestPGKey (k AS LONG)
+    __UI_KeyHit = k
+    __UI_PropertyGridKey
+    __UI_KeyHit = 0
+END SUB
+
+''' @brief Presses the mouse button on a control (the mouse is where __UI_MouseLeft/Top say), then lets the grids update.
+SUB TestPGPress (id AS LONG)
+    __UI_MouseIsDown = True
+    __UI_MouseDownOnID = id
+    __UI_PropertyGridMouseDown
+    __UI_PropertyGridsUpdate
+END SUB
+
+SUB TestPGRelease
+    __UI_MouseIsDown = False
+    __UI_MouseDownOnID = 0
+    __UI_PropertyGridsUpdate
+END SUB
+
+SUB Test_PropertyGrid
+    DIM f AS LONG, f2 AS LONG, tb AS LONG, sz AS LONG, dd AS LONG, cb AS LONG, bt AS LONG, extra AS LONG
+    DIM lbl AS LONG, own AS LONG, events AS LONG
+
+    TEST_CASE_BEGIN "PropertyGrid: rows"
+
+    f = __UI_NewControl(__UI_Type_Frame, "TestPG", 230, 300, 0, 0, 0)
+    PropertyGrid_AddText f, "name", "Name"
+    PropertyGrid_AddInteger f, "size", "Size"
+    PropertyGrid_AddChoice f, "color", "Color", "Red|Green|Blue"
+    PropertyGrid_AddToggle f, "on", "Turned on"
+    PropertyGrid_AddButton f, "go", "Action", "Run"
+    tb = PropertyGrid_Control(f, "name")
+    sz = PropertyGrid_Control(f, "SIZE")
+    dd = PropertyGrid_Control(f, "color")
+    cb = PropertyGrid_Control(f, "on")
+    bt = PropertyGrid_Control(f, "go")
+
+    TEST_CHECK Control(tb).Type = __UI_Type_TextBox, "Text row has a textbox"
+    TEST_CHECK Control(sz).Type = __UI_Type_TextBox, "Keys ignore case"
+    TEST_CHECK Control(dd).Type = __UI_Type_DropdownList, "Choice row has a dropdown list"
+    TEST_CHECK Control(cb).Type = __UI_Type_CheckBox, "Toggle row has a check box"
+    TEST_CHECK Control(bt).Type = __UI_Type_Button, "Button row has a button"
+    TEST_CHECK Control(tb).ParentID = f, "Row controls go in the frame"
+    TEST_CHECK Caption(PropertyGrid_LabelControl(f, "name")) = "Name", "Label caption"
+    TEST_CHECK PropertyGrid_LabelControl(f, "on") = 0, "Toggle rows have no label"
+    TEST_CHECK Caption(cb) = "Turned on", "Toggle caption"
+    TEST_CHECK GetItem(dd, 2) = "Green", "Choice items"
+    TEST_CHECK PropertyGrid_Value(f, "color") = "1", "Choice starts on the first item"
+    TEST_CHECK PropertyGrid_Value(f, "size") = "0", "Number rows start at 0"
+    TEST_CHECK PropertyGrid_RowOf(bt) = "go", "Row of a control"
+    TEST_CHECK PropertyGrid_RowOf(PropertyGrid_LabelControl(f, "name")) = "name", "Row of a label"
+    TEST_CHECK PropertyGrid_GridOf(bt) = f, "Grid of a control"
+    TEST_CHECK PropertyGrid_RowOf(f) = "", "A frame is no row"
+    TEST_CHECK PropertyGrid_Control(f, "missing") = 0, "Missing row"
+    TEST_CHECK PropertyGrid_Value(f, "missing") = "", "Missing row has no value"
+    PropertyGrid_SetValue f, "missing", "x"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: layout"
+
+    PropertyGrid_Layout f
+    TEST_CHECK Control(tb).Top = 10 _ANDALSO Control(sz).Top = 32 _ANDALSO Control(dd).Top = 54, "Rows are stacked"
+    TEST_CHECK Control(cb).Top = 76 _ANDALSO Control(bt).Top = 98, "Rows are stacked to the end"
+    TEST_CHECK PropertyGrid_NextTop(f) = 120, "Next top"
+    TEST_CHECK Control(PropertyGrid_LabelControl(f, "name")).Left = 10 _ANDALSO Control(PropertyGrid_LabelControl(f, "name")).Width = 120, "Label column"
+    TEST_CHECK Control(tb).Left = 129 _ANDALSO Control(tb).Width = 94, "Value column fills the frame"
+    TEST_CHECK Control(cb).Left = 10 _ANDALSO Control(cb).Width = 213, "Toggles span both columns"
+
+    PropertyGrid_ShowRow f, "size", False
+    PropertyGrid_Layout f
+    TEST_CHECK Control(sz).Hidden _ANDALSO Control(PropertyGrid_LabelControl(f, "size")).Hidden, "Hidden row"
+    TEST_CHECK_FALSE PropertyGrid_RowShown(f, "size"), "Row reported hidden"
+    TEST_CHECK Control(dd).Top = 32, "Rows close the gap"
+
+    PropertyGrid_ShowOnly f, "name,go"
+    PropertyGrid_Layout f
+    TEST_CHECK Control(bt).Top = 32 _ANDALSO Control(dd).Hidden _ANDALSO Control(cb).Hidden, "Show only some rows"
+
+    PropertyGrid_ShowAll f, True
+    PropertyGrid_ShowRows f, "Name, size", False
+    PropertyGrid_Layout f
+    TEST_CHECK Control(tb).Hidden _ANDALSO Control(sz).Hidden _ANDALSO Control(dd).Top = 10, "Key lists can have spaces"
+    PropertyGrid_ShowAll f, True
+
+    PropertyGrid_SetFloating f, "size", True
+    Control(sz).Top = 200
+    PropertyGrid_Layout f
+    TEST_CHECK Control(sz).Top = 200 _ANDALSO Control(dd).Top = 32, "Floating rows stay put"
+    PropertyGrid_SetFloating f, "size", False
+
+    PropertyGrid_SetLayout f, 5, 20, 30, 60
+    PropertyGrid_Layout f
+    TEST_CHECK Control(tb).Top = 20 _ANDALSO Control(sz).Top = 50 _ANDALSO Control(tb).Left = 64, "Custom layout"
+    PropertyGrid_SetLayout f, 10, 10, 22, 120
+
+    extra = __UI_NewControl(__UI_Type_Button, "TestPGExtra", 23, 23, 100, 0, f)
+    PropertyGrid_AttachControl f, "color", extra
+    PropertyGrid_Layout f
+    TEST_CHECK Control(extra).Top = Control(dd).Top _ANDALSO Control(extra).Left = 100, "Attached control follows its row"
+    PropertyGrid_ShowRow f, "color", False
+    PropertyGrid_Layout f
+    TEST_CHECK Control(extra).Hidden, "Attached control hides with its row"
+    PropertyGrid_DetachControl extra
+    PropertyGrid_ShowRow f, "color", True
+    PropertyGrid_Layout f
+    TEST_CHECK Control(extra).Hidden, "Detached control is left alone"
+
+    PropertyGrid_SetLabel f, "name", "Title"
+    TEST_CHECK Caption(PropertyGrid_LabelControl(f, "name")) = "Title", "Label changed"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: editing"
+
+    TestValueChangedCount = 0
+    PropertyGrid_SetValue f, "name", "abc"
+    TEST_CHECK Text(tb) = "abc", "Value shown in an unfocused box"
+    Text(tb) = "stray"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Text(tb) = "abc", "Unfocused box keeps showing the value"
+
+    TestPGFocus tb
+    Text(tb) = "xyz"
+    TestPGKey 13
+    TEST_CHECK TestValueChangedCount = 1 _ANDALSO TestValueChangedID = f, "Enter fires the frame's event"
+    TEST_CHECK PropertyGrid_ChangedRow(f) = "name" _ANDALSO PropertyGrid_Value(f, "name") = "xyz", "Committed value"
+    TEST_CHECK Control(tb).TextIsSelected _ANDALSO Control(tb).Cursor = 3, "Text is selected after Enter"
+    TestPGKey 13
+    TEST_CHECK TestValueChangedCount = 1, "Enter again changes nothing"
+
+    Text(tb) = "junk"
+    TestPGKey 27
+    TEST_CHECK Text(tb) = "xyz" _ANDALSO TestValueChangedCount = 1, "Esc puts the value back"
+
+    TestPGFocus sz
+    Text(sz) = "12.6"
+    TestPGKey 13
+    TEST_CHECK PropertyGrid_Value(f, "size") = "13" _ANDALSO Text(sz) = "13", "Integer rows round"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Confirmed, "Box shows the value"
+
+    PropertyGrid_SetValue f, "size", "10"
+    TEST_CHECK Text(sz) = "13", "Focused box keeps its text"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Normal, "Not rejected right after the commit"
+    _DELAY .15
+    __UI_PropertyGridsUpdate
+    TEST_CHECK PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Rejected, "Rejected when the value differs"
+    TestPGKey 27
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Text(sz) = "10" _ANDALSO PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Confirmed, "Esc shows the value taken"
+
+    events = TestValueChangedCount
+    TestPGFocus tb
+    Text(tb) = "typed"
+    __UI_Focus = 0
+    PropertyGrid_SetValue f, "name", "from code"
+    TEST_CHECK Text(tb) = "typed", "Box that lost focus keeps its text until it's committed"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1 _ANDALSO PropertyGrid_Value(f, "name") = "typed", "Leaving a box commits it"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1, "Committed once"
+
+    Text(tb) = "from a dialog"
+    PropertyGrid_Commit f, "name"
+    TEST_CHECK TestValueChangedCount = events + 2 _ANDALSO PropertyGrid_Value(f, "name") = "from a dialog", "Commit from code"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: choices and toggles"
+
+    events = TestValueChangedCount
+    Control(dd).Value = 2
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1 _ANDALSO PropertyGrid_ChangedRow(f) = "color" _ANDALSO PropertyGrid_Value(f, "color") = "2", "Picking an item fires the event"
+    PropertyGrid_SetValue f, "color", "3"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(dd).Value = 3 _ANDALSO TestValueChangedCount = events + 1, "Setting a value from code fires nothing"
+
+    Control(cb).Value = True
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 2 _ANDALSO PropertyGrid_Value(f, "on") = "-1", "Checking fires the event"
+    PropertyGrid_SetValue f, "on", "0"
+    TEST_CHECK Control(cb).Value = 0, "Unchecked from code"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: adopted rows"
+
+    f2 = __UI_NewControl(__UI_Type_Frame, "TestPG2", 300, 200, 0, 0, 0)
+    lbl = __UI_NewControl(__UI_Type_Label, "TestPGOwnLB", 40, 23, 5, 0, f2)
+    own = __UI_NewControl(__UI_Type_TextBox, "TestPGOwnTB", 70, 23, 50, 0, f2)
+    Text(own) = "start"
+    PropertyGrid_AdoptRow f2, "own", lbl, own
+    PropertyGrid_AdoptRow f2, "list", 0, __UI_NewControl(__UI_Type_DropdownList, "TestPGOwnDD", 70, 23, 50, 0, f2)
+    PropertyGrid_Layout f2
+    TEST_CHECK PropertyGrid_Value(f2, "own") = "start", "Adopted textbox keeps its text as the value"
+    TEST_CHECK Control(own).Left = 50 _ANDALSO Control(own).Width = 70 _ANDALSO Control(lbl).Left = 5, "Adopted controls keep left and width"
+    TEST_CHECK Control(PropertyGrid_Control(f2, "list")).Top = 32, "Adopted rows are stacked"
+
+    events = TestValueChangedCount
+    TestPGFocus own
+    Text(own) = "edited"
+    TestPGKey 13
+    TEST_CHECK TestValueChangedCount = events + 1 _ANDALSO TestValueChangedID = f2, "Adopted textbox commits"
+    Control(PropertyGrid_Control(f2, "list")).Value = 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1, "Adopted dropdowns are left to the program"
+    __UI_Focus = 0
+    __UI_PropertyGridsUpdate
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: scrolling"
+
+    DIM fs AS LONG, i AS LONG, rowTB(1 TO 6) AS LONG
+    'Room for three rows: 100 high, rows from 10, 4 pixels at the bottom
+    fs = __UI_NewControl(__UI_Type_Frame, "TestPGScroll", 200, 100, 0, 0, 0)
+    FOR i = 1 TO 6
+        PropertyGrid_AddText fs, "r" + LTRIM$(STR$(i)), "Row" + STR$(i)
+        rowTB(i) = PropertyGrid_Control(fs, "r" + LTRIM$(STR$(i)))
+    NEXT
+    PropertyGrid_Layout fs
+    TEST_CHECK Control(rowTB(1)).Top = 10 _ANDALSO Control(rowTB(4)).Top = 76, "Rows start unscrolled"
+
+    'Six rows of 22 = 132 pixels in 86 (100 - 10 - 4): they scroll by up to 46 pixels
+    TEST_CHECK __UI_PropertyGridWheel(fs, 1), "Wheel over the frame scrolls"
+    TEST_CHECK Control(rowTB(1)).Top = -12 _ANDALSO Control(rowTB(2)).Top = 10, "A wheel notch scrolls a row"
+    TEST_CHECK Control(PropertyGrid_LabelControl(fs, "r1")).Top = -12, "Its label goes too"
+    TEST_CHECK_FALSE Control(rowTB(1)).Hidden, "Scrolled-out rows can still get focus"
+    TEST_CHECK __UI_PropertyGridWheel(rowTB(3), 10), "Wheel over a row scrolls its grid"
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Scrolling stops when the last row shows"
+    TEST_CHECK __UI_PropertyGridWheel(fs, -10), "Wheel back up"
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Back at the top"
+
+    TestPGFocus rowTB(6)
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Focused row is scrolled into view"
+    TestPGFocus rowTB(5)
+    TEST_CHECK Control(rowTB(6)).Top = 74, "A row already in view doesn't scroll"
+    TestPGFocus rowTB(1)
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Scrolled up just enough for a row above"
+    PropertyGrid_ScrollTo fs, "r6"
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Scroll to a row below"
+    PropertyGrid_ScrollTo fs, "r2"
+    TEST_CHECK Control(rowTB(2)).Top = 10, "Scroll to a row above"
+    __UI_Focus = 0
+    __UI_PropertyGridsUpdate
+
+    PropertyGrid_ShowRows fs, "r4,r5,r6", False
+    PropertyGrid_Layout fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Scroll resets when everything fits"
+    TEST_CHECK_FALSE __UI_PropertyGridWheel(fs, 1), "Nothing to scroll"
+    PropertyGrid_ShowAll fs, True
+    PropertyGrid_Layout fs
+
+    'Rows end before the scrollbar while there is one
+    DIM gs AS LONG, sbX AS LONG
+    gs = __UI_PGFind(fs)
+    TEST_CHECK Control(rowTB(1)).Left + Control(rowTB(1)).Width <= __UI_PropertyGrids(gs).SbLeft - 3, "Rows make room for the scrollbar"
+
+    'The scrollbar, part by part (mouse coordinates are the form's)
+    sbX = Control(fs).Left + __UI_PropertyGrids(gs).SbLeft + __UI_ScrollbarWidth \ 2
+    __UI_HoveringID = fs
+    __UI_MouseLeft = sbX
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).SbTop + __UI_PropertyGrids(gs).SbHeight - 4
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = -12 _ANDALSO Control(rowTB(2)).Top = 10, "Down button scrolls a row"
+    TestPGRelease
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).SbTop + 3
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Up button scrolls back"
+    TestPGRelease
+
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).TrackTop + __UI_PropertyGrids(gs).TrackHeight - 2
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Clicking the track below the thumb pages down"
+    TestPGRelease
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).TrackTop + 1
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Clicking the track above the thumb pages up"
+    TestPGRelease
+
+    'Dragging the thumb: it keeps the spot where it was grabbed
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).ThumbTop + 2
+    TestPGPress fs
+    TEST_CHECK __UI_PropertyGrids(gs).Dragging, "Thumb grabbed"
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Grabbing doesn't scroll"
+    'Every pixel the thumb moves scrolls the rows, not just whole rows
+    DIM room AS LONG
+    room = __UI_PropertyGrids(gs).TrackHeight - __UI_PropertyGrids(gs).ThumbHeight
+    __UI_MouseTop = __UI_MouseTop + 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(1)).Top < 10 _ANDALSO Control(rowTB(1)).Top > 10 - 22, "A small drag scrolls part of a row"
+    TEST_CHECK __UI_PropertyGrids(gs).ScrollY = _ROUND(46 / room), "Scrolled in proportion"
+    'Frames keep a picture of themselves: scrolling has to ask for a new one
+    Control(fs).Redraw = False
+    __UI_MouseTop = __UI_MouseTop + 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(fs).Redraw, "Dragging the thumb redraws the frame"
+    Control(fs).Redraw = False
+    __UI_PropertyGridsUpdate
+    TEST_CHECK_FALSE Control(fs).Redraw, "Nothing redrawn while the thumb stays put"
+    __UI_HoveringID = rowTB(2)
+    __UI_MouseDownOnID = 0
+    __UI_MouseTop = Control(fs).Top + 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Thumb dragged to the bottom, even off the scrollbar"
+    __UI_MouseTop = Control(fs).Top - 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(1)).Top = 10, "And back to the top"
+    TestPGRelease
+    __UI_MouseTop = Control(fs).Top + 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Releasing the button ends the drag"
+
+    'A drag that leaves the frame's area before the screen updates still counts
+    '(the engine forgets which control was pressed as soon as the mouse moves onto another one)
+    __UI_HoveringID = fs
+    __UI_MouseLeft = sbX
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).ThumbTop + 2
+    __UI_MouseIsDown = True
+    __UI_MouseDownOnID = fs
+    __UI_PropertyGridMouseDown
+    __UI_MouseDownOnID = 0
+    __UI_HoveringID = rowTB(3)
+    __UI_MouseTop = Control(fs).Top + 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Quick drag still moves the thumb"
+    TestPGRelease
+    PropertyGrid_ScrollTo fs, "r1"
+
+    'Pressing elsewhere in the frame doesn't touch the scrollbar
+    __UI_HoveringID = fs
+    __UI_MouseLeft = Control(fs).Left + 5
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).SbTop + __UI_PropertyGrids(gs).SbHeight - 4
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Press away from the scrollbar"
+    TestPGRelease
+    __UI_HoveringID = 0
+
+    dd = PropertyGrid_Control(f, "color")
+    __UI_Focus = dd
+    TEST_CHECK_FALSE __UI_PropertyGridWheel(dd, 1), "A focused dropdown keeps the wheel"
+    __UI_Focus = 0
+    __UI_PropertyGridsUpdate
+    __UI_DestroyControl Control(fs)
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: adopted rows make room for the scrollbar"
+
+    DIM fa AS LONG, a1 AS LONG, a2 AS LONG, a3 AS LONG, side AS LONG, leftOfIt AS LONG
+    'Two rows fit: 60 high, rows from 10, 4 pixels at the bottom
+    fa = __UI_NewControl(__UI_Type_Frame, "TestPGRoom", 200, 60, 0, 0, 0)
+    a1 = __UI_NewControl(__UI_Type_TextBox, "TestPGRoom1", 100, 23, 50, 0, fa)
+    a2 = __UI_NewControl(__UI_Type_TextBox, "TestPGRoom2", 145, 23, 50, 0, fa)
+    a3 = __UI_NewControl(__UI_Type_TextBox, "TestPGRoom3", 145, 23, 50, 0, fa)
+    side = __UI_NewControl(__UI_Type_Button, "TestPGRoomSide", 40, 23, 155, 0, fa)
+    leftOfIt = __UI_NewControl(__UI_Type_Button, "TestPGRoomLeft", 23, 23, 25, 0, fa)
+    PropertyGrid_AdoptRow fa, "one", 0, a1
+    PropertyGrid_AttachControl fa, "one", side
+    PropertyGrid_AttachControl fa, "one", leftOfIt
+    PropertyGrid_AdoptRow fa, "two", 0, a2
+    PropertyGrid_AdoptRow fa, "three", 0, a3
+    PropertyGrid_Layout fa
+    gs = __UI_PGFind(fa)
+    TEST_CHECK __UI_PropertyGrids(gs).MaxScrollY > 0, "Three rows don't fit"
+    TEST_CHECK Control(a2).Left = 50 _ANDALSO Control(a2).Left + Control(a2).Width <= __UI_PropertyGrids(gs).SbLeft - 3, "Wide control narrowed, left kept"
+    TEST_CHECK Control(side).Left + Control(side).Width <= __UI_PropertyGrids(gs).SbLeft - 3, "Control attached to its right slides left"
+    TEST_CHECK Control(a1).Width = 100 - (195 - (__UI_PropertyGrids(gs).SbLeft - 3)), "The row's control narrows by as much"
+    TEST_CHECK Control(leftOfIt).Left = 25, "Control attached to its left stays"
+    PropertyGrid_Layout fa
+    TEST_CHECK Control(a2).Width = 145 - (195 - (__UI_PropertyGrids(gs).SbLeft - 3)), "Laying out again doesn't narrow it more"
+
+    PropertyGrid_ShowRow fa, "three", False
+    PropertyGrid_Layout fa
+    TEST_CHECK __UI_PropertyGrids(gs).MaxScrollY = 0, "Two rows fit"
+    TEST_CHECK Control(a2).Width = 145 _ANDALSO Control(a1).Width = 100 _ANDALSO Control(side).Left = 155, "Everything back as it was"
+
+    PropertyGrid_ShowRow fa, "three", True
+    PropertyGrid_Layout fa
+    PropertyGrid_DetachControl side
+    TEST_CHECK Control(side).Left = 155, "Detaching puts it back"
+    __UI_DestroyControl Control(fa)
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: rows written in the designer"
+
+    DIM fd AS LONG, pKey AS STRING, pKind AS _BYTE, pLabel AS STRING, pExtra AS STRING
+    TEST_CHECK __UI_PGParseLine(" size | integer | Size ", pKey, pKind, pLabel, pExtra), "Line parsed"
+    TEST_CHECK pKey = "size" _ANDALSO pKind = __UI_PropertyGrid_Integer _ANDALSO pLabel = "Size" _ANDALSO pExtra = "", "Key, kind and label, trimmed"
+    TEST_CHECK __UI_PGParseLine("Nickname", pKey, pKind, pLabel, pExtra), "Label-only line parsed"
+    TEST_CHECK pKey = "Nickname" _ANDALSO pKind = __UI_PropertyGrid_Text _ANDALSO pLabel = "Nickname", "Label-only line is a text row"
+    TEST_CHECK __UI_PGParseLine("c|CHOICE|Color|Red,Green|extra", pKey, pKind, pLabel, pExtra), "Choice line parsed"
+    TEST_CHECK pKind = __UI_PropertyGrid_Choice _ANDALSO pExtra = "Red,Green|extra", "Kinds ignore case; the last field takes the rest"
+    TEST_CHECK __UI_PGParseLine("x|toggle", pKey, pKind, pLabel, pExtra) _ANDALSO pLabel = "x", "Missing label falls back to the key"
+    TEST_CHECK_FALSE __UI_PGParseLine("   ", pKey, pKind, pLabel, pExtra), "Blank line skipped"
+
+    fd = __UI_NewControl(__UI_Type_Frame, "TestPGDesigned", 230, 300, 0, 0, 0)
+    'As saved in a .frm file (\10; line breaks) and typed in code (\n)
+    Text(fd) = "size|integer|Size\10;color|choice|Color|Red,Green,Blue\n\nfilled|toggle|Filled" + CHR$(13) + CHR$(10) + "reset|button|Defaults|Reset\10;Notes"
+    __UI_PropertyGridsFromForm
+    TEST_CHECK Control(PropertyGrid_Control(fd, "size")).Type = __UI_Type_TextBox, "Integer row built"
+    TEST_CHECK GetItem(PropertyGrid_Control(fd, "color"), 3) = "Blue", "Choice items built"
+    TEST_CHECK Control(PropertyGrid_Control(fd, "filled")).Type = __UI_Type_CheckBox, "Toggle row built"
+    TEST_CHECK Caption(PropertyGrid_Control(fd, "reset")) = "Reset", "Button caption"
+    TEST_CHECK Caption(PropertyGrid_LabelControl(fd, "notes")) = "Notes", "Label-only row built"
+    PropertyGrid_Layout fd
+    TEST_CHECK Control(PropertyGrid_Control(fd, "filled")).Top = 54, "Blank lines leave no gap"
+    pKey = STR$(PropertyGrid_Control(fd, "size"))
+    __UI_PropertyGridsFromForm
+    TEST_CHECK PropertyGrid_Control(fd, "size") = VAL(pKey), "Building twice changes nothing"
+    __UI_DestroyControl Control(fd)
+
+    'The last field is the starting value of text, number and toggle rows
+    fd = __UI_NewControl(__UI_Type_Frame, "TestPGStart", 230, 300, 0, 0, 0)
+    Text(fd) = "n|integer|N|4.6\nf|float|F|2.50\non|toggle|On|-1\noff|toggle|Off|0\nt|text|T|hello\nz|integer|Z"
+    __UI_PropertyGridsFromForm
+    TEST_CHECK PropertyGrid_Value(fd, "n") = "5" _ANDALSO Text(PropertyGrid_Control(fd, "n")) = "5", "An integer row starts rounded"
+    TEST_CHECK PropertyGrid_Value(fd, "f") = "2.5", "A float row starts with its number"
+    TEST_CHECK Control(PropertyGrid_Control(fd, "on")).Value <> 0 _ANDALSO Control(PropertyGrid_Control(fd, "off")).Value = 0, "A toggle starts checked when it isn't 0"
+    TEST_CHECK PropertyGrid_Value(fd, "t") = "hello", "A text row starts with its text"
+    TEST_CHECK PropertyGrid_Value(fd, "z") = "0", "Without a value, a number row starts at 0"
+    __UI_DestroyControl Control(fd)
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: destroying controls"
+
+    __UI_DestroyControl Control(sz)
+    TEST_CHECK PropertyGrid_Control(f, "size") = 0, "Destroyed control's row is gone"
+    PropertyGrid_Layout f
+    TEST_CHECK Control(dd).Top = 32, "Other rows close the gap"
+
+    __UI_DestroyControl Control(f)
+    TEST_CHECK PropertyGrid_Control(f, "name") = 0, "Destroyed frame's rows are gone"
+    TEST_CHECK PropertyGrid_GridOf(tb) = 0, "Its controls no longer belong to a grid"
+    events = TestValueChangedCount
+    Control(dd).Value = 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events, "A forgotten grid fires nothing"
+
+    TEST_CASE_END
+END SUB
+
+''' @brief Presses a key in the focused control, as far as data grids are concerned. Returns what's left of the key.
+FUNCTION TestDGKey& (k AS LONG)
+    __UI_KeyHit = k
+    __UI_DataGridKey
+    TestDGKey = __UI_KeyHit
+    __UI_KeyHit = 0
+END FUNCTION
+
+''' @brief Presses and releases the mouse button at a point of a frame (in the frame's coordinates).
+SUB TestDGClick (id AS LONG, x AS LONG, y AS LONG)
+    __UI_MouseLeft = Control(id).Left + x
+    __UI_MouseTop = Control(id).Top + y
+    __UI_HoveringID = id
+    __UI_Focus = id
+    __UI_MouseIsDown = True
+    __UI_MouseDownOnID = id
+    __UI_DataGridMouseDown
+    __UI_DataGridsUpdate
+    __UI_MouseIsDown = False
+    __UI_MouseDownOnID = 0
+    __UI_DataGridsUpdate
+END SUB
+
+SUB Test_DataGrid
+    DIM g AS LONG, r AS LONG, ed AS LONG, events AS LONG, i AS LONG, k AS LONG
+
+    TEST_CASE_BEGIN "DataGrid: columns and rows"
+
+    'No border and the default font: rows (and the header) are 24 high, rows start at 25
+    g = __UI_NewControl(__UI_Type_Frame, "TestDG", 300, 100, 0, 0, 0)
+    Control(g).HasBorder = False
+    DataGrid_AddTextColumn g, "Name", 100
+    DataGrid_AddChoiceColumn g, "Color", 80, "Red|Green|Blue"
+    DataGrid_AddIntegerColumn g, "Size", 60
+    DataGrid_AddToggleColumn g, "On", 0
+    TEST_CHECK DataGrid_ColumnCount(g) = 4, "Four columns"
+    TEST_CHECK Control(g).CanHaveFocus, "A grid can have focus"
+    TEST_CHECK DataGrid_RowCount(g) = 0, "No rows yet"
+
+    r = DataGrid_AddRow(g, "apple|Red|3|-1")
+    TEST_CHECK r = 1, "First row"
+    r = DataGrid_AddRow(g, "pear")
+    TEST_CHECK r = 2, "Second row"
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "apple" _ANDALSO DataGrid_Cell(g, 1, 4) = "-1", "Cells from a list"
+    TEST_CHECK DataGrid_Cell(g, 2, 2) = "Red", "A choice starts on its first item"
+    TEST_CHECK DataGrid_Cell(g, 2, 3) = "0" _ANDALSO DataGrid_Cell(g, 2, 4) = "0", "Numbers and toggles start at 0"
+    r = DataGrid_InsertRow(g, 1, "fig|Blue|7|0")
+    TEST_CHECK r = 1 _ANDALSO DataGrid_Cell(g, 1, 1) = "fig" _ANDALSO DataGrid_Cell(g, 2, 1) = "apple", "Insert before a row"
+    DataGrid_SetCell g, 3, 1, "a|b"
+    TEST_CHECK DataGrid_Cell(g, 3, 1) = "a|b", "A cell can hold anything set directly"
+    TEST_CHECK DataGrid_Cell(g, 9, 1) = "" _ANDALSO DataGrid_Cell(g, 1, 9) = "", "Missing cells are empty"
+
+    DataGrid_Select g, 2, 1
+    TEST_CHECK DataGrid_Row(g) = 2 _ANDALSO DataGrid_Column(g) = 1, "Select a cell"
+    DataGrid_MoveRow g, 2, 3
+    TEST_CHECK DataGrid_Cell(g, 3, 1) = "apple" _ANDALSO DataGrid_Cell(g, 2, 1) = "a|b", "Move a row down"
+    TEST_CHECK DataGrid_Row(g) = 3, "The current cell goes with its row"
+    DataGrid_MoveRow g, 3, 1
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "apple" _ANDALSO DataGrid_Cell(g, 2, 1) = "fig", "Move a row to the top"
+    DataGrid_RemoveRow g, 1
+    TEST_CHECK DataGrid_RowCount(g) = 2 _ANDALSO DataGrid_Cell(g, 1, 1) = "fig", "Remove a row"
+    TEST_CHECK DataGrid_Row(g) = 1, "The current cell stays on the same row number"
+    DataGrid_RemoveRow g, 2
+    DataGrid_RemoveRow g, 1
+    TEST_CHECK DataGrid_RowCount(g) = 0 _ANDALSO DataGrid_Row(g) = 0, "No rows, no current cell"
+    r = DataGrid_AddRow(g, "kiwi")
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "kiwi", "Places of removed rows are used again"
+    DataGrid_Clear g
+    TEST_CHECK DataGrid_RowCount(g) = 0, "Clear"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: keyboard"
+
+    FOR i = 1 TO 6
+        r = DataGrid_AddRow(g, "row" + LTRIM$(STR$(i)) + "|Green|" + LTRIM$(STR$(i)) + "|0")
+    NEXT
+    __UI_Focus = g
+    TestValueChangedCount = 0
+    k = TestDGKey(_KEY_DOWN)
+    TEST_CHECK DataGrid_Row(g) = 1 _ANDALSO DataGrid_Column(g) = 1, "The first key picks the first cell"
+    TEST_CHECK TestValueChangedCount = 1 _ANDALSO TestValueChangedID = g, "Moving fires __UI_ValueChanged on the frame"
+    TEST_CHECK DataGrid_ChangedColumn(g) = 0 _ANDALSO DataGrid_ChangedRow(g) = 1, "Column 0: the current cell moved"
+    k = TestDGKey(_KEY_DOWN)
+    k = TestDGKey(_KEY_RIGHT)
+    TEST_CHECK DataGrid_Row(g) = 2 _ANDALSO DataGrid_Column(g) = 2, "Arrows move"
+    TEST_CHECK k = _KEY_RIGHT, "Arrows still reach __UI_KeyPress"
+    k = TestDGKey(_KEY_END)
+    TEST_CHECK DataGrid_Column(g) = 4, "End goes to the last column"
+    k = TestDGKey(_KEY_HOME)
+    TEST_CHECK DataGrid_Column(g) = 1, "Home goes to the first column"
+    k = TestDGKey(_KEY_PAGEDOWN)
+    TEST_CHECK DataGrid_Row(g) = 4, "Page down moves by a page (3 rows show, so 2)"
+    k = TestDGKey(_KEY_PAGEDOWN)
+    k = TestDGKey(_KEY_PAGEDOWN)
+    TEST_CHECK DataGrid_Row(g) = 6, "Not past the last row"
+    __UI_DataGridsUpdate
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 3, "The current row is scrolled into view"
+    k = TestDGKey(_KEY_UP)
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 3, "A row in view doesn't scroll"
+    DataGrid_Select g, 1, 1
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 0, "Selecting a row above scrolls up"
+
+    'Tab goes from cell to cell, and out of the grid past the last one
+    __UI_KeyHit = 9
+    TEST_CHECK __UI_DataGridTab, "Tab moves to the next cell"
+    TEST_CHECK DataGrid_Column(g) = 2, "Next cell"
+    DataGrid_Select g, 6, 4
+    TEST_CHECK_FALSE __UI_DataGridTab, "Tab on the last cell leaves the grid"
+    __UI_KeyHit = 0
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: editing"
+
+    DataGrid_Select g, 2, 1
+    __UI_Focus = g
+    TestValueChangedCount = 0
+    k = TestDGKey(13)
+    TEST_CHECK DataGrid_IsEditing(g), "Enter starts editing"
+    ed = __UI_Focus
+    TEST_CHECK Control(ed).Type = __UI_Type_TextBox _ANDALSO Control(ed).ParentID = g, "A box in the frame"
+    TEST_CHECK DataGrid_GridOf(ed) = g _ANDALSO DataGrid_GridOf(g) = g, "The box belongs to the grid"
+    TEST_CHECK Text(ed) = "row2" _ANDALSO Control(ed).TextIsSelected, "It holds the cell, selected"
+    'Row 2 shows at the top (the grid was scrolled down to row 6, then up just enough for row 2)
+    TEST_CHECK Control(ed).Top = 25 - 1 _ANDALSO Control(ed).Left = 0 _ANDALSO Control(ed).Width = 100 + 1, "It sits on the cell"
+    TEST_CHECK TestDGKey(-13) = 0, "Releasing Enter doesn't click the default button"
+    Text(ed) = "changed"
+    k = TestDGKey(13)
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "Enter ends editing"
+    TEST_CHECK __UI_Focus = g _ANDALSO Control(ed).Hidden, "The grid has focus again"
+    TEST_CHECK DataGrid_Cell(g, 2, 1) = "changed", "The new value is kept"
+    TEST_CHECK TestValueChangedCount = 1 _ANDALSO DataGrid_ChangedRow(g) = 2 _ANDALSO DataGrid_ChangedColumn(g) = 1, "Its change fires __UI_ValueChanged"
+
+    k = TestDGKey(13)
+    Text(ed) = "dropped"
+    k = TestDGKey(27)
+    TEST_CHECK DataGrid_Cell(g, 2, 1) = "changed" _ANDALSO TestValueChangedCount = 1, "Esc puts the old value back"
+
+    k = TestDGKey(ASC("x"))
+    TEST_CHECK DataGrid_IsEditing(g) _ANDALSO Text(ed) = "x" _ANDALSO k = 0, "Typing starts editing with that key"
+    __UI_Focus = 0
+    __UI_DataGridsUpdate
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "Leaving the box ends editing"
+    TEST_CHECK DataGrid_Cell(g, 2, 1) = "x", "and keeps what was typed"
+
+    __UI_Focus = g
+    DataGrid_Select g, 2, 3
+    k = TestDGKey(ASC("a"))
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "Letters don't start editing a number"
+    k = TestDGKey(ASC("4"))
+    Text(ed) = "4.6"
+    k = TestDGKey(_KEY_DOWN)
+    TEST_CHECK DataGrid_Cell(g, 2, 3) = "5", "Integers are rounded"
+    TEST_CHECK DataGrid_Row(g) = 3 _ANDALSO NOT DataGrid_IsEditing(g), "Down keeps the value and moves down"
+    k = TestDGKey(_KEY_DELETE)
+    TEST_CHECK DataGrid_Cell(g, 3, 3) = "0", "Delete clears a number to 0"
+
+    DataGrid_Select g, 3, 4
+    k = TestDGKey(32)
+    TEST_CHECK DataGrid_Cell(g, 3, 4) = "-1", "Space checks a toggle"
+    k = TestDGKey(32)
+    TEST_CHECK DataGrid_Cell(g, 3, 4) = "0", "and unchecks it"
+
+    DataGrid_Select g, 3, 2
+    k = TestDGKey(ASC("b"))
+    TEST_CHECK DataGrid_Cell(g, 3, 2) = "Blue", "A letter picks the next item starting with it"
+    k = TestDGKey(ASC("r"))
+    TEST_CHECK DataGrid_Cell(g, 3, 2) = "Red", "Another letter, another item"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: mouse"
+
+    __UI_Focus = g
+    DataGrid_Select g, 1, 1
+    __UI_DataGridsUpdate
+    TestValueChangedCount = 0
+    'Row 1 is at 25..48, column 3 at 181..240 (100 + 80 + 1)
+    TestDGClick g, 200, 30
+    TEST_CHECK DataGrid_Row(g) = 1 _ANDALSO DataGrid_Column(g) = 3, "A click picks a cell"
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "but doesn't edit it"
+    TestDGClick g, 200, 30
+    TEST_CHECK DataGrid_IsEditing(g), "Clicking the current cell again edits it"
+    TestDGClick g, 50, 55
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "Clicking elsewhere ends editing"
+    TEST_CHECK DataGrid_Row(g) = 2 _ANDALSO DataGrid_Column(g) = 1, "and picks that cell"
+    TestDGClick g, 270, 55
+    TEST_CHECK DataGrid_Cell(g, 2, 4) = "-1", "A click on a toggle flips it"
+    TestDGClick g, 50, 10
+    TEST_CHECK DataGrid_Row(g) = 2, "A click on the header doesn't move"
+
+    'Six rows, three show: a scrollbar at the right
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).MaxTopRow = 3, "Three rows don't fit"
+    TEST_CHECK __UI_DataGridWheel(g, 1), "The wheel scrolls"
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 3, "three rows a notch"
+    Control(g).Redraw = False
+    __UI_DataGridsUpdate
+    TEST_CHECK Control(g).Redraw, "Scrolling redraws the frame"
+    Control(g).Redraw = False
+    __UI_DataGridsUpdate
+    TEST_CHECK_FALSE Control(g).Redraw, "Nothing redrawn when nothing changed"
+    TEST_CHECK __UI_DataGridWheel(g, -5), "Wheel back up"
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 0, "Back at the top"
+    TestDGClick g, 300 - 5, 100 - 8
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 1, "The scrollbar's down button scrolls a row"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: the row cut off at the bottom"
+
+    'Rows 25..96 show whole; the next row starts at 97 and is cut off at 99
+    DataGrid_Select g, 1, 1
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 0, "Scrolled to the top"
+    TestDGClick g, 50, 98
+    TEST_CHECK DataGrid_Row(g) = 4, "A click on the row cut off picks it"
+    TEST_CHECK __UI_DataGrids(__UI_DGFind(g)).TopRow = 1, "and scrolls it into full view"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: selecting rows"
+
+    __UI_Focus = g
+    DataGrid_Select g, 2, 1
+    TEST_CHECK DataGrid_SelectionFirst(g) = 2 _ANDALSO DataGrid_SelectionLast(g) = 2, "The current row is selected"
+    __UI_ShiftIsDown = True
+    k = TestDGKey(_KEY_DOWN)
+    k = TestDGKey(_KEY_DOWN)
+    __UI_ShiftIsDown = False
+    TEST_CHECK DataGrid_Row(g) = 4, "Shift+Down moves the current cell"
+    TEST_CHECK DataGrid_SelectionFirst(g) = 2 _ANDALSO DataGrid_SelectionLast(g) = 4, "and selects the rows on the way"
+    TEST_CHECK DataGrid_RowSelected(g, 3) _ANDALSO NOT DataGrid_RowSelected(g, 5), "Rows in the range"
+    k = TestDGKey(_KEY_DELETE)
+    TEST_CHECK k = _KEY_DELETE _ANDALSO DataGrid_Cell(g, 4, 1) = "row4", "Delete with several rows selected is left to the program"
+    k = TestDGKey(_KEY_UP)
+    TEST_CHECK DataGrid_SelectionFirst(g) = 3 _ANDALSO DataGrid_SelectionLast(g) = 3, "Moving without Shift leaves one row selected"
+
+    __UI_ShiftIsDown = True
+    k = TestDGKey(_KEY_UP)
+    __UI_ShiftIsDown = False
+    TEST_CHECK DataGrid_SelectionFirst(g) = 2 _ANDALSO DataGrid_SelectionLast(g) = 3, "Selecting upwards"
+
+    'Shift+click
+    DataGrid_Select g, 1, 1
+    __UI_DataGridsUpdate
+    __UI_ShiftIsDown = True
+    TestDGClick g, 50, 80
+    __UI_ShiftIsDown = False
+    TEST_CHECK DataGrid_Row(g) = 3 _ANDALSO DataGrid_SelectionFirst(g) = 1 _ANDALSO DataGrid_SelectionLast(g) = 3, "Shift+click selects a range"
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "Shift+click doesn't edit"
+
+    'Dragging from row 1 down to row 2
+    __UI_MouseLeft = Control(g).Left + 50
+    __UI_MouseTop = Control(g).Top + 30
+    __UI_HoveringID = g
+    __UI_MouseIsDown = True
+    __UI_MouseDownOnID = g
+    __UI_DataGridMouseDown
+    __UI_DataGridsUpdate
+    TEST_CHECK DataGrid_SelectionFirst(g) = 1 _ANDALSO DataGrid_SelectionLast(g) = 1, "A press picks one row"
+    __UI_MouseTop = Control(g).Top + 55
+    __UI_DataGridsUpdate
+    TEST_CHECK DataGrid_Row(g) = 2 _ANDALSO DataGrid_SelectionFirst(g) = 1 _ANDALSO DataGrid_SelectionLast(g) = 2, "Dragging selects rows"
+    __UI_MouseTop = Control(g).Top + 200
+    __UI_DataGridsUpdate
+    TEST_CHECK DataGrid_Row(g) = 4 _ANDALSO __UI_DataGrids(__UI_DGFind(g)).TopRow = 1, "Dragging below scrolls a row at a time"
+    __UI_MouseIsDown = False
+    __UI_MouseDownOnID = 0
+    __UI_DataGridsUpdate
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "A drag doesn't edit"
+
+    'Moving and removing the selection
+    DataGrid_SelectRows g, 2, 3
+    TEST_CHECK DataGrid_Row(g) = 3 _ANDALSO DataGrid_SelectionFirst(g) = 2 _ANDALSO DataGrid_SelectionLast(g) = 3, "Select rows from code"
+    DIM c1 AS STRING, c2 AS STRING, c3 AS STRING, rows AS LONG
+    c1 = DataGrid_Cell(g, 1, 1): c2 = DataGrid_Cell(g, 2, 1): c3 = DataGrid_Cell(g, 3, 1)
+    DataGrid_MoveSelection g, -1
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = c2 _ANDALSO DataGrid_Cell(g, 2, 1) = c3 _ANDALSO DataGrid_Cell(g, 3, 1) = c1, "Move the selected rows up"
+    TEST_CHECK DataGrid_SelectionFirst(g) = 1 _ANDALSO DataGrid_SelectionLast(g) = 2 _ANDALSO DataGrid_Row(g) = 2, "They stay selected"
+    DataGrid_MoveSelection g, -1
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = c2, "Not past the top"
+    DataGrid_MoveSelection g, 1
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = c1 _ANDALSO DataGrid_Cell(g, 2, 1) = c2 _ANDALSO DataGrid_Cell(g, 3, 1) = c3, "and back down"
+    rows = DataGrid_RowCount(g)
+    DataGrid_RemoveSelection g
+    TEST_CHECK DataGrid_RowCount(g) = rows - 2 _ANDALSO DataGrid_Cell(g, 1, 1) = c1, "Remove the selected rows"
+    TEST_CHECK DataGrid_Row(g) = 2 _ANDALSO DataGrid_SelectionLast(g) = 2, "The row after them is current"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: a cell's own kind"
+
+    r = DataGrid_InsertRow(g, 1, "own")
+    TEST_CHECK DataGrid_CellKind(g, 1, 1) = __UI_DataGrid_Text, "A cell has its column's kind"
+    DataGrid_SetCellKind g, 1, 1, __UI_DataGrid_Toggle
+    TEST_CHECK DataGrid_CellKind(g, 1, 1) = __UI_DataGrid_Toggle _ANDALSO DataGrid_CellKind(g, 2, 1) = __UI_DataGrid_Text, "until it gets one of its own"
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "own", "Its value isn't changed"
+    DataGrid_SetCell g, 1, 1, "0"
+    DataGrid_Select g, 1, 1
+    __UI_Focus = g
+    events = TestValueChangedCount
+    k = TestDGKey(32)
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "-1" _ANDALSO NOT DataGrid_IsEditing(g), "Space flips it like a toggle column's"
+    TEST_CHECK TestValueChangedCount = events + 1, "and fires __UI_ValueChanged"
+    DataGrid_MoveRow g, 1, 2
+    TEST_CHECK DataGrid_CellKind(g, 2, 1) = __UI_DataGrid_Toggle _ANDALSO DataGrid_CellKind(g, 1, 1) = __UI_DataGrid_Text, "The kind moves with its row"
+    DataGrid_SetCellKind g, 2, 1, __UI_DataGrid_Integer
+    DataGrid_Select g, 2, 1
+    k = TestDGKey(ASC("4"))
+    k = TestDGKey(ASC("."))
+    k = TestDGKey(ASC("6"))
+    Text(__UI_Focus) = "4.6"
+    k = TestDGKey(13)
+    TEST_CHECK DataGrid_Cell(g, 2, 1) = "5", "An integer cell rounds what's typed"
+    DataGrid_SetCellKind g, 2, 1, 0
+    TEST_CHECK DataGrid_CellKind(g, 2, 1) = __UI_DataGrid_Text, "0 gives it its column's kind back"
+    DataGrid_RemoveRow g, 2
+    r = DataGrid_AddRow(g, "new")
+    TEST_CHECK DataGrid_CellKind(g, r, 1) = __UI_DataGrid_Text, "A new row in a reused place starts with its columns' kinds"
+    DataGrid_RemoveRow g, r
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: destroying the frame"
+
+    events = TestValueChangedCount
+    __UI_DestroyControl Control(g)
+    TEST_CHECK __UI_DGFind(g) = 0, "The grid goes with its frame"
+    TEST_CHECK Control(ed).ID = 0, "and so does its box"
+    __UI_DataGridsUpdate
+    TEST_CHECK TestValueChangedCount = events, "A forgotten grid fires nothing"
+
+    TEST_CASE_END
+    __UI_Focus = 0
+END SUB
+
+SUB Test_DataGridScrolling
+    DIM g AS LONG, r AS LONG, i AS LONG, k AS LONG, dg AS LONG, cols AS LONG, x AS LONG, y AS LONG
+
+    TEST_CASE_BEGIN "DataGrid: sideways scrolling"
+
+    'Four 80-pixel columns don't fit in 200 pixels
+    g = __UI_NewControl(__UI_Type_Frame, "TestDGWide", 200, 150, 0, 0, 0)
+    Control(g).HasBorder = False
+    FOR i = 1 TO 4
+        DataGrid_AddTextColumn g, "C" + LTRIM$(STR$(i)), 80
+    NEXT
+    r = DataGrid_AddRow(g, "a1|a2|a3|a4")
+    r = DataGrid_AddRow(g, "b1|b2|b3|b4")
+    dg = __UI_DGFind(g)
+    __UI_DGMeasure dg
+    TEST_CHECK __UI_DataGrids(dg).MaxLeftCol = 2, "Columns that don't fit scroll (two have to go for the last two to show)"
+    TEST_CHECK __UI_DataGrids(dg).BodyBottom = __UI_DataGrids(dg).AreaBottom - __UI_ScrollbarWidth, "The horizontal scrollbar takes room from the rows"
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 0, "Starts at the first column"
+
+    DataGrid_Select g, 1, 4
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 2, "Selecting a column out of view scrolls to it"
+    TEST_CHECK __UI_DataGridCols(__UI_DGCol(dg, 4)).Right <= __UI_DGContentRight(dg), "and it shows whole"
+    TEST_CHECK_FALSE __UI_DGColInView(dg, 1), "The first column is scrolled out"
+    DataGrid_Select g, 1, 2
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 1, "Going back left scrolls to the column"
+
+    DataGrid_Select g, 1, 1
+    __UI_Focus = g
+    k = TestDGKey(_KEY_RIGHT)
+    k = TestDGKey(_KEY_RIGHT)
+    TEST_CHECK DataGrid_Column(g) = 3 _ANDALSO __UI_DataGrids(dg).LeftCol = 1, "Arrow keys scroll sideways"
+    k = TestDGKey(_KEY_HOME)
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 0, "Home scrolls back"
+
+    'A click on the scrollbar's right button scrolls a column; the scrollbar isn't a cell
+    __UI_DGMeasure dg
+    x = __UI_DataGrids(dg).HbLeft + __UI_DataGrids(dg).HbWidth - 4
+    y = __UI_DataGrids(dg).HbTop + 4
+    TEST_CHECK __UI_DGHScrollbarPart(dg, x, y) = 2, "The right button is at the scrollbar's end"
+    TestDGClick g, x, y
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 1, "Clicking it scrolls a column"
+    TEST_CHECK DataGrid_Row(g) = 1 _ANDALSO DataGrid_Column(g) = 1, "and doesn't move the current cell"
+    TestDGClick g, __UI_DataGrids(dg).HbLeft + 3, y
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 0, "The left button scrolls back"
+
+    'The wheel scrolls sideways with Shift, or when every row fits
+    TEST_CHECK __UI_DataGridWheel(g, 1), "The wheel scrolls"
+    TEST_CHECK __UI_DataGrids(dg).LeftCol = 1, "sideways, when every row fits"
+    FOR i = 1 TO 10
+        r = DataGrid_AddRow(g, "")
+    NEXT
+    TEST_CHECK __UI_DataGridWheel(g, 1) _ANDALSO __UI_DataGrids(dg).LeftCol = 1 _ANDALSO __UI_DataGrids(dg).TopRow > 0, "With rows to scroll, the wheel scrolls them"
+    __UI_ShiftIsDown = True
+    TEST_CHECK __UI_DataGridWheel(g, -1) _ANDALSO __UI_DataGrids(dg).LeftCol = 0, "and Shift+wheel scrolls sideways"
+    __UI_ShiftIsDown = False
+
+    'Room enough: no sideways scrolling
+    Control(g).Width = 400
+    __UI_DGMeasure dg
+    TEST_CHECK __UI_DataGrids(dg).MaxLeftCol = 0, "Columns that fit don't scroll"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "DataGrid: removing columns and row tags"
+
+    DataGrid_Clear g
+    r = DataGrid_AddRow(g, "a1|a2|a3|a4")
+    r = DataGrid_AddRow(g, "b1|b2|b3|b4")
+    DataGrid_SetCellKind g, 1, 3, __UI_DataGrid_Toggle
+    DataGrid_Select g, 2, 4
+    cols = __UI_TotalDataGridCols
+    DataGrid_RemoveColumn g, 2
+    TEST_CHECK DataGrid_ColumnCount(g) = 3, "A column is removed"
+    TEST_CHECK DataGrid_Cell(g, 1, 2) = "a3" _ANDALSO DataGrid_Cell(g, 2, 3) = "b4", "and its cells, in every row"
+    TEST_CHECK DataGrid_CellKind(g, 1, 2) = __UI_DataGrid_Toggle, "A cell's own kind moves with it"
+    TEST_CHECK DataGrid_Column(g) = 3, "The current cell stays on its column"
+    DataGrid_AddTextColumn g, "New", 0
+    TEST_CHECK __UI_TotalDataGridCols = cols, "A new column takes the removed one's place"
+    TEST_CHECK DataGrid_Cell(g, 1, 4) = "", "and starts empty"
+
+    TEST_CHECK DataGrid_RowTag(g, 1) = "", "Rows have no tag at first"
+    DataGrid_SetRowTag g, 1, "first"
+    DataGrid_MoveRow g, 1, 2
+    TEST_CHECK DataGrid_RowTag(g, 2) = "first" _ANDALSO DataGrid_RowTag(g, 1) = "", "A tag moves with its row"
+    DataGrid_RemoveRow g, 2
+    r = DataGrid_AddRow(g, "")
+    TEST_CHECK DataGrid_RowTag(g, r) = "", "A new row has no tag, even in a reused place"
+
+    __UI_DestroyControl Control(g)
+    TEST_CASE_END
+    __UI_Focus = 0
+END SUB
+
+SUB Test_DataGridDefinitions
+    DIM f AS LONG, f2 AS LONG, dg AS LONG
+
+    TEST_CASE_BEGIN "DataGrid: grids written in the designer"
+
+    TEST_CHECK __UI_IsDataGridDefinition("#columns\nName"), "A definition starts with #columns"
+    TEST_CHECK __UI_IsDataGridDefinition(CHR$(10) + "  #Columns " + CHR$(10) + "Name"), "after blank lines, in any case"
+    TEST_CHECK_FALSE __UI_IsDataGridDefinition("name|text|Name"), "Property grid rows aren't one"
+    TEST_CHECK_FALSE __UI_IsDataGridDefinition(""), "Nor is empty text"
+
+    f = __UI_NewControl(__UI_Type_Frame, "TestDGDef", 300, 150, 0, 0, 0)
+    Text(f) = "#columns\nName|text|100\nColor|choice|80|Red,Green\nQty|integer\n#rows\napple|Green|3\n\npear\n\n"
+    __UI_PropertyGridsFromForm
+    TEST_CHECK __UI_PGFind(f) = 0, "A grid definition doesn't make property grid rows"
+    __UI_DataGridsFromForm
+    dg = __UI_DGFind(f)
+    TEST_CHECK dg > 0, "The frame becomes a data grid when the program starts"
+    TEST_CHECK Control(f).CanHaveFocus, "that can have focus"
+    TEST_CHECK DataGrid_ColumnCount(f) = 3, "with its columns"
+    TEST_CHECK __UI_DataGridColCaption(__UI_DGCol(dg, 2)) = "Color" _ANDALSO __UI_DataGridCols(__UI_DGCol(dg, 1)).Width = 100, "Captions and widths"
+    TEST_CHECK DataGrid_CellKind(f, 1, 2) = __UI_DataGrid_Choice _ANDALSO __UI_DataGridColItems(__UI_DGCol(dg, 2)) = "Red|Green", "Kinds and items"
+    TEST_CHECK __UI_DataGridCols(__UI_DGCol(dg, 3)).Width = 0 _ANDALSO DataGrid_CellKind(f, 1, 3) = __UI_DataGrid_Integer, "A width left out shares the room"
+    TEST_CHECK DataGrid_RowCount(f) = 3, "and rows: a blank line between rows is a row, blank lines at the end aren't"
+    TEST_CHECK DataGrid_Cell(f, 1, 2) = "Green" _ANDALSO DataGrid_Cell(f, 1, 3) = "3", "Cells"
+    TEST_CHECK DataGrid_Cell(f, 3, 1) = "pear" _ANDALSO DataGrid_Cell(f, 3, 2) = "Red" _ANDALSO DataGrid_Cell(f, 3, 3) = "0", "Cells left out get their column's default"
+    __UI_DestroyControl Control(f)
+
+    'In the designer, the grid follows the frame's Text
+    __UI_DesignMode = True
+    f2 = __UI_NewControl(__UI_Type_Frame, "TestDGDesign", 300, 150, 0, 0, 0)
+    Control(f2).CanHaveFocus = False
+    Text(f2) = "#columns" + CHR$(10) + "A" + CHR$(10) + "B" + CHR$(10) + "#rows" + CHR$(10) + "1|2"
+    __UI_DataGridsUpdate
+    TEST_CHECK DataGrid_ColumnCount(f2) = 2 _ANDALSO DataGrid_RowCount(f2) = 1, "The designer shows the grid"
+    TEST_CHECK_FALSE Control(f2).CanHaveFocus, "without changing the frame's settings"
+    Text(f2) = Text(f2) + CHR$(10) + "3|4"
+    __UI_DataGridsUpdate
+    TEST_CHECK DataGrid_RowCount(f2) = 2 _ANDALSO DataGrid_Cell(f2, 2, 2) = "4", "A changed Text builds it again"
+    Text(f2) = "key|text|Label"
+    __UI_DataGridsUpdate
+    TEST_CHECK __UI_DGFind(f2) = 0, "Text that isn't a grid definition puts the frame back"
+    __UI_DestroyControl Control(f2)
+    __UI_DesignMode = False
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_DataGridCSV
+    DIM g AS LONG, g2 AS LONG, n AS LONG, csv AS STRING, nl AS STRING, f AS STRING
+
+    TEST_CASE_BEGIN "DataGrid: CSV"
+    nl = CHR$(13) + CHR$(10)
+
+    g = __UI_NewControl(__UI_Type_Frame, "TestDGCSV", 300, 150, 0, 0, 0)
+    DataGrid_AddTextColumn g, "Name", 0
+    DataGrid_AddChoiceColumn g, "Color", 80, "Red|Green|Blue"
+    DataGrid_AddIntegerColumn g, "Qty", 50
+    DataGrid_AddToggleColumn g, "On", 40
+
+    'Without a header, fields go to the columns in order
+    n = DataGrid_FromCSV(g, "apple,Green,3,yes" + nl + nl + "pear" + CHR$(10) + "fig,Blue,2.6,0", 0)
+    TEST_CHECK n = 3 _ANDALSO DataGrid_RowCount(g) = 3, "Rows from lines; blank lines are left out"
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "apple" _ANDALSO DataGrid_Cell(g, 1, 2) = "Green" _ANDALSO DataGrid_Cell(g, 1, 4) = "-1", "Cells from fields; yes checks a toggle"
+    TEST_CHECK DataGrid_Cell(g, 2, 2) = "Red" _ANDALSO DataGrid_Cell(g, 2, 3) = "0" _ANDALSO DataGrid_Cell(g, 2, 4) = "0", "Fields left out get their column's default"
+    TEST_CHECK DataGrid_Cell(g, 3, 3) = "3", "Integers are rounded"
+
+    'Quotes
+    n = DataGrid_FromCSV(g, CHR$(34) + "Smith, J" + CHR$(34) + ",Red" + nl + CHR$(34) + "say " + CHR$(34) + CHR$(34) + "hi" + CHR$(34) + CHR$(34) + CHR$(34) + nl + CHR$(34) + "two" + CHR$(10) + "lines|x" + CHR$(34) + ",Blue", 0)
+    TEST_CHECK n = 3, "Rows are replaced"
+    TEST_CHECK DataGrid_Cell(g, 1, 1) = "Smith, J", "A field in quotes can hold the separator"
+    TEST_CHECK DataGrid_Cell(g, 2, 1) = "say " + CHR$(34) + "hi" + CHR$(34), "and doubled quotes"
+    TEST_CHECK DataGrid_Cell(g, 3, 1) = "two" + CHR$(10) + "lines|x" _ANDALSO DataGrid_Cell(g, 3, 2) = "Blue", "and line breaks and |"
+
+    'Writing it back and reading it again gives the same cells
+    csv = DataGrid_ToCSV(g, __UI_DataGrid_CSVHeader)
+    TEST_CHECK LEFT$(csv, 18) = "Name,Color,Qty,On" + CHR$(13), "The header has the captions"
+    TEST_CHECK INSTR(csv, CHR$(34) + "Smith, J" + CHR$(34) + ",Red,0,0" + nl) > 0, "Fields that need quotes get them"
+    g2 = __UI_NewControl(__UI_Type_Frame, "TestDGCSV2", 300, 150, 0, 0, 0)
+    n = DataGrid_FromCSV(g2, csv, __UI_DataGrid_CSVHeader)
+    TEST_CHECK n = 3 _ANDALSO DataGrid_ColumnCount(g2) = 4, "A grid with no columns gets one per header field"
+    TEST_CHECK __UI_DataGridColCaption(__UI_DGCol(__UI_DGFind(g2), 2)) = "Color", "named after it"
+    TEST_CHECK DataGrid_Cell(g2, 2, 1) = DataGrid_Cell(g, 2, 1) _ANDALSO DataGrid_Cell(g2, 3, 1) = DataGrid_Cell(g, 3, 1), "The same cells come back"
+    TEST_CHECK DataGrid_ToCSV(g2, __UI_DataGrid_CSVHeader) = csv, "and the same text"
+    __UI_DestroyControl Control(g2)
+
+    'With a header, fields go to the column with their caption
+    n = DataGrid_FromCSV(g, "on;QTY;Extra;Name" + nl + "true;7;zzz;kiwi" + nl, __UI_DataGrid_CSVHeader + __UI_DataGrid_CSVSemicolon)
+    TEST_CHECK n = 1 _ANDALSO DataGrid_Cell(g, 1, 1) = "kiwi" _ANDALSO DataGrid_Cell(g, 1, 3) = "7" _ANDALSO DataGrid_Cell(g, 1, 4) = "-1", "Columns found by caption, in any case"
+    TEST_CHECK DataGrid_Cell(g, 1, 2) = "Red", "A column with no field gets its default"
+
+    'Tags and appending
+    n = DataGrid_FromCSV(g, "17" + CHR$(9) + "plum" + nl + "18" + CHR$(9) + "lime" + CHR$(9) + "Green", __UI_DataGrid_CSVTags + __UI_DataGrid_CSVTab + __UI_DataGrid_CSVAppend)
+    TEST_CHECK n = 2 _ANDALSO DataGrid_RowCount(g) = 3, "Rows are added to the ones there"
+    TEST_CHECK DataGrid_RowTag(g, 2) = "17" _ANDALSO DataGrid_Cell(g, 2, 1) = "plum" _ANDALSO DataGrid_RowTag(g, 3) = "18", "The first field is the row's tag"
+    TEST_CHECK DataGrid_RowTag(g, 1) = "", "Rows not loaded keep no tag"
+    csv = DataGrid_ToCSV(g, __UI_DataGrid_CSVTags + __UI_DataGrid_CSVHeader)
+    TEST_CHECK LEFT$(csv, 22) = "Tag,Name,Color,Qty,On" + CHR$(13), "Tags are written first"
+    TEST_CHECK INSTR(csv, nl + "18,lime,Green,0,0" + nl) > 0, "with their rows"
+
+    'Files
+    f = "test_datagrid_csv.tmp"
+    TEST_CHECK DataGrid_SaveCSV(g, f, __UI_DataGrid_CSVHeader + __UI_DataGrid_CSVTags), "Save to a file"
+    DataGrid_Clear g
+    n = DataGrid_LoadCSV(g, f, __UI_DataGrid_CSVHeader + __UI_DataGrid_CSVTags)
+    TEST_CHECK n = 3 _ANDALSO DataGrid_RowTag(g, 3) = "18" _ANDALSO DataGrid_Cell(g, 3, 1) = "lime", "and load it back"
+    KILL f
+    TEST_CHECK DataGrid_LoadCSV(g, f, 0) = -1 _ANDALSO DataGrid_RowCount(g) = 3, "A missing file loads nothing"
+    TEST_CHECK DataGrid_FromCSV(g, CHR$(239) + CHR$(187) + CHR$(191) + "x", 0) = 1 _ANDALSO DataGrid_Cell(g, 1, 1) = "x", "A byte order mark is left out"
+    TEST_CHECK DataGrid_FromCSV(g, "a,", 0) = 1 _ANDALSO DataGrid_Cell(g, 1, 2) = "", "An empty last field is a field (not the default)"
+    __UI_DestroyControl Control(g)
+
+    'Without a header or columns
+    g = __UI_NewControl(__UI_Type_Frame, "TestDGCSV3", 300, 150, 0, 0, 0)
+    n = DataGrid_FromCSV(g, "1,2,3", 0)
+    TEST_CHECK n = 1 _ANDALSO DataGrid_ColumnCount(g) = 3 _ANDALSO __UI_DataGridColCaption(__UI_DGCol(__UI_DGFind(g), 3)) = "Column 3", "Columns named by number"
+    __UI_DestroyControl Control(g)
+
+    TEST_CASE_END
+END SUB
+
 SUB __UI_LoadForm: END SUB
 SUB __UI_AssignIDs: END SUB
 SUB __UI_OnLoad: END SUB
 SUB __UI_BeforeUnload: END SUB
 SUB __UI_BeforeUpdateDisplay: END SUB
 SUB __UI_FormResized: END SUB
-SUB __UI_ValueChanged (id AS LONG): id = id: END SUB
+SUB __UI_ValueChanged (id AS LONG): TestValueChangedCount = TestValueChangedCount + 1: TestValueChangedID = id: END SUB
 SUB __UI_TextChanged (id AS LONG): id = id: END SUB
 SUB __UI_MouseEnter (id AS LONG): id = id: END SUB
 SUB __UI_MouseLeave (id AS LONG): id = id: END SUB

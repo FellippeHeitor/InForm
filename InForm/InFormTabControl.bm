@@ -32,6 +32,8 @@ SUB __UI_DrawContainer (id AS LONG)
     IF Control(id).Type = __UI_Type_TabControl THEN
         __UI_DrawTabControl Control(id)
     ELSE
+        IF __UI_DesignMode THEN __UI_PropertyGridDrawMock id
+        __UI_PropertyGridDrawScrollbar id
         __UI_DrawFrame Control(id)
     END IF
 END SUB

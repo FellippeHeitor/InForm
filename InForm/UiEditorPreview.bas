@@ -149,6 +149,17 @@ FUNCTION AddNewMenuBarControl&
     AddNewMenuBarControl& = TempValue
 END FUNCTION
 
+''' @brief Leaves no control selected (a form that was just loaded or restored starts this way).
+SUB DeselectAllControls
+    DIM i AS LONG
+    FOR i = 1 TO UBOUND(Control)
+        Control(i).ControlIsSelected = False
+    NEXT
+    __UI_TotalSelectedControls = 0
+    __UI_FirstSelectedID = 0
+    __UI_ForceRedraw = True
+END SUB
+
 SUB SelectNewControl (id AS LONG)
     DIM i AS LONG
     FOR i = 1 TO UBOUND(Control)
@@ -368,6 +379,45 @@ SUB __UI_BeforeUpdateDisplay
                     END IF
                     SelectNewControl TempValue
                 END IF
+            CASE "NEWDATAGRID"
+                'A frame whose Text holds a data grid's columns and rows (see InFormDataGrid.bm)
+                SaveUndoImage
+                DIM dgName$, dgN AS LONG
+                dgN = 0
+                DO
+                    dgN = dgN + 1
+                    dgName$ = "DataGrid" + LTRIM$(STR$(dgN))
+                LOOP WHILE __UI_GetID(dgName$) > 0
+                'Never wider or taller than the form (with a small margin)
+                defW = _MIN(320, Control(__UI_FormID).Width - 20)
+                defH = _MIN(160, Control(__UI_FormID).Height - __UI_MenuBarOffsetV - 20)
+                IF defW < 60 THEN defW = 60
+                IF defH < 60 THEN defH = 60
+                TempValue = __UI_NewControl(__UI_Type_Frame, dgName$, defW, defH, Control(__UI_FormID).Width \ 2 - defW \ 2, (Control(__UI_FormID).Height - __UI_MenuBarOffsetV) \ 2 + __UI_MenuBarOffsetV - defH \ 2, 0)
+                SetCaption TempValue, ""
+                Control(TempValue).HasBorder = False
+                Text(TempValue) = "#columns" + CHR$(10) + "Column 1|text|0" + CHR$(10) + "Column 2|text|0" + CHR$(10) + "#rows"
+                IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
+                SelectNewControl TempValue
+            CASE "NEWPROPERTYGRID"
+                'A frame with two sample property grid rows in its Text (see InFormPropertyGrid.bm);
+                'double-clicking it opens the editor's table to change them
+                SaveUndoImage
+                DIM pgName$, pgN AS LONG
+                pgN = 0
+                DO
+                    pgN = pgN + 1
+                    pgName$ = "PropertyGrid" + LTRIM$(STR$(pgN))
+                LOOP WHILE __UI_GetID(pgName$) > 0
+                defW = _MIN(260, Control(__UI_FormID).Width - 20)
+                defH = _MIN(110, Control(__UI_FormID).Height - __UI_MenuBarOffsetV - 20)
+                IF defW < 60 THEN defW = 60
+                IF defH < 60 THEN defH = 60
+                TempValue = __UI_NewControl(__UI_Type_Frame, pgName$, defW, defH, Control(__UI_FormID).Width \ 2 - defW \ 2, (Control(__UI_FormID).Height - __UI_MenuBarOffsetV) \ 2 + __UI_MenuBarOffsetV - defH \ 2, 0)
+                SetCaption TempValue, "Properties"
+                Text(TempValue) = "name|text|Name|Untitled" + CHR$(10) + "size|integer|Size|10"
+                IF __UI_TotalActiveMenus > 0 THEN __UI_CloseAllMenus
+                SelectNewControl TempValue
             CASE "LOCKCONTROLS"
                 'When the user starts editing a property in UiEditor,
                 'a list of the currently selected controls is built so
@@ -399,6 +449,27 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
 
                 __UI_Bind __UI_GetID(BindInfo$(1)), __UI_GetID(BindInfo$(2)), BindInfo$(3), BindInfo$(4)
+            CASE "LOCKINPUT"
+                'The editor shows a dialog that works on this form (property grid rows): no editing here meanwhile
+                __UI_InputLocked = CVI(thisData$)
+                __UI_ForceRedraw = True 'shows or clears the notice that says the form is being edited in the editor
+                IF __UI_InputLocked THEN
+                    __UI_MouseIsDown = False
+                    __UI_MouseDownOnID = 0
+                    __UI_IsDragging = False
+                    __UI_IsResizing = False
+                END IF
+            CASE "ROWSPREVIEW"
+                'Property grid rows being edited in the editor's dialog, shown as they change. No undo step:
+                'when the dialog closes, it puts the frame's rows back and sends the result as a property.
+                TempValue = CVL(LEFT$(thisData$, 4))
+                i = __UI_GetID(MID$(thisData$, 5, TempValue))
+                IF i > 0 THEN
+                    IF Control(i).Type = __UI_Type_Frame THEN
+                        Text(i) = MID$(thisData$, 5 + TempValue)
+                        Control(i).Redraw = True
+                    END IF
+                END IF
             CASE "UNBINDCONTROLS"
                 'Two control names, separated by CHR$(10)
                 IF INSTR(thisData$, CHR$(10)) THEN
@@ -854,6 +925,10 @@ SUB __UI_BeforeUpdateDisplay
                                         Control(i).Height = (_HEIGHT(Control(i).HelperCanvas) / _WIDTH(Control(i).HelperCanvas)) * Control(i).Width
                                         IF LEN(b$) > 0 AND b$ <> "&" THEN GOSUB AutoName
                                     END IF
+                                ELSEIF Control(i).Type = __UI_Type_Frame THEN
+                                    'A frame's text holds property grid rows, one per line
+                                    Text(i) = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
+                                    IF RIGHT$(Text(i), 1) = CHR$(10) THEN Text(i) = LEFT$(Text(i), LEN(Text(i)) - 1)
                                 ELSEIF Control(i).Type = __UI_Type_TabControl THEN
                                     Text(i) = Replace(b$, "\n", CHR$(10), False, TotalReplacements)
                                     IF RIGHT$(Text(i), 1) = CHR$(10) THEN Text(i) = LEFT$(Text(i), LEN(Text(i)) - 1)
@@ -1893,6 +1968,13 @@ SUB __UI_KeyPress (id AS LONG)
             DeleteSelectedControls
         CASE 221 'Select all controls
             SelectAllControls
+        CASE 236 'Double-click on a container
+            IF __UI_TotalSelectedControls = 1 _ANDALSO Control(__UI_FirstSelectedID).Type = __UI_Type_Frame _ANDALSO LEN(_TRIM$(Replace(Text(__UI_FirstSelectedID), CHR$(10), "", False, 0))) > 0 THEN
+                'A frame with property grid rows or a data grid: edit them in the editor's dialog
+                SendData "", "SHOWROWSDIALOG"
+            ELSE
+                SelectAllControls
+            END IF
         CASE 223
             AlternateNumericOnlyProperty
         CASE 224
@@ -1926,7 +2008,58 @@ SUB __UI_KeyPress (id AS LONG)
             'NEXT
             'c$ = MKL$(LEN(a$)) + a$ + MKL$(LEN(b$)) + b$
             SendData "", "SHOWBINDCONTROLDIALOG"
+        CASE 230 TO 235 'Add a property grid row to the selected frame (right-click > Add property)
+            AddPropertyGridRow id - 230
     END SELECT
+END SUB
+
+''' @brief Adds a row to the selected frame's property grid definitions (its Text), with a key not used yet.
+''' Which: 0 = text box, 1 = integer, 2 = number, 3 = choice, 4 = toggle, 5 = button
+SUB AddPropertyGridRow (Which AS LONG)
+    DIM f AS LONG, Base$, Kind$, Label$, Extra$, Key$, n AS LONG, Rows$, NewLine$, p AS LONG
+    DIM pKey AS STRING, pKind AS _BYTE, pLabel AS STRING, pExtra AS STRING, Taken AS _BYTE
+
+    f = __UI_FirstSelectedID
+    IF __UI_TotalSelectedControls <> 1 OR Control(f).Type <> __UI_Type_Frame THEN EXIT SUB
+    IF __UI_IsDataGridFrame(f) THEN EXIT SUB 'a data grid's columns are edited in the editor
+
+    SELECT CASE Which
+        CASE 0: Base$ = "text": Kind$ = "text": Label$ = "Text"
+        CASE 1: Base$ = "integer": Kind$ = "integer": Label$ = "Integer"
+        CASE 2: Base$ = "number": Kind$ = "float": Label$ = "Number"
+        CASE 3: Base$ = "choice": Kind$ = "choice": Label$ = "Choice": Extra$ = "Item 1,Item 2,Item 3"
+        CASE 4: Base$ = "toggle": Kind$ = "toggle": Label$ = "Toggle"
+        CASE 5: Base$ = "button": Kind$ = "button": Label$ = "Button": Extra$ = "Click"
+        CASE ELSE: EXIT SUB
+    END SELECT
+
+    'The first free key: text1, text2...
+    Rows$ = Replace(Text(f), CHR$(13), "", False, 0)
+    DO
+        n = n + 1
+        Key$ = Base$ + LTRIM$(STR$(n))
+        Taken = False
+        NewLine$ = Rows$ + CHR$(10)
+        DO
+            p = INSTR(NewLine$, CHR$(10))
+            IF p = 0 THEN EXIT DO
+            IF __UI_PGParseLine(LEFT$(NewLine$, p - 1), pKey, pKind, pLabel, pExtra) THEN
+                IF LCASE$(pKey) = Key$ THEN Taken = True
+            END IF
+            NewLine$ = MID$(NewLine$, p + 1)
+        LOOP
+    LOOP WHILE Taken
+
+    NewLine$ = Key$ + "|" + Kind$ + "|" + Label$ + " " + LTRIM$(STR$(n))
+    IF LEN(Extra$) THEN NewLine$ = NewLine$ + "|" + Extra$
+    IF LEN(Rows$) > 0 AND RIGHT$(Rows$, 1) <> CHR$(10) THEN Rows$ = Rows$ + CHR$(10)
+    Text(f) = Rows$ + NewLine$
+
+    'The frame keeps its size: rows that don't fit get a scrollbar. Show the new row.
+    IF f > UBOUND(__UI_PGMockScrollY) THEN REDIM _PRESERVE __UI_PGMockScrollY(0 TO UBOUND(Control)) AS LONG
+    __UI_PGMockScrollY(f) = 2147483647 'kept within range when drawn: scrolled to the bottom
+    Control(f).Redraw = True
+    __UI_ForceRedraw = True
 END SUB
 
 SUB AlternateNumericOnlyProperty
@@ -2844,6 +2977,10 @@ SUB LoadPreview (Destination AS _BYTE)
     'if both of its controls were copied.
     LoadPendingBindings PendingBindings$
 
+    'A form opened, created or restored after a crash starts with nothing selected
+    '(the selection it was saved with is only kept by undo/redo)
+    IF Disk OR Destination = FromEditor THEN DeselectAllControls
+
     IF NOT Disk AND NOT UndoBuffer THEN
         IF NOT CorruptedData THEN
             __UI_FirstSelectedID = FirstToBeSelected
@@ -3278,6 +3415,7 @@ SUB LoadPreviewText
         LOOP UNTIL __UI_EOF
         CLOSE #BinaryFileNum
         IF LogFileLoad THEN CLOSE #LogFileNum
+        DeselectAllControls 'a form that was just opened starts with nothing selected
         __UI_AutoRefresh = True
         EXIT SUB
 

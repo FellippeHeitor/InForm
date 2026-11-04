@@ -2,16 +2,6 @@
 
 `QBDS` is a collection of **generic data structure libraries**. It provides containers such as queues, lists, stacks, maps, and more.
 
-## Libraries
-
-* [**Array**](./Array.md): Dynamic array with resizing.
-* [**HMap**](./HMap.md): Generic hash map.
-* [**HMap64**](./HMap64.md): Hash map optimized for 64-bit keys.
-* [**HSet**](./HSet.md): Generic hash set.
-* [**LList**](./LList.md): Doubly linked list.
-* [**Queue**](./Queue.md): FIFO queue.
-* [**Stack**](./Stack.md): LIFO stack.
-
 ## QBDS.bi
 
 The `QBDS.bi` file defines some **common constants and routines** shared across all `QBDS` libraries.

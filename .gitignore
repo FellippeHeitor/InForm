@@ -37,3 +37,6 @@ desktop.ini
 !setup_inform_mac.command
 # Unignore theme files
 !InForm/themes/*.ini
+
+# The DataGridCSVDemo example writes its data next to it
+examples/DataGridCSVDemo/inventory.csv

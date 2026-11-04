@@ -10,14 +10,14 @@ OPTION _EXPLICIT
 $VERSIONINFO:CompanyName='QB64 Phoenix Edition Team'
 $VERSIONINFO:FileDescription='InForm-PE Form Designer executable'
 $VERSIONINFO:InternalName='UiEditor'
-$VERSIONINFO:LegalCopyright='Copyright (c) 2025 QB64 Phoenix Edition Team'
+$VERSIONINFO:LegalCopyright='Copyright (c) 2026 QB64 Phoenix Edition Team'
 $VERSIONINFO:LegalTrademarks='All trademarks are property of their respective owners'
 $VERSIONINFO:OriginalFilename='UiEditor.exe'
 $VERSIONINFO:ProductName='InForm-PE Form Designer'
 $VERSIONINFO:Web='https://github.com/QB64-Phoenix-Edition/InForm-PE'
 $VERSIONINFO:Comments='https://github.com/QB64-Phoenix-Edition/InForm-PE'
-$VERSIONINFO:FILEVERSION#=1,5,8,0
-$VERSIONINFO:PRODUCTVERSION#=1,5,8,0
+$VERSIONINFO:FILEVERSION#=1,7,0,0
+$VERSIONINFO:PRODUCTVERSION#=1,7,0,0
 $EXEICON:'./resources/InForm.ico'
 
 'Controls: --------------------------------------------------------------------
@@ -102,7 +102,7 @@ DIM SHARED AddCheckBox AS LONG, AddRadioButton AS LONG
 DIM SHARED AddListBox AS LONG, AddDropdownList AS LONG
 DIM SHARED AddTrackBar AS LONG, AddProgressBar AS LONG
 DIM SHARED AddPictureBox AS LONG, AddFrame AS LONG
-DIM SHARED AddToggleSwitch AS LONG, AddTabControl AS LONG
+DIM SHARED AddToggleSwitch AS LONG, AddTabControl AS LONG, AddDataGrid AS LONG, AddPropertyGrid AS LONG
 
 'Control toggles
 DIM SHARED Stretch AS LONG, HasBorder AS LONG
@@ -122,6 +122,23 @@ DIM SHARED AddGifExtensionToggle AS LONG
 'Z-ordering dialog
 DIM SHARED ControlList AS LONG, UpBT AS LONG
 DIM SHARED DownBT AS LONG, CloseZOrderingBT AS LONG
+
+'Property grid rows dialog, also used for a data grid's columns and rows
+DIM SHARED ColumnsLB AS LONG, EditColumnsBT AS LONG
+DIM SHARED RowsLB AS LONG, EditRowsBT AS LONG, EditRowsDialog AS LONG, RowsDescriptionLB AS LONG
+DIM SHARED RowsFirstBT AS LONG, RowsPrevBT AS LONG, RowsPositionLB AS LONG, RowsNextBT AS LONG, RowsLastBT AS LONG
+DIM SHARED RowsAddBT AS LONG, RowsDeleteBT AS LONG, RowsUpBT AS LONG, RowsDownBT AS LONG
+DIM SHARED RowsHintLB AS LONG, RowsOKBT AS LONG, RowsCancelBT AS LONG, RowsGrid AS LONG
+DIM SHARED RowsDialogOpen AS _BYTE
+DIM SHARED RowsFrameName$ ' the frame whose rows are being edited
+DIM SHARED RowsOriginal$, RowsShown$ ' its rows when the dialog opened, and as the preview shows them now
+REDIM SHARED RowsHistory(0) AS STRING ' the table after each change, for undo (see RowsSnapshot$)
+DIM SHARED RowsHistoryPos AS LONG, RowsHistoryCount AS LONG
+CONST RowsModeProperties = 0 ' what the dialog's table holds: a property grid's rows,
+CONST RowsModeColumns = 1 '    a data grid's columns,
+CONST RowsModeGridRows = 2 '   or a data grid's rows
+DIM SHARED RowsMode AS _BYTE
+DIM SHARED RowsKeep$ ' the part of a data grid's definition the table doesn't hold (its rows, or its columns)
 
 'Set binding dialog
 DIM SHARED SourceControlLB AS LONG
@@ -174,7 +191,7 @@ DIM SHARED PreviewFormID AS LONG, PreviewSelectionRectangle AS INTEGER
 DIM SHARED PreviewAttached AS _BYTE, AutoNameControls AS _BYTE
 DIM SHARED LastKeyPress AS DOUBLE, SaveFrmOnly AS _BYTE
 DIM SHARED UiEditorTitle$, Edited AS _BYTE, ZOrderingDialogOpen AS _BYTE
-DIM SHARED PropertySent AS _BYTE, RevertEdit AS _BYTE, OldColor AS _UNSIGNED LONG
+DIM SHARED PropertySent AS _BYTE, OldColor AS _UNSIGNED LONG
 DIM SHARED ColorPreviewWord$, BlinkStatusBar AS SINGLE, StatusBarBackColor AS _UNSIGNED LONG
 DIM SHARED InstanceHost AS LONG, InstanceClient AS LONG
 DIM SHARED HostPort AS STRING, Host AS LONG, Client AS LONG
@@ -188,15 +205,6 @@ DIM SHARED LoadedWithGifExtension AS _BYTE, AddGifExtension AS _BYTE
 DIM SHARED TotalGifLoaded AS LONG, SetBindingDialogOpen AS _BYTE
 DIM SHARED InitialControlSet AS STRING
 DIM SHARED Answer AS LONG
-
-TYPE newInputBox
-    ID AS LONG
-    LabelID AS LONG
-    Signal AS INTEGER
-    LastEdited AS SINGLE
-    DataType AS INTEGER
-    Sent AS _BYTE
-END TYPE
 
 CONST UIEDITOR_TCP_PORT = "49374" ' TCP port # used by UIEditor
 CONST COMMDLG_DELAY! = 0.2! ' amount of time to wait to let the UI refresh before opening a common dialog window
@@ -222,9 +230,6 @@ REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
 REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
 REDIM SHARED zOrderIDs(0) AS LONG
 DIM SHARED ZOrderLastMove AS DOUBLE, ZOrderListDirty AS _BYTE
-REDIM SHARED InputBox(1 TO 100) AS newInputBox
-REDIM SHARED Toggles(1 TO 100) AS LONG
-REDIM SHARED InputBoxText(1 TO 100) AS STRING
 DIM SHARED PreviewDefaultButtonID AS LONG
 
 DIM SHARED HasFontList AS _BYTE, ShowFontList AS _BYTE
@@ -376,6 +381,12 @@ SUB __UI_Click (id AS LONG)
         CASE AddButton, AddLabel, AddTextBox, AddCheckBox, AddRadioButton, AddListBox, AddDropdownList, AddTrackBar, AddProgressBar, AddPictureBox, AddFrame, AddToggleSwitch, AddTabControl
             b$ = "NEWCONTROL>" + MKI$(Dummy) + "<END>"
             Send Client, b$
+        CASE AddDataGrid
+            'A frame with a data grid's columns and rows in its Text (see InFormDataGrid.bm)
+            Send Client, "NEWDATAGRID><END>"
+        CASE AddPropertyGrid
+            'A frame with property grid rows in its Text (see InFormPropertyGrid.bm)
+            Send Client, "NEWPROPERTYGRID><END>"
         CASE AddNumericBox
             b$ = MKI$(0)
             SendData b$, 222
@@ -535,7 +546,7 @@ SUB __UI_Click (id AS LONG)
             __UI_ForceRedraw = True
 
         CASE HelpMenuAbout
-            MessageBox "InForm GUI engine for QB64-PE\n\nCopyright (c) 2025 QB64 Phoenix Edition Team\nCopyright (c) 2023 George McGinn - gbytes58@gmail.com\nCopyright (c) 2022 Fellippe Heitor - @FellippeHeitor\n\n" + UiEditorTitle$ + " v" + __UI_Version + "\n\nhttps://github.com/QB64-Phoenix-Edition/InForm-PE", UiEditorTitle$ + " - About", MsgBox_Information
+            MessageBox "InForm GUI engine for QB64-PE\n\nCopyright (c) 2026 QB64 Phoenix Edition Team\nCopyright (c) 2023 George McGinn - gbytes58@gmail.com\nCopyright (c) 2022 Fellippe Heitor - @FellippeHeitor\n\n" + UiEditorTitle$ + " v" + __UI_Version + "\n\nhttps://github.com/QB64-Phoenix-Edition/InForm-PE", UiEditorTitle$ + " - About", MsgBox_Information
         CASE HelpMenuHelp
             MessageBox "Design a form and export the resulting code to generate an event-driven QB64-PE program.", UiEditorTitle$ + " - What's all this?", MsgBox_Information
         CASE FileMenuExit
@@ -622,6 +633,36 @@ SUB __UI_Click (id AS LONG)
                 b$ = b$ + "<END>"
                 Send Client, b$
             END IF
+        CASE EditRowsBT
+            OpenRowsDialog
+        CASE EditColumnsBT
+            OpenRowsDialogFor RowsModeColumns
+        CASE RowsOKBT
+            ApplyRowsDialog
+        CASE RowsCancelBT
+            CloseRowsDialog
+        CASE RowsFirstBT
+            RowsGoTo 1
+        CASE RowsPrevBT
+            RowsGoTo DataGrid_Row(RowsGrid) - 1
+        CASE RowsNextBT
+            RowsGoTo DataGrid_Row(RowsGrid) + 1
+        CASE RowsLastBT
+            RowsGoTo DataGrid_RowCount(RowsGrid)
+        CASE RowsAddBT
+            RowsAdd
+        CASE RowsDeleteBT
+            DataGrid_RemoveSelection RowsGrid
+            RowsChanged
+            __UI_Focus = RowsGrid
+        CASE RowsUpBT
+            DataGrid_MoveSelection RowsGrid, -1
+            RowsChanged
+            __UI_Focus = RowsGrid
+        CASE RowsDownBT
+            DataGrid_MoveSelection RowsGrid, 1
+            RowsChanged
+            __UI_Focus = RowsGrid
         CASE CloseZOrderingBT
             Caption(StatusBar) = "Ready."
             Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
@@ -808,8 +849,7 @@ SUB __UI_Click (id AS LONG)
             END IF
             IF LEN(ImageFile$) THEN
                 Text(TextTB) = ImageFile$
-                InputBox(GetInputBoxFromID(TextTB)).Sent = False
-                ConfirmEdits TextTB
+                PropertyGrid_Commit ControlProperties, "text"
                 Caption(StatusBar) = "Image file set."
             END IF
         CASE KeyboardComboBT
@@ -910,12 +950,16 @@ SUB __UI_MouseLeave (id AS LONG)
 END SUB
 
 SUB __UI_FocusIn (id AS LONG)
+    'Focus stays in the property grid rows dialog while it's open
+    IF RowsDialogOpen THEN
+        IF Control(id).ParentID <> EditRowsDialog AND DataGrid_GridOf(id) <> RowsGrid AND id <> __UI_ActiveDropdownList THEN
+            __UI_Focus = RowsGrid
+            EXIT SUB
+        END IF
+    END IF
+
     SELECT CASE id
         CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
-            DIM ThisInputBox AS LONG
-            ThisInputBox = GetInputBoxFromID(id)
-            InputBoxText(ThisInputBox) = Text(id)
-            InputBox(ThisInputBox).Sent = False
             Caption(StatusBar) = "Editing property"
 
         CASE ControlList
@@ -928,6 +972,7 @@ SUB __UI_FocusIn (id AS LONG)
 
         CASE AddButton
             IF ZOrderingDialogOpen THEN __UI_Focus = ControlList
+            IF RowsDialogOpen THEN __UI_Focus = RowsGrid
             IF SetBindingDialogOpen THEN __UI_Focus = SourcePropertyList
 
         CASE KeyboardComboBT
@@ -938,9 +983,8 @@ SUB __UI_FocusIn (id AS LONG)
 END SUB
 
 SUB __UI_FocusOut (id AS LONG)
+    'Property boxes commit their edits on their own (see InFormPropertyGrid.bm)
     SELECT CASE id
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
-            ConfirmEdits id
         CASE KeyboardComboBT
             __UI_BypassKeyCombos = False
             Caption(KeyboardComboBT) = "Click to assign"
@@ -1092,12 +1136,6 @@ SUB SendNewRGB
     b$ = _MK$(_UNSIGNED LONG, NewColor)
     SendData b$, Control(ColorPropertiesList).Value + 22
 END SUB
-
-FUNCTION PropertyFullySelected%% (id AS LONG)
-PropertyFullySelected%% = Control(id).TextIsSelected AND _
-Control(id).SelectionStart = 0 AND _
-Control(id).Cursor = LEN(Text(id))
-END FUNCTION
 
 SUB SelectPropertyFully (id AS LONG)
     Control(id).TextIsSelected = True
@@ -1427,6 +1465,7 @@ SUB __UI_BeforeUpdateDisplay
             CASE "FORMID"
                 PreviewFormID = CVL(thisData$)
             CASE "FIRSTSELECTED"
+                IF RowsDialogOpen AND FirstSelected <> CVL(thisData$) THEN CloseRowsDialog
                 FirstSelected = CVL(thisData$)
                 IF SetBindingDialogOpen THEN
                     Caption(CancelBindBT) = "Cancel"
@@ -1456,6 +1495,9 @@ SUB __UI_BeforeUpdateDisplay
                 END IF
             CASE "SHOWBINDCONTROLDIALOG"
                 __UI_Click EditMenuBindControls
+            CASE "SHOWROWSDIALOG"
+                'A frame with property grid rows was double-clicked in the preview
+                IF NOT RowsDialogOpen AND NOT ZOrderingDialogOpen AND NOT SetBindingDialogOpen THEN OpenRowsDialog
             CASE "ORIGINALIMAGEWIDTH"
                 OriginalImageWidth = CVI(thisData$)
             CASE "ORIGINALIMAGEHEIGHT"
@@ -1485,7 +1527,12 @@ SUB __UI_BeforeUpdateDisplay
                 ELSE
                     Edited = True
                     IF __UI_Focus > 0 THEN
-                        IF PropertySent THEN PropertySent = False ELSE LoseFocus
+                        'The rows dialog changes the preview as the user types: it keeps its focus
+                        IF PropertySent THEN
+                            PropertySent = False
+                        ELSEIF NOT RowsDialogOpen THEN
+                            LoseFocus
+                        END IF
                     END IF
                 END IF
             CASE "UNDOPOINTER"
@@ -1607,7 +1654,16 @@ SUB __UI_BeforeUpdateDisplay
     IF UndoPointer > 0 THEN Control(EditMenuUndo).Disabled = False
     IF UndoPointer < TotalUndoImages THEN Control(EditMenuRedo).Disabled = False
 
-    IF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
+    IF RowsDialogOpen THEN
+        'Undo/redo change the table, not the form behind the dialog (a cell being edited keeps the keys)
+        IF __UI_CtrlIsDown AND NOT DataGrid_IsEditing(RowsGrid) THEN
+            IF __UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z") THEN
+                RowsUndo -1
+            ELSEIF __UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y") THEN
+                RowsUndo 1
+            END IF
+        END IF
+    ELSEIF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
         SendSignal 214
     ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
         SendSignal 215
@@ -1771,39 +1827,17 @@ SUB __UI_BeforeUpdateDisplay
 
     IF FirstSelected = 0 THEN FirstSelected = PreviewFormID
 
-    FOR i = 1 TO UBOUND(InputBox)
-        Control(InputBox(i).ID).Disabled = False
-        Control(InputBox(i).ID).Hidden = False
-        Control(InputBox(i).LabelID).Hidden = False
-        IF __UI_Focus = InputBox(i).ID THEN
-            Control(InputBox(i).ID).Height = 22
-            Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 1)
-            Control(InputBox(i).ID).BorderSize = 2
-        ELSE
-            Control(InputBox(i).ID).Height = 23
-            Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-            Control(InputBox(i).ID).BorderSize = 1
-        END IF
-    NEXT
-    Control(FontSizeList).Hidden = True
-
-    FOR i = 1 TO UBOUND(Toggles)
-        Control(Toggles(i)).Disabled = True
-        Control(Toggles(i)).Hidden = False
-    NEXT
+    'Every property row starts shown and every toggle hidden; what doesn't apply is sorted out below
+    PropertyGrid_ShowAll ControlProperties, True
+    PropertyGrid_ShowAll ControlToggles, False
     Control(AnchorPicker).Disabled = True
-
-    CONST ShadeOfGreen~& = _RGB32(28, 150, 50)
-    CONST ShadeOfRed~& = _RGB32(233, 44, 0)
-
-    CONST PropertyUpdateDelay = .1
 
     'Pasting into the Text field keeps line breaks as \n for multiline textboxes,
     'and for list boxes and dropdowns, where each line becomes an item
     __UI_PasteLineBreakAs = ""
     IF __UI_Focus = TextTB AND FirstSelected > 0 THEN
         SELECT CASE PreviewControls(FirstSelected).Type
-            CASE __UI_Type_ListBox, __UI_Type_DropdownList
+            CASE __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_Frame
                 __UI_PasteLineBreakAs = "\n"
             CASE __UI_Type_TextBox
                 IF PreviewControls(FirstSelected).Multiline THEN __UI_PasteLineBreakAs = "\n"
@@ -1811,318 +1845,47 @@ SUB __UI_BeforeUpdateDisplay
     END IF
 
     IF FirstSelected > 0 THEN
-        DIM ThisInputBox AS LONG
-        ThisInputBox = GetInputBoxFromID(__UI_Focus)
+        'Values shown in the property boxes (a box being edited keeps its text until Enter, Esc or leaving it)
+        PropertyGrid_SetValue ControlProperties, "name", RTRIM$(PreviewControls(FirstSelected).Name)
+        PropertyGrid_SetValue ControlProperties, "caption", Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
 
-        IF __UI_Focus <> NameTB OR (__UI_Focus = NameTB AND RevertEdit = True) THEN
-            Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name)
-            IF (__UI_Focus = NameTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = NameTB THEN
-            IF PropertyFullySelected(NameTB) THEN
-                IF Text(NameTB) = RTRIM$(PreviewControls(FirstSelected).Name) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> CaptionTB OR (__UI_Focus = CaptionTB AND RevertEdit = True) THEN
-            Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0)
-            IF (__UI_Focus = CaptionTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = CaptionTB THEN
-            IF PropertyFullySelected(CaptionTB) THEN
-                IF Text(CaptionTB) = Replace(__UI_TrimAt0$(PreviewCaptions(FirstSelected)), CHR$(10), "\n", False, 0) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> TextTB OR (__UI_Focus = TextTB AND RevertEdit = True) THEN
-            IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR (PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND PreviewControls(FirstSelected).Multiline) THEN
-                Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0)
-            ELSE
-                Text(TextTB) = PreviewTexts(FirstSelected)
+        IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR PreviewControls(FirstSelected).Type = __UI_Type_Frame OR (PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND PreviewControls(FirstSelected).Multiline) THEN
+            PropertyGrid_SetValue ControlProperties, "text", Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0)
+            IF __UI_Focus <> TextTB THEN Mask(TextTB) = ""
+        ELSE
+            PropertyGrid_SetValue ControlProperties, "text", PreviewTexts(FirstSelected)
+            IF __UI_Focus <> TextTB THEN
                 IF LEN(PreviewMasks(FirstSelected)) > 0 AND PreviewControls(FirstSelected).Type = __UI_Type_TextBox THEN
                     Mask(TextTB) = PreviewMasks(FirstSelected)
                 ELSE
                     Mask(TextTB) = ""
                 END IF
             END IF
-            IF (__UI_Focus = TextTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = TextTB THEN
-            Control(TextTB).NumericOnly = PreviewControls(FirstSelected).NumericOnly
-            IF PropertyFullySelected(TextTB) THEN
-                IF Text(TextTB) = Replace(PreviewTexts(FirstSelected), CHR$(10), "\n", False, 0) AND (PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList OR (PreviewControls(FirstSelected).Type = __UI_Type_TextBox AND PreviewControls(FirstSelected).Multiline)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSEIF ((PreviewControls(FirstSelected).Type <> __UI_Type_ListBox AND PreviewControls(FirstSelected).Type <> __UI_Type_DropdownList) AND Text(TextTB) = PreviewTexts(FirstSelected)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
         END IF
+        IF __UI_Focus = TextTB THEN Control(TextTB).NumericOnly = PreviewControls(FirstSelected).NumericOnly
 
-        IF __UI_Focus <> MaskTB OR (__UI_Focus = MaskTB AND RevertEdit = True) THEN
-            Text(MaskTB) = PreviewMasks(FirstSelected)
-            IF (__UI_Focus = MaskTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = MaskTB THEN
-            IF PropertyFullySelected(MaskTB) THEN
-                IF Text(MaskTB) = PreviewMasks(FirstSelected) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> TopTB OR (__UI_Focus = TopTB AND RevertEdit = True) THEN
-            Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top))
-            IF (__UI_Focus = TopTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = TopTB THEN
-            IF PropertyFullySelected(TopTB) THEN
-                IF Text(TopTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Top)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> LeftTB OR (__UI_Focus = LeftTB AND RevertEdit = True) THEN
-            Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left))
-            IF (__UI_Focus = LeftTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = LeftTB THEN
-            IF PropertyFullySelected(LeftTB) THEN
-                IF Text(LeftTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Left)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> WidthTB OR (__UI_Focus = WidthTB AND RevertEdit = True) THEN
-            Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width))
-            IF (__UI_Focus = WidthTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = WidthTB THEN
-            IF PropertyFullySelected(WidthTB) THEN
-                IF Text(WidthTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Width)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> HeightTB OR (__UI_Focus = HeightTB AND RevertEdit = True) THEN
-            Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height))
-            IF (__UI_Focus = HeightTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = HeightTB THEN
-            IF PropertyFullySelected(HeightTB) THEN
-                IF Text(HeightTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Height)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> FontTB OR (__UI_Focus = FontTB AND RevertEdit = True) THEN
-            IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
-                Text(FontTB) = PreviewFonts(FirstSelected)
-            ELSE
-                Text(FontTB) = PreviewFonts(PreviewFormID)
-            END IF
-            IF (__UI_Focus = FontTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = FontTB THEN
-            IF PropertyFullySelected(FontTB) THEN
-                IF Text(FontTB) = PreviewFonts(FirstSelected) OR Text(FontTB) = PreviewFonts(PreviewFormID) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
+        PropertyGrid_SetValue ControlProperties, "mask", PreviewMasks(FirstSelected)
+        PropertyGrid_SetValue ControlProperties, "top", LTRIM$(STR$(PreviewControls(FirstSelected).Top))
+        PropertyGrid_SetValue ControlProperties, "left", LTRIM$(STR$(PreviewControls(FirstSelected).Left))
+        PropertyGrid_SetValue ControlProperties, "width", LTRIM$(STR$(PreviewControls(FirstSelected).Width))
+        PropertyGrid_SetValue ControlProperties, "height", LTRIM$(STR$(PreviewControls(FirstSelected).Height))
 
         IF LEN(PreviewFonts(FirstSelected)) > 0 THEN
+            PropertyGrid_SetValue ControlProperties, "font", PreviewFonts(FirstSelected)
             SelectFontInList PreviewActualFonts(FirstSelected)
         ELSE
+            PropertyGrid_SetValue ControlProperties, "font", PreviewFonts(PreviewFormID)
             SelectFontInList PreviewActualFonts(PreviewFormID)
         END IF
 
-        IF __UI_Focus <> TooltipTB OR (__UI_Focus = TooltipTB AND RevertEdit = True) THEN
-            Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
-            IF (__UI_Focus = TooltipTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = TooltipTB THEN
-            IF PropertyFullySelected(FontTB) THEN
-                IF Text(TooltipTB) = Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> ValueTB OR (__UI_Focus = ValueTB AND RevertEdit = True) THEN
-            Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value))
-            IF (__UI_Focus = ValueTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = ValueTB THEN
-            IF PropertyFullySelected(ValueTB) THEN
-                IF Text(ValueTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Value)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> MinTB OR (__UI_Focus = MinTB AND RevertEdit = True) THEN
-            Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min))
-            IF (__UI_Focus = MinTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = MinTB THEN
-            IF PropertyFullySelected(MinTB) THEN
-                IF Text(MinTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Min)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> MaxTB OR (__UI_Focus = MaxTB AND RevertEdit = True) THEN
-            Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max))
-            IF (__UI_Focus = MaxTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = MaxTB THEN
-            IF PropertyFullySelected(MaxTB) THEN
-                IF Text(MaxTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Max)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> IntervalTB OR (__UI_Focus = IntervalTB AND RevertEdit = True) THEN
-            Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
-            IF (__UI_Focus = IntervalTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = IntervalTB THEN
-            IF PropertyFullySelected(IntervalTB) THEN
-                IF Text(IntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Interval)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> MinIntervalTB OR (__UI_Focus = MinIntervalTB AND RevertEdit = True) THEN
-            Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval))
-        ELSEIF __UI_Focus = MinIntervalTB THEN
-            IF PropertyFullySelected(MinIntervalTB) THEN
-                IF Text(MinIntervalTB) = LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> PaddingTB OR (__UI_Focus = PaddingTB AND RevertEdit = True) THEN
-            Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
-            IF (__UI_Focus = PaddingTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = PaddingTB THEN
-            IF PropertyFullySelected(PaddingTB) THEN
-                IF Text(PaddingTB) = LTRIM$(STR$(PreviewControls(FirstSelected).Padding)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
-
-        IF __UI_Focus <> SizeTB OR (__UI_Focus = SizeTB AND RevertEdit = True) THEN
-            Text(SizeTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize))
-            IF (__UI_Focus = SizeTB AND RevertEdit = True) THEN RevertEdit = False: SelectPropertyFully __UI_Focus
-        ELSEIF __UI_Focus = SizeTB THEN
-            IF PropertyFullySelected(SizeTB) THEN
-                IF Text(SizeTB) = LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize)) THEN
-                    Control(__UI_Focus).BorderColor = ShadeOfGreen
-                ELSE
-                    IF TIMER - InputBox(ThisInputBox).LastEdited < PropertyUpdateDelay THEN
-                        Control(__UI_Focus).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
-                    ELSE
-                        Control(__UI_Focus).BorderColor = ShadeOfRed
-                    END IF
-                END IF
-            END IF
-        END IF
+        PropertyGrid_SetValue ControlProperties, "tooltip", Replace(PreviewTips(FirstSelected), CHR$(10), "\n", False, 0)
+        PropertyGrid_SetValue ControlProperties, "value", LTRIM$(STR$(PreviewControls(FirstSelected).Value))
+        PropertyGrid_SetValue ControlProperties, "min", LTRIM$(STR$(PreviewControls(FirstSelected).Min))
+        PropertyGrid_SetValue ControlProperties, "max", LTRIM$(STR$(PreviewControls(FirstSelected).Max))
+        PropertyGrid_SetValue ControlProperties, "interval", LTRIM$(STR$(PreviewControls(FirstSelected).Interval))
+        PropertyGrid_SetValue ControlProperties, "mininterval", LTRIM$(STR$(PreviewControls(FirstSelected).MinInterval))
+        PropertyGrid_SetValue ControlProperties, "padding", LTRIM$(STR$(PreviewControls(FirstSelected).Padding))
+        PropertyGrid_SetValue ControlToggles, "bordersize", LTRIM$(STR$(PreviewControls(FirstSelected).BorderSize))
     END IF
 
     Control(TextTB).Max = 0
@@ -2175,7 +1938,7 @@ SUB __UI_BeforeUpdateDisplay
     END IF
 
     STATIC ShowInvalidValueWarning AS _BYTE
-    IF Control(__UI_Focus).BorderColor = ShadeOfRed THEN
+    IF PropertyGrid_RowState(PropertyGrid_GridOf(__UI_Focus), PropertyGrid_RowOf$(__UI_Focus)) = __UI_PropertyGrid_Rejected THEN
         IF ShowInvalidValueWarning = False THEN
             ShowInvalidValueWarning = True
             Caption(StatusBar) = "Invalid value; ESC for previous or adjusted value"
@@ -2185,311 +1948,168 @@ SUB __UI_BeforeUpdateDisplay
         ShowInvalidValueWarning = False
     END IF
 
-    'Disable properties that don't apply
-    Control(AlignOptions).Disabled = True
-    Control(BooleanOptions).Disabled = True
-    Control(VAlignOptions).Disabled = True
-    Control(BulletOptions).Disabled = True
-    Caption(TextLB) = "Text"
-    Caption(ValueLB) = "Value"
-    Caption(MaxLB) = "Max"
-    Control(SizeTB).Disabled = True
-    Control(SizeTB).Hidden = True
+    IF PreviewControls(FirstSelected).Type = __UI_Type_Frame AND TotalSelected > 0 THEN
+        'A frame's Text holds its property grid rows, or a data grid's columns and rows, edited in a table (see OpenRowsDialog)
+        IF IsDataGridFrame(FirstSelected) THEN
+            DIM GridColumns$, GridRows$
+            __UI_DGSplitDefinition PreviewTexts(FirstSelected), GridColumns$, GridRows$
+            Caption(EditColumnsBT) = CountCaption$(__UI_DGPartCount(GridColumns$, CHR$(10)) - 1, "column")
+            Caption(EditRowsBT) = CountCaption$(__UI_DGPartCount(GridRows$, CHR$(10)) - 1, "row")
+            ToolTip(EditColumnsBT) = "The data grid's columns: their captions, kinds and widths"
+            ToolTip(EditRowsBT) = "The rows the data grid has when the program starts"
+        ELSE
+            Caption(EditRowsBT) = CountCaption$(__UI_DGPartCount(PropertyGridRowList$(FirstSelected), CHR$(10)) - 1, "row")
+            ToolTip(EditRowsBT) = "Rows written here turn the frame into a property grid when the program runs"
+        END IF
+    END IF
+
+    IF RowsDialogOpen THEN UpdateRowsDialog
+
+    'Hide the properties that don't apply
+    PropertyGrid_ShowRows ControlProperties, "align,boolean,valign,bullet,rows,columns", False
+    PropertyGrid_SetLabel ControlProperties, "text", "Text"
+    PropertyGrid_SetLabel ControlProperties, "value", "Value"
+    PropertyGrid_SetLabel ControlProperties, "max", "Max"
     IF TotalSelected > 0 THEN
         SELECT EVERYCASE PreviewControls(FirstSelected).Type
             CASE __UI_Type_ToggleSwitch
-                Control(CanHaveFocus).Disabled = False
-                Control(Disabled).Disabled = False
-                Control(Hidden).Disabled = False
-                Control(CaptionTB).Disabled = True
-                Control(BooleanOptions).Disabled = False
-                Control(TextTB).Disabled = True
-                Control(FontTB).Disabled = True
-                Control(FontList).Disabled = True
-                Control(MinTB).Disabled = True
-                Control(MaxTB).Disabled = True
-                Control(IntervalTB).Disabled = True
-                Control(MinIntervalTB).Disabled = True
-                Control(PaddingTB).Disabled = True
-                Control(BulletOptions).Disabled = True
+                PropertyGrid_ShowRows ControlToggles, "canhavefocus,disabled,hidden", True
+                PropertyGrid_ShowRows ControlProperties, "caption,text,font,fontlist,min,max,interval,mininterval,padding,bullet", False
+                PropertyGrid_ShowRow ControlProperties, "boolean", True
             CASE __UI_Type_MenuBar, __UI_Type_MenuItem
-                Control(Disabled).Disabled = False
-                Control(Hidden).Disabled = False
+                PropertyGrid_ShowRows ControlToggles, "disabled,hidden", True
             CASE __UI_Type_MenuBar
-                'Check if this is the last menu bar item so that Align options can be enabled
-                FOR i = UBOUND(PreviewControls) TO 1 STEP -1
-                    IF PreviewControls(i).ID > 0 AND PreviewControls(i).Type = __UI_Type_MenuBar THEN
-                        EXIT FOR
-                    END IF
-                NEXT
-                IF i = FirstSelected THEN
-                    Control(AlignOptions).Disabled = False
-                END IF
-
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TooltipTB, AlignOptions
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowOnly ControlProperties, "name,caption,tooltip,align"
             CASE __UI_Type_ContextMenu
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowOnly ControlProperties, "name"
             CASE __UI_Type_MenuItem
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TextTB, TooltipTB, BulletOptions, BooleanOptions, KeyboardComboBT
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowOnly ControlProperties, "name,caption,text,tooltip,bullet,boolean,keycombo"
             CASE __UI_Type_PictureBox
-                Caption(TextLB) = "Image file"
-                Control(AlignOptions).Disabled = False
-                Control(VAlignOptions).Disabled = False
-                Control(Stretch).Disabled = False
-                Control(Transparent).Disabled = False
-                IF PreviewAnimatedGif(FirstSelected) THEN
-                    Control(AutoPlayGif).Disabled = False
-                END IF
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, TextTB, TopTB, LeftTB, WidthTB, HeightTB, TooltipTB, AlignOptions, VAlignOptions
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                PropertyGrid_SetLabel ControlProperties, "text", "Image file"
+                PropertyGrid_ShowRows ControlToggles, "stretch,transparent", True
+                IF PreviewAnimatedGif(FirstSelected) THEN PropertyGrid_ShowRow ControlToggles, "autoplaygif", True
+                PropertyGrid_ShowOnly ControlProperties, "name,text,top,left,width,height,tooltip,align,valign"
             CASE __UI_Type_Label
-                Control(Transparent).Disabled = False
-                Control(AutoSize).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, PaddingTB, AlignOptions, VAlignOptions, FontList
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowRows ControlToggles, "transparent,autosize", True
+                PropertyGrid_ShowOnly ControlProperties, "name,caption,top,left,width,height,font,tooltip,padding,align,valign,fontlist"
             CASE __UI_Type_Frame
-                Control(Transparent).Disabled = True
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, CaptionTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                'Its Text holds property grid rows, or a data grid's columns and rows, edited in a table
+                PropertyGrid_ShowRow ControlToggles, "transparent", False
+                IF IsDataGridFrame(FirstSelected) THEN
+                    PropertyGrid_ShowOnly ControlProperties, "name,caption,columns,rows,top,left,width,height,font,tooltip,fontlist"
+                ELSE
+                    PropertyGrid_ShowOnly ControlProperties, "name,caption,rows,top,left,width,height,font,tooltip,fontlist"
+                END IF
             CASE __UI_Type_TextBox
                 STATIC PreviousNumericState AS _BYTE
-                Control(Transparent).Disabled = False
-                Control(PasswordMaskCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False) OR PreviewControls(FirstSelected).Multiline
-                Control(MultilineCB).Disabled = (PreviewControls(FirstSelected).NumericOnly <> False) OR PreviewControls(FirstSelected).PasswordField OR LEN(PreviewMasks(FirstSelected)) > 0
+                PropertyGrid_ShowRow ControlToggles, "transparent", True
+                PropertyGrid_ShowRow ControlToggles, "password", NOT ((PreviewControls(FirstSelected).NumericOnly <> False) OR PreviewControls(FirstSelected).Multiline)
+                PropertyGrid_ShowRow ControlToggles, "multiline", NOT ((PreviewControls(FirstSelected).NumericOnly <> False) OR PreviewControls(FirstSelected).PasswordField OR LEN(PreviewMasks(FirstSelected)) > 0)
                 IF PreviousNumericState <> PreviewControls(FirstSelected).NumericOnly THEN
                     PreviousNumericState = PreviewControls(FirstSelected).NumericOnly
                     __UI_ForceRedraw = True
                 END IF
+                PropertyGrid_ShowAll ControlProperties, True
                 IF PreviewControls(FirstSelected).NumericOnly = True THEN
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, MaxTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
-                                Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
-                                Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
+                    PropertyGrid_ShowRows ControlProperties, "value,min,max,mask,interval,padding,align,valign,mininterval,bullet,boolean,keycombo", False
                 ELSEIF PreviewControls(FirstSelected).NumericOnly = __UI_NumericWithBounds THEN
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MaskTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
-                                Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
-                                Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
+                    PropertyGrid_ShowRows ControlProperties, "value,mask,interval,padding,align,valign,mininterval,bullet,boolean,keycombo", False
                 ELSE
-                    Caption(MaxLB) = "Max length"
-                    FOR i = 1 TO UBOUND(InputBox)
-                        SELECT CASE InputBox(i).ID
-                            CASE ValueTB, MinTB, IntervalTB, PaddingTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
-                                Control(InputBox(i).ID).Disabled = True
-                            CASE ELSE
-                                Control(InputBox(i).ID).Disabled = False
-                        END SELECT
-                    NEXT
+                    PropertyGrid_SetLabel ControlProperties, "max", "Max length"
+                    PropertyGrid_ShowRows ControlProperties, "value,min,interval,padding,align,valign,mininterval,bullet,boolean,keycombo", False
                 END IF
             CASE __UI_Type_Button, __UI_Type_MenuItem
-                Caption(TextLB) = "Image file"
+                PropertyGrid_SetLabel ControlProperties, "text", "Image file"
             CASE __UI_Type_Button
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions
-                            Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowAll ControlProperties, True
+                PropertyGrid_ShowRows ControlProperties, "value,min,max,interval,padding,mask,align,valign,mininterval,bullet,boolean", False
             CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                Control(Transparent).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB
-                            Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowRow ControlToggles, "transparent", True
+                PropertyGrid_ShowAll ControlProperties, True
+                PropertyGrid_ShowRows ControlProperties, "text,min,max,interval,padding,mask,align,valign,mininterval,bullet,value", False
             CASE __UI_Type_ToggleSwitch
-                Control(Transparent).Disabled = True
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE WidthTB, HeightTB, TextTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, ValueTB, FontTB, FontList
-                            Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowRow ControlToggles, "transparent", False
+                PropertyGrid_ShowAll ControlProperties, True
+                PropertyGrid_ShowRows ControlProperties, "width,height,text,min,max,interval,padding,mask,align,valign,mininterval,bullet,value,font,fontlist", False
             CASE __UI_Type_ProgressBar
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE TextTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
-                            Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowAll ControlProperties, True
+                PropertyGrid_ShowRows ControlProperties, "text,interval,padding,mask,align,valign,mininterval,bullet,boolean,keycombo", False
             CASE __UI_Type_TrackBar
-                Control(HideTicks).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE CaptionTB, TextTB, FontTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, BulletOptions, BooleanOptions, FontList, KeyboardComboBT
-                            Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
+                PropertyGrid_ShowRow ControlToggles, "hideticks", True
+                PropertyGrid_ShowAll ControlProperties, True
+                PropertyGrid_ShowRows ControlProperties, "caption,text,font,padding,mask,align,valign,bullet,boolean,fontlist,keycombo", False
             CASE __UI_Type_ListBox, __UI_Type_DropdownList
-                Caption(TextLB) = "List items"
-                Caption(ValueLB) = "Selected item"
-                Control(Transparent).Disabled = False
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE CaptionTB, MinTB, MaxTB, IntervalTB, PaddingTB, MaskTB, AlignOptions, VAlignOptions, MinIntervalTB, BulletOptions, BooleanOptions, KeyboardComboBT
-                            Control(InputBox(i).ID).Disabled = True
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = False
-                    END SELECT
-                NEXT
+                PropertyGrid_SetLabel ControlProperties, "text", "List items"
+                PropertyGrid_SetLabel ControlProperties, "value", "Selected item"
+                PropertyGrid_ShowRow ControlToggles, "transparent", True
+                PropertyGrid_ShowAll ControlProperties, True
+                PropertyGrid_ShowRows ControlProperties, "caption,min,max,interval,padding,mask,align,valign,mininterval,bullet,boolean,keycombo", False
             CASE __UI_Type_ListBox
-                Control(AutoScroll).Disabled = False
-                Control(ReorderableCB).Disabled = False
+                PropertyGrid_ShowRows ControlToggles, "autoscroll,reorderable", True
             CASE __UI_Type_DropdownList
-                Control(SearchableCB).Disabled = False
-                Control(FuzzyCB).Disabled = (PreviewControls(FirstSelected).Searchable = False)
+                PropertyGrid_ShowRow ControlToggles, "searchable", True
+                PropertyGrid_ShowRow ControlToggles, "fuzzy", PreviewControls(FirstSelected).Searchable
             CASE __UI_Type_TabControl
-                Caption(TextLB) = "Tabs"
-                Caption(ValueLB) = "Active tab"
-                Control(Transparent).Disabled = True
-                FOR i = 1 TO UBOUND(InputBox)
-                    SELECT CASE InputBox(i).ID
-                        CASE NameTB, TextTB, ValueTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, FontList
-                            Control(InputBox(i).ID).Disabled = False
-                        CASE ELSE
-                            Control(InputBox(i).ID).Disabled = True
-                    END SELECT
-                NEXT
+                PropertyGrid_SetLabel ControlProperties, "text", "Tabs"
+                PropertyGrid_SetLabel ControlProperties, "value", "Active tab"
+                PropertyGrid_ShowRow ControlToggles, "transparent", False
+                PropertyGrid_ShowOnly ControlProperties, "name,text,value,top,left,width,height,font,tooltip,fontlist"
             CASE __UI_Type_Frame, __UI_Type_Label, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_PictureBox
-                Control(HasBorder).Disabled = False
+                PropertyGrid_ShowRow ControlToggles, "hasborder", True
             CASE __UI_Type_ProgressBar
-                Control(ShowPercentage).Disabled = False
+                PropertyGrid_ShowRow ControlToggles, "showpercentage", True
             CASE __UI_Type_Label
-                Control(WordWrap).Disabled = False
+                PropertyGrid_ShowRow ControlToggles, "wordwrap", True
             CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_TabControl
-                Control(CanHaveFocus).Disabled = False
+                PropertyGrid_ShowRow ControlToggles, "canhavefocus", True
             CASE __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_TabControl
-                Control(Disabled).Disabled = False
+                PropertyGrid_ShowRow ControlToggles, "disabled", True
             CASE __UI_Type_Frame, __UI_Type_TabControl, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
-                Control(Hidden).Disabled = False
+                PropertyGrid_ShowRow ControlToggles, "hidden", True
             CASE __UI_Type_Frame, __UI_Type_TabControl, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox, __UI_Type_ToggleSwitch
                 Control(AnchorPicker).Disabled = False
             CASE __UI_Type_Label
-                Control(AlignOptions).Disabled = False
-                Control(VAlignOptions).Disabled = False
+                PropertyGrid_ShowRows ControlProperties, "align,valign", True
         END SELECT
     ELSE
         'Properties relative to the form
-        Control(CenteredWindow).Disabled = False
-        Control(Resizable).Disabled = False
-        Control(AddGifExtensionToggle).Disabled = False
-        Caption(TextLB) = "Icon file"
-
-        FOR i = 1 TO UBOUND(InputBox)
-            SELECT CASE InputBox(i).ID
-                CASE NameTB, CaptionTB, TextTB, WidthTB, HeightTB, FontTB, FontList
-                    Control(InputBox(i).ID).Disabled = False
-                CASE ELSE
-                    Control(InputBox(i).ID).Disabled = True
-            END SELECT
-        NEXT
+        PropertyGrid_ShowRows ControlToggles, "centered,resizable,addgifextension", True
+        PropertyGrid_SetLabel ControlProperties, "text", "Icon file"
+        PropertyGrid_ShowOnly ControlProperties, "name,caption,text,width,height,font,fontlist"
     END IF
 
-    IF TotalSelected > 1 THEN Control(NameTB).Disabled = True
+    IF TotalSelected > 1 THEN PropertyGrid_ShowRow ControlProperties, "name", False
 
     IF HasFontList AND (ShowFontList = True AND BypassShowFontList = False) THEN
-        Control(FontTB).Disabled = True
+        PropertyGrid_ShowRow ControlProperties, "font", False
     ELSE
-        Control(FontList).Disabled = True
+        PropertyGrid_ShowRow ControlProperties, "fontlist", False
     END IF
 
-    IF PreviewControls(FirstSelected).Type = __UI_Type_ContextMenu OR PreviewControls(FirstSelected).Type = __UI_Type_MenuBar OR PreviewControls(FirstSelected).Type = __UI_Type_MenuItem THEN
-        Control(ContextMenuControlsList).Disabled = True
-    ELSE
-        Control(ContextMenuControlsList).Disabled = False
+    SELECT CASE PreviewControls(FirstSelected).Type
+        CASE __UI_Type_ContextMenu, __UI_Type_MenuBar, __UI_Type_MenuItem
+            PropertyGrid_ShowRow ControlProperties, "contextmenu", False
+        CASE ELSE
+            PropertyGrid_ShowRow ControlProperties, "contextmenu", True
+    END SELECT
+
+    'Border size sits beside "Has border"
+    IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame AND PreviewControls(FirstSelected).Type <> __UI_Type_TabControl THEN
+        PropertyGrid_ShowRow ControlToggles, "bordersize", PropertyGrid_RowShown(ControlToggles, "hasborder")
+        Caption(HasBorder) = "Has border     Size"
     END IF
 
-    DIM LastTopForInputBox AS INTEGER
-    LastTopForInputBox = -12
-    CONST TopIncrementForInputBox = 22
-    FOR i = 1 TO UBOUND(InputBox)
-        'Exception for SizeTB:
-        IF InputBox(i).ID = SizeTB THEN _CONTINUE
-
-        IF Control(InputBox(i).ID).Disabled THEN
-            Control(InputBox(i).ID).Hidden = True
-            Control(InputBox(i).LabelID).Hidden = True
-        ELSE
-            LastTopForInputBox = LastTopForInputBox + TopIncrementForInputBox
-            Control(InputBox(i).ID).Top = LastTopForInputBox
-            Control(InputBox(i).LabelID).Top = LastTopForInputBox
-        END IF
-    NEXT
-
-    LastTopForInputBox = -12
-    FOR i = 1 TO UBOUND(Toggles)
-        IF Control(Toggles(i)).Disabled THEN
-            Control(Toggles(i)).Hidden = True
-        ELSE
-            LastTopForInputBox = LastTopForInputBox + TopIncrementForInputBox
-            Control(Toggles(i)).Top = LastTopForInputBox
-        END IF
-    NEXT
+    'Stack the rows now, so the controls placed next to them below get their final positions
+    PropertyGrid_Layout ControlProperties
+    PropertyGrid_Layout ControlToggles
+    Control(SizeTB).Top = Control(HasBorder).Top
 
     'The anchor picker goes below the toggles, with its description under it
     Control(AnchorPicker).Hidden = Control(AnchorPicker).Disabled
     Control(AnchorLB).Hidden = Control(AnchorPicker).Hidden
     Control(AnchorInfoLB).Hidden = Control(AnchorPicker).Hidden
     IF NOT Control(AnchorPicker).Hidden THEN
-        Control(AnchorPicker).Top = LastTopForInputBox + TopIncrementForInputBox + 6
+        Control(AnchorPicker).Top = PropertyGrid_NextTop(ControlToggles) + 6
         Control(AnchorLB).Top = Control(AnchorPicker).Top
         Control(AnchorInfoLB).Top = Control(AnchorPicker).Top + Control(AnchorPicker).Height + 2
         UpdateAnchorPicker
@@ -2498,23 +2118,13 @@ SUB __UI_BeforeUpdateDisplay
     'Custom cases
     Control(AutoPlayGif).Disabled = NOT Control(AddGifExtensionToggle).Value
     Control(AutoSize).Disabled = Control(WordWrap).Value
-    IF Control(HasBorder).Value = True AND PreviewControls(FirstSelected).Type <> __UI_Type_Frame AND PreviewControls(FirstSelected).Type <> __UI_Type_TabControl THEN
-        Control(SizeTB).Disabled = False
-        Control(SizeTB).Hidden = False
-        Control(SizeTB).Height = 22
-        Control(SizeTB).Top = Control(HasBorder).Top
-        Caption(HasBorder) = "Has border     Size"
-    END IF
 
-    Control(FontSizeList).Disabled = Control(FontList).Disabled
-    Control(FontSizeList).Hidden = Control(FontList).Hidden
-    Control(FontSizeList).Top = Control(FontList).Top
     Control(PasteListBT).Hidden = True
     Control(BrowseImageBT).Hidden = True
 
     SELECT CASE PreviewControls(FirstSelected).Type
         CASE __UI_Type_PictureBox, __UI_Type_Button, __UI_Type_MenuItem, __UI_Type_Form
-            IF Control(TextTB).Hidden = False AND Control(TextTB).Disabled = False THEN
+            IF PropertyGrid_RowShown(ControlProperties, "text") THEN
                 Control(BrowseImageBT).Top = Control(TextTB).Top
                 Control(BrowseImageBT).Hidden = False
             END IF
@@ -2947,59 +2557,63 @@ SUB __UI_OnLoad
     GOSUB ShowMessage
     LoadFontList
 
-    'Assign InputBox IDs:
-    i = 0
-    i = i + 1: InputBox(i).ID = NameTB: InputBox(i).LabelID = NameLB: InputBox(i).Signal = 1: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = CaptionTB: InputBox(i).LabelID = CaptionLB: InputBox(i).Signal = 2: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = TextTB: InputBox(i).LabelID = TextLB: InputBox(i).Signal = 3: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = MaskTB: InputBox(i).LabelID = MaskLB: InputBox(i).Signal = 35: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = TopTB: InputBox(i).LabelID = TopLB: InputBox(i).Signal = 4: InputBox(i).DataType = DT_Integer
-    i = i + 1: InputBox(i).ID = LeftTB: InputBox(i).LabelID = LeftLB: InputBox(i).Signal = 5: InputBox(i).DataType = DT_Integer
-    i = i + 1: InputBox(i).ID = WidthTB: InputBox(i).LabelID = WidthLB: InputBox(i).Signal = 6: InputBox(i).DataType = DT_Integer
-    i = i + 1: InputBox(i).ID = HeightTB: InputBox(i).LabelID = HeightLB: InputBox(i).Signal = 7: InputBox(i).DataType = DT_Integer
-    i = i + 1: InputBox(i).ID = FontTB: InputBox(i).LabelID = FontLB: InputBox(i).Signal = 8: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = FontList: InputBox(i).LabelID = FontListLB: InputBox(i).Signal = 8: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = TooltipTB: InputBox(i).LabelID = TooltipLB: InputBox(i).Signal = 9: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = ValueTB: InputBox(i).LabelID = ValueLB: InputBox(i).Signal = 10: InputBox(i).DataType = DT_Float
-    i = i + 1: InputBox(i).ID = BooleanOptions: InputBox(i).LabelID = BooleanLB: InputBox(i).Signal = 10: InputBox(i).DataType = DT_Float
-    i = i + 1: InputBox(i).ID = MinTB: InputBox(i).LabelID = MinLB: InputBox(i).Signal = 11: InputBox(i).DataType = DT_Float
-    i = i + 1: InputBox(i).ID = MaxTB: InputBox(i).LabelID = MaxLB: InputBox(i).Signal = 12: InputBox(i).DataType = DT_Float
-    i = i + 1: InputBox(i).ID = IntervalTB: InputBox(i).LabelID = IntervalLB: InputBox(i).Signal = 13: InputBox(i).DataType = DT_Float
-    i = i + 1: InputBox(i).ID = MinIntervalTB: InputBox(i).LabelID = MinIntervalLB: InputBox(i).Signal = 36: InputBox(i).DataType = DT_Float
-    i = i + 1: InputBox(i).ID = PaddingTB: InputBox(i).LabelID = PaddingLeftrightLB: InputBox(i).Signal = 31: InputBox(i).DataType = DT_Integer
-    i = i + 1: InputBox(i).ID = AlignOptions: InputBox(i).LabelID = TextAlignLB
-    i = i + 1: InputBox(i).ID = VAlignOptions: InputBox(i).LabelID = VerticalAlignLB
-    i = i + 1: InputBox(i).ID = BulletOptions: InputBox(i).LabelID = BulletOptionsLB
-    i = i + 1: InputBox(i).ID = SizeTB: InputBox(i).Signal = 40: InputBox(i).DataType = DT_Integer
-    i = i + 1: InputBox(i).ID = ContextMenuControlsList: InputBox(i).LabelID = ContextMenuLB: InputBox(i).DataType = DT_Text
-    i = i + 1: InputBox(i).ID = KeyboardComboBT: InputBox(i).LabelID = KeyboardComboLB: InputBox(i).DataType = DT_Text
+    'The Control properties frame is a property grid: rows are stacked in this order,
+    'and only the ones that apply to the selected control are shown (see __UI_BeforeUpdateDisplay)
+    PropertyGrid_AdoptRow ControlProperties, "name", NameLB, NameTB
+    PropertyGrid_AdoptRow ControlProperties, "caption", CaptionLB, CaptionTB
+    PropertyGrid_AdoptRow ControlProperties, "text", TextLB, TextTB
+    PropertyGrid_AdoptRow ControlProperties, "columns", ColumnsLB, EditColumnsBT
+    PropertyGrid_AdoptRow ControlProperties, "rows", RowsLB, EditRowsBT
+    PropertyGrid_AdoptRow ControlProperties, "mask", MaskLB, MaskTB
+    PropertyGrid_AdoptRow ControlProperties, "top", TopLB, TopTB
+    PropertyGrid_AdoptRow ControlProperties, "left", LeftLB, LeftTB
+    PropertyGrid_AdoptRow ControlProperties, "width", WidthLB, WidthTB
+    PropertyGrid_AdoptRow ControlProperties, "height", HeightLB, HeightTB
+    PropertyGrid_AdoptRow ControlProperties, "font", FontLB, FontTB
+    PropertyGrid_AdoptRow ControlProperties, "fontlist", FontListLB, FontList
+    PropertyGrid_AttachControl ControlProperties, "fontlist", FontSizeList
+    PropertyGrid_AdoptRow ControlProperties, "tooltip", TooltipLB, TooltipTB
+    PropertyGrid_AdoptRow ControlProperties, "value", ValueLB, ValueTB
+    PropertyGrid_AdoptRow ControlProperties, "boolean", BooleanLB, BooleanOptions
+    PropertyGrid_AdoptRow ControlProperties, "min", MinLB, MinTB
+    PropertyGrid_AdoptRow ControlProperties, "max", MaxLB, MaxTB
+    PropertyGrid_AdoptRow ControlProperties, "interval", IntervalLB, IntervalTB
+    PropertyGrid_AdoptRow ControlProperties, "mininterval", MinIntervalLB, MinIntervalTB
+    PropertyGrid_AdoptRow ControlProperties, "padding", PaddingLeftrightLB, PaddingTB
+    PropertyGrid_AdoptRow ControlProperties, "align", TextAlignLB, AlignOptions
+    PropertyGrid_AdoptRow ControlProperties, "valign", VerticalAlignLB, VAlignOptions
+    PropertyGrid_AdoptRow ControlProperties, "bullet", BulletOptionsLB, BulletOptions
+    PropertyGrid_AdoptRow ControlProperties, "contextmenu", ContextMenuLB, ContextMenuControlsList
+    PropertyGrid_AdoptRow ControlProperties, "keycombo", KeyboardComboLB, KeyboardComboBT
 
-    REDIM _PRESERVE InputBox(1 TO i) AS newInputBox
-    REDIM InputBoxText(1 TO i) AS STRING
+    'The toggles frame is another one, with check boxes and no labels
+    PropertyGrid_AdoptRow ControlToggles, "stretch", 0, Stretch
+    PropertyGrid_AdoptRow ControlToggles, "hasborder", 0, HasBorder
+    PropertyGrid_AdoptRow ControlToggles, "showpercentage", 0, ShowPercentage
+    PropertyGrid_AdoptRow ControlToggles, "password", 0, PasswordMaskCB
+    PropertyGrid_AdoptRow ControlToggles, "multiline", 0, MultilineCB
+    PropertyGrid_AdoptRow ControlToggles, "wordwrap", 0, WordWrap
+    PropertyGrid_AdoptRow ControlToggles, "canhavefocus", 0, CanHaveFocus
+    PropertyGrid_AdoptRow ControlToggles, "disabled", 0, Disabled
+    PropertyGrid_AdoptRow ControlToggles, "transparent", 0, Transparent
+    PropertyGrid_AdoptRow ControlToggles, "hidden", 0, Hidden
+    PropertyGrid_AdoptRow ControlToggles, "centered", 0, CenteredWindow
+    PropertyGrid_AdoptRow ControlToggles, "resizable", 0, Resizable
+    PropertyGrid_AdoptRow ControlToggles, "autoscroll", 0, AutoScroll
+    PropertyGrid_AdoptRow ControlToggles, "searchable", 0, SearchableCB
+    PropertyGrid_AdoptRow ControlToggles, "fuzzy", 0, FuzzyCB
+    PropertyGrid_AdoptRow ControlToggles, "reorderable", 0, ReorderableCB
+    PropertyGrid_AdoptRow ControlToggles, "autosize", 0, AutoSize
+    PropertyGrid_AdoptRow ControlToggles, "hideticks", 0, HideTicks
+    PropertyGrid_AdoptRow ControlToggles, "autoplaygif", 0, AutoPlayGif
+    PropertyGrid_AdoptRow ControlToggles, "addgifextension", 0, AddGifExtensionToggle
+    'The border size box sits next to "Has border", so it's left out of the stacking
+    PropertyGrid_AdoptRow ControlToggles, "bordersize", 0, SizeTB
+    PropertyGrid_SetFloating ControlToggles, "bordersize", True
 
-    'Assign Toggles IDs:
-    i = 0
-    i = i + 1: Toggles(i) = Stretch
-    i = i + 1: Toggles(i) = HasBorder
-    i = i + 1: Toggles(i) = ShowPercentage
-    i = i + 1: Toggles(i) = PasswordMaskCB
-    i = i + 1: Toggles(i) = MultilineCB
-    i = i + 1: Toggles(i) = WordWrap
-    i = i + 1: Toggles(i) = CanHaveFocus
-    i = i + 1: Toggles(i) = Disabled
-    i = i + 1: Toggles(i) = Transparent
-    i = i + 1: Toggles(i) = Hidden
-    i = i + 1: Toggles(i) = CenteredWindow
-    i = i + 1: Toggles(i) = Resizable
-    i = i + 1: Toggles(i) = AutoScroll
-    i = i + 1: Toggles(i) = SearchableCB
-    i = i + 1: Toggles(i) = FuzzyCB
-    i = i + 1: Toggles(i) = ReorderableCB
-    i = i + 1: Toggles(i) = AutoSize
-    i = i + 1: Toggles(i) = HideTicks
-    i = i + 1: Toggles(i) = AutoPlayGif
-    i = i + 1: Toggles(i) = AddGifExtensionToggle
-    REDIM _PRESERVE Toggles(1 TO i) AS LONG
+    'The table in the property grid rows dialog (its columns are set when it opens, see SetRowsGridColumns)
+    DataGrid_Attach RowsGrid
+    Control(RowsGrid).HasBorder = False
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(FontList) = "System fonts may not be available in all computers. To specify a local font file, right-click 'Font' to the left of this list and disable 'Show system fonts list'."
@@ -3102,24 +2716,27 @@ SUB __UI_KeyPress (id AS LONG)
             IF __UI_KeyHit = 27 THEN
                 __UI_Click CloseZOrderingBT
             END IF
-        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
-            IF __UI_KeyHit = 13 THEN
-                'Send the preview the new property value
-                ConfirmEdits id
-            ELSEIF __UI_KeyHit = 32 THEN
-                IF id = NameTB THEN
-                    __UI_KeyHit = 0
-                    Caption(StatusBar) = "Control names cannot contain spaces"
-                    BlinkStatusBar = TIMER
-                ELSE
-                    InputBox(GetInputBoxFromID(id)).Sent = False
-                    Send Client, "LOCKCONTROLS><END>"
+        CASE RowsGrid, RowsFirstBT, RowsPrevBT, RowsNextBT, RowsLastBT, RowsAddBT, RowsDeleteBT, RowsUpBT, RowsDownBT, RowsOKBT, RowsCancelBT
+            'Esc while a cell is being edited only stops the editing (the grid takes the key)
+            IF __UI_KeyHit = 27 THEN CloseRowsDialog
+            'Delete clears a cell; with several rows selected, it removes them
+            IF id = RowsGrid AND __UI_KeyHit = 21248 THEN
+                IF DataGrid_SelectionLast(RowsGrid) > DataGrid_SelectionFirst(RowsGrid) THEN
+                    DataGrid_RemoveSelection RowsGrid
+                    RowsChanged
                 END IF
+            END IF
+        CASE NameTB, CaptionTB, TextTB, MaskTB, TopTB, LeftTB, WidthTB, HeightTB, FontTB, TooltipTB, ValueTB, MinTB, MaxTB, IntervalTB, PaddingTB, MinIntervalTB, SizeTB
+            'Enter and Esc were already handled by the property grid
+            IF __UI_KeyHit = 13 THEN
+                'The new value was sent to the preview (see SendPropertyEdit)
+            ELSEIF __UI_KeyHit = 32 AND id = NameTB THEN
+                __UI_KeyHit = 0
+                Caption(StatusBar) = "Control names cannot contain spaces"
+                BlinkStatusBar = TIMER
             ELSEIF __UI_KeyHit = 27 THEN
-                RevertEdit = True
                 Caption(StatusBar) = "Previous property value restored."
             ELSE
-                InputBox(GetInputBoxFromID(id)).Sent = False
                 Send Client, "LOCKCONTROLS><END>"
             END IF
         CASE KeyboardComboBT
@@ -3158,44 +2775,49 @@ SUB __UI_KeyPress (id AS LONG)
     END SELECT
 END SUB
 
-SUB ConfirmEdits (id AS LONG)
-    DIM b$, TempValue AS LONG
+''' @brief Sends the preview a property that was just edited in the Control properties or toggles frame.
+SUB SendPropertyEdit (GridID AS LONG)
+    DIM b$, Key$, NewValue$, id AS LONG, Signal AS INTEGER, DataType AS INTEGER
 
-    IF InputBoxText(GetInputBoxFromID(id)) <> Text(id) AND _
-        InputBox(GetInputBoxFromID(id)).Sent = False THEN
-        SELECT CASE InputBox(GetInputBoxFromID(id)).DataType
-            CASE DT_Text
-                b$ = MKL$(LEN(Text(id))) + Text(id)
-            CASE DT_Integer
-                b$ = MKI$(VAL(Text(id)))
-            CASE DT_Float
-                b$ = _MK$(_FLOAT, VAL(Text(id)))
-        END SELECT
-        TempValue = GetPropertySignal(id)
-        SendData b$, TempValue
-        PropertySent = True
-        Text(id) = RestoreCHR(Text(id))
-        SelectPropertyFully id
-        InputBoxText(GetInputBoxFromID(id)) = Text(id)
-        InputBox(GetInputBoxFromID(id)).LastEdited = TIMER
-        InputBox(GetInputBoxFromID(id)).Sent = True
-        Caption(StatusBar) = "Ready."
-    END IF
+    Key$ = PropertyGrid_ChangedRow$(GridID)
+    SELECT CASE Key$
+        CASE "name": Signal = 1: DataType = DT_Text
+        CASE "caption": Signal = 2: DataType = DT_Text
+        CASE "text": Signal = 3: DataType = DT_Text
+        CASE "top": Signal = 4: DataType = DT_Integer
+        CASE "left": Signal = 5: DataType = DT_Integer
+        CASE "width": Signal = 6: DataType = DT_Integer
+        CASE "height": Signal = 7: DataType = DT_Integer
+        CASE "font": Signal = 8: DataType = DT_Text
+        CASE "tooltip": Signal = 9: DataType = DT_Text
+        CASE "value": Signal = 10: DataType = DT_Float
+        CASE "min": Signal = 11: DataType = DT_Float
+        CASE "max": Signal = 12: DataType = DT_Float
+        CASE "interval": Signal = 13: DataType = DT_Float
+        CASE "padding": Signal = 31: DataType = DT_Integer
+        CASE "mask": Signal = 35: DataType = DT_Text
+        CASE "mininterval": Signal = 36: DataType = DT_Float
+        CASE "bordersize": Signal = 40: DataType = DT_Integer
+        CASE ELSE: EXIT SUB
+    END SELECT
+
+    NewValue$ = PropertyGrid_Value$(GridID, Key$)
+    SELECT CASE DataType
+        CASE DT_Text
+            b$ = MKL$(LEN(NewValue$)) + NewValue$
+        CASE DT_Integer
+            b$ = MKI$(VAL(NewValue$))
+        CASE DT_Float
+            b$ = _MK$(_FLOAT, VAL(NewValue$))
+    END SELECT
+    SendData b$, Signal
+    PropertySent = True
+
+    'Character codes typed as \65; become the characters themselves, the way the preview stores them
+    id = PropertyGrid_Control(GridID, Key$)
+    Text(id) = RestoreCHR(Text(id))
+    Caption(StatusBar) = "Ready."
 END SUB
-
-FUNCTION GetPropertySignal& (id AS LONG)
-    DIM i AS LONG
-    FOR i = 1 TO UBOUND(InputBox)
-        IF InputBox(i).ID = id THEN GetPropertySignal& = InputBox(i).Signal: EXIT FUNCTION
-    NEXT
-END FUNCTION
-
-FUNCTION GetInputBoxFromID& (id AS LONG)
-    DIM i AS LONG
-    FOR i = 1 TO UBOUND(InputBox)
-        IF InputBox(i).ID = id THEN GetInputBoxFromID& = i: EXIT FUNCTION
-    NEXT
-END FUNCTION
 
 SUB __UI_TextChanged (id AS LONG)
     SELECT CASE id
@@ -3212,6 +2834,12 @@ SUB __UI_ValueChanged (id AS LONG)
 
     DIM b$, i AS LONG
     SELECT EVERYCASE id
+        CASE ControlProperties, ControlToggles
+            SendPropertyEdit id
+        CASE RowsGrid
+            'A cell was changed (column 0 means another cell became current)
+            IF DataGrid_ChangedColumn(RowsGrid) = 2 THEN RowsKindChanged DataGrid_ChangedRow(RowsGrid)
+            IF DataGrid_ChangedColumn(RowsGrid) > 0 THEN RowsChanged
         CASE AlignOptions
             IF __UI_Focus <> id THEN EXIT SUB
             b$ = MKI$(Control(AlignOptions).Value - 1)
@@ -3229,7 +2857,7 @@ SUB __UI_ValueChanged (id AS LONG)
             PropertySent = True
         CASE BooleanOptions
             b$ = _MK$(_FLOAT, -(Control(BooleanOptions).Value - 1))
-            SendData b$, GetPropertySignal(BooleanOptions)
+            SendData b$, 10
             PropertySent = True
         CASE ContextMenuControlsList
             i = Control(ContextMenuControlsList).Value
@@ -3415,6 +3043,24 @@ SUB DrawEditorIcons
     IconLine 9.5, 2.5, 13.5, 2.5, 1, soft
     IconLine 9.5, 2.5, 9.5, 5, 1, soft
     IconLine 13.5, 2.5, 13.5, 5, 1, soft
+
+    'Property grid: label | value rows, one of them a box being edited
+    EditorIconCanvas AddPropertyGrid, 16
+    IconRoundRect 0.5, 1.5, 15.5, 14.5, 1.5, 1, fg
+    IconLine 2.5, 5, 6, 5, 1.4, soft
+    IconRoundRect 8, 3, 14, 7, 1, 0, acc
+    IconLine 2.5, 11, 6, 11, 1.4, soft
+    IconRoundRect 8, 9, 14, 13, 1, 1, fg
+
+    'Data grid: a table with a header row and a current cell
+    EditorIconCanvas AddDataGrid, 16
+    IconRoundRect 0, 1, 16, 15, 1.5, 0, paper
+    IconRoundRect 0.5, 1.5, 15.5, 5.5, 1, 0, soft
+    IconRoundRect 6, 6, 11, 10, 0, 0, acc
+    IconRoundRect 0.5, 1.5, 15.5, 14.5, 1.5, 1, fg
+    IconLine 0.5, 10, 15.5, 10, 1, fg
+    IconLine 5.5, 1.5, 5.5, 14.5, 1, fg
+    IconLine 10.5, 1.5, 10.5, 14.5, 1, fg
 
     'Paste list button: lines of text
     EditorIconCanvas PasteListBT, 17
@@ -3820,6 +3466,534 @@ SUB LoadPreview
         END IF
         PrevTotalGifLoaded = TotalGifLoaded
     END IF
+END SUB
+
+'---------------------------------------------------------------------------------
+'Property grid rows dialog: a frame's Text holds rows (key|kind|label|items, one per line), edited here in a table.
+'The same dialog edits a data grid's columns and rows (see InFormDataGrid.bm for how its Text holds them).
+'---------------------------------------------------------------------------------
+
+''' @brief The word a property grid row kind is written as.
+FUNCTION RowKindName$ (Kind AS _BYTE)
+    SELECT CASE Kind
+        CASE __UI_PropertyGrid_Integer: RowKindName$ = "integer"
+        CASE __UI_PropertyGrid_Float: RowKindName$ = "float"
+        CASE __UI_PropertyGrid_Choice: RowKindName$ = "choice"
+        CASE __UI_PropertyGrid_Toggle: RowKindName$ = "toggle"
+        CASE __UI_PropertyGrid_Button: RowKindName$ = "button"
+        CASE ELSE: RowKindName$ = "text"
+    END SELECT
+END FUNCTION
+
+''' @brief Opens the dialog on the selected frame: a data grid's rows (its columns, when it has none yet),
+''' or a property grid's rows.
+SUB OpenRowsDialog
+    DIM GridColumns$, GridRows$
+    IF FirstSelected = 0 OR TotalSelected <> 1 THEN EXIT SUB
+    IF IsDataGridFrame(FirstSelected) THEN
+        __UI_DGSplitDefinition PreviewTexts(FirstSelected), GridColumns$, GridRows$
+        IF LEN(GridColumns$) = 0 THEN OpenRowsDialogFor RowsModeColumns ELSE OpenRowsDialogFor RowsModeGridRows
+    ELSE
+        OpenRowsDialogFor RowsModeProperties
+    END IF
+END SUB
+
+''' @brief Sets up the table's columns for what it holds (see RowsMode).
+SUB SetRowsGridColumns
+    DIM c AS LONG, Caption$, Kind AS _BYTE, ColumnWidth AS INTEGER, Items$
+
+    DataGrid_Clear RowsGrid
+    FOR c = DataGrid_ColumnCount(RowsGrid) TO 1 STEP -1
+        DataGrid_RemoveColumn RowsGrid, c
+    NEXT
+    SELECT CASE RowsMode
+        CASE RowsModeProperties
+            DataGrid_AddTextColumn RowsGrid, "Key", 110
+            DataGrid_AddChoiceColumn RowsGrid, "Kind", 80, "text|integer|float|choice|toggle|button"
+            DataGrid_AddTextColumn RowsGrid, "Label", 140
+            DataGrid_AddTextColumn RowsGrid, "Items / value", 0
+        CASE RowsModeColumns
+            DataGrid_AddTextColumn RowsGrid, "Caption", 150
+            DataGrid_AddChoiceColumn RowsGrid, "Kind", 80, "text|integer|float|choice|toggle"
+            DataGrid_AddIntegerColumn RowsGrid, "Width", 70
+            DataGrid_AddTextColumn RowsGrid, "Items", 0
+        CASE RowsModeGridRows
+            'The data grid's own columns (RowsKeep$ holds them)
+            FOR c = 1 TO __UI_DGPartCount(RowsKeep$, CHR$(10)) - 1
+                __UI_DGParseColumn __UI_DGPart(RowsKeep$, c, CHR$(10)), Caption$, Kind, ColumnWidth, Items$
+                Items$ = Replace$(Items$, ",", "|", False, 0)
+                SELECT CASE Kind
+                    CASE __UI_DataGrid_Integer: DataGrid_AddIntegerColumn RowsGrid, Caption$, ColumnWidth
+                    CASE __UI_DataGrid_Float: DataGrid_AddFloatColumn RowsGrid, Caption$, ColumnWidth
+                    CASE __UI_DataGrid_Choice: DataGrid_AddChoiceColumn RowsGrid, Caption$, ColumnWidth, Items$
+                    CASE __UI_DataGrid_Toggle: DataGrid_AddToggleColumn RowsGrid, Caption$, ColumnWidth
+                    CASE ELSE: DataGrid_AddTextColumn RowsGrid, Caption$, ColumnWidth
+                END SELECT
+            NEXT
+    END SELECT
+END SUB
+
+''' @brief Fills the table with the selected frame's property grid rows, data grid columns or data grid rows
+''' (Mode is one of the RowsMode constants) and shows the dialog.
+SUB OpenRowsDialogFor (Mode AS _BYTE)
+    DIM t$, l$, p AS LONG, k$, Kind AS _BYTE, Label$, Extra$, r AS LONG, i AS LONG
+    DIM GridColumns$, GridRows$, ColumnWidth AS INTEGER, FrameName$
+
+    IF FirstSelected = 0 OR TotalSelected <> 1 THEN EXIT SUB
+    IF PreviewControls(FirstSelected).Type <> __UI_Type_Frame THEN EXIT SUB
+    IF Mode <> RowsModeProperties AND NOT IsDataGridFrame(FirstSelected) THEN EXIT SUB
+
+    RowsMode = Mode
+    RowsKeep$ = ""
+    IF Mode <> RowsModeProperties THEN
+        __UI_DGSplitDefinition PreviewTexts(FirstSelected), GridColumns$, GridRows$
+        IF Mode = RowsModeColumns THEN RowsKeep$ = GridRows$ ELSE RowsKeep$ = GridColumns$
+    END IF
+    SetRowsGridColumns
+
+    SELECT CASE Mode
+        CASE RowsModeProperties
+            t$ = Replace(PreviewTexts(FirstSelected), "\n", CHR$(10), False, 0)
+            t$ = Replace(t$, CHR$(13), "", False, 0) + CHR$(10)
+            DO
+                p = INSTR(t$, CHR$(10))
+                IF p = 0 THEN EXIT DO
+                l$ = LEFT$(t$, p - 1)
+                t$ = MID$(t$, p + 1)
+                IF __UI_PGParseLine(l$, k$, Kind, Label$, Extra$) THEN
+                    r = DataGrid_AddRow(RowsGrid, "")
+                    DataGrid_SetCell RowsGrid, r, 1, k$
+                    DataGrid_SetCell RowsGrid, r, 2, RowKindName$(Kind)
+                    DataGrid_SetCell RowsGrid, r, 3, Label$
+                    DataGrid_SetCell RowsGrid, r, 4, Extra$
+                    RowsValueKind r
+                END IF
+            LOOP
+        CASE RowsModeColumns
+            'Each line remembers which column it was, so the rows' cells can follow when columns move or go
+            FOR i = 1 TO __UI_DGPartCount(GridColumns$, CHR$(10)) - 1
+                __UI_DGParseColumn __UI_DGPart(GridColumns$, i, CHR$(10)), Label$, Kind, ColumnWidth, Extra$
+                r = DataGrid_AddRow(RowsGrid, "")
+                DataGrid_SetCell RowsGrid, r, 1, Label$
+                DataGrid_SetCell RowsGrid, r, 2, __UI_DGKindName$(Kind)
+                DataGrid_SetCell RowsGrid, r, 3, LTRIM$(STR$(ColumnWidth))
+                DataGrid_SetCell RowsGrid, r, 4, Extra$
+                DataGrid_SetRowTag RowsGrid, r, LTRIM$(STR$(i))
+            NEXT
+        CASE RowsModeGridRows
+            FOR i = 1 TO __UI_DGPartCount(GridRows$, CHR$(10)) - 1
+                r = DataGrid_AddRow(RowsGrid, __UI_DGPart(GridRows$, i, CHR$(10)))
+            NEXT
+    END SELECT
+    IF DataGrid_RowCount(RowsGrid) > 0 THEN DataGrid_Select RowsGrid, 1, 1
+
+    'Changes show in the preview as they're made; the frame's Text as it was is put back when the dialog closes
+    FrameName$ = RTRIM$(__UI_TrimAt0$(PreviewControls(FirstSelected).Name))
+    RowsFrameName$ = FrameName$
+    RowsOriginal$ = PreviewTexts(FirstSelected)
+    RowsShown$ = RowsOriginal$
+    RowsHistoryCount = 1
+    RowsHistoryPos = 1
+    REDIM RowsHistory(1 TO 16) AS STRING
+    RowsHistory(1) = RowsSnapshot$
+
+    SELECT CASE Mode
+        CASE RowsModeProperties
+            Caption(EditRowsDialog) = "Property grid rows: " + FrameName$
+            Caption(RowsDescriptionLB) = "Each line becomes a row of the frame's property grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; Ctrl+Z undoes."
+            Caption(StatusBar) = "Editing property grid rows"
+        CASE RowsModeColumns
+            Caption(EditRowsDialog) = "Data grid columns: " + FrameName$
+            Caption(RowsDescriptionLB) = "Each line becomes a column of the frame's data grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects lines; Ctrl+Z undoes."
+            Caption(StatusBar) = "Editing data grid columns"
+        CASE RowsModeGridRows
+            Caption(EditRowsDialog) = "Data grid rows: " + FrameName$
+            Caption(RowsDescriptionLB) = "The rows the frame's data grid has when the program starts, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; Ctrl+Z undoes."
+            Caption(StatusBar) = "Editing data grid rows"
+    END SELECT
+    Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
+    Control(EditRowsDialog).Left = 18: Control(EditRowsDialog).Top = 70
+    Control(RowsGrid).Left = Control(EditRowsDialog).Left + 15
+    Control(RowsGrid).Top = Control(EditRowsDialog).Top + 62
+    RowsDialogOpen = True
+    Send Client, "LOCKINPUT>" + MKI$(True) + "<END>" 'no editing in the preview while the dialog is open
+    __UI_Focus = RowsGrid
+    UpdateRowsDialog
+    __UI_ForceRedraw = True
+END SUB
+
+''' @brief Hides the dialog without changing the frame.
+SUB CloseRowsDialog
+    IF NOT RowsDialogOpen THEN EXIT SUB
+    RowsDialogOpen = False
+    Send Client, "LOCKINPUT>" + MKI$(False) + "<END>"
+    IF DataGrid_IsEditing(RowsGrid) THEN DataGrid_StopEditing RowsGrid
+    IF RowsShown$ <> RowsOriginal$ THEN ShowRowsInPreview RowsOriginal$
+    REDIM RowsHistory(0) AS STRING
+    RowsHistoryCount = 0
+    RowsHistoryPos = 0
+    Control(DialogBG).Left = -600: Control(DialogBG).Top = -600
+    Control(EditRowsDialog).Left = -600: Control(EditRowsDialog).Top = -600
+    Control(RowsGrid).Left = -600: Control(RowsGrid).Top = -600
+    __UI_Focus = 0
+    Caption(StatusBar) = "Ready."
+    __UI_ForceRedraw = True
+END SUB
+
+''' @brief Points at a cell the table can't keep as it is, and says why.
+SUB RowsRefuse (r AS LONG, c AS LONG, Message$)
+    DataGrid_Select RowsGrid, r, c
+    __UI_Focus = RowsGrid
+    MessageBox Message$, UiEditorTitle$, MsgBox_Exclamation
+END SUB
+
+''' @brief Writes the table back to the frame's Text (an edit that can be undone) and closes the dialog.
+SUB ApplyRowsDialog
+    DIM r AS LONG, c AS LONG, k$, Label$, t$, Keys$
+
+    DataGrid_StopEditing RowsGrid
+    SELECT CASE RowsMode
+        CASE RowsModeProperties
+            Keys$ = CHR$(10)
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                k$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 1))
+                Label$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 3))
+                IF LEN(k$) = 0 AND LEN(Label$) = 0 THEN _CONTINUE 'blank rows are left out
+                IF LEN(k$) = 0 THEN k$ = Label$
+
+                IF INSTR(k$, "|") > 0 OR INSTR(Label$, "|") > 0 THEN
+                    IF INSTR(k$, "|") > 0 THEN c = 1 ELSE c = 3
+                    RowsRefuse r, c, "Keys and labels can't contain |."
+                    EXIT SUB
+                END IF
+                IF INSTR(Keys$, CHR$(10) + LCASE$(k$) + CHR$(10)) THEN
+                    RowsRefuse r, 1, "More than one row has the key '" + k$ + "'. Each row needs its own key."
+                    EXIT SUB
+                END IF
+                Keys$ = Keys$ + LCASE$(k$) + CHR$(10)
+            NEXT
+        CASE RowsModeColumns
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                IF INSTR(DataGrid_Cell(RowsGrid, r, 1), "|") THEN RowsRefuse r, 1, "Captions can't contain |.": EXIT SUB
+                IF INSTR(DataGrid_Cell(RowsGrid, r, 4), "|") THEN RowsRefuse r, 4, "Separate a choice's items with commas: they can't contain |.": EXIT SUB
+            NEXT
+        CASE RowsModeGridRows
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                FOR c = 1 TO DataGrid_ColumnCount(RowsGrid)
+                    IF INSTR(DataGrid_Cell(RowsGrid, r, c), "|") THEN
+                        RowsRefuse r, c, "Cells written here can't contain |. Your code can put it in a cell with DataGrid_SetCell."
+                        EXIT SUB
+                    END IF
+                NEXT
+            NEXT
+    END SELECT
+
+    'The preview gets the frame's Text back as it was, then the new one as a property: one step to undo
+    t$ = RowsTableText$
+    CloseRowsDialog
+    IF t$ <> RowsOriginal$ THEN
+        SendData MKL$(LEN(t$)) + t$, 3
+        PropertySent = True
+    END IF
+END SUB
+
+''' @brief What the frame's Text becomes with the table as it is: property grid rows (key|kind|label|items, one per
+''' line, blank rows left out), or a data grid's definition with the table as its columns or rows.
+FUNCTION RowsTableText$
+    DIM r AS LONG, c AS LONG, i AS LONG, k$, Kind$, Label$, Extra$, t$, Row$, OldRow$, Tag AS LONG
+
+    SELECT CASE RowsMode
+        CASE RowsModeProperties
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                k$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 1))
+                Kind$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 2))
+                Label$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 3))
+                Extra$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 4))
+                IF LEN(k$) = 0 AND LEN(Label$) = 0 THEN _CONTINUE
+                IF LEN(k$) = 0 THEN k$ = Label$
+                Row$ = k$ + "|" + Kind$ + "|" + Label$
+                IF LEN(Extra$) THEN Row$ = Row$ + "|" + Extra$
+                IF LEN(t$) THEN t$ = t$ + CHR$(10)
+                t$ = t$ + Row$
+            NEXT
+
+        CASE RowsModeColumns
+            t$ = "#columns" + CHR$(10)
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                Row$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 1)) + "|" + _TRIM$(DataGrid_Cell(RowsGrid, r, 2)) + "|" + LTRIM$(STR$(_MAX(0, VAL(DataGrid_Cell(RowsGrid, r, 3)))))
+                Extra$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 4))
+                IF LEN(Extra$) THEN Row$ = Row$ + "|" + Extra$
+                t$ = t$ + Row$ + CHR$(10)
+            NEXT
+            t$ = t$ + "#rows"
+            'Each row's cells follow their columns; a new column's cells are left out (they get its default)
+            FOR i = 1 TO __UI_DGPartCount(RowsKeep$, CHR$(10)) - 1
+                OldRow$ = __UI_DGPart(RowsKeep$, i, CHR$(10))
+                Row$ = ""
+                FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                    IF r > 1 THEN Row$ = Row$ + "|"
+                    Tag = VAL(DataGrid_RowTag(RowsGrid, r))
+                    IF Tag > 0 THEN Row$ = Row$ + __UI_DGPart(OldRow$, Tag, "|")
+                NEXT
+                DO WHILE RIGHT$(Row$, 1) = "|"
+                    Row$ = LEFT$(Row$, LEN(Row$) - 1)
+                LOOP
+                t$ = t$ + CHR$(10) + Row$
+            NEXT
+
+        CASE RowsModeGridRows
+            t$ = "#columns" + CHR$(10) + RowsKeep$ + "#rows"
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                Row$ = ""
+                FOR c = 1 TO DataGrid_ColumnCount(RowsGrid)
+                    IF c > 1 THEN Row$ = Row$ + "|"
+                    Row$ = Row$ + DataGrid_Cell(RowsGrid, r, c)
+                NEXT
+                t$ = t$ + CHR$(10) + Row$
+            NEXT
+    END SELECT
+    RowsTableText$ = t$
+END FUNCTION
+
+''' @brief Shows the frame's Text as the table makes it, without an undo step (see ApplyRowsDialog).
+SUB ShowRowsInPreview (t$)
+    Send Client, "ROWSPREVIEW>" + MKL$(LEN(RowsFrameName$)) + RowsFrameName$ + t$ + "<END>"
+    RowsShown$ = t$
+END SUB
+
+''' @brief The table's cells and row tags, and the current cell, to go back to with undo.
+FUNCTION RowsSnapshot$
+    DIM r AS LONG, c AS LONG, s$
+    s$ = MKL$(DataGrid_Row(RowsGrid)) + MKL$(DataGrid_Column(RowsGrid))
+    FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+        FOR c = 1 TO DataGrid_ColumnCount(RowsGrid)
+            s$ = s$ + DataGrid_Cell(RowsGrid, r, c) + CHR$(1)
+        NEXT
+        s$ = s$ + DataGrid_RowTag(RowsGrid, r) + CHR$(1) + CHR$(2)
+    NEXT
+    RowsSnapshot$ = s$
+END FUNCTION
+
+''' @brief Property grid rows: makes a row's last cell a check box for a toggle and a number for an integer or float
+''' (text otherwise).
+SUB RowsValueKind (r AS LONG)
+    IF RowsMode <> RowsModeProperties THEN EXIT SUB
+    SELECT CASE _TRIM$(DataGrid_Cell(RowsGrid, r, 2))
+        CASE "toggle": DataGrid_SetCellKind RowsGrid, r, 4, __UI_DataGrid_Toggle
+        CASE "integer": DataGrid_SetCellKind RowsGrid, r, 4, __UI_DataGrid_Integer
+        CASE "float": DataGrid_SetCellKind RowsGrid, r, 4, __UI_DataGrid_Float
+        CASE ELSE: DataGrid_SetCellKind RowsGrid, r, 4, 0
+    END SELECT
+END SUB
+
+''' @brief What a row's last cell holds for a kind: a starting value, a choice's items or a button's caption.
+FUNCTION RowsExtraMeaning$ (Kind$)
+    SELECT CASE Kind$
+        CASE "choice", "button": RowsExtraMeaning$ = Kind$
+        CASE ELSE: RowsExtraMeaning$ = "value"
+    END SELECT
+END FUNCTION
+
+''' @brief A row's kind was changed in the table: its last cell changes kind with it, and its value is kept
+''' only if it means the same thing for the new kind (e.g. a choice's items aren't a toggle's value).
+''' For a data grid column, only a choice has items: a new choice gets some to start with.
+SUB RowsKindChanged (r AS LONG)
+    DIM s$, p AS LONG, i AS LONG, Row$, OldKind$, NewKind$, v$
+
+    NewKind$ = _TRIM$(DataGrid_Cell(RowsGrid, r, 2))
+    IF RowsMode = RowsModeColumns THEN
+        IF NewKind$ = "choice" THEN
+            IF LEN(_TRIM$(DataGrid_Cell(RowsGrid, r, 4))) = 0 THEN DataGrid_SetCell RowsGrid, r, 4, "Item 1,Item 2,Item 3"
+        ELSE
+            DataGrid_SetCell RowsGrid, r, 4, ""
+        END IF
+        EXIT SUB
+    END IF
+    IF RowsMode <> RowsModeProperties THEN EXIT SUB
+
+    'The row's kind before the change, from the last snapshot kept for undo
+    s$ = MID$(RowsHistory(RowsHistoryPos), 9)
+    FOR i = 1 TO r
+        p = INSTR(s$, CHR$(2))
+        IF p = 0 THEN Row$ = "": EXIT FOR
+        Row$ = LEFT$(s$, p - 1)
+        s$ = MID$(s$, p + 1)
+    NEXT
+    p = INSTR(Row$, CHR$(1))
+    IF p THEN OldKind$ = _TRIM$(MID$(Row$, p + 1, INSTR(p + 1, Row$, CHR$(1)) - p - 1))
+
+    v$ = DataGrid_Cell(RowsGrid, r, 4)
+    IF RowsExtraMeaning$(OldKind$) <> RowsExtraMeaning$(NewKind$) THEN v$ = ""
+    IF LEN(_TRIM$(v$)) THEN
+        SELECT CASE NewKind$
+            CASE "toggle": IF VAL(v$) <> 0 THEN v$ = "-1" ELSE v$ = "0"
+            CASE "integer": v$ = LTRIM$(STR$(_ROUND(VAL(v$))))
+            CASE "float": v$ = LTRIM$(STR$(VAL(v$)))
+        END SELECT
+    END IF
+    DataGrid_SetCell RowsGrid, r, 4, v$
+    RowsValueKind r
+END SUB
+
+''' @brief Called after every change to the table: keeps it for undo and shows it in the preview.
+SUB RowsChanged
+    DIM s$
+    IF NOT RowsDialogOpen THEN EXIT SUB
+    s$ = RowsSnapshot$
+    'Only the cells count: moving to another cell isn't a change
+    IF MID$(s$, 9) <> MID$(RowsHistory(RowsHistoryPos), 9) THEN
+        RowsHistoryPos = RowsHistoryPos + 1
+        IF RowsHistoryPos > UBOUND(RowsHistory) THEN REDIM _PRESERVE RowsHistory(1 TO RowsHistoryPos + 15) AS STRING
+        RowsHistoryCount = RowsHistoryPos 'what could be redone is gone
+    END IF
+    RowsHistory(RowsHistoryPos) = s$
+    IF RowsTableText$ <> RowsShown$ THEN ShowRowsInPreview RowsTableText$
+END SUB
+
+''' @brief Goes back (-1) or forward (1) through the changes made to the table.
+SUB RowsUndo (Direction AS LONG)
+    DIM s$, p AS LONG, r AS LONG, c AS LONG, Cells$, Row$, CurRow AS LONG, CurCol AS LONG
+
+    IF RowsHistoryPos + Direction < 1 OR RowsHistoryPos + Direction > RowsHistoryCount THEN EXIT SUB
+    'An undone change takes its place in view (the current cell is kept with it)
+    IF Direction < 0 THEN s$ = RowsHistory(RowsHistoryPos) ELSE s$ = RowsHistory(RowsHistoryPos + 1)
+    CurRow = CVL(LEFT$(s$, 4)): CurCol = CVL(MID$(s$, 5, 4))
+    RowsHistoryPos = RowsHistoryPos + Direction
+    s$ = RowsHistory(RowsHistoryPos)
+
+    DataGrid_Clear RowsGrid
+    Cells$ = MID$(s$, 9)
+    DO
+        p = INSTR(Cells$, CHR$(2))
+        IF p = 0 THEN EXIT DO
+        Row$ = LEFT$(Cells$, p - 1)
+        Cells$ = MID$(Cells$, p + 1)
+        r = DataGrid_AddRow(RowsGrid, "")
+        FOR c = 1 TO DataGrid_ColumnCount(RowsGrid)
+            p = INSTR(Row$, CHR$(1))
+            DataGrid_SetCell RowsGrid, r, c, LEFT$(Row$, p - 1)
+            Row$ = MID$(Row$, p + 1)
+        NEXT
+        p = INSTR(Row$, CHR$(1))
+        IF p THEN DataGrid_SetRowTag RowsGrid, r, LEFT$(Row$, p - 1)
+        RowsValueKind r
+    LOOP
+    IF CurRow = 0 THEN CurRow = 1
+    IF CurCol = 0 THEN CurCol = 1
+    IF DataGrid_RowCount(RowsGrid) > 0 THEN DataGrid_Select RowsGrid, CurRow, CurCol
+
+    IF RowsTableText$ <> RowsShown$ THEN ShowRowsInPreview RowsTableText$
+    IF Direction < 0 THEN Caption(StatusBar) = "Undone." ELSE Caption(StatusBar) = "Redone."
+END SUB
+
+''' @brief Makes a row current, keeping the column.
+SUB RowsGoTo (r AS LONG)
+    DIM c AS LONG
+    c = DataGrid_Column(RowsGrid)
+    IF c = 0 THEN c = 1
+    DataGrid_Select RowsGrid, r, c
+    __UI_Focus = RowsGrid
+END SUB
+
+''' @brief Adds a line below the current one and starts editing its first cell: a text row with a key not used yet,
+''' a text column with a caption not used yet, or a data grid row with its columns' defaults.
+SUB RowsAdd
+    DIM n AS LONG, r AS LONG, k$, Taken AS _BYTE, Base$, NewLine$
+
+    SELECT CASE RowsMode
+        CASE RowsModeProperties: Base$ = "text"
+        CASE RowsModeColumns: Base$ = "Column "
+    END SELECT
+    IF LEN(Base$) THEN
+        DO
+            n = n + 1
+            k$ = Base$ + LTRIM$(STR$(n))
+            Taken = False
+            FOR r = 1 TO DataGrid_RowCount(RowsGrid)
+                IF LCASE$(_TRIM$(DataGrid_Cell(RowsGrid, r, 1))) = LCASE$(k$) THEN Taken = True: EXIT FOR
+            NEXT
+        LOOP WHILE Taken
+    END IF
+    SELECT CASE RowsMode
+        CASE RowsModeProperties: NewLine$ = k$ + "|text|Text"
+        CASE RowsModeColumns: NewLine$ = k$ + "|text|80"
+    END SELECT
+
+    r = DataGrid_InsertRow(RowsGrid, DataGrid_Row(RowsGrid) + 1, NewLine$)
+    DataGrid_Select RowsGrid, r, 1
+    RowsChanged
+    __UI_Focus = RowsGrid
+    'A check box or a list in the first cell isn't typed in
+    SELECT CASE DataGrid_CellKind(RowsGrid, r, 1)
+        CASE __UI_DataGrid_Text, __UI_DataGrid_Integer, __UI_DataGrid_Float: DataGrid_Edit RowsGrid
+    END SELECT
+END SUB
+
+''' @brief Keeps the dialog's position, buttons and hint in step with the table.
+SUB UpdateRowsDialog
+    DIM r AS LONG, n AS LONG, First AS LONG, Last AS LONG, Noun$, Nouns$, c AS LONG, Caption$, Kind AS _BYTE
+    DIM ColumnWidth AS INTEGER, Items$, Holds$
+
+    r = DataGrid_Row(RowsGrid)
+    n = DataGrid_RowCount(RowsGrid)
+    First = DataGrid_SelectionFirst(RowsGrid)
+    Last = DataGrid_SelectionLast(RowsGrid)
+    IF RowsMode = RowsModeColumns THEN Noun$ = "Column": Nouns$ = "Columns" ELSE Noun$ = "Row": Nouns$ = "Rows"
+    IF n = 0 THEN
+        Caption(RowsPositionLB) = "No " + LCASE$(Nouns$)
+    ELSEIF Last > First THEN
+        Caption(RowsPositionLB) = Nouns$ + STR$(First) + "-" + LTRIM$(STR$(Last)) + " of" + STR$(n)
+    ELSE
+        Caption(RowsPositionLB) = Noun$ + STR$(r) + " of" + STR$(n)
+    END IF
+    Control(RowsFirstBT).Disabled = r <= 1
+    Control(RowsPrevBT).Disabled = r <= 1
+    Control(RowsNextBT).Disabled = r >= n
+    Control(RowsLastBT).Disabled = r >= n
+    Control(RowsDeleteBT).Disabled = r = 0
+    Control(RowsUpBT).Disabled = First <= 1
+    Control(RowsDownBT).Disabled = First = 0 OR Last >= n
+
+    c = DataGrid_Column(RowsGrid)
+    IF r = 0 THEN c = 0
+    SELECT CASE RowsMode
+        CASE RowsModeProperties
+            SELECT CASE c
+                CASE 1: Caption(RowsHintLB) = "Key: the name your code uses for the row, as in PropertyGrid_Value$(frame, " + CHR$(34) + "key" + CHR$(34) + "). Each row needs its own."
+                CASE 2: Caption(RowsHintLB) = "Kind: a text, integer or float box, a choice (dropdown list), a toggle (check box) or a button. Space or a second click opens the list."
+                CASE 3: Caption(RowsHintLB) = "Label: shown to the left of the row (a toggle's caption)."
+                CASE 4
+                    SELECT CASE _TRIM$(DataGrid_Cell(RowsGrid, r, 2))
+                        CASE "choice": Caption(RowsHintLB) = "Items: the choice's items, separated by commas (Red,Green,Blue)."
+                        CASE "button": Caption(RowsHintLB) = "Caption: the text on the button (the label when left empty)."
+                        CASE "toggle": Caption(RowsHintLB) = "Value: whether the check box starts checked. A click or Space checks it."
+                        CASE ELSE: Caption(RowsHintLB) = "Value: what the box starts with. Your code can change it with PropertyGrid_SetValue."
+                    END SELECT
+                CASE ELSE: Caption(RowsHintLB) = "Add a row to start."
+            END SELECT
+        CASE RowsModeColumns
+            SELECT CASE c
+                CASE 1: Caption(RowsHintLB) = "Caption: the column's header. Columns are numbered from 1 in this order, as in DataGrid_Cell$(frame, row, column)."
+                CASE 2: Caption(RowsHintLB) = "Kind: text, integer or float cells, a choice (dropdown list) or a toggle (check box). Space or a second click opens the list."
+                CASE 3: Caption(RowsHintLB) = "Width: in pixels. 0 shares the room the other columns leave. Columns that don't fit scroll sideways."
+                CASE 4: Caption(RowsHintLB) = "Items: a choice column's items, separated by commas (Red,Green,Blue)."
+                CASE ELSE: Caption(RowsHintLB) = "Add a column to start."
+            END SELECT
+        CASE RowsModeGridRows
+            IF c = 0 THEN
+                Caption(RowsHintLB) = "Add a row to start. Your code can also add rows with DataGrid_AddRow."
+            ELSE
+                __UI_DGParseColumn __UI_DGPart(RowsKeep$, c, CHR$(10)), Caption$, Kind, ColumnWidth, Items$
+                SELECT CASE Kind
+                    CASE __UI_DataGrid_Integer: Holds$ = "a whole number"
+                    CASE __UI_DataGrid_Float: Holds$ = "a number"
+                    CASE __UI_DataGrid_Choice: Holds$ = "one of its items (Space or a second click opens the list)"
+                    CASE __UI_DataGrid_Toggle: Holds$ = "a check box (a click or Space checks it)"
+                    CASE ELSE: Holds$ = "any text"
+                END SELECT
+                Caption(RowsHintLB) = Caption$ + ": " + Holds$ + ". Your code reads cells with DataGrid_Cell$ and changes them with DataGrid_SetCell."
+            END IF
+    END SELECT
 END SUB
 
 '---------------------------------------------------------------------------------
@@ -4287,7 +4461,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     OPEN BaseOutputFileName + ".frm" FOR OUTPUT AS #TextFileNum
     PRINT #TextFileNum, "': This form was generated by"
     PRINT #TextFileNum, "': InForm-PE for QB64-PE - v"; __UI_Version
-    PRINT #TextFileNum, "': Copyright (c) 2025 QB64 Phoenix Edition Team"
+    PRINT #TextFileNum, "': Copyright (c) 2026 QB64 Phoenix Edition Team"
     PRINT #TextFileNum, "': https://github.com/QB64-Phoenix-Edition/InForm-PE"
     PRINT #TextFileNum, "'-----------------------------------------------------------"
     PRINT #TextFileNum, "SUB __UI_LoadForm"
@@ -4762,7 +4936,14 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                                 GOSUB checkCondition
                                 IF checkConditionResult THEN
                                     IF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10)) = 0 AND INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") = 0 THEN
-                                        addedItems$ = addedItems$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                        IF i = 13 AND IsPropertyGridFrame(Dummy) THEN
+                                            'A frame that became a property grid gets the explained CASE block
+                                            addedItems$ = addedItems$ + PropertyGridValueChangedCase$(Dummy, indenting) + CHR$(10)
+                                        ELSEIF i = 13 AND IsDataGridFrame(Dummy) THEN
+                                            addedItems$ = addedItems$ + DataGridValueChangedCase$(Dummy, indenting) + CHR$(10)
+                                        ELSE
+                                            addedItems$ = addedItems$ + SPACE$(indenting) + "CASE " + RTRIM$(PreviewControls(Dummy).Name) + CHR$(10) + CHR$(10)
+                                        END IF
                                     ELSEIF INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on ") > 0 THEN
                                         thisBlock$ = LEFT$(thisBlock$, INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34)) + 5 + LEN(RTRIM$(PreviewControls(Dummy).Name))) + MID$(thisBlock$, INSTR(INSTR(thisBlock$, " CASE " + RTRIM$(PreviewControls(Dummy).Name) + " '<-- " + CHR$(34) + RTRIM$(PreviewControls(Dummy).Name) + CHR$(34) + " deleted from Form on "), thisBlock$, CHR$(10)))
                                     END IF
@@ -4785,7 +4966,7 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             OPEN BaseOutputFileName + ".bas" FOR OUTPUT AS #TextFileNum
             PRINT #TextFileNum, "': This program uses"
             PRINT #TextFileNum, "': InForm-PE for QB64-PE - v"; __UI_Version
-            PRINT #TextFileNum, "': Copyright (c) 2025 QB64 Phoenix Edition Team"
+            PRINT #TextFileNum, "': Copyright (c) 2026 QB64 Phoenix Edition Team"
             PRINT #TextFileNum, "': https://github.com/QB64-Phoenix-Edition/InForm-PE"
             PRINT #TextFileNum, "'-----------------------------------------------------------"
             PRINT #TextFileNum,
@@ -4838,11 +5019,26 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         PRINT #TextFileNum,
 
                     CASE 1
+                        'Hints go right below the SUB line, each followed by an empty line
+                        '(the empty body line is only needed when nothing else goes in)
+                        DIM OnLoadHasCode AS _BYTE
+                        OnLoadHasCode = False
                         IF PreviewDefaultButtonID > 0 THEN
                             PRINT #TextFileNum, "    __UI_DefaultButtonID = " + RTRIM$(__UI_TrimAt0$(PreviewControls(PreviewDefaultButtonID).Name))
-                        ELSE
-                            PRINT #TextFileNum,
+                            OnLoadHasCode = True
                         END IF
+                        FOR Dummy = 1 TO UBOUND(PreviewControls)
+                            IF IsPropertyGridFrame(Dummy) THEN
+                                PrintLines TextFileNum, PropertyGridOnLoadHint$(Dummy)
+                                PRINT #TextFileNum,
+                                OnLoadHasCode = True
+                            ELSEIF IsDataGridFrame(Dummy) THEN
+                                PrintLines TextFileNum, DataGridOnLoadHint$(Dummy)
+                                PRINT #TextFileNum,
+                                OnLoadHasCode = True
+                            END IF
+                        NEXT
+                        IF NOT OnLoadHasCode THEN PRINT #TextFileNum,
 
                     CASE 2
                         IF AddGifExtension = True AND TotalGifLoaded > 0 THEN
@@ -4867,6 +5063,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                             END IF
                         NEXT
                         PRINT #TextFileNum, "    END SELECT"
+
+                    CASE 4 'Buttons on property grid rows
+                        PrintLines TextFileNum, PropertyGridClickBlock$
 
                     CASE 7, 8, 11 'Controls that can have focus only
                         PRINT #TextFileNum, "    SELECT CASE id"
@@ -4893,6 +5092,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                         FOR Dummy = 1 TO UBOUND(PreviewControls)
                             IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TabControl OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
                                 PRINT #TextFileNum, "        CASE " + RTRIM$(PreviewControls(Dummy).Name)
+                                PRINT #TextFileNum,
+                            ELSEIF IsPropertyGridFrame(Dummy) THEN
+                                PrintLines TextFileNum, PropertyGridValueChangedCase$(Dummy, 8)
+                                PRINT #TextFileNum,
+                            ELSEIF IsDataGridFrame(Dummy) THEN
+                                PrintLines TextFileNum, DataGridValueChangedCase$(Dummy, 8)
                                 PRINT #TextFileNum,
                             END IF
                         NEXT
@@ -4955,7 +5160,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                 checkConditionResult = True
             END IF
 
-        CASE 13 'Dropdown list, List box, Tab control, Track bar, ToggleSwitch, CheckBox
+        CASE 13 'Dropdown list, List box, Tab control, Track bar, ToggleSwitch, CheckBox, property grid frames
+            IF IsPropertyGridFrame(Dummy) OR IsDataGridFrame(Dummy) THEN checkConditionResult = True
             IF PreviewControls(Dummy).ID > 0 AND (PreviewControls(Dummy).Type = __UI_Type_ListBox OR PreviewControls(Dummy).Type = __UI_Type_DropdownList OR PreviewControls(Dummy).Type = __UI_Type_TabControl OR PreviewControls(Dummy).Type = __UI_Type_TrackBar OR PreviewControls(Dummy).Type = __UI_Type_ToggleSwitch OR PreviewControls(Dummy).Type = __UI_Type_CheckBox OR PreviewControls(Dummy).Type = __UI_Type_RadioButton) THEN
                 checkConditionResult = True
             END IF
@@ -5004,6 +5210,211 @@ FUNCTION SpecialCharsToEscapeCode$ (Text$)
     NEXT
     SpecialCharsToEscapeCode$ = Temp$ + CHR$(34)
 END FUNCTION
+
+''' @brief _TRUE for a frame that has property grid rows (see docs/PropertyGrid.md).
+FUNCTION IsPropertyGridFrame%% (i AS LONG)
+    IF PreviewControls(i).ID = 0 OR PreviewControls(i).Type <> __UI_Type_Frame THEN EXIT FUNCTION
+    IF __UI_IsDataGridDefinition(PreviewTexts(i)) THEN EXIT FUNCTION
+    IsPropertyGridFrame = LEN(_TRIM$(Replace$(PreviewTexts(i), CHR$(10), "", False, 0))) > 0
+END FUNCTION
+
+''' @brief _TRUE for a frame whose Text holds a data grid's columns and rows (see docs/DataGrid.md).
+FUNCTION IsDataGridFrame%% (i AS LONG)
+    IF i <= 0 OR i > UBOUND(PreviewControls) THEN EXIT FUNCTION
+    IF PreviewControls(i).ID = 0 OR PreviewControls(i).Type <> __UI_Type_Frame THEN EXIT FUNCTION
+    IsDataGridFrame = __UI_IsDataGridDefinition(PreviewTexts(i))
+END FUNCTION
+
+''' @brief A button caption that counts things: "None - add rows...", "1 row - edit...", "3 rows - edit...".
+FUNCTION CountCaption$ (n AS LONG, Noun$)
+    SELECT CASE n
+        CASE IS <= 0: CountCaption$ = "None - add " + Noun$ + "s..."
+        CASE 1: CountCaption$ = "1 " + Noun$ + " - edit..."
+        CASE ELSE: CountCaption$ = LTRIM$(STR$(n)) + " " + Noun$ + "s - edit..."
+    END SELECT
+END FUNCTION
+
+''' @brief The CASE block written in __UI_ValueChanged for a data grid frame, explaining how to use it.
+FUNCTION DataGridValueChangedCase$ (i AS LONG, Indent AS INTEGER)
+    DIM n$, p$, r$, LF$, GridColumns$, GridRows$, c AS LONG, Caption$, Kind AS _BYTE, ColumnWidth AS INTEGER, Items$
+
+    n$ = RTRIM$(PreviewControls(i).Name)
+    p$ = SPACE$(Indent)
+    LF$ = CHR$(10)
+    __UI_DGSplitDefinition PreviewTexts(i), GridColumns$, GridRows$
+    r$ = p$ + "CASE " + n$ + LF$
+    r$ = r$ + p$ + "    '" + n$ + " is a data grid. This runs when a cell is changed (Enter was pressed in it, an" + LF$
+    r$ = r$ + p$ + "    'item was picked or a box was checked) and when another cell becomes current." + LF$
+    r$ = r$ + p$ + "    'Cells are text: use VAL() for numbers. A toggle is " + CHR$(34) + "-1" + CHR$(34) + " when checked." + LF$
+    r$ = r$ + p$ + "    IF DataGrid_ChangedColumn(" + n$ + ") > 0 THEN" + LF$
+    r$ = r$ + p$ + "        SELECT CASE DataGrid_ChangedColumn(" + n$ + ")" + LF$
+    FOR c = 1 TO __UI_DGPartCount(GridColumns$, LF$) - 1
+        __UI_DGParseColumn __UI_DGPart(GridColumns$, c, LF$), Caption$, Kind, ColumnWidth, Items$
+        r$ = r$ + p$ + "            CASE" + STR$(c) + " '" + Caption$ + LF$
+        r$ = r$ + p$ + "                'The new value: DataGrid_Cell$(" + n$ + ", DataGrid_ChangedRow(" + n$ + ")," + STR$(c) + ")" + LF$
+        r$ = r$ + LF$
+    NEXT
+    r$ = r$ + p$ + "        END SELECT" + LF$
+    r$ = r$ + p$ + "    ELSE" + LF$
+    r$ = r$ + p$ + "        'Another cell became current: DataGrid_Row(" + n$ + "), DataGrid_Column(" + n$ + ")" + LF$
+    r$ = r$ + p$ + "    END IF" + LF$
+    DataGridValueChangedCase$ = r$
+END FUNCTION
+
+''' @brief Comments written in __UI_OnLoad for a data grid frame.
+FUNCTION DataGridOnLoadHint$ (i AS LONG)
+    DIM n$, r$, q$, LF$
+    n$ = RTRIM$(PreviewControls(i).Name)
+    q$ = CHR$(34)
+    LF$ = CHR$(10)
+    r$ = "    '" + n$ + " is a data grid: its columns and rows were built from the designer just before" + LF$
+    r$ = r$ + "    'this event, so you can add rows or change cells here, for example:" + LF$
+    r$ = r$ + "    'r = DataGrid_AddRow(" + n$ + ", " + q$ + "first cell|second cell" + q$ + ")" + LF$
+    r$ = r$ + "    'See docs/DataGrid.md for everything a data grid can do." + LF$
+    DataGridOnLoadHint$ = r$
+END FUNCTION
+
+''' @brief The rows of a property grid frame, one "key|kind" per line (kind as a __UI_PropertyGrid_* number).
+FUNCTION PropertyGridRowList$ (i AS LONG)
+    DIM t$, l$, p AS LONG, r$, k$, kind AS _BYTE, label$, extra$
+    t$ = Replace$(PreviewTexts(i), CHR$(13), "", False, 0) + CHR$(10)
+    DO
+        p = INSTR(t$, CHR$(10))
+        IF p = 0 THEN EXIT DO
+        l$ = LEFT$(t$, p - 1)
+        t$ = MID$(t$, p + 1)
+        IF __UI_PGParseLine(l$, k$, kind, label$, extra$) THEN
+            IF kind = __UI_PropertyGrid_Choice THEN
+                p = INSTR(extra$, ",")
+                IF p THEN extra$ = LEFT$(extra$, p - 1)
+            END IF
+            r$ = r$ + k$ + "|" + LTRIM$(STR$(kind)) + "|" + extra$ + CHR$(10)
+        END IF
+    LOOP
+    PropertyGridRowList$ = r$
+END FUNCTION
+
+''' @brief Splits one entry of PropertyGridRowList$.
+SUB PropertyGridRowFields (Entry$, Key$, Kind AS INTEGER, FirstItem$)
+    DIM p1 AS LONG, p2 AS LONG
+    p1 = INSTR(Entry$, "|")
+    p2 = INSTR(p1 + 1, Entry$, "|")
+    Key$ = LEFT$(Entry$, p1 - 1)
+    Kind = VAL(MID$(Entry$, p1 + 1, p2 - p1 - 1))
+    FirstItem$ = MID$(Entry$, p2 + 1)
+END SUB
+
+''' @brief The CASE block written in __UI_ValueChanged for a property grid frame, explaining how to use it.
+FUNCTION PropertyGridValueChangedCase$ (i AS LONG, Indent AS INTEGER)
+    DIM n$, p$, r$, rows$, entry$, k$, item$, kind AS INTEGER, q$, LF$, pos1 AS LONG
+
+    n$ = RTRIM$(PreviewControls(i).Name)
+    p$ = SPACE$(Indent)
+    q$ = CHR$(34)
+    LF$ = CHR$(10)
+    r$ = p$ + "CASE " + n$ + LF$
+    r$ = r$ + p$ + "    '" + n$ + " is a property grid. This runs when one of its rows changes: Enter was" + LF$
+    r$ = r$ + p$ + "    'pressed in a box (or the box lost focus), an item was picked or a box was checked." + LF$
+    r$ = r$ + p$ + "    'PropertyGrid_Value$ reads the new value; PropertyGrid_SetValue here replaces it" + LF$
+    r$ = r$ + p$ + "    '(for example, to keep a number in range: the box then turns red until Esc)." + LF$
+    r$ = r$ + p$ + "    SELECT CASE PropertyGrid_ChangedRow$(" + n$ + ")" + LF$
+
+    rows$ = PropertyGridRowList$(i)
+    DO
+        pos1 = INSTR(rows$, LF$)
+        IF pos1 = 0 THEN EXIT DO
+        entry$ = LEFT$(rows$, pos1 - 1)
+        rows$ = MID$(rows$, pos1 + 1)
+        PropertyGridRowFields entry$, k$, kind, item$
+        IF kind = __UI_PropertyGrid_Button THEN _CONTINUE 'clicks go to __UI_Click
+        r$ = r$ + p$ + "        CASE " + q$ + k$ + q$ + LF$
+        SELECT CASE kind
+            CASE __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
+                r$ = r$ + p$ + "            'The number entered: VAL(PropertyGrid_Value$(" + n$ + ", " + q$ + k$ + q$ + "))" + LF$
+            CASE __UI_PropertyGrid_Choice
+                r$ = r$ + p$ + "            'The item picked (1 = " + item$ + "): VAL(PropertyGrid_Value$(" + n$ + ", " + q$ + k$ + q$ + "))" + LF$
+            CASE __UI_PropertyGrid_Toggle
+                r$ = r$ + p$ + "            'Checked: PropertyGrid_Value$(" + n$ + ", " + q$ + k$ + q$ + ") <> " + q$ + "0" + q$ + LF$
+            CASE ELSE
+                r$ = r$ + p$ + "            'The text entered: PropertyGrid_Value$(" + n$ + ", " + q$ + k$ + q$ + ")" + LF$
+        END SELECT
+        r$ = r$ + LF$
+    LOOP
+    r$ = r$ + p$ + "    END SELECT" + LF$
+    PropertyGridValueChangedCase$ = r$
+END FUNCTION
+
+''' @brief Comments written in __UI_OnLoad for a property grid frame.
+FUNCTION PropertyGridOnLoadHint$ (i AS LONG)
+    DIM n$, r$, rows$, entry$, k$, item$, kind AS INTEGER, q$, LF$, pos1 AS LONG, example$
+
+    n$ = RTRIM$(PreviewControls(i).Name)
+    q$ = CHR$(34)
+    LF$ = CHR$(10)
+    rows$ = PropertyGridRowList$(i)
+    DO
+        pos1 = INSTR(rows$, LF$)
+        IF pos1 = 0 THEN EXIT DO
+        entry$ = LEFT$(rows$, pos1 - 1)
+        rows$ = MID$(rows$, pos1 + 1)
+        PropertyGridRowFields entry$, k$, kind, item$
+        SELECT CASE kind
+            CASE __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float: example$ = "10"
+            CASE __UI_PropertyGrid_Choice: example$ = "1"
+            CASE __UI_PropertyGrid_Toggle: example$ = "-1"
+            CASE __UI_PropertyGrid_Button: _CONTINUE
+            CASE ELSE: example$ = "some text"
+        END SELECT
+        EXIT DO
+    LOOP
+
+    r$ = "    '" + n$ + " is a property grid: its rows were built from the Rows property just before" + LF$
+    r$ = r$ + "    'this event, so you can set their starting values here. Values are always text." + LF$
+    IF LEN(example$) THEN
+        r$ = r$ + "    'PropertyGrid_SetValue " + n$ + ", " + q$ + k$ + q$ + ", " + q$ + example$ + q$ + LF$
+    END IF
+    r$ = r$ + "    'See docs/PropertyGrid.md for everything a property grid can do." + LF$
+    PropertyGridOnLoadHint$ = r$
+END FUNCTION
+
+''' @brief The block written in __UI_Click for buttons on property grid rows (empty when there are none).
+FUNCTION PropertyGridClickBlock$
+    DIM i AS LONG, r$, rows$, entry$, k$, item$, kind AS INTEGER, q$, LF$, pos1 AS LONG
+
+    q$ = CHR$(34)
+    LF$ = CHR$(10)
+    FOR i = 1 TO UBOUND(PreviewControls)
+        IF NOT IsPropertyGridFrame(i) THEN _CONTINUE
+        rows$ = PropertyGridRowList$(i)
+        DO
+            pos1 = INSTR(rows$, LF$)
+            IF pos1 = 0 THEN EXIT DO
+            entry$ = LEFT$(rows$, pos1 - 1)
+            rows$ = MID$(rows$, pos1 + 1)
+            PropertyGridRowFields entry$, k$, kind, item$
+            IF kind = __UI_PropertyGrid_Button THEN
+                r$ = r$ + "        CASE " + q$ + k$ + q$ + " '" + RTRIM$(PreviewControls(i).Name) + LF$ + LF$
+            END IF
+        LOOP
+    NEXT
+    IF LEN(r$) = 0 THEN EXIT FUNCTION
+
+    PropertyGridClickBlock$ = LF$ + "    'Buttons on property grid rows aren't listed above: the grid creates them when the" + LF$ + _
+        "    'program starts. PropertyGrid_RowOf$(id) tells which row a clicked button is on." + LF$ + _
+        "    SELECT CASE PropertyGrid_RowOf$(id)" + LF$ + r$ + "    END SELECT" + LF$
+END FUNCTION
+
+''' @brief Writes text to a file one line at a time, so line endings suit the system.
+SUB PrintLines (FileNum AS INTEGER, Block$)
+    DIM t$, p AS LONG
+    t$ = Block$
+    DO WHILE LEN(t$)
+        p = INSTR(t$, CHR$(10))
+        IF p = 0 THEN PRINT #FileNum, t$: EXIT DO
+        PRINT #FileNum, LEFT$(t$, p - 1)
+        t$ = MID$(t$, p + 1)
+    LOOP
+END SUB
 
 '---------------------------------------------------------------------------------
 FUNCTION OutsideQuotes%% (text$, position AS LONG)

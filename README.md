@@ -15,15 +15,19 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - Themes: classic XP, flat light and flat dark built in, or your own theme files ([Themes](docs/Themes.md))
 - Tab control for multi-page forms ([TabControl](docs/TabControl.md))
 - Anchors: controls move and stretch with resizable forms ([Anchors](docs/Anchors.md))
+- Property grids: label/value rows with built-in editing, like the designer's properties panel ([PropertyGrid](docs/PropertyGrid.md))
+- Data grids: tables with column headers, keyboard navigation, editing in place, sideways scrolling and CSV loading and saving, set up in code or in the designer ([DataGrid](docs/DataGrid.md))
 
 ## DOCUMENTATION
 
 - [Wiki](https://github.com/QB64-Phoenix-Edition/InForm-PE/wiki)
 - [Tutorial](https://raw.githack.com/QB64-Phoenix-Edition/InForm-PE/refs/heads/master/docs/tutorial/index.html)
-- [Extensions](docs/Extensions.md)
+- [Extensions](docs/)
 - [Themes](docs/Themes.md)
 - [TabControl](docs/TabControl.md)
 - [Anchors](docs/Anchors.md)
+- [PropertyGrid](docs/PropertyGrid.md)
+- [DataGrid](docs/DataGrid.md)
 
 ## USAGE
 
@@ -78,6 +82,10 @@ InForm/InFormCommon.bi
 InForm/InFormVersion.bi
 InForm/InFormTheme.bm
 InForm/InFormTabControl.bm
+InForm/InFormPropertyGrid.bi
+InForm/InFormPropertyGrid.bm
+InForm/InFormDataGrid.bi
+InForm/InFormDataGrid.bm
 InForm/xp.uitheme
 InForm/themes/*.*
 InForm/extensions/*.*
@@ -86,7 +94,7 @@ InForm/extensions/*.*
 ## EXAMPLES
 
 | Name | Author |
-|------|-------------|
+| ------ | ------------- |
 | 21-game | TempodiBasic |
 | AnchorsDemo | Fellippe Heitor |
 | Bin2Include | Zachary Spriggs |
@@ -94,6 +102,8 @@ InForm/extensions/*.*
 | Calculator | Terry Ritchie |
 | ClickTheVoid | Fellippe Heitor |
 | ClockPatience | Richard Notley |
+| DataGridCSVDemo | Fellippe Heitor |
+| DataGridDemo | Fellippe Heitor |
 | DuckShoot | Richard Notley |
 | ebacCalculator | George McGinn |
 | EncryptDecrypt | TempodiBasic |
@@ -103,7 +113,7 @@ InForm/extensions/*.*
 | GravitationSimulation | Richard Notley |
 | GX-Map-Maker | boxgaming |
 | InFormPaint | Fellippe Heitor |
-| InsideOutsideTriangle |  Richard Notley |
+| InsideOutsideTriangle | Richard Notley |
 | Lander1 | B+ |
 | Lander2 | B+ |
 | Mahjong | Richard Notley |
@@ -112,6 +122,7 @@ InForm/extensions/*.*
 | Pelmanism | Richard Notley |
 | PictureGrid | Richard Notley |
 | PlayFX | Samuel Gomes |
+| PropertyGridDemo | Fellippe Heitor |
 | R2P | bobalooie |
 | RockPaperScissorsSpockLizard | TempodiBasic |
 | SearchableDropdownDemo | Fellippe Heitor |
