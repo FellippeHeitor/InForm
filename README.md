@@ -14,6 +14,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - Everything is statically linked (no shared library dependencies)
 - Themes: classic XP, flat light and flat dark built in, or your own theme files ([Themes](docs/Themes.md))
 - Tab control for multi-page forms ([TabControl](docs/TabControl.md))
+- Anchors: controls move and stretch with resizable forms ([Anchors](docs/Anchors.md))
 
 ## DOCUMENTATION
 
@@ -22,6 +23,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - [Extensions](docs/Extensions.md)
 - [Themes](docs/Themes.md)
 - [TabControl](docs/TabControl.md)
+- [Anchors](docs/Anchors.md)
 
 ## USAGE
 
@@ -86,6 +88,7 @@ InForm/extensions/*.*
 | Name | Author |
 |------|-------------|
 | 21-game | TempodiBasic |
+| AnchorsDemo | Fellippe Heitor |
 | Bin2Include | Zachary Spriggs |
 | Bubble-Universe | Samuel Gomes |
 | Calculator | Terry Ritchie |

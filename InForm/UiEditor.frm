@@ -97,6 +97,9 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecent9", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
     SetCaption __UI_NewID, "FileMenuRecent9"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuRecentRemoveMissing", 91, 18, 0, 22, __UI_GetID("FileMenuRecent"))
+    SetCaption __UI_NewID, "Remove &missing projects"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "FileMenuSave", 91, 18, 0, 22, __UI_GetID("FileMenu"))
     SetCaption __UI_NewID, "&Save project"
 
@@ -251,7 +254,16 @@ SUB __UI_LoadForm
     $END IF
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuSaveFormOnly", 126, 20, 0, 44, __UI_GetID("OptionsMenu"))
-    SetCaption __UI_NewID, "Save &form only"
+    SetCaption __UI_NewID, "Save &form only-"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuEditorThemeLight", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
+    SetCaption __UI_NewID, "Editor theme: &Light"
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
+    Control(__UI_NewID).Value = -1
+
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "OptionsMenuEditorThemeDark", 0, 0, 0, 0, __UI_GetID("OptionsMenu"))
+    SetCaption __UI_NewID, "Editor theme: &Dark"
+    Control(__UI_NewID).BulletStyle = __UI_Bullet
 
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "HelpMenuHelp", 0, 0, 0, 0, __UI_GetID("HelpMenu"))
     SetCaption __UI_NewID, "&What's all this?-"
@@ -414,6 +426,11 @@ SUB __UI_LoadForm
     Control(__UI_NewID).CanHaveFocus = True
     ToolTip(__UI_NewID) = "Paste list into control"
 
+    __UI_NewID = __UI_NewControl(__UI_Type_Button, "BrowseImageBT", 23, 23, 106, 54, __UI_GetID("ControlProperties"))
+    SetCaption __UI_NewID, "..."
+    Control(__UI_NewID).CanHaveFocus = True
+    ToolTip(__UI_NewID) = "Browse for a file"
+
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "TextTB", 230, 23, 129, 54, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
@@ -455,10 +472,12 @@ SUB __UI_LoadForm
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontList", 180, 23, 129, 362, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).Searchable = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_DropdownList, "FontSizeList", 50, 23, 309, 362, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).Searchable = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_TextBox, "TooltipTB", 230, 23, 129, 208, __UI_GetID("ControlProperties"))
     Control(__UI_NewID).HasBorder = True
@@ -630,6 +649,18 @@ SUB __UI_LoadForm
     SetCaption __UI_NewID, "Fuzzy search"
     Control(__UI_NewID).CanHaveFocus = True
 
+    __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "ReorderableCB", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Reorderable"
+    Control(__UI_NewID).CanHaveFocus = True
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "AnchorLB", 52, 20, 12, 232, __UI_GetID("ControlToggles"))
+    SetCaption __UI_NewID, "Anchor"
+
+    __UI_NewID = __UI_NewControl(__UI_Type_PictureBox, "AnchorPicker", 128, 62, 66, 232, __UI_GetID("ControlToggles"))
+
+    __UI_NewID = __UI_NewControl(__UI_Type_Label, "AnchorInfoLB", 184, 34, 12, 298, __UI_GetID("ControlToggles"))
+    Control(__UI_NewID).WordWrap = True
+
     __UI_NewID = __UI_NewControl(__UI_Type_CheckBox, "AutoScroll", 181, 20, 12, 232, __UI_GetID("ControlToggles"))
     SetCaption __UI_NewID, "Auto-scroll"
     Control(__UI_NewID).CanHaveFocus = True
@@ -708,7 +739,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).VAlign = __UI_Middle
 
     __UI_NewID = __UI_NewControl(__UI_Type_Label, "ZDescriptionLB", 484, 58, 15, 419, __UI_GetID("ZOrdering"))
-    SetCaption __UI_NewID, "Select a control in the list and use the up/down buttons to change the z-ordering/tab order. This affects both the order in which the controls are drawn (in case there are overlaps) and also the tab order for keyboard navigation by your users. "
+    SetCaption __UI_NewID, "Drag controls in the list (or select one and use the up/down buttons) to change the z-ordering/tab order. This affects both the order in which the controls are drawn (in case there are overlaps) and also the tab order for keyboard navigation by your users. "
     Control(__UI_NewID).VAlign = __UI_Middle
     Control(__UI_NewID).WordWrap = True
 
@@ -716,6 +747,7 @@ SUB __UI_LoadForm
     Control(__UI_NewID).Font = SetFont(__INFORM_DEFAULT_FONTS_MONO, 12)
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).CanHaveFocus = True
+    Control(__UI_NewID).Reorderable = True
 
     __UI_NewID = __UI_NewControl(__UI_Type_Button, "UpBT", 40, 42, 511, 162, __UI_GetID("ZOrdering"))
     SetCaption __UI_NewID, "^"
@@ -779,6 +811,7 @@ SUB __UI_LoadForm
     AddItem __UI_NewID, "Hidden"
     AddItem __UI_NewID, "Searchable"
     AddItem __UI_NewID, "Fuzzy"
+    AddItem __UI_NewID, "Reorderable"
     Control(__UI_NewID).HasBorder = True
     Control(__UI_NewID).Value = 7
     Control(__UI_NewID).CanHaveFocus = True
@@ -867,6 +900,8 @@ SUB __UI_AssignIDs
     OptionsMenuAutoName = __UI_GetID("OptionsMenuAutoName")
     OptionsMenuSwapButtons = __UI_GetID("OptionsMenuSwapButtons")
     OptionsMenuSaveFormOnly = __UI_GetID("OptionsMenuSaveFormOnly")
+    OptionsMenuEditorThemeLight = __UI_GetID("OptionsMenuEditorThemeLight")
+    OptionsMenuEditorThemeDark = __UI_GetID("OptionsMenuEditorThemeDark")
     HelpMenuHelp = __UI_GetID("HelpMenuHelp")
     HelpMenuAbout = __UI_GetID("HelpMenuAbout")
     AddButton = __UI_GetID("AddButton")
@@ -955,9 +990,14 @@ SUB __UI_AssignIDs
     FontSwitchMenuSwitch = __UI_GetID("FontSwitchMenuSwitch")
     FontSwitchMenu = __UI_GetID("FontSwitchMenu")
     AutoScroll = __UI_GetID("AutoScroll")
+    ReorderableCB = __UI_GetID("ReorderableCB")
+    AnchorLB = __UI_GetID("AnchorLB")
+    AnchorPicker = __UI_GetID("AnchorPicker")
+    AnchorInfoLB = __UI_GetID("AnchorInfoLB")
     SearchableCB = __UI_GetID("SearchableCB")
     FuzzyCB = __UI_GetID("FuzzyCB")
     PasteListBT = __UI_GetID("PasteListBT")
+    BrowseImageBT = __UI_GetID("BrowseImageBT")
     EditMenuConvertType = __UI_GetID("EditMenuConvertType")
     AutoSize = __UI_GetID("AutoSize")
     SizeTB = __UI_GetID("SizeTB")
@@ -976,6 +1016,7 @@ SUB __UI_AssignIDs
     FileMenuRecent7 = __UI_GetID("FileMenuRecent7")
     FileMenuRecent8 = __UI_GetID("FileMenuRecent8")
     FileMenuRecent9 = __UI_GetID("FileMenuRecent9")
+    FileMenuRecentRemoveMissing = __UI_GetID("FileMenuRecentRemoveMissing")
     KeyboardComboLB = __UI_GetID("KeyboardComboLB")
     KeyboardComboBT = __UI_GetID("KeyboardComboBT")
     SetControlBinding = __UI_GetID("SetControlBinding")

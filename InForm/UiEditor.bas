@@ -50,6 +50,7 @@ DIM SHARED FileMenuRecent6 AS LONG
 DIM SHARED FileMenuRecent7 AS LONG
 DIM SHARED FileMenuRecent8 AS LONG
 DIM SHARED FileMenuRecent9 AS LONG
+DIM SHARED FileMenuRecentRemoveMissing AS LONG
 
 DIM SHARED EditMenuUndo AS LONG, EditMenuRedo AS LONG, EditMenuCut AS LONG
 DIM SHARED EditMenuCopy AS LONG, EditMenuPaste AS LONG
@@ -85,6 +86,10 @@ DIM SHARED AlignMenuDistributeH AS LONG
 DIM SHARED OptionsMenuAutoName AS LONG
 DIM SHARED OptionsMenuSwapButtons AS LONG
 DIM SHARED OptionsMenuSaveFormOnly AS LONG
+DIM SHARED OptionsMenuEditorThemeLight AS LONG, OptionsMenuEditorThemeDark AS LONG
+DIM SHARED EditorTheme AS STRING
+DIM SHARED RestoringSession AS _BYTE, RecoverySaved$, RecoverySavedAt AS DOUBLE
+CONST RECOVERY_FILE = "InForm/UiEditor.recovery"
 
 DIM SHARED HelpMenuHelp AS LONG, HelpMenuAbout AS LONG
 
@@ -102,6 +107,10 @@ DIM SHARED AddToggleSwitch AS LONG, AddTabControl AS LONG
 'Control toggles
 DIM SHARED Stretch AS LONG, HasBorder AS LONG
 DIM SHARED ShowPercentage AS LONG, PasswordMaskCB AS LONG, MultilineCB AS LONG, SearchableCB AS LONG, FuzzyCB AS LONG
+DIM SHARED ReorderableCB AS LONG
+DIM SHARED AnchorLB AS LONG, AnchorPicker AS LONG, AnchorInfoLB AS LONG
+DIM SHARED AnchorPickerFlags AS LONG ' anchor edges of the first selected control, as the picker shows them
+CONST AnchorPickerBoxW = 40, AnchorPickerBoxH = 20 ' size of the control drawn in the anchor picker
 DIM SHARED WordWrap AS LONG, CanHaveFocus AS LONG
 DIM SHARED Disabled AS LONG, Transparent AS LONG
 DIM SHARED Hidden AS LONG, CenteredWindow AS LONG
@@ -154,7 +163,7 @@ DIM SHARED MaskTB AS LONG, MaskLB AS LONG
 DIM SHARED BulletOptions AS LONG, BulletOptionsLB AS LONG
 DIM SHARED BooleanLB AS LONG, BooleanOptions AS LONG
 DIM SHARED FontListLB AS LONG, FontList AS LONG, FontSizeList
-DIM SHARED PasteListBT AS LONG, ContextMenuLB AS LONG
+DIM SHARED PasteListBT AS LONG, BrowseImageBT AS LONG, ContextMenuLB AS LONG
 DIM SHARED ContextMenuControlsList AS LONG
 DIM SHARED KeyboardComboLB AS LONG, KeyboardComboBT AS LONG
 '------------------------------------------------------------------------------
@@ -174,6 +183,7 @@ DIM SHARED prevScreenX AS INTEGER, prevScreenY AS INTEGER
 DIM SHARED UndoPointer AS INTEGER, TotalUndoImages AS INTEGER
 DIM SHARED totalBytesSent AS _UNSIGNED _INTEGER64
 DIM SHARED RecentMenuItem(1 TO 9) AS LONG, RecentListBuilt AS _BYTE
+DIM SHARED RecentFile(1 TO 9) AS STRING
 DIM SHARED LoadedWithGifExtension AS _BYTE, AddGifExtension AS _BYTE
 DIM SHARED TotalGifLoaded AS LONG, SetBindingDialogOpen AS _BYTE
 DIM SHARED InitialControlSet AS STRING
@@ -211,6 +221,7 @@ REDIM SHARED PreviewKeyCombos(0) AS STRING
 REDIM SHARED PreviewAnimatedGif(0) AS _BYTE
 REDIM SHARED PreviewAutoPlayGif(0) AS _BYTE
 REDIM SHARED zOrderIDs(0) AS LONG
+DIM SHARED ZOrderLastMove AS DOUBLE, ZOrderListDirty AS _BYTE
 REDIM SHARED InputBox(1 TO 100) AS newInputBox
 REDIM SHARED Toggles(1 TO 100) AS LONG
 REDIM SHARED InputBoxText(1 TO 100) AS STRING
@@ -261,9 +272,6 @@ END IF
 
 DIM SHARED CurrentPath$, ThisFileName$
 
-CONST EDITOR_IMAGE_COMMONCONTROLS~%% = 1~%%
-CONST EDITOR_IMAGE_DISK~%% = 2~%%
-
 $IF WIN THEN
     DECLARE DYNAMIC LIBRARY "kernel32"
         FUNCTION OpenProcess& (BYVAL dwDesiredAccess AS LONG, BYVAL bInheritHandle AS LONG, BYVAL dwProcessId AS LONG)
@@ -290,7 +298,7 @@ $END IF
 
 'Event procedures: ---------------------------------------------------------------
 SUB __UI_Click (id AS LONG)
-    DIM Answer AS _BYTE, Dummy AS LONG, b$
+    DIM Answer AS _BYTE, Dummy AS LONG, b$, i AS LONG
     STATIC LastClick#, LastClickedID AS LONG
 
     SendSignal -8
@@ -317,6 +325,12 @@ SUB __UI_Click (id AS LONG)
         CASE OptionsMenuSaveFormOnly
             SaveFrmOnly = NOT SaveFrmOnly
             Control(id).Value = SaveFrmOnly
+        CASE OptionsMenuEditorThemeLight
+            SetEditorTheme "light"
+            SaveSettings
+        CASE OptionsMenuEditorThemeDark
+            SetEditorTheme "dark"
+            SaveSettings
 
         CASE EditMenuConvertType
             b$ = MKI$(0)
@@ -415,6 +429,11 @@ SUB __UI_Click (id AS LONG)
         CASE FuzzyCB
             b$ = MKI$(Control(id).Value)
             SendData b$, 47
+        CASE ReorderableCB
+            b$ = MKI$(Control(id).Value)
+            SendData b$, 48
+        CASE AnchorPicker
+            ToggleAnchorEdge AnchorPickerEdge
         CASE AutoScroll
             b$ = MKI$(Control(id).Value)
             SendData b$, 38
@@ -520,33 +539,18 @@ SUB __UI_Click (id AS LONG)
         CASE HelpMenuHelp
             MessageBox "Design a form and export the resulting code to generate an event-driven QB64-PE program.", UiEditorTitle$ + " - What's all this?", MsgBox_Information
         CASE FileMenuExit
-            IF Edited THEN
-                __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
-                IF Answer = 0 THEN
-                    EXIT SUB
-                ELSEIF Answer = 1 THEN
-                    SaveForm False, False
-                END IF
-            END IF
+            'Unsaved work is kept and restored the next time the editor starts
+            IF Edited THEN SaveRecovery
+            SaveSettings
             IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
             SYSTEM
         CASE EditMenuZOrdering
-            'Fill the list:
             Caption(StatusBar) = "Editing z-ordering/tab ordering"
-            DIM j AS LONG, i AS LONG
-            STATIC Moving AS _BYTE
-            REDIM _PRESERVE zOrderIDs(1 TO UBOUND(PreviewControls)) AS LONG
-            ReloadZList:
-            ResetList ControlList
-            FOR i = 1 TO UBOUND(PreviewControls)
-                SELECT CASE PreviewControls(i).Type
-                    CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
-                        j = j + 1
-                        zOrderIDs(j) = i
-                        AddItem ControlList, __UI_Type(PreviewControls(i).Type).Name + RTRIM$(PreviewControls(i).Name)
-                END SELECT
-            NEXT
-            IF Moving THEN RETURN
+            ZOrderLastMove = 0
+            ZOrderListDirty = False
+            ZOrderRefreshList True
+            Control(ControlList).InputViewStart = 1
+            ZOrderSelectControl FirstSelected
             Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
             Control(ZOrdering).Left = 18: Control(ZOrdering).Top = 40
             __UI_Focus = ControlList
@@ -625,26 +629,11 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = 0
             ZOrderingDialogOpen = False
         CASE UpBT
-            DIM PrevListValue AS LONG
-            PrevListValue = Control(ControlList).Value
-            b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value - 1))
-            SendData b$, 211
-            __UI_Delay .1
-            Moving = True: GOSUB ReloadZList
-            Moving = False
-            Control(ControlList).Value = PrevListValue - 1
+            ZOrderMove -1
             __UI_Focus = ControlList
-            __UI_ValueChanged ControlList
         CASE DownBT
-            PrevListValue = Control(ControlList).Value
-            b$ = MKL$(zOrderIDs(Control(ControlList).Value)) + MKL$(zOrderIDs(Control(ControlList).Value + 1))
-            SendData b$, 212
-            __UI_Delay .1
-            Moving = True: GOSUB ReloadZList
-            Moving = False
-            Control(ControlList).Value = PrevListValue + 1
+            ZOrderMove 1
             __UI_Focus = ControlList
-            __UI_ValueChanged ControlList
 
         CASE FileMenuOpen
             IF Edited THEN
@@ -675,8 +664,14 @@ SUB __UI_Click (id AS LONG)
 
             __UI_ForceRedraw = True
 
+        CASE FileMenuRecentRemoveMissing
+            RemoveMissingFromRecentList
+
         CASE FileMenuRecent1, FileMenuRecent2, FileMenuRecent3, FileMenuRecent4, FileMenuRecent5, FileMenuRecent6, FileMenuRecent7, FileMenuRecent8, FileMenuRecent9
-            tmpFileName = ToolTip(id)
+            tmpFileName = ""
+            FOR i = 1 TO 9
+                IF RecentMenuItem(i) = id THEN tmpFileName = RecentFile(i): EXIT FOR
+            NEXT
             IF _FILEEXISTS(tmpFileName) THEN
                 IF Edited THEN
                     __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form?", "yesnocancel", "question", 1)
@@ -794,6 +789,29 @@ SUB __UI_Click (id AS LONG)
             __UI_Focus = Dummy
             Control(Dummy).Cursor = LEN(Text(Dummy))
             Control(Dummy).TextIsSelected = False
+        CASE BrowseImageBT
+            DIM ImageFile$, ImagePath$
+            ImagePath$ = Text(TextTB)
+            IF LEN(ImagePath$) > 0 AND _FILEEXISTS(ImagePath$) THEN
+                ImagePath$ = Pathname_GetPath(ImagePath$)
+            ELSEIF LEN(CurrentPath$) > 0 THEN
+                ImagePath$ = CurrentPath$
+            ELSE
+                ImagePath$ = Pathname_AddDirectorySeparator(_STARTDIR$)
+            END IF
+            __UI_Delay COMMDLG_DELAY
+            IF PreviewControls(FirstSelected).Type = __UI_Type_Form THEN
+                'The form icon becomes the executable icon, which must be an .ico file
+                ImageFile$ = _OPENFILEDIALOG$(UiEditorTitle$ + ": Choose icon", ImagePath$, "*.ico|*.ICO", "Icon files")
+            ELSE
+                ImageFile$ = _OPENFILEDIALOG$(UiEditorTitle$ + ": Choose image", ImagePath$, "*.png|*.PNG|*.jpg|*.JPG|*.jpeg|*.JPEG|*.bmp|*.BMP|*.gif|*.GIF|*.tga|*.TGA|*.psd|*.PSD|*.pcx|*.PCX|*.pnm|*.PNM|*.qoi|*.QOI|*.svg|*.SVG|*.ico|*.ICO|*.cur|*.CUR", "Image files")
+            END IF
+            IF LEN(ImageFile$) THEN
+                Text(TextTB) = ImageFile$
+                InputBox(GetInputBoxFromID(TextTB)).Sent = False
+                ConfirmEdits TextTB
+                Caption(StatusBar) = "Image file set."
+            END IF
         CASE KeyboardComboBT
             __UI_BypassKeyCombos = True
             Caption(KeyboardComboBT) = CHR$(7) + " hit a key combo... (ESC to clear)"
@@ -865,6 +883,8 @@ SUB __UI_MouseEnter (id AS LONG)
             Caption(StatusBar) = "Automatically sets control names based on caption and type."
         CASE OptionsMenuSaveFormOnly
             Caption(StatusBar) = "Saves only the .frm file."
+        CASE OptionsMenuEditorThemeLight, OptionsMenuEditorThemeDark
+            Caption(StatusBar) = "Changes the look of the editor (not of the form you're designing)."
         CASE OptionsMenuSwapButtons
             Caption(StatusBar) = "Toggles left/right mouse buttons."
         CASE FontLB, FontListLB
@@ -1048,6 +1068,24 @@ SUB RemoveFromRecentList (FileName$)
     RecentListBuilt = False
 END SUB
 
+SUB RemoveMissingFromRecentList
+    DIM i AS LONG, total AS LONG, b$
+    DIM keep(1 TO 9) AS STRING
+
+    'Keep the files that still exist, in their current order
+    FOR i = 1 TO 9
+        b$ = Ini_ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+        IF LEN(b$) THEN
+            IF _FILEEXISTS(b$) THEN total = total + 1: keep(total) = b$
+        END IF
+    NEXT
+
+    FOR i = 1 TO 9
+        Ini_WriteSetting "InForm/InForm.ini", "Recent Projects", STR$(i), keep(i)
+    NEXT
+    RecentListBuilt = False
+END SUB
+
 SUB SendNewRGB
     DIM b$, NewColor AS _UNSIGNED LONG
     NewColor = _RGB32(Control(Red).Value, Control(Green).Value, Control(Blue).Value)
@@ -1145,6 +1183,8 @@ SUB __UI_BeforeUpdateDisplay
     STATIC PrevFirstSelected AS LONG, PreviewHasMenuActive AS INTEGER
     STATIC ThisControlTurnsInto AS INTEGER
     STATIC LastChange AS SINGLE
+    STATIC FileMenuWasOpen AS _BYTE
+    DIM LastRecent AS LONG, MissingRecent AS LONG
 
     IF TIMER - BlinkStatusBar < 1 THEN
         IF TIMER - LastChange > .2 THEN
@@ -1177,35 +1217,56 @@ SUB __UI_BeforeUpdateDisplay
         Control(KeyboardComboBT).Redraw = True
     END IF
 
+    'Check the recent projects again every time the File menu opens,
+    'so files that were moved or deleted show up as missing
+    IF __UI_TotalActiveMenus > 0 AND __UI_ParentMenu(1) = FileMenu THEN
+        IF NOT FileMenuWasOpen THEN FileMenuWasOpen = True: RecentListBuilt = False
+    ELSE
+        FileMenuWasOpen = False
+    END IF
+
     IF RecentListBuilt = False THEN
         'Build list of recent projects
         RecentListBuilt = True
+        LastRecent = 0
+        MissingRecent = 0
         FOR i = 1 TO 9
-            b$ = Ini_ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+            RecentFile(i) = Ini_ReadSetting("InForm/InForm.ini", "Recent Projects", STR$(i))
+            IF LEN(RecentFile(i)) THEN
+                LastRecent = i
+                IF NOT _FILEEXISTS(RecentFile(i)) THEN MissingRecent = MissingRecent + 1
+            END IF
+        NEXT
+
+        FOR i = 1 TO 9
+            b$ = RecentFile(i)
             IF LEN(b$) THEN
-                ToolTip(RecentMenuItem(i)) = b$
-                IF INSTR(b$, DIRECTORY_SEPARATOR) > 0 THEN
-                    FOR j = LEN(b$) TO 1 STEP -1
-                        IF MID$(b$, j, 1) = DIRECTORY_SEPARATOR THEN
-                            SetCaption RecentMenuItem(i), "&" + LTRIM$(STR$(i)) + " " + MID$(b$, j + 1)
-                            EXIT FOR
-                        END IF
-                    NEXT
+                b$ = "&" + LTRIM$(STR$(i)) + " " + Pathname_GetFileName(b$)
+                'A trailing - draws a separator above "Remove missing projects"
+                IF i = LastRecent AND MissingRecent > 0 THEN b$ = b$ + "-"
+                SetCaption RecentMenuItem(i), b$
+                IF _FILEEXISTS(RecentFile(i)) THEN
+                    ToolTip(RecentMenuItem(i)) = RecentFile(i)
+                    Control(RecentMenuItem(i)).Disabled = False
                 ELSE
-                    SetCaption RecentMenuItem(i), "&" + LTRIM$(STR$(i)) + " " + b$
+                    ToolTip(RecentMenuItem(i)) = RecentFile(i) + CHR$(10) + "(file not found)"
+                    Control(RecentMenuItem(i)).Disabled = True
                 END IF
-                Control(RecentMenuItem(i)).Disabled = False
                 Control(RecentMenuItem(i)).Hidden = False
             ELSE
                 IF i = 1 THEN
                     SetCaption RecentMenuItem(i), "No recent projects"
                     ToolTip(RecentMenuItem(i)) = ""
                     Control(RecentMenuItem(i)).Disabled = True
+                    Control(RecentMenuItem(i)).Hidden = False
                 ELSE
                     Control(RecentMenuItem(i)).Hidden = True
                 END IF
             END IF
         NEXT
+
+        'Only offer to clean up the list when something is missing
+        Control(FileMenuRecentRemoveMissing).Hidden = (MissingRecent = 0)
     END IF
 
     IF __UI_Focus = 0 THEN
@@ -1411,8 +1472,16 @@ SUB __UI_BeforeUpdateDisplay
             CASE "FORMDATA"
                 LastFormData$ = thisData$
                 LoadPreview
+                ZOrderListDirty = True
                 IF NOT FormDataReceived THEN
                     FormDataReceived = True
+                    IF RestoringSession THEN
+                        RestoringSession = False
+                        Edited = True
+                        RecoverySaved$ = LastFormData$
+                        Caption(StatusBar) = "Restored the unsaved changes from your last session."
+                        BlinkStatusBar = TIMER
+                    END IF
                 ELSE
                     Edited = True
                     IF __UI_Focus > 0 THEN
@@ -1427,6 +1496,15 @@ SUB __UI_BeforeUpdateDisplay
     LOOP
 
     IF NOT FormDataReceived THEN EXIT SUB
+
+    'Keep a copy of unsaved work, so it can be restored if the editor closes
+    IF Edited THEN
+        IF LastFormData$ <> RecoverySaved$ THEN
+            IF TIMER(.001) - RecoverySavedAt > 2 OR TIMER(.001) < RecoverySavedAt THEN SaveRecovery
+        END IF
+    ELSEIF LEN(RecoverySaved$) THEN
+        DiscardRecovery
+    END IF
 
     IF LEN(InitialControlSet) = 0 THEN
         InitialControlSet = CHR$(1)
@@ -1498,10 +1576,16 @@ SUB __UI_BeforeUpdateDisplay
         LoseFocus
         PrevFirstSelected = FirstSelected
         __UI_ForceRedraw = True
-        IF ZOrderingDialogOpen AND FirstSelected <> PreviewFormID THEN
-            FOR j = 1 TO UBOUND(zOrderIDs)
-                IF zOrderIDs(j) = FirstSelected THEN Control(ControlList).Value = j: __UI_ValueChanged ControlList: EXIT FOR
-            NEXT
+        'Follow selections made in the preview, but not while our own moves are
+        'still on their way there (the reported selection would be outdated)
+        IF ZOrderingDialogOpen AND NOT ZOrderMovePending THEN ZOrderSelectControl FirstSelected
+    END IF
+
+    IF ZOrderingDialogOpen AND ZOrderListDirty THEN
+        IF NOT ZOrderMovePending THEN
+            ZOrderListDirty = False
+            ZOrderRefreshList False
+            ZOrderSelectControl FirstSelected
         END IF
     END IF
 
@@ -1693,7 +1777,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(InputBox(i).LabelID).Hidden = False
         IF __UI_Focus = InputBox(i).ID THEN
             Control(InputBox(i).ID).Height = 22
-            Control(InputBox(i).ID).BorderColor = _RGB32(0, 0, 0)
+            Control(InputBox(i).ID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 1)
             Control(InputBox(i).ID).BorderSize = 2
         ELSE
             Control(InputBox(i).ID).Height = 23
@@ -1707,6 +1791,7 @@ SUB __UI_BeforeUpdateDisplay
         Control(Toggles(i)).Disabled = True
         Control(Toggles(i)).Hidden = False
     NEXT
+    Control(AnchorPicker).Disabled = True
 
     CONST ShadeOfGreen~& = _RGB32(28, 150, 50)
     CONST ShadeOfRed~& = _RGB32(233, 44, 0)
@@ -2068,6 +2153,9 @@ SUB __UI_BeforeUpdateDisplay
     Control(AutoScroll).Value = PreviewControls(FirstSelected).AutoScroll
     Control(SearchableCB).Value = PreviewControls(FirstSelected).Searchable
     Control(FuzzyCB).Value = PreviewControls(FirstSelected).Fuzzy
+    Control(ReorderableCB).Value = PreviewControls(FirstSelected).Reorderable
+    AnchorPickerFlags = PreviewControls(FirstSelected).Anchor
+    IF AnchorPickerFlags = 0 THEN AnchorPickerFlags = __UI_Anchor_Left OR __UI_Anchor_Top
     Control(AutoSize).Value = PreviewControls(FirstSelected).AutoSize
     Control(HideTicks).Value = (PreviewControls(FirstSelected).Height = __UI_Type(__UI_Type_TrackBar).MinimumHeight)
     Control(AutoPlayGif).Value = PreviewAutoPlayGif(FirstSelected)
@@ -2304,6 +2392,7 @@ SUB __UI_BeforeUpdateDisplay
                 NEXT
             CASE __UI_Type_ListBox
                 Control(AutoScroll).Disabled = False
+                Control(ReorderableCB).Disabled = False
             CASE __UI_Type_DropdownList
                 Control(SearchableCB).Disabled = False
                 Control(FuzzyCB).Disabled = (PreviewControls(FirstSelected).Searchable = False)
@@ -2331,6 +2420,8 @@ SUB __UI_BeforeUpdateDisplay
                 Control(Disabled).Disabled = False
             CASE __UI_Type_Frame, __UI_Type_TabControl, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox
                 Control(Hidden).Disabled = False
+            CASE __UI_Type_Frame, __UI_Type_TabControl, __UI_Type_Button, __UI_Type_CheckBox, __UI_Type_RadioButton, __UI_Type_TextBox, __UI_Type_ListBox, __UI_Type_DropdownList, __UI_Type_TrackBar, __UI_Type_Label, __UI_Type_ProgressBar, __UI_Type_PictureBox, __UI_Type_ToggleSwitch
+                Control(AnchorPicker).Disabled = False
             CASE __UI_Type_Label
                 Control(AlignOptions).Disabled = False
                 Control(VAlignOptions).Disabled = False
@@ -2393,6 +2484,17 @@ SUB __UI_BeforeUpdateDisplay
         END IF
     NEXT
 
+    'The anchor picker goes below the toggles, with its description under it
+    Control(AnchorPicker).Hidden = Control(AnchorPicker).Disabled
+    Control(AnchorLB).Hidden = Control(AnchorPicker).Hidden
+    Control(AnchorInfoLB).Hidden = Control(AnchorPicker).Hidden
+    IF NOT Control(AnchorPicker).Hidden THEN
+        Control(AnchorPicker).Top = LastTopForInputBox + TopIncrementForInputBox + 6
+        Control(AnchorLB).Top = Control(AnchorPicker).Top
+        Control(AnchorInfoLB).Top = Control(AnchorPicker).Top + Control(AnchorPicker).Height + 2
+        UpdateAnchorPicker
+    END IF
+
     'Custom cases
     Control(AutoPlayGif).Disabled = NOT Control(AddGifExtensionToggle).Value
     Control(AutoSize).Disabled = Control(WordWrap).Value
@@ -2408,6 +2510,15 @@ SUB __UI_BeforeUpdateDisplay
     Control(FontSizeList).Hidden = Control(FontList).Hidden
     Control(FontSizeList).Top = Control(FontList).Top
     Control(PasteListBT).Hidden = True
+    Control(BrowseImageBT).Hidden = True
+
+    SELECT CASE PreviewControls(FirstSelected).Type
+        CASE __UI_Type_PictureBox, __UI_Type_Button, __UI_Type_MenuItem, __UI_Type_Form
+            IF Control(TextTB).Hidden = False AND Control(TextTB).Disabled = False THEN
+                Control(BrowseImageBT).Top = Control(TextTB).Top
+                Control(BrowseImageBT).Hidden = False
+            END IF
+    END SELECT
 
     IF PreviewControls(FirstSelected).Type = __UI_Type_ListBox OR PreviewControls(FirstSelected).Type = __UI_Type_DropdownList THEN
         IF INSTR(_CLIPBOARD$, CHR$(10)) THEN
@@ -2493,18 +2604,8 @@ SUB __UI_BeforeUpdateDisplay
 END SUB
 
 SUB __UI_BeforeUnload
-    DIM Answer AS _BYTE
-    IF Edited THEN
-        __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, "Save the current form before leaving?", "yesnocancel", "question", 1)
-        IF Answer = 0 THEN
-            __UI_UnloadSignal = False
-        ELSEIF Answer = 1 THEN
-            IF LEN(ThisFileName$) = 0 THEN
-                ThisFileName$ = "untitled"
-            END IF
-            SaveForm False, False
-        END IF
-    END IF
+    'Unsaved work is kept and restored the next time the editor starts
+    IF Edited THEN SaveRecovery
     SaveSettings
 END SUB
 
@@ -2533,6 +2634,8 @@ SUB SaveSettings
 
     IF __UI_MouseButtonsSwap THEN value$ = "True" ELSE value$ = "False"
     Ini_WriteSetting "InForm/InForm.ini", "InForm Settings", "Swap mouse buttons", value$
+
+    IF LEN(EditorTheme) THEN Ini_WriteSetting "InForm/InForm.ini", "InForm Settings", "Editor theme", EditorTheme
 END SUB
 
 SUB __UI_BeforeInit
@@ -2583,7 +2686,11 @@ END SUB
 
 SUB __UI_OnLoad
     DIM i AS LONG, b$
-    DIM prevDest AS LONG
+
+    'Editor theme (also draws the icons)
+    b$ = LCASE$(Ini_ReadSetting("InForm/InForm.ini", "InForm Settings", "Editor theme"))
+    IF b$ <> "dark" THEN b$ = "light"
+    SetEditorTheme b$
 
     __UI_KeepScreenHidden = False
     _SCREENSHOW
@@ -2723,7 +2830,19 @@ SUB __UI_OnLoad
     b$ = "Parsing command line..."
     GOSUB ShowMessage
 
-    IF _FILEEXISTS(COMMAND$) THEN
+    'Unsaved work from the last session?
+    IF _FILEEXISTS(RECOVERY_FILE) THEN
+        DIM RestoreIt AS _BYTE
+        RestoreIt = True
+        IF _FILEEXISTS(COMMAND$) THEN
+            __UI_Delay COMMDLG_DELAY
+            RestoreIt = (_MESSAGEBOX(UiEditorTitle$, "There are unsaved changes from your last session. Restore them instead of opening " + COMMAND$ + "?", "yesno", "question", 1) = 1)
+        END IF
+        IF RestoreIt THEN RestoringSession = LoadRecovery
+        IF NOT RestoringSession THEN DiscardRecovery
+    END IF
+
+    IF _FILEEXISTS(COMMAND$) AND NOT RestoringSession THEN
         SELECT CASE LCASE$(RIGHT$(COMMAND$, 4))
             CASE ".bas"
                 'Does this .bas $include a .frm?
@@ -2875,6 +2994,7 @@ SUB __UI_OnLoad
     i = i + 1: Toggles(i) = AutoScroll
     i = i + 1: Toggles(i) = SearchableCB
     i = i + 1: Toggles(i) = FuzzyCB
+    i = i + 1: Toggles(i) = ReorderableCB
     i = i + 1: Toggles(i) = AutoSize
     i = i + 1: Toggles(i) = HideTicks
     i = i + 1: Toggles(i) = AutoPlayGif
@@ -2883,97 +3003,15 @@ SUB __UI_OnLoad
 
     ToolTip(FontTB) = "Multiple fonts can be specified by separating them with a question mark (?)." + CHR$(10) + "The first font that can be found/loaded is used."
     ToolTip(FontList) = "System fonts may not be available in all computers. To specify a local font file, right-click 'Font' to the left of this list and disable 'Show system fonts list'."
+    ToolTip(AnchorLB) = "The edges of the form (or of the frame/tab control it's in) that the control follows when that gets resized."
+    ToolTip(AnchorPicker) = "Click a side to anchor the control to that edge of its parent, or to release it."
     ToolTip(ColorPreview) = "Click to copy the current color's hex value to the clipboard."
     ToolTip(KeyboardComboBT) = "Click to assign a key combination to the selected control"
 
-    StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
-    Control(StatusBar).BackColor = StatusBarBackColor
 
     FOR i = 1 TO 9
         RecentMenuItem(i) = __UI_GetID("FileMenuRecent" + LTRIM$(STR$(i)))
     NEXT
-
-    b$ = "Loading images..."
-    GOSUB ShowMessage
-
-    'Load toolbox images:
-    DIM CommControls AS LONG
-    CommControls = LoadEditorImage(EDITOR_IMAGE_COMMONCONTROLS)
-    __UI_ClearColor CommControls, 0, 0
-
-    i = 0
-    Control(AddButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddLabel).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddLabel).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddTextBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTextBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddCheckBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddCheckBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddRadioButton).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddRadioButton).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddListBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddListBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddDropdownList).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddDropdownList).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddTrackBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddTrackBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddProgressBar).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddProgressBar).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddPictureBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddPictureBox).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-    Control(AddFrame).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    i = i + 1: _PUTIMAGE (0, 0), CommControls, Control(AddFrame).HelperCanvas, (0, i * 16 - 16)-STEP(15, 15)
-
-    'Draw ToggleSwitch icon
-    prevDest = _DEST
-    Control(AddToggleSwitch).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddToggleSwitch).HelperCanvas
-    LINE (2, 4)-(13, 11), _RGB32(0, 128, 255), BF
-    LINE (2, 4)-(13, 11), _RGB32(170, 170, 170), B
-    LINE (8, 6)-(11, 9), _RGB32(255, 255, 255), BF
-
-    'Draw AddTabControl icon
-    Control(AddTabControl).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddTabControl).HelperCanvas
-    LINE (1, 5)-(14, 14), _RGB32(255, 255, 255), BF
-    LINE (1, 5)-(14, 14), _RGB32(132, 165, 189), B
-    LINE (1, 1)-(6, 5), _RGB32(255, 255, 255), BF
-    LINE (1, 1)-(6, 5), _RGB32(132, 165, 189), B
-    LINE (2, 5)-(5, 5), _RGB32(255, 255, 255)
-    LINE (7, 2)-(12, 5), _RGB32(220, 230, 240), BF
-    LINE (7, 2)-(12, 5), _RGB32(132, 165, 189), B
-
-    'Draw AddNumericBox icon
-    Control(AddNumericBox).HelperCanvas = _NEWIMAGE(16, 16, 32)
-    _DEST Control(AddNumericBox).HelperCanvas
-    _FONT 8
-    LINE (1, 3)-(15, 13), _RGB32(255, 255, 255), BF
-    LINE (1, 3)-(15, 13), _RGB32(132, 165, 189), B
-    COLOR _RGB32(55, 55, 55), _RGBA32(0, 0, 0, 0)
-    __UI_PrintString 5, 3, "#"
-
-    'Draw PasteListBT icon
-    Control(PasteListBT).HelperCanvas = _NEWIMAGE(17, 17, 32)
-    _DEST Control(PasteListBT).HelperCanvas
-    _FONT 16
-    FOR i = 4 TO 15 STEP 4
-        LINE (3, i)-STEP(_WIDTH - 6, 1), _RGB32(122, 122, 122), BF
-    NEXT
-
-    'Import Align menu icons from InForm.ui
-    Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas
-    Control(AlignMenuAlignRight).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignRight")).HelperCanvas
-    Control(AlignMenuAlignTops).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignTops")).HelperCanvas
-    Control(AlignMenuAlignBottoms).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).HelperCanvas
-    Control(AlignMenuAlignCentersV).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).HelperCanvas
-    Control(AlignMenuAlignCentersH).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).HelperCanvas
-
-    _DEST prevDest
-
-    Control(FileMenuSave).HelperCanvas = LoadEditorImage(EDITOR_IMAGE_DISK)
-
-    _FREEIMAGE CommControls
 
     b$ = "Launching Preview component..."
     GOSUB ShowMessage
@@ -3015,7 +3053,7 @@ SUB __UI_OnLoad
     _DEST 0
     _FONT Control(__UI_FormID).Font
     IF tempIcon < -1 THEN
-        CLS , _RGB32(255, 255, 255)
+        CLS , __UI_DefaultColor(__UI_Type_Form, 2)
         _PUTIMAGE (_WIDTH / 2 - _WIDTH(tempIcon) / 2, _HEIGHT / 2 - _HEIGHT(tempIcon) / 2), tempIcon
         COLOR __UI_DefaultColor(__UI_Type_Form, 1), _RGBA32(0, 0, 0, 0)
         __UI_PrintString _WIDTH \ 2 - _PRINTWIDTH(b$) \ 2, _HEIGHT / 2 + _HEIGHT(tempIcon) / 2 + _FONTHEIGHT, b$
@@ -3214,16 +3252,14 @@ SUB __UI_ValueChanged (id AS LONG)
         CASE Blue
             Text(BlueValue) = LTRIM$(STR$(Control(Blue).Value))
         CASE ControlList
-            Control(UpBT).Disabled = False
-            Control(DownBT).Disabled = False
-            IF Control(ControlList).Value = 1 THEN
-                Control(UpBT).Disabled = True
-            ELSEIF Control(ControlList).Value = 0 THEN
-                Control(UpBT).Disabled = True
-                Control(DownBT).Disabled = True
-            ELSEIF Control(ControlList).Value = Control(ControlList).Max THEN
-                Control(DownBT).Disabled = True
+            'An item was dragged to a new position (the list is reorderable)
+            IF __UI_MovedItemTo > 0 THEN
+                ZOrderItemDropped __UI_MovedItemFrom, __UI_MovedItemTo
+                EXIT SUB
             END IF
+
+            'The user picked a control in the list: select it in the preview too
+            ZOrderUpdateButtons
             IF Control(ControlList).Value > 0 THEN
                 b$ = MKL$(zOrderIDs(Control(ControlList).Value))
             ELSE
@@ -3237,57 +3273,294 @@ SUB __UI_ValueChanged (id AS LONG)
 END SUB
 
 '---------------------------------------------------------------------------------
-' Use this to store editor images and bitmaps
-' Take care not to call multiple times for the same image as it will create a new _IMAGE everytime it is called!
-FUNCTION LoadEditorImage& (id AS _UNSIGNED _BYTE)
-    SELECT CASE id
-        CASE EDITOR_IMAGE_COMMONCONTROLS
-            CONST SIZE_COMMONCONTROLS_BMP_11386~& = 11386~&
-            CONST COMP_COMMONCONTROLS_BMP_11386%% = -1%%
-            CONST DATA_COMMONCONTROLS_BMP_11386 = _
-                "eNpy8q3SYQC0W4UwsgJJdC5nRo4ceciRSCwSiRw7knO4wyKRyLZIkjNILBLZsi0S90e+q7x0SF96tj/MbvJ/NluZl6KYflVV3UWnKP8R/FtwEfxX" + _
-                "8I/Tv07/PH0ksD9rvCG/Tr/wWXRdC6VadIp6t22578alD8Fn8haoPxdfuD/1f239Oj25mjDZ6UD9zvow3+1hPnvr/Xy8/n8VO6D/SnRljjq9oc4E" + _
-                "aURU6RW1oEos4ovFmShvZ7j8Vis0gmpu8BhL5EOBWOW4tSmuTbLhViXIkht9bfzqjnGZ0C8D/dRzKz6qzUckPi6N8O4JinuGR54yB8tHXz3I1U8j" + _
-                "ekTr5JH1BW4qQ54laKuSkGtTamJ8YmgKqK62PjS11IJyapjDQ+ob+w5D15I7tI3Ed/klnuvi+DDUUgcKyU2PA8w8kvscFQbVoE6uG39sa4iAPuqS" + _
-                "3EHqKB4Z5l6hyFPWbAYFTB1G1aJy+JMin/JcDH10jeRkZmDRgJkgSQDzIOjFRcsztnzanjxXQk8a0V3jmk/Qw0AfkhP7w/LF9vjWxxPxw6CcgKwV" + _
-                "P/nMPLTwpdccvsIHInyNcQXKEcxDEoIZOua/h28McyCkFu7HMnY74/v7gcUINL8Xl68HRT1Tt5i7lucyCqQ/COlTQr4XgvwffBpFUbyDjbssCw4K" + _
-                "OdYP7cxkSE0KEWqx7fuU9itx+bG+ITaxfY5p2/e0f8dPTIJEx9uzwHsO8XOTCXL7nNN234f4xhgclXVdyf3s+f3g+0B13dvcxjS4dte3fDSaXLRz" + _
-                "i2t7Rdf3h/iMqxXvhGZsUNcNdgr5ddPiCWBZV2itaa/PpwDUol7ZDp/xGF+T33AflFIh7cVfnfhH68/mDOmUUTd1eYgf9ZH4iKh5Dk11gP+Dsasx" + _
-                "qsrq+pBNvrwLyXPm3Ec9d+1mWz51mL9xOQPTh8/nfw68+Hzn6FHti8/cJ+ZAWNurn3H9HPj/JGtHC2sfrd/LI1Q/5Yvrd/af9hecP/uoziPB9R3N" + _
-                "fdwr5NyFM02bj1Ed4ZO7QWzvPAP2/+d+p/5G94dT8wGbfFUhJE7Ps39oO/077elf9/7oW9oH+5dceXa+n2rX/WPje/qd+sn16w/eP3iuwLp4+mD9" + _
-                "Xh6h+ilfW797f/2R87d3oF//J/v/u2EeO/RtzTuubyvae3hmHnk/Dm0JLc8ifCc238tzkNvVd+pXYvSEvn585IP+9SRnbOdiat8H172ut+RMLTzR" + _
-                "K5TucFM3qFlhdXxJLd5+dNyjnuvWdUWnhdvfEHU3XNoLfVhh/k2RuXzu87Is5Ep8ZFOOdM6QjAnoR/JwhOtdflvdMUn8ZV2JfumRa/ExZeQrrehX" + _
-                "hOfSlNmr+sld6WMRHwPz6EzH/fDr9/df9oB12Dy4H7YmQtv+CJ3/PA1bHpZLP2NX8/9QD+l52PpvsrnMovu24PtD/d88uM+yt2693xXuTCOI9tje" + _
-                "+fvfXnAW8+ILj9gjr+K7vSaCqIsOx18tX7j2G472xrc9T66HPfFtz29x/TzC8e23x7XOt+fmEYpP7otvz80jGN/Y+B/dATY+nz+ITx+BPIhgfMHv" + _
-                "8rDxv7T/f+b/4+LPf4fEm/+8Gda3KfbZn3/9NcF3bv1+/DDfr/9o/HD9lIP1++LGp4TrP8j/+vM/JH/R/P+DaZoQxzecz2dE0ZW2+7/bx9fL5SMf" + _
-                "/M/hbmjqitzo6vr2UT7ueOS5tf34j3senh3nmeuyNEESx0iTGJfLeePL/wE+QY6TI3MOxPagmhr3LHXzwVlAnzvP4nI+U0sd5Cfx7dg8WRaoiseR" + _
-                "ur0cLJf1v9NTVcUzd+s+nIPthW8NPfWcaar0hDI5/U5z9pnHbuM2jxjj0GPWhpis/sgex4EcPfaosgvmecJqZ7Sdmj4kD+bkzIi7tOGMuLIWgfuf" + _
-                "e8/4tl23CFd8MLaA70TANcDGc/Vz+x/kL6sT33IC84Pri1yBjU++J6H5YV1Zxxafsn9+YA7iY4sfEJfn8pmzjX+Yb30wdnO/wegJR2URjvQ8+7gt" + _
-                "Eph5v491MWht/8o3QC157Ph2qNnzeiL30/gfg472/w=="
+'Editor icons
+'
+'The toolbox, menu and button icons are drawn in code with the colors of the
+'editor's theme, so they suit both light and dark themes. Shapes are drawn with
+'anti-aliased edges, in pixel coordinates (the pixel at 0,0 spans 0 to 1).
+'Call DrawEditorIcons again after changing the editor's theme.
 
-            LoadEditorImage = _LOADIMAGE(Resource_LoadBase64String(DATA_COMMONCONTROLS_BMP_11386, SIZE_COMMONCONTROLS_BMP_11386, COMP_COMMONCONTROLS_BMP_11386), 32, "memory")
+''' @brief Switches the editor's own theme ("light" or "dark") and redraws what depends on it.
+SUB SetEditorTheme (themeName AS STRING)
+    DIM blinking AS _BYTE, prevAutoRefresh AS _BYTE, i AS LONG
 
-        CASE EDITOR_IMAGE_DISK
-            CONST SIZE_DISK_BMP_1146~& = 1146~&
-            CONST COMP_DISK_BMP_1146%% = -1%%
-            CONST DATA_DISK_BMP_1146 = _
-                "eNpy8q1iYQCDKiDOAWIBKGZkUGBgZsAF/kMQjEMG4OHhERMXF/cDMu2B2IEIbA90qrOokJAHkM2urqISAqTvx0RF/u/v7v7f1d7+v7ujAxcGy9tY" + _
-                "Wf7kZGW5paKg4AAgixwC64iDMJ5jbbtx8mxtbLO27V5q81j3Xtu2bTxbcW7Vvv06/dft4Rv/ZhYmk6mAePe61as/1odDkbDfx9cE/EwUf8sjP2K+" + _
-                "LhTkHRYzsjMzm+mb2CSJiYY0jishHsTzDeEwQl4Pwj7vv6K6F7WBAFw2q5CZno6ObdpALBar0zmumHisWbmSrw344Xc5EXC7/pfLhTDtsL9/h6yM" + _
-                "tEjXjh0gEok0P/nVy5bxYY8HXrsNPoed5PjlSVS3sx2W169B94Ve3boxPiud8VhL92tov4/m/DT/j9iuIPG2t2+Qm5UV6durJ+TEcwYD4+fNmsW/" + _
-                "ff4Mb5/90PN/9OwpzC9f4t716zDqdUJCTDS7LxOLixUSCaQiEU91mAx6aNUq8jrQfwJHOXmkkNJSONaTJCcJUlEyoqOjNUqZuFgll0EhlfBUQ15O" + _
-                "NkaPHIHB1VWoLC9HVUUF8+WlJWwPzYEkyCVixmuVyuJUkwF9u3fh58yahQP792PZ0qU4dPAgTh4/juPHjuHY0aM4dfIkpk+bBnpXGHXaiFatRDzx" + _
-                "6ZyhODcrA9G9e/BLFy/G3r172cz+fftw4fx5nDl9munSxYuYP28e62WlpUTSTEaI4uM1edkZRaWF+VCKE/llSxYzrlvLljh44ADjz/7BL5w/Hy2j" + _
-                "ooTCvJxIXlYG+/4VhYVlw4dUQ54Y83H71q24e+eOQDeE+/fvCw6HQzCbzYL5/XvB6XQKmzdtYr3K0uIvxQW5kMtFGsrbjBw6+FF+BofdO3cIwYAf" + _
-                "d27dgtfjQU04jHAoiGAggMaGeuzavh2K6GhMHDMS40YNA6fX64iP+rqAgAABV0dHL193d+2e9nbj9atWGbc31RpXFOcZ1xYXGzeUlhrVVhQbJ8fF" + _
-                "GXq5uOgG+/v4hgb5h3t6evIBAK70LyE="
+    'Pause the refresh timer so no frame is drawn halfway through the switch
+    '(it would show a mix of both themes and could redirect the icon drawing)
+    prevAutoRefresh = __UI_AutoRefresh
+    __UI_AutoRefresh = False
 
-            LoadEditorImage = _LOADIMAGE(Resource_LoadBase64String(DATA_DISK_BMP_1146, SIZE_DISK_BMP_1146, COMP_DISK_BMP_1146), 32, "memory")
+    EditorTheme = LCASE$(themeName)
+    blinking = (StatusBarBackColor <> 0 AND Control(StatusBar).BackColor <> StatusBarBackColor)
+    IF LCASE$(GetTheme$) <> EditorTheme THEN SetTheme EditorTheme
 
-        CASE ELSE
-            ERROR 51
-    END SELECT
+    'The status bar is a shade darker than the form
+    StatusBarBackColor = Darken(__UI_DefaultColor(__UI_Type_Form, 2), 90)
+    IF NOT blinking THEN Control(StatusBar).BackColor = StatusBarBackColor
+
+    DrawEditorIcons
+    Control(OptionsMenuEditorThemeLight).Value = (EditorTheme = "light")
+    Control(OptionsMenuEditorThemeDark).Value = (EditorTheme = "dark")
+
+    'Repaint everything in the new theme on the next frame
+    FOR i = 1 TO UBOUND(Control)
+        IF Control(i).ID > 0 THEN Control(i).Redraw = True
+    NEXT
+    __UI_ForceRedraw = True
+    __UI_AutoRefresh = prevAutoRefresh
+END SUB
+
+SUB DrawEditorIcons
+    DIM prevDest AS LONG, i AS LONG, x AS SINGLE, ink AS _UNSIGNED LONG
+    DIM fg AS _UNSIGNED LONG, soft AS _UNSIGNED LONG, acc AS _UNSIGNED LONG
+    DIM accText AS _UNSIGNED LONG, paper AS _UNSIGNED LONG
+
+    prevDest = _DEST
+    fg = __UI_ThemeColor(__UI_ThemeColor_ButtonText)
+    soft = IconMix(fg, __UI_ThemeColor(__UI_ThemeColor_ButtonFace), .6)
+    acc = __UI_ThemeColor(__UI_ThemeColor_Accent)
+    accText = __UI_ThemeColor(__UI_ThemeColor_AccentText)
+    paper = __UI_ThemeColor(__UI_ThemeColor_InputBack)
+
+    'Button
+    EditorIconCanvas AddButton, 16
+    IconRoundRect 1, 3, 15, 13, 2, 0, acc
+    IconLine 5, 8, 11, 8, 2, accText
+
+    'Label
+    EditorIconCanvas AddLabel, 16
+    IconLine 3.2, 13.5, 8, 2.5, 1.7, fg
+    IconLine 8, 2.5, 12.8, 13.5, 1.7, fg
+    IconLine 5.4, 9.8, 10.6, 9.8, 1.4, fg
+
+    'Text box: a field with a caret and an accent underline
+    EditorIconCanvas AddTextBox, 16
+    IconRoundRect 0, 3, 16, 13, 2, 0, paper
+    IconRoundRect 0, 3, 16, 13, 2, 1, fg
+    IconLine 4.5, 6, 4.5, 10, 1.2, acc
+    IconLine 2.5, 12.5, 13.5, 12.5, 1, acc
+
+    'Numeric text box: a field with up/down arrows
+    EditorIconCanvas AddNumericBox, 16
+    IconRoundRect 0, 3, 16, 13, 2, 0, paper
+    IconRoundRect 0, 3, 16, 13, 2, 1, fg
+    IconLine 4.5, 6, 4.5, 10, 1.2, acc
+    IconTriangle 9.5, 7.4, 11.75, 5, 14, 7.4, fg
+    IconTriangle 9.5, 8.6, 11.75, 11, 14, 8.6, fg
+
+    'Check box
+    EditorIconCanvas AddCheckBox, 16
+    IconRoundRect 1, 1, 15, 15, 2.5, 0, acc
+    IconLine 4.6, 8.3, 7, 10.7, 1.6, accText
+    IconLine 7, 10.7, 11.6, 5.6, 1.6, accText
+
+    'Radio button
+    EditorIconCanvas AddRadioButton, 16
+    IconCircle 8, 8, 6.6, 0, acc
+    IconCircle 8, 8, 2.6, 0, accText
+
+    'List box: a few items, one of them selected
+    EditorIconCanvas AddListBox, 16
+    IconRoundRect 0, 0, 16, 16, 2, 0, paper
+    IconRoundRect 0, 0, 16, 16, 2, 1, fg
+    IconLine 4, 3.5, 11, 3.5, 1, soft
+    IconRoundRect 2, 6, 14, 10, 1, 0, acc
+    IconLine 4, 8, 10, 8, 2, accText
+    IconLine 4, 12.5, 9, 12.5, 1, soft
+
+    'Dropdown list
+    EditorIconCanvas AddDropdownList, 16
+    IconRoundRect 0, 3, 16, 13, 2, 0, paper
+    IconRoundRect 0, 3, 16, 13, 2, 1, fg
+    IconLine 3.5, 8, 7, 8, 2, soft
+    IconLine 9.5, 6.75, 11.5, 8.75, 1.4, fg
+    IconLine 11.5, 8.75, 13.5, 6.75, 1.4, fg
+
+    'Track bar
+    EditorIconCanvas AddTrackBar, 16
+    IconLine 2, 8, 14, 8, 2, soft
+    IconLine 2, 8, 7, 8, 2, acc
+    IconCircle 7, 8, 3.8, 0, acc
+    IconCircle 7, 8, 1.6, 0, paper
+
+    'Progress bar
+    EditorIconCanvas AddProgressBar, 16
+    IconRoundRect 0, 4, 16, 12, 2, 1, fg
+    IconRoundRect 2, 6, 10, 10, 1, 0, acc
+
+    'Picture box: a framed landscape
+    EditorIconCanvas AddPictureBox, 16
+    IconRoundRect 0, 2, 16, 14, 2, 1, fg
+    IconTriangle 6.5, 13, 10.5, 8.5, 14.5, 13, soft
+    IconTriangle 1.5, 13, 6, 7, 10.5, 13, acc
+    IconCircle 11.5, 6, 1.6, 0, acc
+
+    'Frame: a box with a caption on its top edge
+    EditorIconCanvas AddFrame, 16
+    IconLine 1.5, 4.5, 2.5, 4.5, 1, fg
+    IconLine 12.5, 4.5, 14.5, 4.5, 1, fg
+    IconLine 1.5, 4.5, 1.5, 14.5, 1, fg
+    IconLine 14.5, 4.5, 14.5, 14.5, 1, fg
+    IconLine 1.5, 14.5, 14.5, 14.5, 1, fg
+    IconLine 4.5, 4.5, 10.5, 4.5, 1.6, acc
+
+    'Toggle switch
+    EditorIconCanvas AddToggleSwitch, 16
+    IconRoundRect 0, 4, 16, 12, 4, 0, acc
+    IconCircle 11.5, 8, 2.3, 0, accText
+
+    'Tab control: the selected tab and the page below it
+    EditorIconCanvas AddTabControl, 16
+    IconRoundRect 0, 5, 16, 16, 1.5, 1, fg
+    IconRoundRect 1, 1, 8, 6, 1, 0, acc
+    IconLine 9.5, 2.5, 13.5, 2.5, 1, soft
+    IconLine 9.5, 2.5, 9.5, 5, 1, soft
+    IconLine 13.5, 2.5, 13.5, 5, 1, soft
+
+    'Paste list button: lines of text
+    EditorIconCanvas PasteListBT, 17
+    FOR i = 0 TO 2
+        IconLine 4, 4 + i * 4, 13 - i * 2, 4 + i * 4, 2, fg
+    NEXT
+
+    'Save menu item (a floppy disk) in normal, hovered and disabled states
+    EditorIconCanvas FileMenuSave, 48
+    FOR i = 0 TO 2
+        SELECT CASE i
+            CASE 0: ink = __UI_DefaultColor(__UI_Type_MenuItem, 1)
+            CASE 1: ink = __UI_DefaultColor(__UI_Type_MenuItem, 3)
+            CASE 2: ink = __UI_DisabledColor
+        END SELECT
+        x = i * 16
+        IconRoundRect x + 1, 1, x + 15, 15, 1.5, 1, ink
+        IconRoundRect x + 4, 1, x + 11, 6, .5, 0, ink
+        IconRoundRect x + 4, 9, x + 12, 15, .5, 1, ink
+    NEXT
+
+    'The Align menu shares its icons with the preview's context menu
+    Control(AlignMenuAlignLeft).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignLeft")).HelperCanvas
+    Control(AlignMenuAlignRight).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignRight")).HelperCanvas
+    Control(AlignMenuAlignTops).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignTops")).HelperCanvas
+    Control(AlignMenuAlignBottoms).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignBottoms")).HelperCanvas
+    Control(AlignMenuAlignCentersV).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersV")).HelperCanvas
+    Control(AlignMenuAlignCentersH).HelperCanvas = Control(__UI_GetID("__UI_PreviewMenuAlignCentersH")).HelperCanvas
+
+    _DEST prevDest
+END SUB
+
+'Makes Control(id).HelperCanvas a clear Wide x 16 image (17 x 17 for 17) and
+'sets it as the drawing destination
+SUB EditorIconCanvas (id AS LONG, Wide AS INTEGER)
+    DIM h AS INTEGER
+    h = 16: IF Wide = 17 THEN h = 17
+    IF Control(id).HelperCanvas < -1 THEN
+        IF _WIDTH(Control(id).HelperCanvas) <> Wide OR _HEIGHT(Control(id).HelperCanvas) <> h THEN
+            _FREEIMAGE Control(id).HelperCanvas
+            Control(id).HelperCanvas = 0
+        END IF
+    END IF
+    IF Control(id).HelperCanvas >= -1 THEN Control(id).HelperCanvas = _NEWIMAGE(Wide, h, 32)
+    _DEST Control(id).HelperCanvas
+    CLS , _RGBA32(0, 0, 0, 0)
+    Control(id).Redraw = True
+END SUB
+
+FUNCTION IconMix~& (c1 AS _UNSIGNED LONG, c2 AS _UNSIGNED LONG, t AS SINGLE)
+    'Blends c1 into c2: t = 1 gives c1, t = 0 gives c2
+    IconMix = _RGB32(_RED32(c1) * t + _RED32(c2) * (1 - t), _GREEN32(c1) * t + _GREEN32(c2) * (1 - t), _BLUE32(c1) * t + _BLUE32(c2) * (1 - t))
 END FUNCTION
+
+'Plots a pixel whose share covered by a shape is Coverage (0 to 1)
+SUB IconPlot (x AS INTEGER, y AS INTEGER, Coverage AS SINGLE, c AS _UNSIGNED LONG)
+    IF Coverage <= 0 THEN EXIT SUB
+    IF x < 0 OR y < 0 OR x >= _WIDTH OR y >= _HEIGHT THEN EXIT SUB
+    PSET (x, y), _RGBA32(_RED32(c), _GREEN32(c), _BLUE32(c), _ALPHA32(c) * Coverage)
+END SUB
+
+'Signed distance from (px, py) to a rounded rectangle (negative inside)
+FUNCTION IconRoundRectDist! (px AS SINGLE, py AS SINGLE, x1 AS SINGLE, y1 AS SINGLE, x2 AS SINGLE, y2 AS SINGLE, Radius AS SINGLE)
+    DIM qx AS SINGLE, qy AS SINGLE, ox AS SINGLE, oy AS SINGLE, inside AS SINGLE
+    qx = ABS(px - (x1 + x2) / 2) - ((x2 - x1) / 2 - Radius)
+    qy = ABS(py - (y1 + y2) / 2) - ((y2 - y1) / 2 - Radius)
+    IF qx > 0 THEN ox = qx
+    IF qy > 0 THEN oy = qy
+    inside = qx: IF qy > inside THEN inside = qy
+    IF inside > 0 THEN inside = 0
+    IconRoundRectDist = SQR(ox * ox + oy * oy) + inside - Radius
+END FUNCTION
+
+'Rounded rectangle from (x1, y1) to (x2, y2): filled if Thickness is 0,
+'otherwise just its outline, drawn inside the edges
+SUB IconRoundRect (x1 AS SINGLE, y1 AS SINGLE, x2 AS SINGLE, y2 AS SINGLE, Radius AS SINGLE, Thickness AS SINGLE, c AS _UNSIGNED LONG)
+    DIM x AS INTEGER, y AS INTEGER, sx AS INTEGER, sy AS INTEGER, hits AS INTEGER, d AS SINGLE
+    FOR y = INT(y1) TO INT(y2)
+        FOR x = INT(x1) TO INT(x2)
+            hits = 0
+            FOR sy = 0 TO 3
+                FOR sx = 0 TO 3
+                    d = IconRoundRectDist(x + (sx + .5) / 4, y + (sy + .5) / 4, x1, y1, x2, y2, Radius)
+                    IF d <= 0 AND (Thickness = 0 OR d > -Thickness) THEN hits = hits + 1
+                NEXT
+            NEXT
+            IconPlot x, y, hits / 16, c
+        NEXT
+    NEXT
+END SUB
+
+'Circle centered at (cx, cy): filled if Thickness is 0, otherwise a ring
+SUB IconCircle (cx AS SINGLE, cy AS SINGLE, Radius AS SINGLE, Thickness AS SINGLE, c AS _UNSIGNED LONG)
+    IconRoundRect cx - Radius, cy - Radius, cx + Radius, cy + Radius, Radius, Thickness, c
+END SUB
+
+'Line from (x1, y1) to (x2, y2) with rounded ends
+SUB IconLine (x1 AS SINGLE, y1 AS SINGLE, x2 AS SINGLE, y2 AS SINGLE, Thickness AS SINGLE, c AS _UNSIGNED LONG)
+    DIM x AS INTEGER, y AS INTEGER, sx AS INTEGER, sy AS INTEGER, hits AS INTEGER
+    DIM px AS SINGLE, py AS SINGLE, dx AS SINGLE, dy AS SINGLE, t AS SINGLE, l2 AS SINGLE, r AS SINGLE
+    DIM xa AS INTEGER, xb AS INTEGER, ya AS INTEGER, yb AS INTEGER
+
+    r = Thickness / 2
+    dx = x2 - x1: dy = y2 - y1
+    l2 = dx * dx + dy * dy
+    xa = INT(_MIN(x1, x2) - r): xb = INT(_MAX(x1, x2) + r)
+    ya = INT(_MIN(y1, y2) - r): yb = INT(_MAX(y1, y2) + r)
+    FOR y = ya TO yb
+        FOR x = xa TO xb
+            hits = 0
+            FOR sy = 0 TO 3
+                FOR sx = 0 TO 3
+                    px = x + (sx + .5) / 4: py = y + (sy + .5) / 4
+                    t = 0
+                    IF l2 > 0 THEN t = ((px - x1) * dx + (py - y1) * dy) / l2
+                    IF t < 0 THEN t = 0
+                    IF t > 1 THEN t = 1
+                    px = px - (x1 + t * dx): py = py - (y1 + t * dy)
+                    IF px * px + py * py <= r * r THEN hits = hits + 1
+                NEXT
+            NEXT
+            IconPlot x, y, hits / 16, c
+        NEXT
+    NEXT
+END SUB
+
+'Filled triangle
+SUB IconTriangle (ax AS SINGLE, ay AS SINGLE, bx AS SINGLE, by AS SINGLE, cx AS SINGLE, cy AS SINGLE, c AS _UNSIGNED LONG)
+    DIM x AS INTEGER, y AS INTEGER, sx AS INTEGER, sy AS INTEGER, hits AS INTEGER
+    DIM px AS SINGLE, py AS SINGLE, d1 AS SINGLE, d2 AS SINGLE, d3 AS SINGLE
+    FOR y = INT(_MIN(ay, _MIN(by, cy))) TO INT(_MAX(ay, _MAX(by, cy)))
+        FOR x = INT(_MIN(ax, _MIN(bx, cx))) TO INT(_MAX(ax, _MAX(bx, cx)))
+            hits = 0
+            FOR sy = 0 TO 3
+                FOR sx = 0 TO 3
+                    px = x + (sx + .5) / 4: py = y + (sy + .5) / 4
+                    d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by)
+                    d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy)
+                    d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay)
+                    IF NOT ((d1 < 0 OR d2 < 0 OR d3 < 0) AND (d1 > 0 OR d2 > 0 OR d3 > 0)) THEN hits = hits + 1
+                NEXT
+            NEXT
+            IconPlot x, y, hits / 16, c
+        NEXT
+    NEXT
+END SUB
 
 FUNCTION ReadSequential$ (Txt$, Bytes%)
     ReadSequential$ = LEFT$(Txt$, Bytes%)
@@ -3462,6 +3735,11 @@ SUB LoadPreview
                     PreviewControls(Dummy).Searchable = True
                 CASE -53
                     PreviewControls(Dummy).Fuzzy = True
+                CASE -54
+                    PreviewControls(Dummy).Reorderable = True
+                CASE -55
+                    b$ = ReadSequential$(FormData$, 2)
+                    PreviewControls(Dummy).Anchor = CVI(b$)
                 CASE -34
                     b$ = ReadSequential$(FormData$, 4)
                     PreviewControls(Dummy).Encoding = CVL(b$)
@@ -3543,6 +3821,244 @@ SUB LoadPreview
         PrevTotalGifLoaded = TotalGifLoaded
     END IF
 END SUB
+
+'---------------------------------------------------------------------------------
+'Z-ordering dialog
+'
+'The list is kept in step with the preview locally: a move swaps the two rows
+'right away and tells the preview to swap the same two control slots. Slot
+'numbers don't change when controls are swapped, so moves can be sent back to
+'back without waiting for the preview. The list is only rebuilt from the
+'preview's data once it settles, and only if it actually differs (undo, etc.).
+
+FUNCTION ZOrderable%% (i AS LONG)
+    IF PreviewControls(i).ID = 0 THEN EXIT FUNCTION
+    SELECT CASE PreviewControls(i).Type
+        CASE 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18
+            ZOrderable = True
+    END SELECT
+END FUNCTION
+
+FUNCTION ZOrderMovePending%%
+    'True while dragging and for a short while after a move, until the preview has caught up
+    DIM elapsed AS DOUBLE
+    IF __UI_ReorderingID = ControlList THEN ZOrderMovePending = True: EXIT FUNCTION
+    IF ZOrderLastMove = 0 THEN EXIT FUNCTION
+    elapsed = TIMER(.001) - ZOrderLastMove
+    IF elapsed >= 0 AND elapsed < .3 THEN ZOrderMovePending = True ELSE ZOrderLastMove = 0
+END FUNCTION
+
+SUB ZOrderRefreshList (Force AS _BYTE)
+    'Fills zOrderIDs() from the latest preview data and reloads the list if it changed
+    DIM i AS LONG, total AS LONG, items$, prevValue AS LONG, prevViewStart AS LONG
+
+    IF UBOUND(zOrderIDs) < UBOUND(PreviewControls) THEN REDIM zOrderIDs(0 TO UBOUND(PreviewControls)) AS LONG
+    FOR i = 1 TO UBOUND(PreviewControls)
+        IF ZOrderable(i) THEN
+            total = total + 1
+            zOrderIDs(total) = i
+            items$ = items$ + __UI_Type(PreviewControls(i).Type).Name + RTRIM$(PreviewControls(i).Name) + CHR$(10)
+        END IF
+    NEXT
+
+    IF NOT Force AND items$ = Text(ControlList) AND total = Control(ControlList).Max THEN EXIT SUB
+
+    prevValue = Control(ControlList).Value
+    prevViewStart = Control(ControlList).InputViewStart
+    ResetList ControlList
+    Text(ControlList) = items$
+    Control(ControlList).Max = total
+    Control(ControlList).LastVisibleItem = 0
+    IF prevValue > total THEN prevValue = total
+    Control(ControlList).Value = prevValue
+    Control(ControlList).PreviousValue = prevValue
+    IF prevViewStart > total THEN prevViewStart = total
+    IF prevViewStart < 1 THEN prevViewStart = 1
+    Control(ControlList).InputViewStart = prevViewStart
+    Control(ControlList).Redraw = True
+    ZOrderUpdateButtons
+END SUB
+
+SUB ZOrderSelectControl (id AS LONG)
+    'Highlights control slot id in the list without echoing it back to the preview
+    DIM i AS LONG
+    IF id = 0 OR id = PreviewFormID THEN EXIT SUB
+    FOR i = 1 TO Control(ControlList).Max
+        IF zOrderIDs(i) = id THEN
+            ZOrderSetValue i
+            EXIT SUB
+        END IF
+    NEXT
+END SUB
+
+SUB ZOrderSetValue (v AS LONG)
+    DIM visible AS LONG
+    Control(ControlList).Value = v
+    Control(ControlList).PreviousValue = v
+    visible = Control(ControlList).LastVisibleItem
+    IF visible = 0 AND Control(ControlList).ItemHeight > 0 THEN 'not drawn yet
+        visible = FIX((Control(ControlList).Height - ABS(Control(ControlList).HasBorder) * 5) / Control(ControlList).ItemHeight)
+    END IF
+    IF visible > 0 AND v > 0 THEN
+        IF v < Control(ControlList).InputViewStart THEN
+            Control(ControlList).InputViewStart = v
+        ELSEIF v > Control(ControlList).InputViewStart + visible - 1 THEN
+            Control(ControlList).InputViewStart = v - visible + 1
+        END IF
+    END IF
+    Control(ControlList).Redraw = True
+    ZOrderUpdateButtons
+END SUB
+
+SUB ZOrderUpdateButtons
+    DIM v AS LONG
+    v = Control(ControlList).Value
+    Control(UpBT).Disabled = (v <= 1 OR v > Control(ControlList).Max)
+    Control(DownBT).Disabled = (v < 1 OR v >= Control(ControlList).Max)
+END SUB
+
+SUB ZOrderMove (Direction AS LONG)
+    DIM v AS LONG, t AS LONG, a AS LONG, b AS LONG, itemA$, itemB$, b$
+
+    v = Control(ControlList).Value
+    t = v + Direction
+    IF v < 1 OR v > Control(ControlList).Max OR t < 1 OR t > Control(ControlList).Max THEN EXIT SUB
+    a = zOrderIDs(v)
+    b = zOrderIDs(t)
+
+    b$ = MKL$(a) + MKL$(b)
+    IF Direction < 0 THEN SendData b$, 211 ELSE SendData b$, 212
+
+    'The moved control now lives in slot b: keep it selected
+    b$ = MKL$(b)
+    SendData b$, 213
+
+    itemA$ = GetItem(ControlList, v)
+    itemB$ = GetItem(ControlList, t)
+    ReplaceItem ControlList, v, itemB$
+    ReplaceItem ControlList, t, itemA$
+    ZOrderSetValue t
+
+    ZOrderLastMove = TIMER(.001)
+    IF ZOrderLastMove = 0 THEN ZOrderLastMove = .001
+    ZOrderListDirty = True 'check against the preview once it settles
+END SUB
+
+SUB ZOrderItemDropped (From AS LONG, Dest AS LONG)
+    'The list has already moved the item; give the preview the whole new order
+    'in one message (which also makes the drag a single undo step)
+    DIM i AS LONG, n AS LONG, keepID AS LONG, b$
+
+    n = Control(ControlList).Max
+    IF From < 1 OR From > n OR Dest < 1 OR Dest > n THEN EXIT SUB
+    DIM order(1 TO n) AS LONG
+    FOR i = 1 TO n
+        order(i) = zOrderIDs(i)
+    NEXT
+    keepID = order(From)
+    IF Dest > From THEN
+        FOR i = From TO Dest - 1
+            order(i) = order(i + 1)
+        NEXT
+    ELSE
+        FOR i = From TO Dest + 1 STEP -1
+            order(i) = order(i - 1)
+        NEXT
+    END IF
+    order(Dest) = keepID
+
+    b$ = MKL$(n)
+    FOR i = 1 TO n
+        b$ = b$ + MKL$(zOrderIDs(i)) + MKL$(order(i))
+    NEXT
+    SendData b$, 229
+
+    'The dropped control now lives in the slot of the row it was dropped on
+    ZOrderSetValue Dest
+    b$ = MKL$(zOrderIDs(Dest))
+    SendData b$, 213
+
+    ZOrderLastMove = TIMER(.001)
+    IF ZOrderLastMove = 0 THEN ZOrderLastMove = .001
+    ZOrderListDirty = True 'check against the preview once it settles
+END SUB
+
+'---------------------------------------------------------------------------------
+'Session recovery
+'
+'While a form has unsaved changes, a copy is kept in RECOVERY_FILE. Closing the
+'editor keeps it, and the next session starts with that work restored.
+'File layout: "InFormRecovery" + CHR$(1), then length-prefixed (MKL$) fields:
+'file name, path, initial control set, gif extension flags, form data.
+
+SUB SaveRecovery
+    DIM f AS INTEGER, b$
+    IF LEN(LastFormData$) = 0 OR _DIREXISTS("InForm") = 0 THEN EXIT SUB
+    b$ = "InFormRecovery" + CHR$(1)
+    b$ = b$ + MKL$(LEN(ThisFileName$)) + ThisFileName$
+    b$ = b$ + MKL$(LEN(CurrentPath$)) + CurrentPath$
+    b$ = b$ + MKL$(LEN(InitialControlSet)) + InitialControlSet
+    b$ = b$ + MKL$(4) + MKI$(AddGifExtension) + MKI$(LoadedWithGifExtension)
+    b$ = b$ + MKL$(LEN(LastFormData$)) + LastFormData$
+    IF _FILEEXISTS(RECOVERY_FILE) THEN KILL RECOVERY_FILE
+    f = FREEFILE
+    OPEN RECOVERY_FILE FOR BINARY AS #f
+    PUT #f, 1, b$
+    CLOSE #f
+    RecoverySaved$ = LastFormData$
+    RecoverySavedAt = TIMER(.001)
+END SUB
+
+SUB DiscardRecovery
+    IF _FILEEXISTS(RECOVERY_FILE) THEN KILL RECOVERY_FILE
+    RecoverySaved$ = ""
+END SUB
+
+FUNCTION RecoveryField$ (b$)
+    'Reads the next length-prefixed field (b$ is consumed)
+    DIM l AS LONG
+    IF LEN(b$) < 4 THEN b$ = "": EXIT FUNCTION
+    l = CVL(LEFT$(b$, 4))
+    IF l < 0 OR l > LEN(b$) - 4 THEN b$ = "": EXIT FUNCTION
+    RecoveryField$ = MID$(b$, 5, l)
+    b$ = MID$(b$, 5 + l)
+END FUNCTION
+
+'Gets the preview ready to load the recovered form. Returns False if there's
+'nothing usable to restore.
+FUNCTION LoadRecovery%%
+    DIM f AS INTEGER, b$, fileName$, filePath$, controlSet$, flags$, formData$
+
+    f = FREEFILE
+    OPEN RECOVERY_FILE FOR BINARY AS #f
+    b$ = SPACE$(LOF(f))
+    GET #f, 1, b$
+    CLOSE #f
+
+    IF LEFT$(b$, 15) <> "InFormRecovery" + CHR$(1) THEN EXIT FUNCTION
+    b$ = MID$(b$, 16)
+    fileName$ = RecoveryField$(b$)
+    filePath$ = RecoveryField$(b$)
+    controlSet$ = RecoveryField$(b$)
+    flags$ = RecoveryField$(b$)
+    formData$ = RecoveryField$(b$)
+    IF LEN(formData$) = 0 OR LEN(flags$) <> 4 THEN EXIT FUNCTION
+
+    'The preview loads this file when it starts
+    f = FREEFILE
+    OPEN "InForm/UiEditorPreview.frmbin" FOR BINARY AS #f
+    b$ = "InForm" + CHR$(1) + formData$
+    PUT #f, 1, b$
+    CLOSE #f
+
+    ThisFileName$ = fileName$
+    CurrentPath$ = filePath$
+    InitialControlSet = controlSet$
+    AddGifExtension = CVI(LEFT$(flags$, 2))
+    LoadedWithGifExtension = CVI(MID$(flags$, 3, 2))
+    Control(AddGifExtensionToggle).Value = (AddGifExtension OR LoadedWithGifExtension = True)
+    LoadRecovery = True
+END FUNCTION
 
 SUB SendData (b$, Property AS INTEGER)
     'IF PreviewSelectionRectangle THEN EXIT SUB
@@ -4045,6 +4561,12 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
                     PRINT #TextFileNum, "    Control(__UI_NewID).Searchable = True"
                     IF PreviewControls(i).Fuzzy THEN PRINT #TextFileNum, "    Control(__UI_NewID).Fuzzy = True"
                 END IF
+                IF PreviewControls(i).Reorderable AND PreviewControls(i).Type = __UI_Type_ListBox THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Reorderable = True"
+                END IF
+                IF PreviewControls(i).Anchor <> 0 AND PreviewControls(i).Anchor <> (__UI_Anchor_Left OR __UI_Anchor_Top) THEN
+                    PRINT #TextFileNum, "    Control(__UI_NewID).Anchor = " + AnchorFlagsCode$(PreviewControls(i).Anchor)
+                END IF
                 IF PreviewControls(i).AutoSize THEN
                     PRINT #TextFileNum, "    Control(__UI_NewID).AutoSize = True"
                 END IF
@@ -4385,6 +4907,8 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
     END IF
 
     AddToRecentList BaseOutputFileName + ".frm"
+    Edited = False
+    DiscardRecovery
 
     b$ = "Exporting successful. Files output:" + CHR$(10)
     IF NOT SaveOnlyFrm THEN b$ = b$ + "    " + MID$(BaseOutputFileName, LEN(CurrentPath$) + 1) + ".bas" + CHR$(10)
@@ -4402,6 +4926,9 @@ SUB SaveForm (ExitToQB64 AS _BYTE, SaveOnlyFrm AS _BYTE)
             b$ = b$ + CHR$(10) + CHR$(10) + "Close the editor?"
             __UI_Delay COMMDLG_DELAY: Answer = _MESSAGEBOX(UiEditorTitle$, b$, "yesno", "question", 0)
             IF Answer = 0 THEN Edited = False: EXIT SUB
+            SaveSettings
+            IF _FILEEXISTS("InForm/UiEditorPreview.frmbin") THEN KILL "InForm/UiEditorPreview.frmbin"
+            SYSTEM
         END IF
     ELSE
         MessageBox b$, UiEditorTitle$, MsgBox_Information
@@ -4569,3 +5096,168 @@ FUNCTION PreviewBoundProperty$ (i AS LONG, other$)
         IF n$ = other$ THEN PreviewBoundProperty$ = prop$: EXIT FUNCTION
     LOOP
 END FUNCTION
+
+'Anchor flags as code, e.g. "__UI_Anchor_Left OR __UI_Anchor_Right"
+FUNCTION AnchorFlagsCode$ (Flags AS _BYTE)
+    DIM a$
+    IF (Flags AND __UI_Anchor_Left) THEN a$ = a$ + " OR __UI_Anchor_Left"
+    IF (Flags AND __UI_Anchor_Top) THEN a$ = a$ + " OR __UI_Anchor_Top"
+    IF (Flags AND __UI_Anchor_Right) THEN a$ = a$ + " OR __UI_Anchor_Right"
+    IF (Flags AND __UI_Anchor_Bottom) THEN a$ = a$ + " OR __UI_Anchor_Bottom"
+    AnchorFlagsCode$ = MID$(a$, 5)
+END FUNCTION
+
+
+'---------------------------------------------------------------------------------
+'Anchor picker: a drawing of the selected control inside its parent, with a bar
+'from each side of the control to the parent's edge. Lit bars are anchored edges;
+'clicking a side of the drawing toggles that edge.
+
+'The edge (__UI_Anchor_*) under the mouse, or 0 when it's over the control box or outside
+FUNCTION AnchorPickerEdge&
+    DIM mx AS SINGLE, my AS SINGLE, cx AS SINGLE, cy AS SINGLE, dx AS SINGLE, dy AS SINGLE
+    IF __UI_HoveringID <> AnchorPicker OR Control(AnchorPicker).Hidden THEN EXIT FUNCTION
+    mx = __UI_MouseLeft - Control(AnchorPicker).Left - Control(ControlToggles).Left
+    my = __UI_MouseTop - Control(AnchorPicker).Top - Control(ControlToggles).Top
+    cx = Control(AnchorPicker).Width / 2: cy = Control(AnchorPicker).Height / 2
+    IF ABS(mx - cx) <= AnchorPickerBoxW / 2 AND ABS(my - cy) <= AnchorPickerBoxH / 2 THEN EXIT FUNCTION
+    'Split the drawing along its diagonals: each quarter belongs to the side it touches
+    dx = (mx - cx) / cx: dy = (my - cy) / cy
+    IF ABS(dx) > ABS(dy) THEN
+        IF dx < 0 THEN AnchorPickerEdge = __UI_Anchor_Left ELSE AnchorPickerEdge = __UI_Anchor_Right
+    ELSE
+        IF dy < 0 THEN AnchorPickerEdge = __UI_Anchor_Top ELSE AnchorPickerEdge = __UI_Anchor_Bottom
+    END IF
+END FUNCTION
+
+'Anchors or releases one edge on every selected control
+SUB ToggleAnchorEdge (Edge AS LONG)
+    DIM Opposite AS LONG, b$, EdgeName$, OppositeName$
+    IF Edge = 0 THEN EXIT SUB
+    SELECT CASE Edge
+        CASE __UI_Anchor_Left: Opposite = __UI_Anchor_Right
+        CASE __UI_Anchor_Right: Opposite = __UI_Anchor_Left
+        CASE __UI_Anchor_Top: Opposite = __UI_Anchor_Bottom
+        CASE __UI_Anchor_Bottom: Opposite = __UI_Anchor_Top
+    END SELECT
+    IF (AnchorPickerFlags AND Edge) THEN
+        IF (AnchorPickerFlags AND Opposite) = 0 THEN
+            'A control always follows at least one side in each direction
+            SELECT CASE Edge
+                CASE __UI_Anchor_Left: EdgeName$ = "left": OppositeName$ = "right"
+                CASE __UI_Anchor_Right: EdgeName$ = "right": OppositeName$ = "left"
+                CASE __UI_Anchor_Top: EdgeName$ = "top": OppositeName$ = "bottom"
+                CASE __UI_Anchor_Bottom: EdgeName$ = "bottom": OppositeName$ = "top"
+            END SELECT
+            Caption(StatusBar) = "To release the " + EdgeName$ + ", anchor the " + OppositeName$ + " first: a control always follows one of them."
+            BlinkStatusBar = TIMER
+            EXIT SUB
+        END IF
+        AnchorPickerFlags = AnchorPickerFlags AND NOT Edge
+        b$ = MKI$(Edge) + MKI$(False)
+    ELSE
+        AnchorPickerFlags = AnchorPickerFlags OR Edge
+        b$ = MKI$(Edge) + MKI$(True)
+    END IF
+    SendData b$, 49
+    UpdateAnchorPicker
+END SUB
+
+'What the anchors do, in words
+FUNCTION AnchorDescription$ (Flags AS LONG)
+    DIM h AS LONG, v AS LONG, p$
+    'h/v: 0 = stays, 1 = moves along, 2 = stretches
+    IF (Flags AND __UI_Anchor_Right) THEN h = 1 - ((Flags AND __UI_Anchor_Left) <> 0)
+    IF (Flags AND __UI_Anchor_Bottom) THEN v = 1 - ((Flags AND __UI_Anchor_Top) <> 0)
+
+    p$ = "the form"
+    IF TotalSelected > 0 _ANDALSO FirstSelected <= UBOUND(PreviewParentIDS) THEN
+        IF LEN(PreviewParentIDS(FirstSelected)) THEN
+            IF PreviewIsTabChild(FirstSelected) THEN p$ = "the tab control" ELSE p$ = "the frame"
+        END IF
+    END IF
+
+    SELECT CASE h * 3 + v
+        CASE 0: AnchorDescription$ = "Stays put when " + p$ + " is resized."
+        CASE 1: AnchorDescription$ = "Sticks to the bottom of " + p$ + "."
+        CASE 2: AnchorDescription$ = "Gets taller with " + p$ + "."
+        CASE 3: AnchorDescription$ = "Sticks to the right side of " + p$ + "."
+        CASE 4: AnchorDescription$ = "Sticks to the bottom-right corner of " + p$ + "."
+        CASE 5: AnchorDescription$ = "Gets taller and sticks to the right of " + p$ + "."
+        CASE 6: AnchorDescription$ = "Gets wider with " + p$ + "."
+        CASE 7: AnchorDescription$ = "Gets wider and sticks to the bottom of " + p$ + "."
+        CASE 8: AnchorDescription$ = "Grows with " + p$ + " in both directions."
+    END SELECT
+END FUNCTION
+
+'Redraws the picker when what it shows has changed
+SUB UpdateAnchorPicker
+    STATIC LastFlags AS LONG, LastHover AS LONG, LastBack AS _UNSIGNED LONG, LastAccent AS _UNSIGNED LONG
+    DIM Hover AS LONG, w AS LONG, h AS LONG, cx AS LONG, cy AS LONG
+    DIM bl AS LONG, bt AS LONG, br AS LONG, bb AS LONG
+    DIM Back AS _UNSIGNED LONG, Accent AS _UNSIGNED LONG, Faint AS _UNSIGNED LONG, BoxBack AS _UNSIGNED LONG
+
+    Hover = AnchorPickerEdge
+    Back = Control(ControlToggles).BackColor
+    Accent = __UI_ThemeColor(__UI_ThemeColor_Accent)
+    SetCaption AnchorInfoLB, AnchorDescription$(AnchorPickerFlags)
+
+    IF Control(AnchorPicker).HelperCanvas = 0 THEN
+        Control(AnchorPicker).HelperCanvas = _NEWIMAGE(Control(AnchorPicker).Width, Control(AnchorPicker).Height, 32)
+    ELSEIF AnchorPickerFlags = LastFlags AND Hover = LastHover AND Back = LastBack AND Accent = LastAccent THEN
+        EXIT SUB
+    END IF
+    LastFlags = AnchorPickerFlags: LastHover = Hover: LastBack = Back: LastAccent = Accent
+
+    Faint = __UI_ThemeColor(__UI_ThemeColor_Border)
+    BoxBack = __UI_ThemeColor(__UI_ThemeColor_InputBack)
+
+    _DEST Control(AnchorPicker).HelperCanvas
+    w = _WIDTH: h = _HEIGHT
+    cx = w \ 2: cy = h \ 2
+    bl = cx - AnchorPickerBoxW \ 2: br = bl + AnchorPickerBoxW - 1
+    bt = cy - AnchorPickerBoxH \ 2: bb = bt + AnchorPickerBoxH - 1
+
+    'The parent and the control
+    LINE (0, 0)-(w - 1, h - 1), Back, BF
+    LINE (0, 0)-(w - 1, h - 1), Faint, B
+    LINE (bl, bt)-(br, bb), BoxBack, BF
+    LINE (bl, bt)-(br, bb), Faint, B
+
+    DrawAnchorBar 3, cy, bl - 2, cy, __UI_Anchor_Left, Hover, Accent, Faint
+    DrawAnchorBar br + 2, cy, w - 4, cy, __UI_Anchor_Right, Hover, Accent, Faint
+    DrawAnchorBar cx, 3, cx, bt - 2, __UI_Anchor_Top, Hover, Accent, Faint
+    DrawAnchorBar cx, bb + 2, cx, h - 4, __UI_Anchor_Bottom, Hover, Accent, Faint
+
+    _DEST 0
+    Control(AnchorPicker).Redraw = True
+END SUB
+
+'One bar of the picker: solid and thick when anchored, dotted when not.
+'The one under the mouse gets a soft band behind it, keeping its own look.
+SUB DrawAnchorBar (x1 AS LONG, y1 AS LONG, x2 AS LONG, y2 AS LONG, Edge AS LONG, Hover AS LONG, Accent AS _UNSIGNED LONG, Faint AS _UNSIGNED LONG)
+    DIM k AS LONG
+
+    IF Hover = Edge THEN
+        IF y1 = y2 THEN
+            LINE (x1 - 2, y1 - 7)-(x2 + 2, y2 + 7), _RGBA32(_RED32(Accent), _GREEN32(Accent), _BLUE32(Accent), 45), BF
+        ELSE
+            LINE (x1 - 7, y1 - 2)-(x2 + 7, y2 + 2), _RGBA32(_RED32(Accent), _GREEN32(Accent), _BLUE32(Accent), 45), BF
+        END IF
+    END IF
+
+    IF (AnchorPickerFlags AND Edge) THEN
+        FOR k = -1 TO 1
+            IF y1 = y2 THEN LINE (x1, y1 + k)-(x2, y2 + k), Accent ELSE LINE (x1 + k, y1)-(x2 + k, y2), Accent
+        NEXT
+        'A cap where the bar meets the parent's edge
+        SELECT CASE Edge
+            CASE __UI_Anchor_Left: LINE (x1, y1 - 5)-(x1 + 1, y1 + 5), Accent, BF
+            CASE __UI_Anchor_Right: LINE (x2 - 1, y2 - 5)-(x2, y2 + 5), Accent, BF
+            CASE __UI_Anchor_Top: LINE (x1 - 5, y1)-(x1 + 5, y1 + 1), Accent, BF
+            CASE __UI_Anchor_Bottom: LINE (x2 - 5, y2 - 1)-(x2 + 5, y2), Accent, BF
+        END SELECT
+    ELSE
+        LINE (x1, y1)-(x2, y2), Faint, , &HCCCC
+    END IF
+END SUB

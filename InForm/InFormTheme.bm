@@ -341,6 +341,7 @@ SUB SetTheme (themeName AS STRING)
     __UI_Theme_ApplyMetrics
     __UI_Theme_FreeImages
     __UI_Theme_Recolor oldDefaults()
+    __UI_DrawAlignIcons
     __UI_ForceRedraw = _TRUE
 END SUB
 
@@ -365,6 +366,7 @@ SUB SetThemeColor (role AS LONG, c AS _UNSIGNED LONG)
     __UI_Theme_SnapshotDefaults oldDefaults()
     __UI_ThemeColor(role) = c
     __UI_Theme_Recolor oldDefaults()
+    __UI_DrawAlignIcons
     __UI_ForceRedraw = _TRUE
 END SUB
 

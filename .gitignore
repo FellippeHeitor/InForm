@@ -31,6 +31,7 @@ desktop.ini
 *.ini
 # Other temp files
 *.frmbin
+*.recovery
 *.tmp[0-9]
 # Unignore macOS setup script
 !setup_inform_mac.command

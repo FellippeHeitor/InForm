@@ -40,6 +40,8 @@ SUB __UI_BeforeInit
     Test_InFormUIUtils
     Test_InFormUIHelpers
     Test_DropdownSearch
+    Test_ReorderableList
+    Test_Anchors
     Test_InFormUIUnicodeUtils
     Test_Theme
     Test_TabControl
@@ -2114,6 +2116,112 @@ SUB Test_DropdownSearch
 
     _DEST prevDest
     _FREEIMAGE testImage
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_ReorderableList
+    TEST_CASE_BEGIN "InFormUIHelpers: reorderable list box"
+
+    DIM lb AS LONG
+    lb = __UI_NewControl(__UI_Type_ListBox, "TestReorderLB", 200, 100, 0, 0, 0)
+    AddItem lb, "A"
+    AddItem lb, "B"
+    AddItem lb, "C"
+    AddItem lb, "D"
+    Control(lb).Value = 2
+
+    MoveItem lb, 1, 3
+    TEST_CHECK Text(lb) = "B" + _CHR_LF + "C" + _CHR_LF + "A" + _CHR_LF + "D" + _CHR_LF, "Move down shifts the items in between up"
+    TEST_CHECK Control(lb).Value = 1, "Selection follows its item when others move"
+
+    MoveItem lb, 4, 1
+    TEST_CHECK Text(lb) = "D" + _CHR_LF + "B" + _CHR_LF + "C" + _CHR_LF + "A" + _CHR_LF, "Move up shifts the items in between down"
+    TEST_CHECK Control(lb).Value = 2, "Selection still on the same item"
+
+    MoveItem lb, 2, 4
+    TEST_CHECK GetItem(lb, 4) = "B" _ANDALSO Control(lb).Value = 4, "Moving the selected item keeps it selected"
+
+    MoveItem lb, 0, 2
+    MoveItem lb, 2, 5
+    MoveItem lb, 3, 3
+    TEST_CHECK Text(lb) = "D" + _CHR_LF + "C" + _CHR_LF + "A" + _CHR_LF + "B" + _CHR_LF _ANDALSO Control(lb).Max = 4, "Out-of-range and no-op moves change nothing"
+
+    'Dropping into a gap: gap 1 is above the first item, gap 5 below the last
+    Control(lb).Reorderable = _TRUE
+    __UI_ReorderingID = lb: __UI_ReorderFrom = 1: __UI_ReorderGap = 5
+    TEST_CHECK __UI_ReorderEnd, "Dropping below the last item moves it"
+    TEST_CHECK GetItem(lb, 4) = "D" _ANDALSO Control(lb).Value = 4, "Dropped item ends up last and selected"
+    TEST_CHECK __UI_ReorderingID = 0 _ANDALSO __UI_MovedItemFrom = 0 _ANDALSO __UI_MovedItemTo = 0, "Drag state is cleared after the drop"
+
+    __UI_ReorderingID = lb: __UI_ReorderFrom = 4: __UI_ReorderGap = 1
+    TEST_CHECK __UI_ReorderEnd _ANDALSO GetItem(lb, 1) = "D", "Dropping above the first item moves it first"
+
+    __UI_ReorderingID = lb: __UI_ReorderFrom = 2: __UI_ReorderGap = 0
+    TEST_CHECK NOT __UI_ReorderEnd, "No gap: nothing moves"
+
+    __UI_DestroyControl Control(lb)
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_Anchors
+    TEST_CASE_BEGIN "InFormUIHelpers: anchors"
+
+    DIM l AS INTEGER, t AS INTEGER, w AS LONG, h AS LONG
+
+    l = 10: t = 20: w = 100: h = 50
+    __UI_AnchorOne 0, 30, 40, l, t, w, h
+    TEST_CHECK l = 10 _ANDALSO t = 20 _ANDALSO w = 100 _ANDALSO h = 50, "Anchor 0 acts as left + top: nothing changes"
+
+    __UI_AnchorOne __UI_Anchor_Right OR __UI_Anchor_Bottom, 30, 40, l, t, w, h
+    TEST_CHECK l = 40 _ANDALSO t = 60 _ANDALSO w = 100 _ANDALSO h = 50, "Right + bottom: the control moves"
+
+    __UI_AnchorOne __UI_Anchor_Left OR __UI_Anchor_Right OR __UI_Anchor_Top OR __UI_Anchor_Bottom, -30, -40, l, t, w, h
+    TEST_CHECK l = 40 _ANDALSO t = 60 _ANDALSO w = 70 _ANDALSO h = 10, "All four edges: the control stretches"
+
+    __UI_AnchorOne __UI_Anchor_Left OR __UI_Anchor_Right OR __UI_Anchor_Top OR __UI_Anchor_Bottom, -500, -500, l, t, w, h
+    TEST_CHECK w = -430 _ANDALSO h = -490, "The size anchors aim for isn't clamped"
+
+    DIM bt AS LONG, tb AS LONG, fr AS LONG, child AS LONG, fixed AS LONG
+    bt = __UI_NewControl(__UI_Type_Button, "TestAnchorBT", 80, 23, 300, 200, 0)
+    Control(bt).Anchor = __UI_Anchor_Right OR __UI_Anchor_Bottom
+    tb = __UI_NewControl(__UI_Type_TextBox, "TestAnchorTB", 200, 23, 10, 10, 0)
+    Control(tb).Anchor = __UI_Anchor_Left OR __UI_Anchor_Right OR __UI_Anchor_Top
+    fr = __UI_NewControl(__UI_Type_Frame, "TestAnchorFR", 150, 100, 10, 50, 0)
+    Control(fr).Anchor = __UI_Anchor_Left OR __UI_Anchor_Top OR __UI_Anchor_Bottom
+    child = __UI_NewControl(__UI_Type_Button, "TestAnchorChild", 60, 23, 10, 60, fr)
+    Control(child).Anchor = __UI_Anchor_Left OR __UI_Anchor_Bottom
+    fixed = __UI_NewControl(__UI_Type_Label, "TestAnchorLB", 60, 20, 5, 5, 0)
+
+    __UI_ApplyAnchors 50, 30
+    TEST_CHECK Control(bt).Left = 350 _ANDALSO Control(bt).Top = 230 _ANDALSO Control(bt).Width = 80, "Bottom-right button follows the form's corner"
+    TEST_CHECK Control(tb).Left = 10 _ANDALSO Control(tb).Width = 250 _ANDALSO Control(tb).Top = 10, "Left + right text box stretches"
+    TEST_CHECK Control(fr).Height = 130 _ANDALSO Control(fr).Width = 150, "Frame stretches down only"
+    TEST_CHECK Control(child).Top = 90 _ANDALSO Control(child).Left = 10, "Child follows its frame's bottom edge"
+    TEST_CHECK Control(fixed).Left = 5 _ANDALSO Control(fixed).Top = 5 _ANDALSO Control(fixed).Width = 60, "Default anchor keeps the control in place"
+
+    __UI_ApplyAnchors -50, -30
+    TEST_CHECK Control(bt).Left = 300 _ANDALSO Control(tb).Width = 200 _ANDALSO Control(fr).Height = 100 _ANDALSO Control(child).Top = 60, "Shrinking back restores the design layout"
+
+    'Shrink far past what fits, then grow back: sizes stop at 1 pixel but come back exactly
+    __UI_ApplyAnchors -400, -300
+    TEST_CHECK Control(tb).Width = 1 _ANDALSO Control(fr).Height = 1, "Shrinking too far stops at 1 pixel"
+    __UI_ApplyAnchors 300, 200
+    TEST_CHECK Control(tb).Width = 100 _ANDALSO Control(fr).Height = 1, "Growing part of the way back keeps the lost size in mind"
+    __UI_ApplyAnchors 100, 100
+    TEST_CHECK Control(tb).Width = 200 _ANDALSO Control(fr).Height = 100 _ANDALSO Control(child).Top = 60 _ANDALSO Control(bt).Left = 300, "Growing all the way back restores the design layout"
+
+    'Changing a size in code is respected from then on
+    Control(tb).Width = 150
+    __UI_ApplyAnchors 10, 0
+    TEST_CHECK Control(tb).Width = 160, "Anchors continue from a size set in code"
+
+    __UI_DestroyControl Control(child)
+    __UI_DestroyControl Control(fr)
+    __UI_DestroyControl Control(bt)
+    __UI_DestroyControl Control(tb)
+    __UI_DestroyControl Control(fixed)
 
     TEST_CASE_END
 END SUB

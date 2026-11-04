@@ -56,6 +56,7 @@ CONST EMPTY_FORM = "SW5Gb3JtAcgAAAD//3cAAAABAAUARm9ybTEsASwBAAAAAAAA/v8FAAAARm9y
 '   226 = Add new ContextMenu control
 '   227 = Toggle __UI_ShowInvisibleControls
 '   228 = Bind/Unbind selected controls
+'   229 = Reorder controls (z-ordering, e.g. after dragging in the list)
 
 'SavePreview parameters:
 CONST InDisk = 1
@@ -189,7 +190,7 @@ SUB __UI_BeforeUpdateDisplay
         STATIC EditorWasActive AS _BYTE
     $END IF
     STATIC WasDragging AS _BYTE, WasResizing AS _BYTE
-    STATIC NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER
+    STATIC NewWindowTop AS INTEGER, NewWindowLeft AS INTEGER, GotWindowPosition AS _BYTE
 
     IF __UI_TotalSelectedControls < 0 THEN __UI_TotalSelectedControls = 0
 
@@ -286,6 +287,7 @@ SUB __UI_BeforeUpdateDisplay
             CASE "WINDOWPOSITION"
                 NewWindowLeft = CVI(LEFT$(thisData$, 2))
                 NewWindowTop = CVI(MID$(thisData$, 3, 2))
+                GotWindowPosition = True
             CASE "AUTONAME"
                 AutoNameControls = CVI(thisData$)
             CASE "MOUSESWAP"
@@ -439,8 +441,12 @@ SUB __UI_BeforeUpdateDisplay
         IF i = _TOTALDROPPEDFILES THEN _FINISHDROP
     NEXT
 
-    IF NewWindowLeft <> -32001 AND NewWindowTop <> -32001 AND (NewWindowLeft <> _SCREENX OR NewWindowTop <> _SCREENY) THEN
-        _SCREENMOVE NewWindowLeft + 612, NewWindowTop
+    'Stay docked to the right of the editor. Compare against where the preview should be, not where the editor is:
+    'both windows open at the same default spot, so comparing to the editor's position skipped the first move
+    IF GotWindowPosition AND NewWindowLeft <> -32001 AND NewWindowTop <> -32001 THEN
+        IF NewWindowLeft + 612 <> _SCREENX OR NewWindowTop <> _SCREENY THEN
+            _SCREENMOVE NewWindowLeft + 612, NewWindowTop
+        END IF
     END IF
 
     'Check if the editor is still alive
@@ -995,40 +1001,12 @@ SUB __UI_BeforeUpdateDisplay
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).ControlIsSelected THEN
                                     ChangeFont:
-                                    Control(i).Font = SetFont(NewFontFile, NewFontSize)
-                                    DIM tempFont AS LONG
-                                    tempFont = _FONT
-                                    _FONT Control(i).Font
-                                    SELECT CASE Control(i).Type
-                                        CASE __UI_Type_Label
-                                            IF Control(i).WordWrap = False THEN
-                                                Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
-                                                AutoSizeLabel Control(i)
-                                            END IF
-                                        CASE __UI_Type_TextBox
-                                            IF Control(i).Multiline = False THEN
-                                                Control(i).Height = uspacing + 6 + (ABS(Control(i).HasBorder) * Control(i).BorderSize)
-                                            END IF
-                                        CASE __UI_Type_CheckBox, __UI_Type_RadioButton
-                                            Control(i).Height = uspacing + 6
-                                        CASE __UI_Type_ProgressBar
-                                            IF INSTR(Caption(i), CHR$(10)) = 0 THEN
-                                                Control(i).Height = uspacing + 6
-                                            END IF
-                                    END SELECT
-                                    IF Control(i).HotKey > 0 THEN
-                                        IF Control(i).HotKeyPosition = 1 THEN
-                                            Control(i).HotKeyOffset = 0
-                                        ELSE
-                                            Control(i).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(i), Control(i).HotKeyPosition - 1))
-                                        END IF
-                                    END IF
-                                    _FONT tempFont
+                                    ApplyFont i, SetFont(NewFontFile, NewFontSize)
                                     IF LockedControlsGOSUB THEN RETURN
                                 END IF
                             NEXT
                         ELSE
-                            Control(__UI_FormID).Font = SetFont(NewFontFile, NewFontSize)
+                            ApplyFont __UI_FormID, SetFont(NewFontFile, NewFontSize)
                             DIM MustRedrawMenus AS _BYTE
                             FOR i = 1 TO UBOUND(Control)
                                 IF Control(i).Type = __UI_Type_MenuBar OR Control(i).Type = __UI_Type_MenuItem OR Control(i).Type = __UI_Type_MenuPanel OR Control(i).Type = __UI_Type_ContextMenu THEN
@@ -1509,6 +1487,7 @@ SUB __UI_BeforeUpdateDisplay
             CASE 40 'BorderSize
                 b$ = ReadSequential$(Property$, 2)
                 TempValue = CVI(b$)
+                DIM tempFont AS LONG
                 IF TotalLockedControls THEN
                     FOR j = 1 TO TotalLockedControls
                         IF NOT __UI_IsContainer(Control(LockedControls(j)).Type) THEN
@@ -1639,6 +1618,32 @@ SUB __UI_BeforeUpdateDisplay
                         END IF
                     NEXT
                 END IF
+            CASE 48 'Reorderable (list boxes)
+                b$ = ReadSequential$(Property$, 2)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        IF Control(LockedControls(j)).Type = __UI_Type_ListBox THEN Control(LockedControls(j)).Reorderable = CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected AND Control(i).Type = __UI_Type_ListBox THEN
+                            Control(i).Reorderable = CVI(b$)
+                        END IF
+                    NEXT
+                END IF
+            CASE 49 'Anchor: an edge flag and whether it's on
+                b$ = ReadSequential$(Property$, 2)
+                TempValue = CVI(b$)
+                b$ = ReadSequential$(Property$, 2)
+                IF TotalLockedControls THEN
+                    FOR j = 1 TO TotalLockedControls
+                        SetAnchorFlag LockedControls(j), TempValue, CVI(b$)
+                    NEXT
+                ELSE
+                    FOR i = 1 TO UBOUND(Control)
+                        IF Control(i).ControlIsSelected THEN SetAnchorFlag i, TempValue, CVI(b$)
+                    NEXT
+                END IF
             CASE 44 'Auto-play (GIF extension)
                 b$ = ReadSequential$(Property$, 2)
                 IF TotalLockedControls THEN
@@ -1659,33 +1664,20 @@ SUB __UI_BeforeUpdateDisplay
                 b$ = ReadSequential$(Property$, 2)
                 DoAlign TempValue
             CASE 211, 212 'Z-Ordering -> Move up/down
-                DIM tID1 AS LONG, tID2 AS LONG
                 a$ = ReadSequential$(Property$, 4)
                 b$ = ReadSequential$(Property$, 4)
-                tID1 = Control(CVL(a$)).ID
-                tID2 = Control(CVL(b$)).ID
-                SWAP Control(CVL(b$)), Control(CVL(a$))
-                __UI_SwapBindingIDs CVL(a$), CVL(b$)
-                SWAP Caption(CVL(b$)), Caption(CVL(a$))
-                SWAP Text(CVL(b$)), Text(CVL(a$))
-                SWAP ToolTip(CVL(b$)), ToolTip(CVL(a$))
-                Control(CVL(a$)).ID = tID1
-                Control(CVL(b$)).ID = tID2
-
-                'Restore ParentIDs based on ParentName
-                FOR i = 1 TO UBOUND(Control)
-                    Control(i).ParentID = __UI_GetID(Control(i).ParentName)
-                NEXT
-
-                IF __UI_TotalActiveMenus > 0 AND LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) <> "__UI_" THEN
+                IF SwapZOrder(CVL(a$), CVL(b$)) THEN
                     IF Control(CVL(a$)).Type = __UI_Type_MenuItem THEN
-                        __UI_ActivateMenu Control(Control(CVL(a$)).ParentID), False
+                        RefreshMenusAfterZOrder CVL(a$)
                     ELSEIF Control(CVL(b$)).Type = __UI_Type_MenuItem THEN
-                        __UI_ActivateMenu Control(Control(CVL(b$)).ParentID), False
+                        RefreshMenusAfterZOrder CVL(b$)
                     ELSE
-                        __UI_CloseAllMenus
+                        RefreshMenusAfterZOrder 0
                     END IF
                 END IF
+            CASE 229 'Z-Ordering -> Reorder: count, then (slot, slot whose control goes there) pairs
+                b$ = ReadSequential$(Property$, 4)
+                ReorderControls ReadSequential$(Property$, CVL(b$) * 8)
             CASE 213
                 'Select control
                 b$ = ReadSequential$(Property$, 4)
@@ -1695,7 +1687,9 @@ SUB __UI_BeforeUpdateDisplay
                     Control(i).ControlIsSelected = False
                 NEXT
 
-                IF CVL(b$) > 0 THEN Control(CVL(b$)).ControlIsSelected = True
+                IF CVL(b$) > 0 AND CVL(b$) <= UBOUND(Control) THEN
+                    IF Control(CVL(b$)).ID > 0 THEN Control(CVL(b$)).ControlIsSelected = True
+                END IF
             CASE 216 TO 221
                 __UI_KeyPress TempValue
             CASE 222 'New textbox control with the NumericOnly property set to true
@@ -2440,12 +2434,16 @@ SUB LoadPreview (Destination AS _BYTE)
         b$ = SPACE$(4): GET #BinaryFileNum, , b$
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
 
-        REDIM _PRESERVE Caption(1 TO CVL(b$)) AS STRING
-        REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
-        REDIM Text(1 TO CVL(b$)) AS STRING
-        REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
-        REDIM ToolTip(1 TO CVL(b$)) AS STRING
-        REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
+        'Keep the lower bound at 0, as declared: REDIM _PRESERVE with a different
+        'lower bound shifts every element, mismatching the internal controls' captions
+        REDIM _PRESERVE Caption(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempCaptions(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE Text(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempTexts(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE Mask(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempMask(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE ToolTip(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempTips(0 TO CVL(b$)) AS STRING
         REDIM _PRESERVE Control(0 TO CVL(b$)) AS __UI_ControlTYPE
     ELSEIF UndoBuffer THEN
         FOR i = UBOUND(Control) TO 1 STEP -1
@@ -2460,12 +2458,16 @@ SUB LoadPreview (Destination AS _BYTE)
         b$ = ReadSequential$(Clip$, 4)
         IF LogFileLoad THEN PRINT #LogFileNum, "READ NEW ARRAYS:" + STR$(CVL(b$))
 
-        REDIM _PRESERVE Caption(1 TO CVL(b$)) AS STRING
-        REDIM __UI_TempCaptions(1 TO CVL(b$)) AS STRING
-        REDIM Text(1 TO CVL(b$)) AS STRING
-        REDIM __UI_TempTexts(1 TO CVL(b$)) AS STRING
-        REDIM ToolTip(1 TO CVL(b$)) AS STRING
-        REDIM __UI_TempTips(1 TO CVL(b$)) AS STRING
+        'Keep the lower bound at 0, as declared: REDIM _PRESERVE with a different
+        'lower bound shifts every element, mismatching the internal controls' captions
+        REDIM _PRESERVE Caption(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempCaptions(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE Text(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempTexts(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE Mask(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempMask(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE ToolTip(0 TO CVL(b$)) AS STRING
+        REDIM _PRESERVE __UI_TempTips(0 TO CVL(b$)) AS STRING
         REDIM _PRESERVE Control(0 TO CVL(b$)) AS __UI_ControlTYPE
     ELSE
         DIM ShiftPosition AS _BYTE
@@ -2755,6 +2757,13 @@ SUB LoadPreview (Destination AS _BYTE)
                 CASE -53
                     Control(TempValue).Fuzzy = True
                     IF LogFileLoad THEN PRINT #LogFileNum, "FUZZY"
+                CASE -54
+                    Control(TempValue).Reorderable = True
+                    IF LogFileLoad THEN PRINT #LogFileNum, "REORDERABLE"
+                CASE -55
+                    IF NOT Disk THEN b$ = ReadSequential$(Clip$, 2) ELSE b$ = SPACE$(2): GET #BinaryFileNum, , b$
+                    Control(TempValue).Anchor = CVI(b$)
+                    IF LogFileLoad THEN PRINT #LogFileNum, "ANCHOR"; Control(TempValue).Anchor
                 CASE -34
                     IF NOT Disk THEN b$ = ReadSequential$(Clip$, 4) ELSE b$ = SPACE$(4): GET #BinaryFileNum, , b$
                     Control(TempValue).Encoding = CVL(b$)
@@ -3139,6 +3148,15 @@ SUB LoadPreviewText
                             Control(TempValue).Searchable = (DummyText$ = "True")
                         CASE "Fuzzy"
                             Control(TempValue).Fuzzy = (DummyText$ = "True")
+                        CASE "Reorderable"
+                            Control(TempValue).Reorderable = (DummyText$ = "True")
+                        CASE "Anchor"
+                            Control(TempValue).Anchor = 0
+                            IF INSTR(DummyText$, "__UI_Anchor_Left") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Left
+                            IF INSTR(DummyText$, "__UI_Anchor_Top") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Top
+                            IF INSTR(DummyText$, "__UI_Anchor_Right") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Right
+                            IF INSTR(DummyText$, "__UI_Anchor_Bottom") THEN Control(TempValue).Anchor = Control(TempValue).Anchor OR __UI_Anchor_Bottom
+                            IF Control(TempValue).Anchor = 0 THEN Control(TempValue).Anchor = VAL(DummyText$)
                         CASE "Encoding"
                             Control(TempValue).Encoding = VAL(DummyText$)
                         CASE "NumericOnly"
@@ -3598,6 +3616,14 @@ SUB SavePreview (Destination AS _BYTE)
                         b$ = MKI$(-53)
                         IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                     END IF
+                END IF
+                IF Control(i).Reorderable AND Control(i).Type = __UI_Type_ListBox THEN
+                    b$ = MKI$(-54)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
+                END IF
+                IF Control(i).Anchor <> 0 AND Control(i).Anchor <> (__UI_Anchor_Left OR __UI_Anchor_Top) THEN
+                    b$ = MKI$(-55) + MKI$(Control(i).Anchor)
+                    IF Disk THEN PUT #BinFileNum, , b$ ELSE Clip$ = Clip$ + b$
                 END IF
                 IF Control(i).Encoding > 0 THEN
                     b$ = MKI$(-34) + MKL$(Control(i).Encoding)
@@ -4086,6 +4112,58 @@ SUB SetMultiline (id AS LONG, state AS INTEGER)
     Control(id).Redraw = True
 END SUB
 
+SUB ApplyFont (id AS LONG, NewFont AS LONG)
+    'Sets a control's font, then passes it down to the children that were
+    'still using the old one (inherited from the form, a frame or a tab group)
+    DIM OldFont AS LONG, i AS LONG, tempFont AS LONG
+    OldFont = Control(id).Font
+    Control(id).Font = NewFont
+
+    tempFont = _FONT
+    _FONT Control(id).Font
+    SELECT CASE Control(id).Type
+        CASE __UI_Type_Label
+            IF Control(id).WordWrap = False THEN
+                Control(id).Height = uspacing + 6 + (ABS(Control(id).HasBorder) * Control(id).BorderSize)
+                AutoSizeLabel Control(id)
+            END IF
+        CASE __UI_Type_TextBox
+            IF Control(id).Multiline = False THEN
+                Control(id).Height = uspacing + 6 + (ABS(Control(id).HasBorder) * Control(id).BorderSize)
+            END IF
+        CASE __UI_Type_CheckBox, __UI_Type_RadioButton
+            Control(id).Height = uspacing + 6
+        CASE __UI_Type_ProgressBar
+            IF INSTR(Caption(id), CHR$(10)) = 0 THEN
+                Control(id).Height = uspacing + 6
+            END IF
+    END SELECT
+    IF Control(id).HotKey > 0 THEN
+        IF Control(id).HotKeyPosition = 1 THEN
+            Control(id).HotKeyOffset = 0
+        ELSE
+            Control(id).HotKeyOffset = __UI_PrintWidth(LEFT$(Caption(id), Control(id).HotKeyPosition - 1))
+        END IF
+    END IF
+    _FONT tempFont
+
+    IF OldFont = NewFont THEN EXIT SUB
+    IF id <> __UI_FormID AND NOT __UI_IsContainer(Control(id).Type) THEN EXIT SUB
+
+    FOR i = 1 TO UBOUND(Control)
+        IF i <> id AND Control(i).ID > 0 AND Control(i).Font = OldFont THEN
+            SELECT CASE Control(i).Type
+                CASE __UI_Type_Form, __UI_Type_Font, __UI_Type_MenuBar, __UI_Type_MenuItem, __UI_Type_MenuPanel, __UI_Type_ContextMenu
+                    'Menus are handled separately; fonts and the form don't inherit
+                CASE ELSE
+                    IF Control(i).ParentID = id OR (id = __UI_FormID AND Control(i).ParentID = 0) THEN
+                        ApplyFont i, NewFont
+                    END IF
+            END SELECT
+        END IF
+    NEXT
+END SUB
+
 SUB LoadDefaultFonts
     IF Control(__UI_FormID).Font = 8 OR Control(__UI_FormID).Font = 16 THEN
         Control(__UI_FormID).Font = SetFont(__INFORM_DEFAULT_FONTS, 12)
@@ -4111,3 +4189,133 @@ FUNCTION LoadEditorImage& (id AS _UNSIGNED _BYTE)
             ERROR 51
     END SELECT
 END FUNCTION
+
+'Swaps two controls' slots in Control(), which changes both their drawing order
+'and their tab order. Everything that refers to either slot is updated to follow
+'its control. Returns False if either slot doesn't hold a valid control.
+FUNCTION SwapZOrder%% (a AS LONG, b AS LONG)
+    SHARED __GIFPlayHashTable() AS HMap64
+    DIM i AS LONG, hasA AS _BYTE, hasB AS _BYTE, idxA AS LONG, idxB AS LONG
+
+    IF a = b OR a < 1 OR b < 1 OR a > UBOUND(Control) OR b > UBOUND(Control) THEN EXIT FUNCTION
+    IF Control(a).ID = 0 OR Control(b).ID = 0 THEN EXIT FUNCTION
+
+    SWAP Control(a), Control(b)
+    Control(a).ID = a
+    Control(b).ID = b
+    SWAP Caption(a), Caption(b)
+    SWAP Text(a), Text(b)
+    SWAP Mask(a), Mask(b)
+    SWAP ToolTip(a), ToolTip(b)
+    IF a <= UBOUND(AutoPlayGif) AND b <= UBOUND(AutoPlayGif) THEN SWAP AutoPlayGif(a), AutoPlayGif(b)
+
+    'Animated GIFs are stored by control ID
+    hasA = HMap64_Contains(__GIFPlayHashTable(), a)
+    hasB = HMap64_Contains(__GIFPlayHashTable(), b)
+    IF hasA OR hasB THEN
+        IF hasA THEN idxA = HMap64_GetLong(__GIFPlayHashTable(), a): HMap64_Remove __GIFPlayHashTable(), a
+        IF hasB THEN idxB = HMap64_GetLong(__GIFPlayHashTable(), b): HMap64_Remove __GIFPlayHashTable(), b
+        IF hasA THEN HMap64_SetLong __GIFPlayHashTable(), b, idxA
+        IF hasB THEN HMap64_SetLong __GIFPlayHashTable(), a, idxB
+    END IF
+
+    'References to other controls follow the controls they point to
+    FOR i = 1 TO UBOUND(Control)
+        Control(i).ParentID = SwapZRef(Control(i).ParentID, a, b)
+        Control(i).PreviousParentID = SwapZRef(Control(i).PreviousParentID, a, b)
+        Control(i).ContextMenuID = SwapZRef(Control(i).ContextMenuID, a, b)
+        Control(i).MenuPanelID = SwapZRef(Control(i).MenuPanelID, a, b)
+    NEXT
+    __UI_SwapBindingIDs a, b
+    FOR i = 1 TO __UI_TotalKeyCombos
+        __UI_KeyCombo(i).ControlID = SwapZRef(__UI_KeyCombo(i).ControlID, a, b)
+    NEXT
+    FOR i = 1 TO TotalLockedControls
+        LockedControls(i) = SwapZRef(LockedControls(i), a, b)
+    NEXT
+    __UI_DefaultButtonID = SwapZRef(__UI_DefaultButtonID, a, b)
+    __UI_FirstSelectedID = SwapZRef(__UI_FirstSelectedID, a, b)
+    __UI_Focus = SwapZRef(__UI_Focus, a, b)
+    __UI_PreviousFocus = SwapZRef(__UI_PreviousFocus, a, b)
+
+    Control(a).Redraw = True
+    Control(b).Redraw = True
+    SwapZOrder = True
+END FUNCTION
+
+FUNCTION SwapZRef& (v AS LONG, a AS LONG, b AS LONG)
+    IF v = a THEN
+        SwapZRef = b
+    ELSEIF v = b THEN
+        SwapZRef = a
+    ELSE
+        SwapZRef = v
+    END IF
+END FUNCTION
+
+'Applies a new z-order in one go. Order$ holds pairs of slot numbers: the slot,
+'and the slot (as it was before this call) whose control should end up there.
+'Nothing is changed unless the pairs describe a valid reordering.
+SUB ReorderControls (Order$)
+    DIM n AS LONG, k AS LONG, j AS LONG, menuItem AS LONG
+
+    n = LEN(Order$) \ 8
+    IF n < 2 THEN EXIT SUB
+    DIM slot(1 TO n) AS LONG, at(1 TO n) AS LONG
+    DIM posOf(0 TO UBOUND(Control)) AS LONG, wanted(0 TO UBOUND(Control)) AS _BYTE
+
+    FOR k = 1 TO n
+        slot(k) = CVL(MID$(Order$, (k - 1) * 8 + 1, 4))
+        at(k) = CVL(MID$(Order$, (k - 1) * 8 + 5, 4))
+        IF slot(k) < 1 OR slot(k) > UBOUND(Control) OR at(k) < 1 OR at(k) > UBOUND(Control) THEN EXIT SUB
+        IF Control(slot(k)).ID = 0 OR posOf(slot(k)) > 0 OR wanted(at(k)) THEN EXIT SUB
+        posOf(slot(k)) = k
+        wanted(at(k)) = True
+    NEXT
+    FOR k = 1 TO n
+        IF posOf(at(k)) = 0 THEN EXIT SUB 'not a reordering of the same slots
+    NEXT
+
+    'at() now holds the target order; turn it into a list of swaps.
+    'cur(k) is the original slot of the control currently at position k.
+    DIM cur(1 TO n) AS LONG
+    FOR k = 1 TO n
+        cur(k) = slot(k)
+    NEXT
+    FOR k = 1 TO n
+        IF cur(k) <> at(k) THEN
+            j = posOf(at(k))
+            IF NOT SwapZOrder(slot(k), slot(j)) THEN EXIT FOR
+            posOf(cur(k)) = j
+            posOf(cur(j)) = k
+            SWAP cur(k), cur(j)
+            IF Control(slot(k)).Type = __UI_Type_MenuItem THEN menuItem = slot(k)
+        END IF
+    NEXT
+    RefreshMenusAfterZOrder menuItem
+END SUB
+
+'An open menu of the form being edited must show its items in their new order
+SUB RefreshMenusAfterZOrder (MenuItemID AS LONG)
+    IF __UI_TotalActiveMenus = 0 THEN EXIT SUB
+    IF LEFT$(Control(__UI_ParentMenu(__UI_TotalActiveMenus)).Name, 5) = "__UI_" THEN EXIT SUB
+    IF MenuItemID > 0 THEN
+        __UI_ActivateMenu Control(Control(MenuItemID).ParentID), False
+    ELSE
+        __UI_CloseAllMenus
+    END IF
+END SUB
+
+'Turns one anchor edge on or off for control id, keeping its other edges
+SUB SetAnchorFlag (id AS LONG, Flag AS INTEGER, IsOn AS INTEGER)
+    DIM a AS LONG
+    SELECT CASE Control(id).Type
+        CASE __UI_Type_Form, __UI_Type_MenuBar, __UI_Type_MenuItem, __UI_Type_MenuPanel, __UI_Type_ContextMenu, __UI_Type_Font
+            EXIT SUB
+    END SELECT
+    a = Control(id).Anchor
+    IF a = 0 THEN a = __UI_Anchor_Left OR __UI_Anchor_Top
+    IF IsOn THEN a = a OR Flag ELSE a = a AND NOT Flag
+    IF a = (__UI_Anchor_Left OR __UI_Anchor_Top) THEN a = 0
+    Control(id).Anchor = a
+END SUB
