@@ -99,5 +99,7 @@ FOR EACH CONTROL (FORM INCLUDED):
                 For DropdownList controls
     INTEGER -53 (Fuzzy = True)
                 For searchable DropdownList controls
+    INTEGER -54 (Reorderable = True)
+                For ListBox controls
     -------------------
 INTEGER -1024 (End of file)

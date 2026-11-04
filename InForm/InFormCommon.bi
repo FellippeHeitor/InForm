@@ -326,6 +326,7 @@ TYPE __UI_ControlTYPE
     NumericOnly AS _BYTE
     Searchable AS _BYTE ' dropdown list: typing while it's open filters its items
     Fuzzy AS _BYTE ' searchable dropdown list: letters of a word may have others in between; best matches first
+    Reorderable AS _BYTE ' list box: items can be dragged to a new position
     FirstVisibleLine AS LONG ' multiline textbox: topmost visual line shown (1-based)
     PrevFirstVisibleLine AS LONG
     CurrentLine AS LONG ' multiline textbox: visual line the cursor is on (1-based)
@@ -503,6 +504,16 @@ DIM SHARED __UI_PasteLineBreakAs AS STRING
 ' the dropdown box shows the search text and the list shows only matching items.
 DIM SHARED __UI_DropdownSearch AS STRING ' what has been typed so far
 DIM SHARED __UI_DropdownSearchMap AS STRING
+
+' Reorderable list boxes (see __UI_ReorderBegin). While an item is being dragged,
+' a line in the list shows the gap it will drop into.
+DIM SHARED __UI_ReorderingID AS LONG ' list box whose item is being dragged
+DIM SHARED __UI_ReorderFrom AS LONG ' the dragged item
+DIM SHARED __UI_ReorderGap AS LONG ' drop gap: 1 = above the first item ... .Max + 1 = below the last; 0 = none
+DIM SHARED __UI_ReorderScroll AS DOUBLE ' last auto-scroll step, while dragging past the top/bottom edge
+' Set while __UI_ValueChanged runs for an item that was just dragged to a new
+' position (0 at any other time): where the item came from and where it is now
+DIM SHARED __UI_MovedItemFrom AS LONG, __UI_MovedItemTo AS LONG
 
 REDIM SHARED __UI_Bindings(1 TO 10) AS __UI_BindingTYPE
 DIM SHARED __UI_TotalBindings AS LONG ' MKL$ of the dropdown's item number for each item shown

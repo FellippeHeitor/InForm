@@ -40,6 +40,7 @@ SUB __UI_BeforeInit
     Test_InFormUIUtils
     Test_InFormUIHelpers
     Test_DropdownSearch
+    Test_ReorderableList
     Test_InFormUIUnicodeUtils
     Test_Theme
     Test_TabControl
@@ -2114,6 +2115,51 @@ SUB Test_DropdownSearch
 
     _DEST prevDest
     _FREEIMAGE testImage
+
+    TEST_CASE_END
+END SUB
+
+SUB Test_ReorderableList
+    TEST_CASE_BEGIN "InFormUIHelpers: reorderable list box"
+
+    DIM lb AS LONG
+    lb = __UI_NewControl(__UI_Type_ListBox, "TestReorderLB", 200, 100, 0, 0, 0)
+    AddItem lb, "A"
+    AddItem lb, "B"
+    AddItem lb, "C"
+    AddItem lb, "D"
+    Control(lb).Value = 2
+
+    MoveItem lb, 1, 3
+    TEST_CHECK Text(lb) = "B" + _CHR_LF + "C" + _CHR_LF + "A" + _CHR_LF + "D" + _CHR_LF, "Move down shifts the items in between up"
+    TEST_CHECK Control(lb).Value = 1, "Selection follows its item when others move"
+
+    MoveItem lb, 4, 1
+    TEST_CHECK Text(lb) = "D" + _CHR_LF + "B" + _CHR_LF + "C" + _CHR_LF + "A" + _CHR_LF, "Move up shifts the items in between down"
+    TEST_CHECK Control(lb).Value = 2, "Selection still on the same item"
+
+    MoveItem lb, 2, 4
+    TEST_CHECK GetItem(lb, 4) = "B" _ANDALSO Control(lb).Value = 4, "Moving the selected item keeps it selected"
+
+    MoveItem lb, 0, 2
+    MoveItem lb, 2, 5
+    MoveItem lb, 3, 3
+    TEST_CHECK Text(lb) = "D" + _CHR_LF + "C" + _CHR_LF + "A" + _CHR_LF + "B" + _CHR_LF _ANDALSO Control(lb).Max = 4, "Out-of-range and no-op moves change nothing"
+
+    'Dropping into a gap: gap 1 is above the first item, gap 5 below the last
+    Control(lb).Reorderable = _TRUE
+    __UI_ReorderingID = lb: __UI_ReorderFrom = 1: __UI_ReorderGap = 5
+    TEST_CHECK __UI_ReorderEnd, "Dropping below the last item moves it"
+    TEST_CHECK GetItem(lb, 4) = "D" _ANDALSO Control(lb).Value = 4, "Dropped item ends up last and selected"
+    TEST_CHECK __UI_ReorderingID = 0 _ANDALSO __UI_MovedItemFrom = 0 _ANDALSO __UI_MovedItemTo = 0, "Drag state is cleared after the drop"
+
+    __UI_ReorderingID = lb: __UI_ReorderFrom = 4: __UI_ReorderGap = 1
+    TEST_CHECK __UI_ReorderEnd _ANDALSO GetItem(lb, 1) = "D", "Dropping above the first item moves it first"
+
+    __UI_ReorderingID = lb: __UI_ReorderFrom = 2: __UI_ReorderGap = 0
+    TEST_CHECK NOT __UI_ReorderEnd, "No gap: nothing moves"
+
+    __UI_DestroyControl Control(lb)
 
     TEST_CASE_END
 END SUB
