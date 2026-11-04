@@ -53,6 +53,23 @@ SUB __UI_InternalMenus
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuConvertType", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuConvertType"), "Co&nvert to type-"
 
+    'Frames: rows of a property grid (see InFormPropertyGrid.bm); the submenu's items are sent to the preview as keys 230 to 235
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRow", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
+    SetCaption __UI_NewID, "Add property-"
+    ToolTip(__UI_NewID) = "Adds a row to this frame's property grid (its Rows property)."
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRowText", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenuAddRow"))
+    SetCaption __UI_NewID, "&Text box"
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRowInteger", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenuAddRow"))
+    SetCaption __UI_NewID, "&Integer box"
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRowFloat", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenuAddRow"))
+    SetCaption __UI_NewID, "&Number box"
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRowChoice", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenuAddRow"))
+    SetCaption __UI_NewID, "&Choice (dropdown list)"
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRowToggle", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenuAddRow"))
+    SetCaption __UI_NewID, "Toggle (check bo&x)"
+    __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuAddRowButton", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenuAddRow"))
+    SetCaption __UI_NewID, "&Button"
+
     __UI_NewID = __UI_NewControl(__UI_Type_MenuItem, "__UI_PreviewMenuImageOriginalSize", 0, 0, 0, 0, __UI_GetID("__UI_PreviewMenu"))
     SetCaption __UI_GetID("__UI_PreviewMenuImageOriginalSize"), "Restore &image dimensions-"
 
@@ -247,6 +264,7 @@ SUB __UI_Init
     _DISPLAY
 
     __UI_AssignIDs
+    __UI_PropertyGridsFromForm
     __UI_AnchorFormWidth = Control(__UI_FormID).Width
     __UI_AnchorFormHeight = Control(__UI_FormID).Height
     __UI_OnLoad
@@ -505,7 +523,8 @@ SUB __UI_ProcessInput
                 __UI_Focus = __UI_HoveringID
             END IF
         ELSE
-            IF __UI_HoveringID <> __UI_LastHoveringID AND Control(__UI_HoveringID).Type = __UI_Type_MenuItem AND Control(__UI_HoveringID).SubMenu AND __UI_DesignMode = False THEN
+            'Start the delay before a submenu opens (in the designer too, or it would open at once)
+            IF __UI_HoveringID <> __UI_LastHoveringID AND Control(__UI_HoveringID).Type = __UI_Type_MenuItem AND Control(__UI_HoveringID).SubMenu THEN
                 Control(__UI_HoveringID).LastChange = TIMER
                 __UI_HoveringSubMenu = True
             ELSEIF __UI_HoveringID = __UI_LastHoveringID AND Control(__UI_HoveringID).Type = __UI_Type_MenuItem AND Control(__UI_HoveringID).SubMenu THEN
@@ -626,6 +645,7 @@ SUB __UI_UpdateDisplay
     __UI_IsDrawing = True
 
     __UI_BeforeUpdateDisplay
+    __UI_PropertyGridsUpdate
 
     IF _SCREENX = -32000 _ANDALSO _SCREENY = -32000 THEN
         'Window was minimized
@@ -1555,7 +1575,10 @@ SUB __UI_EventDispatcher
     END IF
 
     'MouseWheel
-    IF __UI_MouseWheel AND NOT __UI_DesignMode THEN
+    IF __UI_MouseWheel _ANDALSO __UI_DesignMode THEN
+        'The designer scrolls the rows of a frame's property grid that don't fit
+        IF __UI_PropertyGridMockWheel(__UI_HoveringID, __UI_MouseWheel) THEN __UI_ForceRedraw = True
+    ELSEIF __UI_MouseWheel THEN
         IF (Control(__UI_HoveringID).Type = __UI_Type_ListBox AND NOT Control(__UI_HoveringID).Disabled) THEN
             Control(__UI_HoveringID).InputViewStart = Control(__UI_HoveringID).InputViewStart + __UI_MouseWheel
             IF Control(__UI_HoveringID).InputViewStart + Control(__UI_HoveringID).LastVisibleItem > Control(__UI_HoveringID).Max THEN
@@ -1570,6 +1593,8 @@ SUB __UI_EventDispatcher
             IF Control(__UI_ActiveDropdownList).InputViewStart < 1 THEN Control(__UI_ActiveDropdownList).InputViewStart = 1
         ELSEIF Control(__UI_HoveringID).Type = __UI_Type_TextBox _ANDALSO Control(__UI_HoveringID).Multiline _ANDALSO NOT Control(__UI_HoveringID).Disabled THEN
             __UI_TBScrollTo __UI_HoveringID, Control(__UI_HoveringID).FirstVisibleLine + __UI_MouseWheel * 3
+        ELSEIF __UI_PropertyGridWheel(__UI_HoveringID, __UI_MouseWheel) THEN
+            'A property grid under the mouse was scrolled
         ELSEIF (Control(__UI_Focus).Type = __UI_Type_DropdownList AND NOT Control(__UI_Focus).Disabled) THEN
             Control(__UI_Focus).Value = Control(__UI_Focus).Value + __UI_MouseWheel
             IF Control(__UI_Focus).Value < 1 THEN Control(__UI_Focus).Value = 1
@@ -1794,6 +1819,9 @@ SUB __UI_EventDispatcher
                     END IF
                 END IF
 
+                'Property grid rows can be added to one frame at a time
+                Control(__UI_GetID("__UI_PreviewMenuAddRow")).Hidden = (__UI_TotalSelectedControls <> 1 _ORELSE Control(__UI_FirstSelectedID).Type <> __UI_Type_Frame)
+
                 IF LEFT$(_CLIPBOARD$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
                     Control(__UI_GetID("__UI_PreviewMenuPaste")).Disabled = False
                 ELSE
@@ -1961,6 +1989,7 @@ SUB __UI_EventDispatcher
             END IF
             __UI_MouseIsDown = True
             __UI_MouseDownOnID = __UI_HoveringID
+            __UI_PropertyGridMouseDown
 
             IF __UI_DesignMode AND __UI_MouseDownOnID = __UI_FormID THEN
                 __UI_SelectionRectangle = True
@@ -2472,17 +2501,22 @@ SUB __UI_EventDispatcher
                     __UI_MouseDownOnID = 0
 
                     ProcessClick:
-                    IF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" OR RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenu" THEN
+                    IF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" OR RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenu" OR RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenuAddRow" THEN
                         'Internal context menus - Text field/Design mode options
                         IF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_TextFieldMenu" THEN
                             __UI_Focus = __UI_PreviousFocus
-                        ELSEIF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenu" THEN
-                            __UI_DestroyControl Control(__UI_ActiveMenu(__UI_TotalActiveMenus))
+                        ELSEIF RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenu" OR RTRIM$(Control(Control(__UI_HoveringID).ParentID).Name) = "__UI_PreviewMenuAddRow" THEN
+                            'An item that opens a submenu leaves the menus open; any other item
+                            'closes them all (a submenu's item would otherwise leave the menu it came from open)
+                            IF NOT Control(__UI_HoveringID).SubMenu THEN
+                                __UI_CloseAllMenus
+                                __UI_ForceRedraw = True
+                            END IF
                         END IF
 
                         ProcessHotkey:
                         __UI_FillSelectedText 0, 0
-                        IF UCASE$(LEFT$(Control(__UI_HoveringID).Name, 16)) = "__UI_PREVIEWMENU" THEN __UI_KeyPress 216
+                        IF UCASE$(LEFT$(Control(__UI_HoveringID).Name, 16)) = "__UI_PREVIEWMENU" _ANDALSO NOT Control(__UI_HoveringID).SubMenu THEN __UI_KeyPress 216
                         SELECT CASE UCASE$(RTRIM$(Control(__UI_HoveringID).Name))
                             CASE "__UI_TEXTMENUCUT"
                                 IF LEN(__UI_SelectedText) > 0 THEN
@@ -2545,6 +2579,12 @@ SUB __UI_EventDispatcher
                                 __UI_KeyPress 227
                             CASE UCASE$("__UI_PreviewMenuBindControls")
                                 __UI_KeyPress 228
+                            CASE UCASE$("__UI_PreviewMenuAddRowText"): __UI_KeyPress 230
+                            CASE UCASE$("__UI_PreviewMenuAddRowInteger"): __UI_KeyPress 231
+                            CASE UCASE$("__UI_PreviewMenuAddRowFloat"): __UI_KeyPress 232
+                            CASE UCASE$("__UI_PreviewMenuAddRowChoice"): __UI_KeyPress 233
+                            CASE UCASE$("__UI_PreviewMenuAddRowToggle"): __UI_KeyPress 234
+                            CASE UCASE$("__UI_PreviewMenuAddRowButton"): __UI_KeyPress 235
                             CASE "__UI_PREVIEWMENUCUT": GOTO ControlCut
                             CASE "__UI_PREVIEWMENUCOPY": GOTO ControlCopy
                             CASE "__UI_PREVIEWMENUPASTE": GOTO ControlPaste
@@ -3315,6 +3355,7 @@ SUB __UI_EventDispatcher
     END IF
 
     IF __UI_Focus > 0 AND __UI_KeyHit <> 0 AND __UI_DesignMode = False THEN
+        __UI_PropertyGridKey
         __UI_KeyPress __UI_Focus
         __UI_KeyboardFocus = True
 
@@ -4859,6 +4900,7 @@ SUB __UI_DestroyControl (This AS __UI_ControlTYPE)
         Mask(This.ID) = _STR_EMPTY
 
         __UI_UnBind This.ID
+        __UI_PropertyGridForget This.ID
 
         IF This.Type = __UI_Type_ListBox THEN
             IF __UI_ActiveDropdownList = This.ID THEN
@@ -8947,6 +8989,11 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
 
     This = TempThis
 
+    'Whether the thumb is shown as being dragged (a property grid keeps track of its own)
+    DIM ThumbDragged AS _BYTE
+    ThumbDragged = __UI_DraggingThumb
+    IF This.Type = __UI_Type_Frame THEN ThumbDragged = __UI_PGThumbDragging
+
     _FONT This.Font
 
     DIM Visible AS LONG ' items or lines shown at once
@@ -8968,6 +9015,10 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
         This.Top = 1
         This.Height = This.Height - 1
         This.Width = __UI_ScrollbarWidth
+    ELSEIF This.Type = __UI_Type_Frame THEN
+        'A property grid's scrollbar (see InFormPropertyGrid.bm): the caller sets its place,
+        'Min/Max/Value, and in .LastVisibleItem how many rows show
+        Visible = This.LastVisibleItem
     END IF
 
     'Scrollbar measurements:
@@ -9014,14 +9065,14 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
         'Thumb
         IF ControlState <> 4 THEN
             FlatThumb = __UI_FlatShade(FlatTrack, .35)
-            IF __UI_DraggingThumb = True THEN
+            IF ThumbDragged THEN
                 FlatThumb = __UI_FlatShade(FlatTrack, .6)
             ELSEIF This.HoveringVScrollbarButton = 3 THEN
                 FlatThumb = __UI_FlatShade(FlatTrack, .5)
             END IF
             DIM FlatThumbW AS SINGLE
             FlatThumbW = This.Width / 3
-            IF __UI_DraggingThumb = True OR This.HoveringVScrollbarButton > 0 THEN FlatThumbW = This.Width / 2
+            IF ThumbDragged OR This.HoveringVScrollbarButton > 0 THEN FlatThumbW = This.Width / 2
             __UI_FlatRoundFill This.Left + (This.Width - FlatThumbW) / 2, ThumbTop + __UI_ScrollbarButtonHeight + 1, FlatThumbW, ThumbHeight - 2, FlatThumbW / 2, FlatThumb
         END IF
     ELSE
@@ -9033,10 +9084,10 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
         END IF
 
         'Mousedown on the track:
-        IF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 4 AND __UI_DraggingThumb = False THEN
+        IF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 4 AND NOT ThumbDragged THEN
             'Above the thumb
             _PUTIMAGE (This.Left, This.Top)-STEP(ImageWidth_Button - 1, ThumbTop + ThumbHeight + __UI_ScrollbarButtonHeight - 1), ControlImage_Track, , (0, 3 * ImageHeight_Button - ImageHeight_Button)-STEP(ImageWidth_Button - 1, ImageHeight_Button - 1)
-        ELSEIF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 5 AND __UI_DraggingThumb = False THEN
+        ELSEIF __UI_MouseDownOnID = This.ID AND This.HoveringVScrollbarButton = 5 AND NOT ThumbDragged THEN
             'Below the thumb
             _PUTIMAGE (This.Left, This.Top + ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Button - 1, This.Height - (This.Top + ThumbTop + __UI_ScrollbarButtonHeight) - 1), ControlImage_Track, , (0, 3 * ImageHeight_Button - ImageHeight_Button)-STEP(ImageWidth_Button - 1, ImageHeight_Button - 1)
         END IF
@@ -9065,11 +9116,11 @@ SUB __UI_DrawVScrollBar (TempThis AS __UI_ControlTYPE, ControlState AS _BYTE)
         'Draw thumb
         IF ControlState = 4 THEN
             'No thumb is shown for disabled scrollbar
-        ELSEIF __UI_DraggingThumb = True THEN
+        ELSEIF ThumbDragged THEN
             _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, ThumbHeight - 1), ControlImage_Thumb, , (0, 3 * ImageHeight_Thumb - ImageHeight_Thumb + 2)-STEP(ImageWidth_Thumb - 1, ImageHeight_Thumb - 5)
             _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 3 * ImageHeight_Thumb - ImageHeight_Thumb)-STEP(ImageWidth_Thumb - 1, 1)
             _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight + ThumbHeight - 2)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 3 * ImageHeight_Thumb - 4)-STEP(ImageWidth_Thumb - 1, 3)
-        ELSEIF This.HoveringVScrollbarButton = 3 AND __UI_DraggingThumb = False THEN
+        ELSEIF This.HoveringVScrollbarButton = 3 AND NOT ThumbDragged THEN
             _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, ThumbHeight - 1), ControlImage_Thumb, , (0, 2 * ImageHeight_Thumb - ImageHeight_Thumb + 2)-STEP(ImageWidth_Thumb - 1, ImageHeight_Thumb - 5)
             _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 2 * ImageHeight_Thumb - ImageHeight_Thumb)-STEP(ImageWidth_Thumb - 1, 1)
             _PUTIMAGE (This.Left + 1, ThumbTop + __UI_ScrollbarButtonHeight + ThumbHeight - 2)-STEP(ImageWidth_Thumb - 2, 1), ControlImage_Thumb, , (0, 2 * ImageHeight_Thumb - 4)-STEP(ImageWidth_Thumb - 1, 3)
@@ -9455,7 +9506,7 @@ END SUB
 
 '---------------------------------------------------------------------------------
 SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
-    DIM PrevDest AS LONG, TempCaption$
+    DIM PrevDest AS LONG, TempCaption$, OpenSubMenu AS _BYTE, k AS LONG
     DIM Temp&
 
     DIM CheckMarkIndex AS _BYTE
@@ -9517,7 +9568,15 @@ SUB __UI_DrawMenuPanel (This AS __UI_ControlTYPE, Parent AS LONG)
                     HasSeparator = False
                 END IF
 
-                IF __UI_Focus = i OR (__UI_HoveringID = i AND __UI_Focus = i) THEN
+                'An item whose submenu is open stays selected while the mouse is in the submenu
+                OpenSubMenu = False
+                IF Control(i).SubMenu THEN
+                    FOR k = 1 TO __UI_TotalActiveMenus
+                        IF __UI_ParentMenu(k) = i THEN OpenSubMenu = True: EXIT FOR
+                    NEXT
+                END IF
+
+                IF __UI_Focus = i OR OpenSubMenu THEN
                     LINE (3, Control(i).Top)-STEP(This.Width - 7, Control(i).Height - 1), This.SelectedBackColor, BF
                     COLOR This.SelectedForeColor
                     CheckMarkIndex = 2
@@ -9929,3 +9988,4 @@ $END IF
 
 '$INCLUDE:'InFormTheme.bm'
 '$INCLUDE:'InFormTabControl.bm'
+'$INCLUDE:'InFormPropertyGrid.bm'

@@ -21,6 +21,9 @@ $LET TEST_CONSOLE_ONLY = TRUE
 
 '$INCLUDE:'../InForm/InForm.bi'
 
+'Counts the __UI_ValueChanged events fired while a test runs (see Test_PropertyGrid)
+DIM SHARED TestValueChangedCount AS LONG, TestValueChangedID AS LONG
+
 SUB __UI_BeforeInit
     TEST_BEGIN_ALL
 
@@ -46,6 +49,7 @@ SUB __UI_BeforeInit
     Test_Theme
     Test_TabControl
     Test_Timer
+    Test_PropertyGrid
 
     TEST_END_ALL
 END SUB
@@ -2641,13 +2645,457 @@ SUB Test_Timer
     TEST_CASE_END
 END SUB
 
+''' @brief Gives a textbox focus the way the grid sees it: focus moves, then the screen updates.
+SUB TestPGFocus (id AS LONG)
+    __UI_Focus = id
+    __UI_PropertyGridsUpdate
+END SUB
+
+''' @brief Presses Enter (13) or Esc (27) in the focused control, as far as the grid is concerned.
+SUB TestPGKey (k AS LONG)
+    __UI_KeyHit = k
+    __UI_PropertyGridKey
+    __UI_KeyHit = 0
+END SUB
+
+''' @brief Presses the mouse button on a control (the mouse is where __UI_MouseLeft/Top say), then lets the grids update.
+SUB TestPGPress (id AS LONG)
+    __UI_MouseIsDown = True
+    __UI_MouseDownOnID = id
+    __UI_PropertyGridMouseDown
+    __UI_PropertyGridsUpdate
+END SUB
+
+SUB TestPGRelease
+    __UI_MouseIsDown = False
+    __UI_MouseDownOnID = 0
+    __UI_PropertyGridsUpdate
+END SUB
+
+SUB Test_PropertyGrid
+    DIM f AS LONG, f2 AS LONG, tb AS LONG, sz AS LONG, dd AS LONG, cb AS LONG, bt AS LONG, extra AS LONG
+    DIM lbl AS LONG, own AS LONG, events AS LONG
+
+    TEST_CASE_BEGIN "PropertyGrid: rows"
+
+    f = __UI_NewControl(__UI_Type_Frame, "TestPG", 230, 300, 0, 0, 0)
+    PropertyGrid_AddText f, "name", "Name"
+    PropertyGrid_AddInteger f, "size", "Size"
+    PropertyGrid_AddChoice f, "color", "Color", "Red|Green|Blue"
+    PropertyGrid_AddToggle f, "on", "Turned on"
+    PropertyGrid_AddButton f, "go", "Action", "Run"
+    tb = PropertyGrid_Control(f, "name")
+    sz = PropertyGrid_Control(f, "SIZE")
+    dd = PropertyGrid_Control(f, "color")
+    cb = PropertyGrid_Control(f, "on")
+    bt = PropertyGrid_Control(f, "go")
+
+    TEST_CHECK Control(tb).Type = __UI_Type_TextBox, "Text row has a textbox"
+    TEST_CHECK Control(sz).Type = __UI_Type_TextBox, "Keys ignore case"
+    TEST_CHECK Control(dd).Type = __UI_Type_DropdownList, "Choice row has a dropdown list"
+    TEST_CHECK Control(cb).Type = __UI_Type_CheckBox, "Toggle row has a check box"
+    TEST_CHECK Control(bt).Type = __UI_Type_Button, "Button row has a button"
+    TEST_CHECK Control(tb).ParentID = f, "Row controls go in the frame"
+    TEST_CHECK Caption(PropertyGrid_LabelControl(f, "name")) = "Name", "Label caption"
+    TEST_CHECK PropertyGrid_LabelControl(f, "on") = 0, "Toggle rows have no label"
+    TEST_CHECK Caption(cb) = "Turned on", "Toggle caption"
+    TEST_CHECK GetItem(dd, 2) = "Green", "Choice items"
+    TEST_CHECK PropertyGrid_Value(f, "color") = "1", "Choice starts on the first item"
+    TEST_CHECK PropertyGrid_Value(f, "size") = "0", "Number rows start at 0"
+    TEST_CHECK PropertyGrid_RowOf(bt) = "go", "Row of a control"
+    TEST_CHECK PropertyGrid_RowOf(PropertyGrid_LabelControl(f, "name")) = "name", "Row of a label"
+    TEST_CHECK PropertyGrid_GridOf(bt) = f, "Grid of a control"
+    TEST_CHECK PropertyGrid_RowOf(f) = "", "A frame is no row"
+    TEST_CHECK PropertyGrid_Control(f, "missing") = 0, "Missing row"
+    TEST_CHECK PropertyGrid_Value(f, "missing") = "", "Missing row has no value"
+    PropertyGrid_SetValue f, "missing", "x"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: layout"
+
+    PropertyGrid_Layout f
+    TEST_CHECK Control(tb).Top = 10 _ANDALSO Control(sz).Top = 32 _ANDALSO Control(dd).Top = 54, "Rows are stacked"
+    TEST_CHECK Control(cb).Top = 76 _ANDALSO Control(bt).Top = 98, "Rows are stacked to the end"
+    TEST_CHECK PropertyGrid_NextTop(f) = 120, "Next top"
+    TEST_CHECK Control(PropertyGrid_LabelControl(f, "name")).Left = 10 _ANDALSO Control(PropertyGrid_LabelControl(f, "name")).Width = 120, "Label column"
+    TEST_CHECK Control(tb).Left = 129 _ANDALSO Control(tb).Width = 94, "Value column fills the frame"
+    TEST_CHECK Control(cb).Left = 10 _ANDALSO Control(cb).Width = 213, "Toggles span both columns"
+
+    PropertyGrid_ShowRow f, "size", False
+    PropertyGrid_Layout f
+    TEST_CHECK Control(sz).Hidden _ANDALSO Control(PropertyGrid_LabelControl(f, "size")).Hidden, "Hidden row"
+    TEST_CHECK_FALSE PropertyGrid_RowShown(f, "size"), "Row reported hidden"
+    TEST_CHECK Control(dd).Top = 32, "Rows close the gap"
+
+    PropertyGrid_ShowOnly f, "name,go"
+    PropertyGrid_Layout f
+    TEST_CHECK Control(bt).Top = 32 _ANDALSO Control(dd).Hidden _ANDALSO Control(cb).Hidden, "Show only some rows"
+
+    PropertyGrid_ShowAll f, True
+    PropertyGrid_ShowRows f, "Name, size", False
+    PropertyGrid_Layout f
+    TEST_CHECK Control(tb).Hidden _ANDALSO Control(sz).Hidden _ANDALSO Control(dd).Top = 10, "Key lists can have spaces"
+    PropertyGrid_ShowAll f, True
+
+    PropertyGrid_SetFloating f, "size", True
+    Control(sz).Top = 200
+    PropertyGrid_Layout f
+    TEST_CHECK Control(sz).Top = 200 _ANDALSO Control(dd).Top = 32, "Floating rows stay put"
+    PropertyGrid_SetFloating f, "size", False
+
+    PropertyGrid_SetLayout f, 5, 20, 30, 60
+    PropertyGrid_Layout f
+    TEST_CHECK Control(tb).Top = 20 _ANDALSO Control(sz).Top = 50 _ANDALSO Control(tb).Left = 64, "Custom layout"
+    PropertyGrid_SetLayout f, 10, 10, 22, 120
+
+    extra = __UI_NewControl(__UI_Type_Button, "TestPGExtra", 23, 23, 100, 0, f)
+    PropertyGrid_AttachControl f, "color", extra
+    PropertyGrid_Layout f
+    TEST_CHECK Control(extra).Top = Control(dd).Top _ANDALSO Control(extra).Left = 100, "Attached control follows its row"
+    PropertyGrid_ShowRow f, "color", False
+    PropertyGrid_Layout f
+    TEST_CHECK Control(extra).Hidden, "Attached control hides with its row"
+    PropertyGrid_DetachControl extra
+    PropertyGrid_ShowRow f, "color", True
+    PropertyGrid_Layout f
+    TEST_CHECK Control(extra).Hidden, "Detached control is left alone"
+
+    PropertyGrid_SetLabel f, "name", "Title"
+    TEST_CHECK Caption(PropertyGrid_LabelControl(f, "name")) = "Title", "Label changed"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: editing"
+
+    TestValueChangedCount = 0
+    PropertyGrid_SetValue f, "name", "abc"
+    TEST_CHECK Text(tb) = "abc", "Value shown in an unfocused box"
+    Text(tb) = "stray"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Text(tb) = "abc", "Unfocused box keeps showing the value"
+
+    TestPGFocus tb
+    Text(tb) = "xyz"
+    TestPGKey 13
+    TEST_CHECK TestValueChangedCount = 1 _ANDALSO TestValueChangedID = f, "Enter fires the frame's event"
+    TEST_CHECK PropertyGrid_ChangedRow(f) = "name" _ANDALSO PropertyGrid_Value(f, "name") = "xyz", "Committed value"
+    TEST_CHECK Control(tb).TextIsSelected _ANDALSO Control(tb).Cursor = 3, "Text is selected after Enter"
+    TestPGKey 13
+    TEST_CHECK TestValueChangedCount = 1, "Enter again changes nothing"
+
+    Text(tb) = "junk"
+    TestPGKey 27
+    TEST_CHECK Text(tb) = "xyz" _ANDALSO TestValueChangedCount = 1, "Esc puts the value back"
+
+    TestPGFocus sz
+    Text(sz) = "12.6"
+    TestPGKey 13
+    TEST_CHECK PropertyGrid_Value(f, "size") = "13" _ANDALSO Text(sz) = "13", "Integer rows round"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Confirmed, "Box shows the value"
+
+    PropertyGrid_SetValue f, "size", "10"
+    TEST_CHECK Text(sz) = "13", "Focused box keeps its text"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Normal, "Not rejected right after the commit"
+    _DELAY .15
+    __UI_PropertyGridsUpdate
+    TEST_CHECK PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Rejected, "Rejected when the value differs"
+    TestPGKey 27
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Text(sz) = "10" _ANDALSO PropertyGrid_RowState(f, "size") = __UI_PropertyGrid_Confirmed, "Esc shows the value taken"
+
+    events = TestValueChangedCount
+    TestPGFocus tb
+    Text(tb) = "typed"
+    __UI_Focus = 0
+    PropertyGrid_SetValue f, "name", "from code"
+    TEST_CHECK Text(tb) = "typed", "Box that lost focus keeps its text until it's committed"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1 _ANDALSO PropertyGrid_Value(f, "name") = "typed", "Leaving a box commits it"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1, "Committed once"
+
+    Text(tb) = "from a dialog"
+    PropertyGrid_Commit f, "name"
+    TEST_CHECK TestValueChangedCount = events + 2 _ANDALSO PropertyGrid_Value(f, "name") = "from a dialog", "Commit from code"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: choices and toggles"
+
+    events = TestValueChangedCount
+    Control(dd).Value = 2
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1 _ANDALSO PropertyGrid_ChangedRow(f) = "color" _ANDALSO PropertyGrid_Value(f, "color") = "2", "Picking an item fires the event"
+    PropertyGrid_SetValue f, "color", "3"
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(dd).Value = 3 _ANDALSO TestValueChangedCount = events + 1, "Setting a value from code fires nothing"
+
+    Control(cb).Value = True
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 2 _ANDALSO PropertyGrid_Value(f, "on") = "-1", "Checking fires the event"
+    PropertyGrid_SetValue f, "on", "0"
+    TEST_CHECK Control(cb).Value = 0, "Unchecked from code"
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: adopted rows"
+
+    f2 = __UI_NewControl(__UI_Type_Frame, "TestPG2", 300, 200, 0, 0, 0)
+    lbl = __UI_NewControl(__UI_Type_Label, "TestPGOwnLB", 40, 23, 5, 0, f2)
+    own = __UI_NewControl(__UI_Type_TextBox, "TestPGOwnTB", 70, 23, 50, 0, f2)
+    Text(own) = "start"
+    PropertyGrid_AdoptRow f2, "own", lbl, own
+    PropertyGrid_AdoptRow f2, "list", 0, __UI_NewControl(__UI_Type_DropdownList, "TestPGOwnDD", 70, 23, 50, 0, f2)
+    PropertyGrid_Layout f2
+    TEST_CHECK PropertyGrid_Value(f2, "own") = "start", "Adopted textbox keeps its text as the value"
+    TEST_CHECK Control(own).Left = 50 _ANDALSO Control(own).Width = 70 _ANDALSO Control(lbl).Left = 5, "Adopted controls keep left and width"
+    TEST_CHECK Control(PropertyGrid_Control(f2, "list")).Top = 32, "Adopted rows are stacked"
+
+    events = TestValueChangedCount
+    TestPGFocus own
+    Text(own) = "edited"
+    TestPGKey 13
+    TEST_CHECK TestValueChangedCount = events + 1 _ANDALSO TestValueChangedID = f2, "Adopted textbox commits"
+    Control(PropertyGrid_Control(f2, "list")).Value = 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events + 1, "Adopted dropdowns are left to the program"
+    __UI_Focus = 0
+    __UI_PropertyGridsUpdate
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: scrolling"
+
+    DIM fs AS LONG, i AS LONG, rowTB(1 TO 6) AS LONG
+    'Room for three rows: 100 high, rows from 10, 4 pixels at the bottom
+    fs = __UI_NewControl(__UI_Type_Frame, "TestPGScroll", 200, 100, 0, 0, 0)
+    FOR i = 1 TO 6
+        PropertyGrid_AddText fs, "r" + LTRIM$(STR$(i)), "Row" + STR$(i)
+        rowTB(i) = PropertyGrid_Control(fs, "r" + LTRIM$(STR$(i)))
+    NEXT
+    PropertyGrid_Layout fs
+    TEST_CHECK Control(rowTB(1)).Top = 10 _ANDALSO Control(rowTB(4)).Top = 76, "Rows start unscrolled"
+
+    'Six rows of 22 = 132 pixels in 86 (100 - 10 - 4): they scroll by up to 46 pixels
+    TEST_CHECK __UI_PropertyGridWheel(fs, 1), "Wheel over the frame scrolls"
+    TEST_CHECK Control(rowTB(1)).Top = -12 _ANDALSO Control(rowTB(2)).Top = 10, "A wheel notch scrolls a row"
+    TEST_CHECK Control(PropertyGrid_LabelControl(fs, "r1")).Top = -12, "Its label goes too"
+    TEST_CHECK_FALSE Control(rowTB(1)).Hidden, "Scrolled-out rows can still get focus"
+    TEST_CHECK __UI_PropertyGridWheel(rowTB(3), 10), "Wheel over a row scrolls its grid"
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Scrolling stops when the last row shows"
+    TEST_CHECK __UI_PropertyGridWheel(fs, -10), "Wheel back up"
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Back at the top"
+
+    TestPGFocus rowTB(6)
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Focused row is scrolled into view"
+    TestPGFocus rowTB(5)
+    TEST_CHECK Control(rowTB(6)).Top = 74, "A row already in view doesn't scroll"
+    TestPGFocus rowTB(1)
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Scrolled up just enough for a row above"
+    PropertyGrid_ScrollTo fs, "r6"
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Scroll to a row below"
+    PropertyGrid_ScrollTo fs, "r2"
+    TEST_CHECK Control(rowTB(2)).Top = 10, "Scroll to a row above"
+    __UI_Focus = 0
+    __UI_PropertyGridsUpdate
+
+    PropertyGrid_ShowRows fs, "r4,r5,r6", False
+    PropertyGrid_Layout fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Scroll resets when everything fits"
+    TEST_CHECK_FALSE __UI_PropertyGridWheel(fs, 1), "Nothing to scroll"
+    PropertyGrid_ShowAll fs, True
+    PropertyGrid_Layout fs
+
+    'Rows end before the scrollbar while there is one
+    DIM gs AS LONG, sbX AS LONG
+    gs = __UI_PGFind(fs)
+    TEST_CHECK Control(rowTB(1)).Left + Control(rowTB(1)).Width <= __UI_PropertyGrids(gs).SbLeft - 3, "Rows make room for the scrollbar"
+
+    'The scrollbar, part by part (mouse coordinates are the form's)
+    sbX = Control(fs).Left + __UI_PropertyGrids(gs).SbLeft + __UI_ScrollbarWidth \ 2
+    __UI_HoveringID = fs
+    __UI_MouseLeft = sbX
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).SbTop + __UI_PropertyGrids(gs).SbHeight - 4
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = -12 _ANDALSO Control(rowTB(2)).Top = 10, "Down button scrolls a row"
+    TestPGRelease
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).SbTop + 3
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Up button scrolls back"
+    TestPGRelease
+
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).TrackTop + __UI_PropertyGrids(gs).TrackHeight - 2
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Clicking the track below the thumb pages down"
+    TestPGRelease
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).TrackTop + 1
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Clicking the track above the thumb pages up"
+    TestPGRelease
+
+    'Dragging the thumb: it keeps the spot where it was grabbed
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).ThumbTop + 2
+    TestPGPress fs
+    TEST_CHECK __UI_PropertyGrids(gs).Dragging, "Thumb grabbed"
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Grabbing doesn't scroll"
+    'Every pixel the thumb moves scrolls the rows, not just whole rows
+    DIM room AS LONG
+    room = __UI_PropertyGrids(gs).TrackHeight - __UI_PropertyGrids(gs).ThumbHeight
+    __UI_MouseTop = __UI_MouseTop + 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(1)).Top < 10 _ANDALSO Control(rowTB(1)).Top > 10 - 22, "A small drag scrolls part of a row"
+    TEST_CHECK __UI_PropertyGrids(gs).ScrollY = _ROUND(46 / room), "Scrolled in proportion"
+    'Frames keep a picture of themselves: scrolling has to ask for a new one
+    Control(fs).Redraw = False
+    __UI_MouseTop = __UI_MouseTop + 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(fs).Redraw, "Dragging the thumb redraws the frame"
+    Control(fs).Redraw = False
+    __UI_PropertyGridsUpdate
+    TEST_CHECK_FALSE Control(fs).Redraw, "Nothing redrawn while the thumb stays put"
+    __UI_HoveringID = rowTB(2)
+    __UI_MouseDownOnID = 0
+    __UI_MouseTop = Control(fs).Top + 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Thumb dragged to the bottom, even off the scrollbar"
+    __UI_MouseTop = Control(fs).Top - 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(1)).Top = 10, "And back to the top"
+    TestPGRelease
+    __UI_MouseTop = Control(fs).Top + 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Releasing the button ends the drag"
+
+    'A drag that leaves the frame's area before the screen updates still counts
+    '(the engine forgets which control was pressed as soon as the mouse moves onto another one)
+    __UI_HoveringID = fs
+    __UI_MouseLeft = sbX
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).ThumbTop + 2
+    __UI_MouseIsDown = True
+    __UI_MouseDownOnID = fs
+    __UI_PropertyGridMouseDown
+    __UI_MouseDownOnID = 0
+    __UI_HoveringID = rowTB(3)
+    __UI_MouseTop = Control(fs).Top + 500
+    __UI_PropertyGridsUpdate
+    TEST_CHECK Control(rowTB(6)).Top = 74, "Quick drag still moves the thumb"
+    TestPGRelease
+    PropertyGrid_ScrollTo fs, "r1"
+
+    'Pressing elsewhere in the frame doesn't touch the scrollbar
+    __UI_HoveringID = fs
+    __UI_MouseLeft = Control(fs).Left + 5
+    __UI_MouseTop = Control(fs).Top + __UI_PropertyGrids(gs).SbTop + __UI_PropertyGrids(gs).SbHeight - 4
+    TestPGPress fs
+    TEST_CHECK Control(rowTB(1)).Top = 10, "Press away from the scrollbar"
+    TestPGRelease
+    __UI_HoveringID = 0
+
+    dd = PropertyGrid_Control(f, "color")
+    __UI_Focus = dd
+    TEST_CHECK_FALSE __UI_PropertyGridWheel(dd, 1), "A focused dropdown keeps the wheel"
+    __UI_Focus = 0
+    __UI_PropertyGridsUpdate
+    __UI_DestroyControl Control(fs)
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: adopted rows make room for the scrollbar"
+
+    DIM fa AS LONG, a1 AS LONG, a2 AS LONG, a3 AS LONG, side AS LONG, leftOfIt AS LONG
+    'Two rows fit: 60 high, rows from 10, 4 pixels at the bottom
+    fa = __UI_NewControl(__UI_Type_Frame, "TestPGRoom", 200, 60, 0, 0, 0)
+    a1 = __UI_NewControl(__UI_Type_TextBox, "TestPGRoom1", 100, 23, 50, 0, fa)
+    a2 = __UI_NewControl(__UI_Type_TextBox, "TestPGRoom2", 145, 23, 50, 0, fa)
+    a3 = __UI_NewControl(__UI_Type_TextBox, "TestPGRoom3", 145, 23, 50, 0, fa)
+    side = __UI_NewControl(__UI_Type_Button, "TestPGRoomSide", 40, 23, 155, 0, fa)
+    leftOfIt = __UI_NewControl(__UI_Type_Button, "TestPGRoomLeft", 23, 23, 25, 0, fa)
+    PropertyGrid_AdoptRow fa, "one", 0, a1
+    PropertyGrid_AttachControl fa, "one", side
+    PropertyGrid_AttachControl fa, "one", leftOfIt
+    PropertyGrid_AdoptRow fa, "two", 0, a2
+    PropertyGrid_AdoptRow fa, "three", 0, a3
+    PropertyGrid_Layout fa
+    gs = __UI_PGFind(fa)
+    TEST_CHECK __UI_PropertyGrids(gs).MaxScrollY > 0, "Three rows don't fit"
+    TEST_CHECK Control(a2).Left = 50 _ANDALSO Control(a2).Left + Control(a2).Width <= __UI_PropertyGrids(gs).SbLeft - 3, "Wide control narrowed, left kept"
+    TEST_CHECK Control(side).Left + Control(side).Width <= __UI_PropertyGrids(gs).SbLeft - 3, "Control attached to its right slides left"
+    TEST_CHECK Control(a1).Width = 100 - (195 - (__UI_PropertyGrids(gs).SbLeft - 3)), "The row's control narrows by as much"
+    TEST_CHECK Control(leftOfIt).Left = 25, "Control attached to its left stays"
+    PropertyGrid_Layout fa
+    TEST_CHECK Control(a2).Width = 145 - (195 - (__UI_PropertyGrids(gs).SbLeft - 3)), "Laying out again doesn't narrow it more"
+
+    PropertyGrid_ShowRow fa, "three", False
+    PropertyGrid_Layout fa
+    TEST_CHECK __UI_PropertyGrids(gs).MaxScrollY = 0, "Two rows fit"
+    TEST_CHECK Control(a2).Width = 145 _ANDALSO Control(a1).Width = 100 _ANDALSO Control(side).Left = 155, "Everything back as it was"
+
+    PropertyGrid_ShowRow fa, "three", True
+    PropertyGrid_Layout fa
+    PropertyGrid_DetachControl side
+    TEST_CHECK Control(side).Left = 155, "Detaching puts it back"
+    __UI_DestroyControl Control(fa)
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: rows written in the designer"
+
+    DIM fd AS LONG, pKey AS STRING, pKind AS _BYTE, pLabel AS STRING, pExtra AS STRING
+    TEST_CHECK __UI_PGParseLine(" size | integer | Size ", pKey, pKind, pLabel, pExtra), "Line parsed"
+    TEST_CHECK pKey = "size" _ANDALSO pKind = __UI_PropertyGrid_Integer _ANDALSO pLabel = "Size" _ANDALSO pExtra = "", "Key, kind and label, trimmed"
+    TEST_CHECK __UI_PGParseLine("Nickname", pKey, pKind, pLabel, pExtra), "Label-only line parsed"
+    TEST_CHECK pKey = "Nickname" _ANDALSO pKind = __UI_PropertyGrid_Text _ANDALSO pLabel = "Nickname", "Label-only line is a text row"
+    TEST_CHECK __UI_PGParseLine("c|CHOICE|Color|Red,Green|extra", pKey, pKind, pLabel, pExtra), "Choice line parsed"
+    TEST_CHECK pKind = __UI_PropertyGrid_Choice _ANDALSO pExtra = "Red,Green|extra", "Kinds ignore case; the last field takes the rest"
+    TEST_CHECK __UI_PGParseLine("x|toggle", pKey, pKind, pLabel, pExtra) _ANDALSO pLabel = "x", "Missing label falls back to the key"
+    TEST_CHECK_FALSE __UI_PGParseLine("   ", pKey, pKind, pLabel, pExtra), "Blank line skipped"
+
+    fd = __UI_NewControl(__UI_Type_Frame, "TestPGDesigned", 230, 300, 0, 0, 0)
+    'As saved in a .frm file (\10; line breaks) and typed in code (\n)
+    Text(fd) = "size|integer|Size\10;color|choice|Color|Red,Green,Blue\n\nfilled|toggle|Filled" + CHR$(13) + CHR$(10) + "reset|button|Defaults|Reset\10;Notes"
+    __UI_PropertyGridsFromForm
+    TEST_CHECK Control(PropertyGrid_Control(fd, "size")).Type = __UI_Type_TextBox, "Integer row built"
+    TEST_CHECK GetItem(PropertyGrid_Control(fd, "color"), 3) = "Blue", "Choice items built"
+    TEST_CHECK Control(PropertyGrid_Control(fd, "filled")).Type = __UI_Type_CheckBox, "Toggle row built"
+    TEST_CHECK Caption(PropertyGrid_Control(fd, "reset")) = "Reset", "Button caption"
+    TEST_CHECK Caption(PropertyGrid_LabelControl(fd, "notes")) = "Notes", "Label-only row built"
+    PropertyGrid_Layout fd
+    TEST_CHECK Control(PropertyGrid_Control(fd, "filled")).Top = 54, "Blank lines leave no gap"
+    pKey = STR$(PropertyGrid_Control(fd, "size"))
+    __UI_PropertyGridsFromForm
+    TEST_CHECK PropertyGrid_Control(fd, "size") = VAL(pKey), "Building twice changes nothing"
+    __UI_DestroyControl Control(fd)
+
+    TEST_CASE_END
+
+    TEST_CASE_BEGIN "PropertyGrid: destroying controls"
+
+    __UI_DestroyControl Control(sz)
+    TEST_CHECK PropertyGrid_Control(f, "size") = 0, "Destroyed control's row is gone"
+    PropertyGrid_Layout f
+    TEST_CHECK Control(dd).Top = 32, "Other rows close the gap"
+
+    __UI_DestroyControl Control(f)
+    TEST_CHECK PropertyGrid_Control(f, "name") = 0, "Destroyed frame's rows are gone"
+    TEST_CHECK PropertyGrid_GridOf(tb) = 0, "Its controls no longer belong to a grid"
+    events = TestValueChangedCount
+    Control(dd).Value = 1
+    __UI_PropertyGridsUpdate
+    TEST_CHECK TestValueChangedCount = events, "A forgotten grid fires nothing"
+
+    TEST_CASE_END
+END SUB
+
 SUB __UI_LoadForm: END SUB
 SUB __UI_AssignIDs: END SUB
 SUB __UI_OnLoad: END SUB
 SUB __UI_BeforeUnload: END SUB
 SUB __UI_BeforeUpdateDisplay: END SUB
 SUB __UI_FormResized: END SUB
-SUB __UI_ValueChanged (id AS LONG): id = id: END SUB
+SUB __UI_ValueChanged (id AS LONG): TestValueChangedCount = TestValueChangedCount + 1: TestValueChangedID = id: END SUB
 SUB __UI_TextChanged (id AS LONG): id = id: END SUB
 SUB __UI_MouseEnter (id AS LONG): id = id: END SUB
 SUB __UI_MouseLeave (id AS LONG): id = id: END SUB

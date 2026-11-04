@@ -537,3 +537,5 @@ DIM SHARED __UI_Type(0 TO 19) AS __UI_Types
 DIM SHARED __UI_Theme AS __UI_ThemeTYPE
 DIM SHARED __UI_ThemeColor(1 TO __UI_ThemeColor_Count) AS _UNSIGNED LONG
 DIM SHARED __UI_ThemeImageFile(1 TO __UI_ThemeImage_Count) AS STRING ' optional image files overriding the embedded bitmaps
+
+'$INCLUDE:'InFormPropertyGrid.bi'

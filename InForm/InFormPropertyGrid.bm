@@ -1,0 +1,1168 @@
+'-----------------------------------------------------------------------------------------------------------------------
+' InForm-PE PropertyGrid
+' Copyright (c) 2026 Fellippe Heitor
+'
+' A PropertyGrid turns a frame into a list of "label | value" rows, like the editor's Control properties panel.
+'   - Each row has a key (any text, e.g. "width") that the program uses to talk about it.
+'   - Rows can be created by the grid (PropertyGrid_AddText, ...) or adopted from controls the form already has.
+'   - Shown rows are stacked from the top of the frame; hidden rows leave no gap.
+'   - Textbox rows: Enter (or leaving the box) commits the text, Esc puts back the row's value.
+'     While a box has focus, its border turns green when the text is the row's value and red when
+'     an entered value was replaced by another one (see PropertyGrid_SetValue).
+'   - A committed or changed row fires __UI_ValueChanged with the frame's ID; PropertyGrid_ChangedRow$ says which row.
+'-----------------------------------------------------------------------------------------------------------------------
+
+$INCLUDEONCE
+
+'$INCLUDE:'InFormCommon.bi'
+
+'-----------------------------------------------------------------------------------------------------------------------
+' Internal helpers
+'-----------------------------------------------------------------------------------------------------------------------
+
+''' @brief Index of the grid attached to a frame, or 0.
+FUNCTION __UI_PGFind& (frameID AS LONG)
+    DIM pgGrid AS LONG
+    IF frameID <= 0 THEN EXIT FUNCTION
+    FOR pgGrid = 1 TO __UI_TotalPropertyGrids
+        IF __UI_PropertyGrids(pgGrid).FrameID = frameID THEN __UI_PGFind = pgGrid: EXIT FUNCTION
+    NEXT
+END FUNCTION
+
+''' @brief Index of a row, given its frame and key (keys ignore case), or 0.
+FUNCTION __UI_PGRow& (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG, pgGrid AS LONG, pgK AS STRING
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid = 0 THEN EXIT FUNCTION
+    pgK = UCASE$(_TRIM$(rowKey))
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).Grid = pgGrid _ANDALSO UCASE$(__UI_PropertyGridKeys(pgRow)) = pgK THEN __UI_PGRow = pgRow: EXIT FUNCTION
+    NEXT
+END FUNCTION
+
+''' @brief Adds a row to a frame's grid (attaching the grid first if needed) and returns its index.
+FUNCTION __UI_PGNewRow& (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    PropertyGrid_Attach frameID
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 THEN
+        __UI_TotalPropertyGridRows = __UI_TotalPropertyGridRows + 1
+        pgRow = __UI_TotalPropertyGridRows
+        IF pgRow > UBOUND(__UI_PropertyGridRows) THEN
+            REDIM _PRESERVE __UI_PropertyGridRows(0 TO pgRow + 15) AS __UI_PropertyGridRowTYPE
+            REDIM _PRESERVE __UI_PropertyGridKeys(0 TO pgRow + 15) AS STRING
+            REDIM _PRESERVE __UI_PropertyGridValues(0 TO pgRow + 15) AS STRING
+            REDIM _PRESERVE __UI_PropertyGridSeen(0 TO pgRow + 15) AS STRING
+        END IF
+    END IF
+    __UI_PropertyGridRows(pgRow).Grid = __UI_PGFind(frameID)
+    __UI_PropertyGridRows(pgRow).Shown = _TRUE
+    __UI_PropertyGridRows(pgRow).Floating = _FALSE
+    __UI_PropertyGridRows(pgRow).Dirty = _FALSE
+    __UI_PropertyGridKeys(pgRow) = _TRIM$(rowKey)
+    __UI_PropertyGridValues(pgRow) = _STR_EMPTY
+    __UI_PropertyGridSeen(pgRow) = _STR_EMPTY
+    __UI_PGNewRow = pgRow
+END FUNCTION
+
+''' @brief A control name made from the frame's name and the row's key.
+FUNCTION __UI_PGControlName$ (frameID AS LONG, rowKey AS STRING, pgSuffix AS STRING)
+    DIM pgI AS LONG, pgColor AS STRING, pgCount AS STRING
+    FOR pgI = 1 TO LEN(rowKey)
+        pgColor = MID$(rowKey, pgI, 1)
+        IF INSTR("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", pgColor) THEN pgCount = pgCount + pgColor
+    NEXT
+    __UI_PGControlName = LEFT$(RTRIM$(Control(frameID).Name), 16) + LEFT$(pgCount, 16) + pgSuffix
+END FUNCTION
+
+''' @brief Creates a row's label (left column) and returns its ID.
+FUNCTION __UI_PGNewLabel& (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING)
+    DIM pgID AS LONG
+    pgID = __UI_NewControl(__UI_Type_Label, __UI_PGControlName(frameID, rowKey, "LB"), 120, 23, 10, 10, frameID)
+    SetCaption pgID, rowLabel
+    Control(pgID).HasBorder = _TRUE
+    Control(pgID).VAlign = __UI_Middle
+    __UI_PGNewLabel = pgID
+END FUNCTION
+
+''' @brief _TRUE for rows edited in a textbox.
+FUNCTION __UI_PGIsTextRow%% (pgRow AS LONG)
+    SELECT CASE __UI_PropertyGridRows(pgRow).Kind
+        CASE __UI_PropertyGrid_Text, __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
+            __UI_PGIsTextRow = _TRUE
+    END SELECT
+END FUNCTION
+
+''' @brief _TRUE when a textbox's whole text is selected.
+FUNCTION __UI_PGFullySelected%% (pgID AS LONG)
+    __UI_PGFullySelected = Control(pgID).TextIsSelected _ANDALSO Control(pgID).SelectionStart = 0 _ANDALSO Control(pgID).Cursor = LEN(Text(pgID))
+END FUNCTION
+
+SUB __UI_PGSelectAll (pgID AS LONG)
+    Control(pgID).TextIsSelected = _TRUE
+    Control(pgID).SelectionStart = 0
+    Control(pgID).Cursor = LEN(Text(pgID))
+END SUB
+
+''' @brief Tells the program a row changed: fires __UI_ValueChanged with the frame's ID.
+SUB __UI_PGFire (pgRow AS LONG)
+    DIM pgGrid AS LONG
+    pgGrid = __UI_PropertyGridRows(pgRow).Grid
+    __UI_PropertyGrids(pgGrid).ChangedRow = pgRow
+    __UI_StateHasChanged = _FALSE
+    __UI_ValueChanged __UI_PropertyGrids(pgGrid).FrameID
+END SUB
+
+''' @brief Makes a textbox row's text its value and tells the program, if the text was edited.
+SUB __UI_PGCommit (pgRow AS LONG)
+    DIM pgID AS LONG, pgText AS STRING
+    pgID = __UI_PropertyGridRows(pgRow).ControlID
+    IF Text(pgID) <> __UI_PropertyGridSeen(pgRow) THEN __UI_PropertyGridRows(pgRow).Dirty = _TRUE
+    IF NOT __UI_PropertyGridRows(pgRow).Dirty THEN EXIT SUB
+    __UI_PropertyGridRows(pgRow).Dirty = _FALSE
+
+    pgText = Text(pgID)
+    IF __UI_PropertyGridRows(pgRow).Owned THEN
+        SELECT CASE __UI_PropertyGridRows(pgRow).Kind
+            CASE __UI_PropertyGrid_Integer: pgText = _TRIM$(STR$(_ROUND(VAL(pgText))))
+            CASE __UI_PropertyGrid_Float: pgText = _TRIM$(STR$(VAL(pgText)))
+        END SELECT
+        Text(pgID) = pgText
+    END IF
+    __UI_PropertyGridSeen(pgRow) = pgText
+    IF pgText = __UI_PropertyGridValues(pgRow) THEN EXIT SUB
+
+    __UI_PropertyGridValues(pgRow) = pgText
+    __UI_PropertyGridRows(pgRow).CommitTime = TIMER
+    __UI_PGFire pgRow
+    'The program may have changed the text (e.g. to show it the way it's stored)
+    __UI_PropertyGridSeen(pgRow) = Text(pgID)
+    IF __UI_Focus = pgID THEN __UI_PGSelectAll pgID
+END SUB
+
+''' @brief Stacks a grid's shown rows, hides the others, and scrolls (by pixels) when they don't all fit.
+''' Rows scrolled out of view are still reachable with Tab: a row that gets focus is scrolled into view.
+SUB __UI_PGLayout (pgGrid AS LONG)
+    DIM pgRow AS LONG, pgAtt AS LONG, pgI AS LONG, pgCount AS LONG
+    DIM pgTop AS LONG, pgY AS INTEGER, pgAcc AS LONG, pgViewHeight AS LONG, pgTotal AS LONG
+    DIM frameID AS LONG, pgEditLeft AS INTEGER, pgEditWidth AS INTEGER, pgCtrl AS LONG, pgLabel AS LONG
+    DIM pgPrevScroll AS LONG, pgScrolls AS _BYTE, pgRightLimit AS INTEGER
+
+    frameID = __UI_PropertyGrids(pgGrid).FrameID
+    REDIM pgStackRow(1 TO __UI_TotalPropertyGridRows + 1) AS LONG, pgStepHeight(1 TO __UI_TotalPropertyGridRows + 1) AS LONG
+
+    'Shown rows, and the room each takes
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).Grid <> pgGrid THEN _CONTINUE
+        pgCtrl = __UI_PropertyGridRows(pgRow).ControlID
+        pgLabel = __UI_PropertyGridRows(pgRow).LabelID
+
+        IF pgCtrl > 0 THEN Control(pgCtrl).Hidden = NOT __UI_PropertyGridRows(pgRow).Shown
+        IF pgLabel > 0 THEN Control(pgLabel).Hidden = NOT __UI_PropertyGridRows(pgRow).Shown
+        FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+            IF __UI_PropertyGridAttachedRow(pgAtt) = pgRow THEN Control(__UI_PropertyGridAttachedID(pgAtt)).Hidden = NOT __UI_PropertyGridRows(pgRow).Shown
+        NEXT
+
+        IF __UI_PropertyGridRows(pgRow).Shown _ANDALSO NOT __UI_PropertyGridRows(pgRow).Floating THEN
+            pgCount = pgCount + 1
+            pgStackRow(pgCount) = pgRow
+            pgStepHeight(pgCount) = __UI_PropertyGrids(pgGrid).RowSpacing
+            IF pgCtrl > 0 THEN
+                'A row taller than the spacing takes the room it needs
+                IF Control(pgCtrl).Height - 1 > pgStepHeight(pgCount) THEN pgStepHeight(pgCount) = Control(pgCtrl).Height - 1
+            END IF
+        END IF
+    NEXT
+
+    'How far the rows can scroll: until the last one shows at the bottom
+    pgViewHeight = Control(frameID).Height - __UI_PropertyGrids(pgGrid).FirstTop - 4
+    FOR pgI = 1 TO pgCount
+        pgTotal = pgTotal + pgStepHeight(pgI)
+    NEXT
+    __UI_PropertyGrids(pgGrid).ViewHeight = pgViewHeight
+    __UI_PropertyGrids(pgGrid).MaxScrollY = pgTotal - pgViewHeight
+    IF __UI_PropertyGrids(pgGrid).MaxScrollY < 0 THEN __UI_PropertyGrids(pgGrid).MaxScrollY = 0
+    pgScrolls = __UI_PropertyGrids(pgGrid).MaxScrollY > 0
+
+    pgPrevScroll = __UI_PropertyGrids(pgGrid).ScrollY
+    IF __UI_PropertyGrids(pgGrid).EnsureRow > 0 THEN
+        'Scroll just enough for the whole row to show
+        pgAcc = 0
+        FOR pgI = 1 TO pgCount
+            IF pgStackRow(pgI) = __UI_PropertyGrids(pgGrid).EnsureRow THEN EXIT FOR
+            pgAcc = pgAcc + pgStepHeight(pgI)
+        NEXT
+        IF pgI <= pgCount THEN
+            IF pgAcc < __UI_PropertyGrids(pgGrid).ScrollY THEN
+                __UI_PropertyGrids(pgGrid).ScrollY = pgAcc
+            ELSEIF pgAcc + pgStepHeight(pgI) > __UI_PropertyGrids(pgGrid).ScrollY + pgViewHeight THEN
+                __UI_PropertyGrids(pgGrid).ScrollY = pgAcc + pgStepHeight(pgI) - pgViewHeight
+            END IF
+        END IF
+        __UI_PropertyGrids(pgGrid).EnsureRow = 0
+    END IF
+    IF __UI_PropertyGrids(pgGrid).ScrollY > __UI_PropertyGrids(pgGrid).MaxScrollY THEN __UI_PropertyGrids(pgGrid).ScrollY = __UI_PropertyGrids(pgGrid).MaxScrollY
+    IF __UI_PropertyGrids(pgGrid).ScrollY < 0 THEN __UI_PropertyGrids(pgGrid).ScrollY = 0
+    IF __UI_PropertyGrids(pgGrid).ScrollY <> pgPrevScroll THEN Control(frameID).Redraw = _TRUE
+
+    'Widths: rows end before the scrollbar when there is one
+    __UI_PropertyGrids(pgGrid).SbLeft = Control(frameID).Width - __UI_ScrollbarWidth - 2
+    IF pgScrolls THEN pgRightLimit = __UI_PropertyGrids(pgGrid).SbLeft - 3 ELSE pgRightLimit = Control(frameID).Width - 7
+    pgEditLeft = __UI_PropertyGrids(pgGrid).RowLeft + __UI_PropertyGrids(pgGrid).LabelWidth - 1
+    pgEditWidth = pgRightLimit - pgEditLeft
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).Grid <> pgGrid THEN _CONTINUE
+        pgCtrl = __UI_PropertyGridRows(pgRow).ControlID
+        pgLabel = __UI_PropertyGridRows(pgRow).LabelID
+        IF pgCtrl = 0 THEN _CONTINUE
+        IF __UI_PropertyGridRows(pgRow).Owned THEN
+            IF pgLabel > 0 THEN
+                Control(pgLabel).Left = __UI_PropertyGrids(pgGrid).RowLeft
+                Control(pgLabel).Width = __UI_PropertyGrids(pgGrid).LabelWidth
+                Control(pgCtrl).Left = pgEditLeft
+                Control(pgCtrl).Width = pgEditWidth
+            ELSE
+                Control(pgCtrl).Left = __UI_PropertyGrids(pgGrid).RowLeft
+                Control(pgCtrl).Width = pgRightLimit - __UI_PropertyGrids(pgGrid).RowLeft
+            END IF
+        ELSE
+            __UI_PGMakeRoom pgRow, pgScrolls _ANDALSO NOT __UI_PropertyGridRows(pgRow).Floating, pgRightLimit
+        END IF
+    NEXT
+
+    'Rows above or below the view are out of the frame's area: hidden by it, and out of the mouse's reach
+    pgTop = __UI_PropertyGrids(pgGrid).FirstTop - __UI_PropertyGrids(pgGrid).ScrollY
+    FOR pgI = 1 TO pgCount
+        pgRow = pgStackRow(pgI)
+        pgY = pgTop
+        pgTop = pgTop + pgStepHeight(pgI)
+        IF __UI_PropertyGridRows(pgRow).ControlID > 0 THEN Control(__UI_PropertyGridRows(pgRow).ControlID).Top = pgY
+        IF __UI_PropertyGridRows(pgRow).LabelID > 0 THEN Control(__UI_PropertyGridRows(pgRow).LabelID).Top = pgY
+        FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+            IF __UI_PropertyGridAttachedRow(pgAtt) = pgRow THEN Control(__UI_PropertyGridAttachedID(pgAtt)).Top = pgY
+        NEXT
+    NEXT
+    __UI_PropertyGrids(pgGrid).NextTop = pgTop
+
+    'Scrollbar parts, measured the way __UI_DrawVScrollBar draws them
+    __UI_PropertyGrids(pgGrid).SbTop = __UI_PropertyGrids(pgGrid).FirstTop - 1
+    __UI_PropertyGrids(pgGrid).SbHeight = Control(frameID).Height - __UI_PropertyGrids(pgGrid).SbTop - 3
+    __UI_PropertyGrids(pgGrid).TrackTop = __UI_PropertyGrids(pgGrid).SbTop + __UI_ScrollbarButtonHeight
+    __UI_PropertyGrids(pgGrid).TrackHeight = __UI_PropertyGrids(pgGrid).SbHeight - __UI_ScrollbarButtonHeight * 2 - 1
+    IF pgScrolls THEN
+        __UI_PropertyGrids(pgGrid).ThumbHeight = __UI_PropertyGrids(pgGrid).TrackHeight * pgViewHeight / pgTotal
+        IF __UI_PropertyGrids(pgGrid).ThumbHeight < 22 THEN __UI_PropertyGrids(pgGrid).ThumbHeight = 22
+        IF __UI_PropertyGrids(pgGrid).ThumbHeight > __UI_PropertyGrids(pgGrid).TrackHeight THEN __UI_PropertyGrids(pgGrid).ThumbHeight = __UI_PropertyGrids(pgGrid).TrackHeight
+        __UI_PropertyGrids(pgGrid).ThumbTop = __UI_PropertyGrids(pgGrid).TrackTop + (__UI_PropertyGrids(pgGrid).TrackHeight - __UI_PropertyGrids(pgGrid).ThumbHeight) * (__UI_PropertyGrids(pgGrid).ScrollY / __UI_PropertyGrids(pgGrid).MaxScrollY)
+    END IF
+END SUB
+
+''' @brief Narrows an adopted row (and slides the controls attached to its right) so it ends before the scrollbar,
+''' or puts it back as it was when there is no scrollbar.
+SUB __UI_PGMakeRoom (pgRow AS LONG, pgNeedRoom AS _BYTE, pgRightLimit AS INTEGER)
+    DIM pgCtrl AS LONG, pgAtt AS LONG, pgID AS LONG, pgRight AS INTEGER, pgOver AS INTEGER
+
+    pgCtrl = __UI_PropertyGridRows(pgRow).ControlID
+
+    'Undo the last change first, so it's always measured from how the program left the controls
+    IF __UI_PropertyGridRows(pgRow).ShrunkBy THEN
+        Control(pgCtrl).Width = Control(pgCtrl).Width + __UI_PropertyGridRows(pgRow).ShrunkBy
+        Control(pgCtrl).Redraw = _TRUE
+        __UI_PropertyGridRows(pgRow).ShrunkBy = 0
+    END IF
+    FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+        IF __UI_PropertyGridAttachedRow(pgAtt) = pgRow _ANDALSO __UI_PropertyGridAttachedShift(pgAtt) THEN
+            pgID = __UI_PropertyGridAttachedID(pgAtt)
+            Control(pgID).Left = Control(pgID).Left + __UI_PropertyGridAttachedShift(pgAtt)
+            __UI_PropertyGridAttachedShift(pgAtt) = 0
+        END IF
+    NEXT
+    IF NOT pgNeedRoom THEN EXIT SUB
+
+    'How far the row (with what's attached to the right of its control) reaches past the limit
+    pgRight = Control(pgCtrl).Left + Control(pgCtrl).Width
+    FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+        IF __UI_PropertyGridAttachedRow(pgAtt) = pgRow THEN
+            pgID = __UI_PropertyGridAttachedID(pgAtt)
+            IF Control(pgID).Left >= Control(pgCtrl).Left _ANDALSO Control(pgID).Left + Control(pgID).Width > pgRight THEN pgRight = Control(pgID).Left + Control(pgID).Width
+        END IF
+    NEXT
+    pgOver = pgRight - pgRightLimit
+    IF pgOver > Control(pgCtrl).Width - 20 THEN pgOver = Control(pgCtrl).Width - 20
+    IF pgOver <= 0 THEN EXIT SUB
+
+    Control(pgCtrl).Width = Control(pgCtrl).Width - pgOver
+    Control(pgCtrl).Redraw = _TRUE
+    __UI_PropertyGridRows(pgRow).ShrunkBy = pgOver
+    FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+        IF __UI_PropertyGridAttachedRow(pgAtt) = pgRow THEN
+            pgID = __UI_PropertyGridAttachedID(pgAtt)
+            IF Control(pgID).Left > Control(pgCtrl).Left THEN
+                Control(pgID).Left = Control(pgID).Left - pgOver
+                __UI_PropertyGridAttachedShift(pgAtt) = pgOver
+            END IF
+        END IF
+    NEXT
+END SUB
+
+''' @brief Called by the mouse wheel handler: scrolls the grid under the mouse. Returns _TRUE if it did.
+FUNCTION __UI_PropertyGridWheel%% (hoverID AS LONG, pgWheel AS LONG)
+    DIM pgGrid AS LONG
+    IF __UI_TotalPropertyGrids = 0 _ORELSE hoverID <= 0 THEN EXIT FUNCTION
+    'A focused dropdown list under the mouse keeps using the wheel to change its value
+    IF Control(hoverID).Type = __UI_Type_DropdownList _ANDALSO hoverID = __UI_Focus THEN EXIT FUNCTION
+    pgGrid = __UI_PGFind(hoverID)
+    IF pgGrid = 0 THEN pgGrid = __UI_PGFind(PropertyGrid_GridOf(hoverID))
+    IF pgGrid = 0 THEN EXIT FUNCTION
+    IF __UI_PropertyGrids(pgGrid).MaxScrollY = 0 THEN EXIT FUNCTION
+    __UI_PropertyGrids(pgGrid).ScrollY = __UI_PropertyGrids(pgGrid).ScrollY + pgWheel * __UI_PropertyGrids(pgGrid).RowSpacing
+    __UI_PGLayout pgGrid
+    __UI_PropertyGridWheel = _TRUE
+END FUNCTION
+
+''' @brief Scrolls for a click on a part of the scrollbar: a row for the arrow buttons, a page for the track.
+SUB __UI_PGScrollStep (pgGrid AS LONG, pgPart AS _BYTE)
+    DIM pgRowHeight AS LONG, pgPage AS LONG
+    pgRowHeight = __UI_PropertyGrids(pgGrid).RowSpacing
+    pgPage = __UI_PropertyGrids(pgGrid).ViewHeight - pgRowHeight 'a page keeps one row in view
+    IF pgPage < pgRowHeight THEN pgPage = pgRowHeight
+    SELECT CASE pgPart
+        CASE 1: __UI_PropertyGrids(pgGrid).ScrollY = __UI_PropertyGrids(pgGrid).ScrollY - pgRowHeight
+        CASE 2: __UI_PropertyGrids(pgGrid).ScrollY = __UI_PropertyGrids(pgGrid).ScrollY + pgRowHeight
+        CASE 4: __UI_PropertyGrids(pgGrid).ScrollY = __UI_PropertyGrids(pgGrid).ScrollY - pgPage
+        CASE 5: __UI_PropertyGrids(pgGrid).ScrollY = __UI_PropertyGrids(pgGrid).ScrollY + pgPage
+    END SELECT
+END SUB
+
+''' @brief Which part of a grid's scrollbar is at a point given in the frame's coordinates:
+''' 0 = none, 1 = up button, 2 = down button, 3 = thumb, 4 = track above it, 5 = track below it.
+FUNCTION __UI_PGScrollbarPart%% (pgGrid AS LONG, pgX AS LONG, pgY AS LONG)
+    IF __UI_PropertyGrids(pgGrid).MaxScrollY = 0 THEN EXIT FUNCTION
+    IF pgX < __UI_PropertyGrids(pgGrid).SbLeft _ORELSE pgX >= __UI_PropertyGrids(pgGrid).SbLeft + __UI_ScrollbarWidth THEN EXIT FUNCTION
+    IF pgY < __UI_PropertyGrids(pgGrid).SbTop _ORELSE pgY >= __UI_PropertyGrids(pgGrid).SbTop + __UI_PropertyGrids(pgGrid).SbHeight THEN EXIT FUNCTION
+    IF pgY < __UI_PropertyGrids(pgGrid).TrackTop THEN
+        __UI_PGScrollbarPart = 1
+    ELSEIF pgY >= __UI_PropertyGrids(pgGrid).SbTop + __UI_PropertyGrids(pgGrid).SbHeight - __UI_ScrollbarButtonHeight - 1 THEN
+        __UI_PGScrollbarPart = 2
+    ELSEIF pgY >= __UI_PropertyGrids(pgGrid).ThumbTop _ANDALSO pgY < __UI_PropertyGrids(pgGrid).ThumbTop + __UI_PropertyGrids(pgGrid).ThumbHeight THEN
+        __UI_PGScrollbarPart = 3
+    ELSEIF pgY < __UI_PropertyGrids(pgGrid).ThumbTop THEN
+        __UI_PGScrollbarPart = 4
+    ELSE
+        __UI_PGScrollbarPart = 5
+    END IF
+END FUNCTION
+
+''' @brief Called by the event dispatcher as soon as the mouse button goes down (so a press that turns
+''' into a drag right away isn't missed): starts scrolling if it went down on a grid's scrollbar.
+SUB __UI_PropertyGridMouseDown
+    DIM pgGrid AS LONG, frameID AS LONG, pgPart AS _BYTE, pgMouseY AS LONG
+
+    IF __UI_TotalPropertyGrids = 0 _ORELSE __UI_MouseDownOnID <= 0 THEN EXIT SUB
+    pgGrid = __UI_PGFind(__UI_MouseDownOnID)
+    IF pgGrid = 0 THEN EXIT SUB
+    frameID = __UI_PropertyGrids(pgGrid).FrameID
+    pgMouseY = __UI_MouseTop - Control(frameID).Top
+    pgPart = __UI_PGScrollbarPart(pgGrid, __UI_MouseLeft - Control(frameID).Left, pgMouseY)
+    IF pgPart = 0 THEN EXIT SUB
+
+    __UI_PropertyGrids(pgGrid).PressPart = pgPart
+    __UI_PropertyGrids(pgGrid).HoverPart = pgPart
+    IF pgPart = 3 THEN
+        __UI_PropertyGrids(pgGrid).Dragging = _TRUE
+        __UI_PropertyGrids(pgGrid).GrabOffset = pgMouseY - __UI_PropertyGrids(pgGrid).ThumbTop
+    ELSE
+        __UI_PGScrollStep pgGrid, pgPart
+        __UI_PGLayout pgGrid
+        __UI_PropertyGrids(pgGrid).RepeatTime = TIMER + .35
+    END IF
+    Control(frameID).Redraw = _TRUE
+END SUB
+
+''' @brief Called on every screen update: the thumb follows the mouse from where it was grabbed, and arrow
+''' buttons and the track repeat while held, like a list box's. Presses start in __UI_PropertyGridMouseDown.
+SUB __UI_PGScrollbarMouse (pgGrid AS LONG)
+    DIM frameID AS LONG, pgMouseY AS LONG, pgRoom AS LONG, pgPart AS _BYTE
+    DIM pgPrevHover AS _BYTE, pgPrevPress AS _BYTE
+
+    frameID = __UI_PropertyGrids(pgGrid).FrameID
+    pgPrevHover = __UI_PropertyGrids(pgGrid).HoverPart
+    pgPrevPress = __UI_PropertyGrids(pgGrid).PressPart
+
+    IF __UI_PropertyGrids(pgGrid).MaxScrollY = 0 _ORELSE NOT __UI_MouseIsDown THEN
+        __UI_PropertyGrids(pgGrid).PressPart = 0
+        __UI_PropertyGrids(pgGrid).Dragging = _FALSE
+    END IF
+
+    'The part under the mouse (only when nothing else is, unless a part is being held)
+    pgMouseY = __UI_MouseTop - Control(frameID).Top
+    IF __UI_HoveringID = frameID _ORELSE __UI_PropertyGrids(pgGrid).PressPart > 0 THEN
+        pgPart = __UI_PGScrollbarPart(pgGrid, __UI_MouseLeft - Control(frameID).Left, pgMouseY)
+    END IF
+    __UI_PropertyGrids(pgGrid).HoverPart = pgPart
+
+    IF __UI_PropertyGrids(pgGrid).Dragging THEN
+        pgRoom = __UI_PropertyGrids(pgGrid).TrackHeight - __UI_PropertyGrids(pgGrid).ThumbHeight
+        IF pgRoom > 0 THEN
+            'The thumb follows the mouse pixel by pixel
+            __UI_PropertyGrids(pgGrid).ScrollY = (pgMouseY - __UI_PropertyGrids(pgGrid).GrabOffset - __UI_PropertyGrids(pgGrid).TrackTop) * __UI_PropertyGrids(pgGrid).MaxScrollY / pgRoom
+        END IF
+        'Keep the thumb looking grabbed wherever the mouse goes
+        __UI_PropertyGrids(pgGrid).HoverPart = 3
+    ELSEIF __UI_PropertyGrids(pgGrid).PressPart > 0 _ANDALSO pgPart = __UI_PropertyGrids(pgGrid).PressPart _ANDALSO TIMER >= __UI_PropertyGrids(pgGrid).RepeatTime THEN
+        'Held down: keep scrolling (the track stops once the thumb reaches the mouse)
+        __UI_PGScrollStep pgGrid, pgPart
+        __UI_PropertyGrids(pgGrid).RepeatTime = TIMER + .05
+    END IF
+
+    IF pgPrevHover <> __UI_PropertyGrids(pgGrid).HoverPart _ORELSE pgPrevPress <> __UI_PropertyGrids(pgGrid).PressPart THEN Control(frameID).Redraw = _TRUE
+END SUB
+
+''' @brief Called by __UI_DrawContainer before a frame is drawn: puts the scrollbar on the frame's canvas,
+''' drawn by __UI_DrawVScrollBar like a list box's.
+SUB __UI_PropertyGridDrawScrollbar (frameID AS LONG)
+    DIM pgGrid AS LONG, pgPrevDest AS LONG, pgBar AS __UI_ControlTYPE, pgState AS _BYTE
+
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid = 0 THEN EXIT SUB
+    IF __UI_PropertyGrids(pgGrid).MaxScrollY = 0 _ORELSE Control(frameID).Canvas = 0 _ORELSE Control(frameID).Font = 0 THEN EXIT SUB
+
+    pgBar = Control(frameID)
+    pgBar.Left = __UI_PropertyGrids(pgGrid).SbLeft
+    pgBar.Top = __UI_PropertyGrids(pgGrid).SbTop
+    pgBar.Width = __UI_ScrollbarWidth
+    pgBar.Height = __UI_PropertyGrids(pgGrid).SbHeight
+    pgBar.Min = 0
+    pgBar.Max = __UI_PropertyGrids(pgGrid).MaxScrollY
+    pgBar.Value = __UI_PropertyGrids(pgGrid).ScrollY
+    pgBar.LastVisibleItem = __UI_PropertyGrids(pgGrid).ViewHeight
+    pgBar.HoveringVScrollbarButton = __UI_PropertyGrids(pgGrid).HoverPart
+    pgState = 1
+    IF Control(frameID).Disabled THEN pgState = 4
+
+    pgPrevDest = _DEST
+    _DEST Control(frameID).Canvas
+
+    'Rows scrolled partly out of view are cut off at the edges of the area rows show in
+    _DONTBLEND
+    LINE (0, 0)-(Control(frameID).Width - 1, __UI_PropertyGrids(pgGrid).FirstTop - 1), Control(frameID).BackColor, BF
+    LINE (0, __UI_PropertyGrids(pgGrid).FirstTop + __UI_PropertyGrids(pgGrid).ViewHeight)-(Control(frameID).Width - 1, Control(frameID).Height - 1), Control(frameID).BackColor, BF
+    _BLEND
+
+    __UI_PGThumbDragging = __UI_PropertyGrids(pgGrid).Dragging
+    __UI_DrawVScrollBar pgBar, pgState
+    __UI_PGThumbDragging = _FALSE
+    _DEST pgPrevDest
+END SUB
+
+''' @brief Called by __UI_DestroyControl: a destroyed frame takes its grid with it, a destroyed control its row.
+SUB __UI_PropertyGridForget (pgID AS LONG)
+    DIM pgGrid AS LONG, pgRow AS LONG, pgAtt AS LONG
+
+    IF pgID <= 0 _ORELSE __UI_TotalPropertyGrids = 0 THEN EXIT SUB
+
+    pgGrid = __UI_PGFind(pgID)
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).Grid = 0 THEN _CONTINUE
+        IF __UI_PropertyGridRows(pgRow).Grid = pgGrid _ORELSE __UI_PropertyGridRows(pgRow).ControlID = pgID THEN
+            'Rows aren't moved around (their numbers are kept elsewhere), so a forgotten row is just left empty
+            IF __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).FocusRow = pgRow THEN __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).FocusRow = 0
+            IF __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).ChangedRow = pgRow THEN __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).ChangedRow = 0
+            FOR pgAtt = __UI_TotalPropertyGridAttached TO 1 STEP -1
+                IF __UI_PropertyGridAttachedRow(pgAtt) = pgRow THEN PropertyGrid_DetachControl __UI_PropertyGridAttachedID(pgAtt)
+            NEXT
+            __UI_PropertyGridRows(pgRow).Grid = 0
+            __UI_PropertyGridRows(pgRow).ControlID = 0
+            __UI_PropertyGridRows(pgRow).LabelID = 0
+            __UI_PropertyGridKeys(pgRow) = _STR_EMPTY
+        ELSEIF __UI_PropertyGridRows(pgRow).LabelID = pgID THEN
+            __UI_PropertyGridRows(pgRow).LabelID = 0
+        END IF
+    NEXT
+    IF pgGrid > 0 THEN __UI_PropertyGrids(pgGrid).FrameID = 0
+    PropertyGrid_DetachControl pgID
+END SUB
+
+''' @brief Called by __UI_UpdateDisplay (after __UI_BeforeUpdateDisplay): keeps every grid's rows up to date.
+SUB __UI_PropertyGridsUpdate
+    CONST __UI_PG_CommitEchoDelay = 0.1 ' a just-committed row isn't shown as rejected before this many seconds
+    DIM pgGrid AS LONG, pgRow AS LONG, pgID AS LONG, pgFocusRow AS LONG, pgPrevRow AS LONG
+
+    IF __UI_TotalPropertyGrids = 0 THEN EXIT SUB
+
+    FOR pgGrid = 1 TO __UI_TotalPropertyGrids
+        IF __UI_PropertyGrids(pgGrid).FrameID = 0 THEN _CONTINUE
+
+        'Commit a row whose textbox just lost focus; take note of one that just got it
+        pgFocusRow = 0
+        IF __UI_Focus > 0 THEN
+            FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+                IF __UI_PropertyGridRows(pgRow).Grid = pgGrid _ANDALSO __UI_PropertyGridRows(pgRow).ControlID = __UI_Focus _ANDALSO __UI_PGIsTextRow(pgRow) THEN pgFocusRow = pgRow: EXIT FOR
+            NEXT
+        END IF
+        pgPrevRow = __UI_PropertyGrids(pgGrid).FocusRow
+        IF pgPrevRow <> pgFocusRow THEN
+            __UI_PropertyGrids(pgGrid).FocusRow = pgFocusRow
+            IF pgPrevRow > 0 THEN __UI_PGCommit pgPrevRow
+            IF pgFocusRow > 0 THEN
+                pgID = __UI_PropertyGridRows(pgFocusRow).ControlID
+                __UI_PropertyGridSeen(pgFocusRow) = Text(pgID)
+                __UI_PropertyGridRows(pgFocusRow).Dirty = Text(pgID) <> __UI_PropertyGridValues(pgFocusRow)
+            END IF
+        END IF
+
+        FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+            IF __UI_PropertyGridRows(pgRow).Grid <> pgGrid THEN _CONTINUE
+            pgID = __UI_PropertyGridRows(pgRow).ControlID
+            IF pgID = 0 THEN _CONTINUE
+
+            SELECT CASE __UI_PropertyGridRows(pgRow).Kind
+                CASE __UI_PropertyGrid_Text, __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
+                    IF pgID <> __UI_Focus THEN
+                        IF Text(pgID) <> __UI_PropertyGridValues(pgRow) THEN Text(pgID) = __UI_PropertyGridValues(pgRow)
+                        Control(pgID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 5)
+                        Control(pgID).BorderSize = 1
+                        IF NOT __UI_PropertyGridRows(pgRow).Floating THEN Control(pgID).Height = 23
+                    ELSE
+                        IF Text(pgID) <> __UI_PropertyGridSeen(pgRow) THEN
+                            __UI_PropertyGridSeen(pgRow) = Text(pgID)
+                            __UI_PropertyGridRows(pgRow).Dirty = _TRUE
+                        END IF
+                        Control(pgID).BorderColor = __UI_DefaultColor(__UI_Type_TextBox, 1)
+                        Control(pgID).BorderSize = 2
+                        IF NOT __UI_PropertyGridRows(pgRow).Floating THEN Control(pgID).Height = 22
+                        IF __UI_PGFullySelected(pgID) THEN
+                            IF Text(pgID) = __UI_PropertyGridValues(pgRow) THEN
+                                Control(pgID).BorderColor = _RGB32(28, 150, 50)
+                            ELSEIF NOT __UI_PropertyGridRows(pgRow).Dirty _ANDALSO TIMER - __UI_PropertyGridRows(pgRow).CommitTime >= __UI_PG_CommitEchoDelay THEN
+                                Control(pgID).BorderColor = _RGB32(233, 44, 0)
+                            END IF
+                        END IF
+                    END IF
+
+                CASE __UI_PropertyGrid_Choice, __UI_PropertyGrid_Toggle
+                    IF __UI_PropertyGridRows(pgRow).Owned _ANDALSO Control(pgID).Value <> __UI_PropertyGridRows(pgRow).LastValue THEN
+                        __UI_PropertyGridRows(pgRow).LastValue = Control(pgID).Value
+                        __UI_PropertyGridValues(pgRow) = _TRIM$(STR$(Control(pgID).Value))
+                        __UI_PGFire pgRow
+                    END IF
+            END SELECT
+        NEXT
+
+        'A row that just got focus (e.g. with Tab) is scrolled into view
+        IF __UI_Focus <> __UI_PropertyGrids(pgGrid).LastFocusID THEN
+            __UI_PropertyGrids(pgGrid).LastFocusID = __UI_Focus
+            IF __UI_Focus > 0 THEN
+                FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+                    IF __UI_PropertyGridRows(pgRow).Grid = pgGrid _ANDALSO __UI_PropertyGridRows(pgRow).ControlID = __UI_Focus THEN __UI_PropertyGrids(pgGrid).EnsureRow = pgRow: EXIT FOR
+                NEXT
+            END IF
+        END IF
+
+        __UI_PGScrollbarMouse pgGrid
+        __UI_PGLayout pgGrid
+
+        'However it got scrolled (thumb, wheel, code), the frame has to draw itself again
+        IF __UI_PropertyGrids(pgGrid).ScrollY <> __UI_PropertyGrids(pgGrid).DrawnScrollY THEN
+            __UI_PropertyGrids(pgGrid).DrawnScrollY = __UI_PropertyGrids(pgGrid).ScrollY
+            Control(__UI_PropertyGrids(pgGrid).FrameID).Redraw = _TRUE
+        END IF
+    NEXT
+END SUB
+
+''' @brief Called by the event dispatcher before __UI_KeyPress: Enter commits a textbox row, Esc puts its value back.
+SUB __UI_PropertyGridKey
+    DIM pgRow AS LONG, pgID AS LONG
+
+    IF __UI_TotalPropertyGrids = 0 THEN EXIT SUB
+    IF __UI_KeyHit <> 13 _ANDALSO __UI_KeyHit <> 27 THEN EXIT SUB
+
+    pgID = __UI_Focus
+    IF Control(pgID).Type <> __UI_Type_TextBox _ORELSE Control(pgID).Multiline THEN EXIT SUB
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).ControlID = pgID _ANDALSO __UI_PGIsTextRow(pgRow) THEN EXIT FOR
+    NEXT
+    IF pgRow > __UI_TotalPropertyGridRows THEN EXIT SUB
+
+    IF __UI_KeyHit = 13 THEN
+        __UI_PGCommit pgRow
+    ELSE
+        Text(pgID) = __UI_PropertyGridValues(pgRow)
+        __UI_PropertyGridSeen(pgRow) = Text(pgID)
+        __UI_PropertyGridRows(pgRow).Dirty = _FALSE
+    END IF
+    __UI_PGSelectAll pgID
+END SUB
+
+'-----------------------------------------------------------------------------------------------------------------------
+' Rows written in the designer
+'
+' A frame whose Text holds row definitions (one per line) becomes a grid when the program starts:
+'   key|kind|label|extra
+' kind is text, integer, float, choice, toggle or button (text if left out); extra is a choice's items
+' separated by commas, or a button's caption. A line with just a label makes a text row keyed by that label.
+'-----------------------------------------------------------------------------------------------------------------------
+
+''' @brief Splits one row definition. Returns _FALSE for a blank line.
+FUNCTION __UI_PGParseLine%% (pgLine AS STRING, pgKey AS STRING, pgKind AS _BYTE, pgLabel AS STRING, pgExtra AS STRING)
+    DIM pgField(1 TO 4) AS STRING, pgI AS LONG, pgPos AS LONG, pgStart AS LONG
+
+    IF LEN(_TRIM$(pgLine)) = 0 THEN EXIT FUNCTION
+    pgStart = 1
+    FOR pgI = 1 TO 4
+        pgPos = INSTR(pgStart, pgLine, "|")
+        'The last field takes the rest of the line
+        IF pgPos = 0 _ORELSE pgI = 4 THEN pgField(pgI) = _TRIM$(MID$(pgLine, pgStart)): EXIT FOR
+        pgField(pgI) = _TRIM$(MID$(pgLine, pgStart, pgPos - pgStart))
+        pgStart = pgPos + 1
+    NEXT
+
+    pgKey = pgField(1)
+    pgLabel = pgField(3)
+    pgExtra = pgField(4)
+    IF pgI = 1 THEN pgLabel = pgKey
+    IF LEN(pgLabel) = 0 THEN pgLabel = pgKey
+    SELECT CASE LCASE$(pgField(2))
+        CASE "integer", "int": pgKind = __UI_PropertyGrid_Integer
+        CASE "float", "number": pgKind = __UI_PropertyGrid_Float
+        CASE "choice", "list": pgKind = __UI_PropertyGrid_Choice
+        CASE "toggle", "check", "checkbox": pgKind = __UI_PropertyGrid_Toggle
+        CASE "button": pgKind = __UI_PropertyGrid_Button
+        CASE ELSE: pgKind = __UI_PropertyGrid_Text
+    END SELECT
+    __UI_PGParseLine = _TRUE
+END FUNCTION
+
+''' @brief A frame's row definitions with line breaks as CHR$(10), whether they came from a .frm file (\10;) or code (\n).
+FUNCTION __UI_PGDefinitions$ (frameID AS LONG)
+    DIM pgText AS STRING
+    pgText = RestoreCHR$(Text(frameID))
+    pgText = Replace$(pgText, "\n", CHR$(10), _FALSE, 0)
+    __UI_PGDefinitions = Replace$(pgText, CHR$(13), _STR_EMPTY, _FALSE, 0)
+END FUNCTION
+
+''' @brief Called by __UI_Init (not in the designer): builds the rows of frames that have row definitions.
+SUB __UI_PropertyGridsFromForm
+    DIM pgID AS LONG, pgText AS STRING, pgLine AS STRING, pgPos AS LONG
+    DIM pgKey AS STRING, pgKind AS _BYTE, pgLabel AS STRING, pgExtra AS STRING
+
+    IF __UI_DesignMode THEN EXIT SUB
+    FOR pgID = 1 TO UBOUND(Control)
+        IF Control(pgID).ID = 0 _ORELSE Control(pgID).Type <> __UI_Type_Frame _ORELSE LEN(Text(pgID)) = 0 THEN _CONTINUE
+        IF __UI_PGFind(pgID) > 0 THEN _CONTINUE 'built already (or set up by the program)
+        pgText = __UI_PGDefinitions(pgID) + CHR$(10)
+        DO
+            pgPos = INSTR(pgText, CHR$(10))
+            IF pgPos = 0 THEN EXIT DO
+            pgLine = LEFT$(pgText, pgPos - 1)
+            pgText = MID$(pgText, pgPos + 1)
+            IF __UI_PGParseLine(pgLine, pgKey, pgKind, pgLabel, pgExtra) THEN
+                SELECT CASE pgKind
+                    CASE __UI_PropertyGrid_Integer: PropertyGrid_AddInteger pgID, pgKey, pgLabel
+                    CASE __UI_PropertyGrid_Float: PropertyGrid_AddFloat pgID, pgKey, pgLabel
+                    CASE __UI_PropertyGrid_Choice: PropertyGrid_AddChoice pgID, pgKey, pgLabel, Replace$(pgExtra, ",", "|", _FALSE, 0)
+                    CASE __UI_PropertyGrid_Toggle: PropertyGrid_AddToggle pgID, pgKey, pgLabel
+                    CASE __UI_PropertyGrid_Button
+                        IF LEN(pgExtra) = 0 THEN pgExtra = pgLabel
+                        PropertyGrid_AddButton pgID, pgKey, pgLabel, pgExtra
+                    CASE ELSE: PropertyGrid_AddText pgID, pgKey, pgLabel
+                END SELECT
+            END IF
+        LOOP
+    NEXT
+END SUB
+
+''' @brief How many rows a frame's row definitions make (blank lines don't count).
+FUNCTION __UI_PGMockRowCount& (frameID AS LONG)
+    DIM pgText AS STRING, pgPos AS LONG, pgCount AS LONG
+    DIM pgKey AS STRING, pgKind AS _BYTE, pgLabel AS STRING, pgExtra AS STRING
+    pgText = __UI_PGDefinitions(frameID) + CHR$(10)
+    DO
+        pgPos = INSTR(pgText, CHR$(10))
+        IF pgPos = 0 THEN EXIT DO
+        IF __UI_PGParseLine(LEFT$(pgText, pgPos - 1), pgKey, pgKind, pgLabel, pgExtra) THEN pgCount = pgCount + 1
+        pgText = MID$(pgText, pgPos + 1)
+    LOOP
+    __UI_PGMockRowCount = pgCount
+END FUNCTION
+
+''' @brief How far a frame's rows are scrolled in the designer, kept within what its rows need (0 when they fit).
+FUNCTION __UI_PGMockScroll& (frameID AS LONG)
+    DIM pgMax AS LONG
+    IF frameID > UBOUND(__UI_PGMockScrollY) THEN REDIM _PRESERVE __UI_PGMockScrollY(0 TO UBOUND(Control)) AS LONG
+    pgMax = __UI_PGMockRowCount(frameID) * __UI_PG_MockSpacing - (Control(frameID).Height - __UI_PG_MockFirstTop - 4)
+    IF pgMax < 0 THEN pgMax = 0
+    IF __UI_PGMockScrollY(frameID) > pgMax THEN __UI_PGMockScrollY(frameID) = pgMax
+    IF __UI_PGMockScrollY(frameID) < 0 THEN __UI_PGMockScrollY(frameID) = 0
+    __UI_PGMockScroll = __UI_PGMockScrollY(frameID)
+END FUNCTION
+
+''' @brief Called by the mouse wheel handler in the designer: scrolls the rows of the frame under the mouse. Returns _TRUE if it did.
+FUNCTION __UI_PropertyGridMockWheel%% (hoverID AS LONG, pgWheel AS LONG)
+    DIM pgBefore AS LONG
+    IF hoverID <= 0 _ORELSE hoverID > UBOUND(Control) THEN EXIT FUNCTION
+    IF Control(hoverID).Type <> __UI_Type_Frame _ORELSE LEN(Text(hoverID)) = 0 THEN EXIT FUNCTION
+    pgBefore = __UI_PGMockScroll(hoverID)
+    __UI_PGMockScrollY(hoverID) = pgBefore + pgWheel * __UI_PG_MockSpacing
+    IF __UI_PGMockScroll(hoverID) = pgBefore THEN EXIT FUNCTION
+    Control(hoverID).Redraw = _TRUE
+    __UI_PropertyGridMockWheel = _TRUE
+END FUNCTION
+
+''' @brief Called by __UI_DrawContainer in the designer: draws a frame's row definitions as the rows will look,
+''' with a scrollbar (scrolled by the mouse wheel) when they don't fit, like the grid has when the program runs.
+SUB __UI_PropertyGridDrawMock (frameID AS LONG)
+    DIM pgText AS STRING, pgLine AS STRING, pgPos AS LONG, pgTop AS INTEGER, pgEditLeft AS INTEGER, pgRight AS INTEGER
+    DIM pgKey AS STRING, pgKind AS _BYTE, pgLabel AS STRING, pgExtra AS STRING
+    DIM pgPrevDest AS LONG, pgPrevFont AS LONG, pgTextTop AS INTEGER, pgX AS INTEGER, pgY AS INTEGER, pgColor AS _UNSIGNED LONG
+    DIM pgScroll AS LONG, pgMax AS LONG, pgViewHeight AS LONG, pgSbLeft AS INTEGER, pgBar AS __UI_ControlTYPE
+
+    IF Control(frameID).Type <> __UI_Type_Frame _ORELSE LEN(Text(frameID)) = 0 _ORELSE Control(frameID).Canvas = 0 THEN EXIT SUB
+
+    'Measured the way __UI_PGLayout does with the default layout
+    pgViewHeight = Control(frameID).Height - __UI_PG_MockFirstTop - 4
+    pgMax = __UI_PGMockRowCount(frameID) * __UI_PG_MockSpacing - pgViewHeight
+    IF pgMax < 0 THEN pgMax = 0
+    pgScroll = __UI_PGMockScroll(frameID)
+    pgSbLeft = Control(frameID).Width - __UI_ScrollbarWidth - 2
+
+    pgPrevDest = _DEST
+    pgPrevFont = _FONT
+    _DEST Control(frameID).Canvas
+    IF Control(frameID).Font THEN _FONT Control(frameID).Font
+    _PRINTMODE _KEEPBACKGROUND
+    pgTextTop = (__UI_PG_MockHeight - _UFONTHEIGHT) \ 2
+    pgEditLeft = 129
+    'Rows end before the scrollbar when there is one
+    IF pgMax > 0 THEN pgRight = pgSbLeft - 4 ELSE pgRight = Control(frameID).Width - 8
+    pgTop = __UI_PG_MockFirstTop - pgScroll
+
+    pgText = __UI_PGDefinitions(frameID) + CHR$(10)
+    DO
+        pgPos = INSTR(pgText, CHR$(10))
+        IF pgPos = 0 _ORELSE pgTop > Control(frameID).Height THEN EXIT DO
+        pgLine = LEFT$(pgText, pgPos - 1)
+        pgText = MID$(pgText, pgPos + 1)
+        IF NOT __UI_PGParseLine(pgLine, pgKey, pgKind, pgLabel, pgExtra) THEN _CONTINUE
+        'Rows scrolled above the frame aren't drawn
+        IF pgTop + __UI_PG_MockHeight <= 0 THEN pgTop = pgTop + __UI_PG_MockSpacing: _CONTINUE
+
+        IF pgKind = __UI_PropertyGrid_Toggle THEN
+            'Check box and caption across both columns
+            pgY = pgTop + (__UI_PG_MockHeight - 13) \ 2
+            LINE (10, pgY)-(22, pgY + 12), __UI_DefaultColor(__UI_Type_CheckBox, 2), BF
+            LINE (10, pgY)-(22, pgY + 12), __UI_DefaultColor(__UI_Type_CheckBox, 5), B
+            COLOR __UI_DefaultColor(__UI_Type_CheckBox, 1)
+            __UI_PrintString 28, pgTop + pgTextTop, pgLabel
+        ELSE
+            'Label column
+            LINE (10, pgTop)-(129, pgTop + __UI_PG_MockHeight - 1), Control(frameID).BorderColor, B
+            COLOR __UI_DefaultColor(__UI_Type_Label, 1)
+            __UI_PrintString 14, pgTop + pgTextTop, pgLabel
+
+            'Value column
+            IF pgKind = __UI_PropertyGrid_Button THEN pgColor = __UI_DefaultColor(__UI_Type_Button, 2) ELSE pgColor = __UI_DefaultColor(__UI_Type_TextBox, 2)
+            LINE (pgEditLeft, pgTop)-(pgRight, pgTop + __UI_PG_MockHeight - 1), pgColor, BF
+            LINE (pgEditLeft, pgTop)-(pgRight, pgTop + __UI_PG_MockHeight - 1), __UI_DefaultColor(__UI_Type_TextBox, 5), B
+            SELECT CASE pgKind
+                CASE __UI_PropertyGrid_Choice
+                    'The first item and a down arrow
+                    pgPos = INSTR(pgExtra, ",")
+                    IF pgPos THEN pgExtra = LEFT$(pgExtra, pgPos - 1)
+                    COLOR __UI_DefaultColor(__UI_Type_DropdownList, 1)
+                    __UI_PrintString pgEditLeft + 5, pgTop + pgTextTop, pgExtra
+                    pgX = pgRight - 12
+                    pgY = pgTop + __UI_PG_MockHeight \ 2 - 2
+                    LINE (pgX - 4, pgY)-(pgX + 4, pgY), __UI_DefaultColor(__UI_Type_DropdownList, 1)
+                    LINE (pgX - 3, pgY + 1)-(pgX + 3, pgY + 1), __UI_DefaultColor(__UI_Type_DropdownList, 1)
+                    LINE (pgX - 2, pgY + 2)-(pgX + 2, pgY + 2), __UI_DefaultColor(__UI_Type_DropdownList, 1)
+                    LINE (pgX - 1, pgY + 3)-(pgX + 1, pgY + 3), __UI_DefaultColor(__UI_Type_DropdownList, 1)
+                    PSET (pgX, pgY + 4), __UI_DefaultColor(__UI_Type_DropdownList, 1)
+                CASE __UI_PropertyGrid_Button
+                    IF LEN(pgExtra) = 0 THEN pgExtra = pgLabel
+                    COLOR __UI_DefaultColor(__UI_Type_Button, 1)
+                    __UI_PrintString (pgEditLeft + pgRight) \ 2 - __UI_PrintWidth(pgExtra) \ 2, pgTop + pgTextTop, pgExtra
+                CASE __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
+                    COLOR __UI_DefaultColor(__UI_Type_TextBox, 1)
+                    __UI_PrintString pgEditLeft + 5, pgTop + pgTextTop, "0"
+            END SELECT
+        END IF
+        pgTop = pgTop + __UI_PG_MockSpacing
+    LOOP
+
+    IF pgMax > 0 THEN
+        'Rows partly out of view are cut off at the edges of the area rows show in
+        _DONTBLEND
+        LINE (0, 0)-(Control(frameID).Width - 1, __UI_PG_MockFirstTop - 1), Control(frameID).BackColor, BF
+        LINE (0, __UI_PG_MockFirstTop + pgViewHeight)-(Control(frameID).Width - 1, Control(frameID).Height - 1), Control(frameID).BackColor, BF
+        _BLEND
+
+        'The scrollbar, where the grid will have it
+        pgBar = Control(frameID)
+        pgBar.Left = pgSbLeft
+        pgBar.Top = __UI_PG_MockFirstTop - 1
+        pgBar.Width = __UI_ScrollbarWidth
+        pgBar.Height = Control(frameID).Height - pgBar.Top - 3
+        pgBar.Min = 0
+        pgBar.Max = pgMax
+        pgBar.Value = pgScroll
+        pgBar.LastVisibleItem = pgViewHeight
+        pgBar.HoveringVScrollbarButton = 0
+        __UI_PGThumbDragging = _FALSE
+        __UI_DrawVScrollBar pgBar, 1
+    END IF
+
+    _FONT pgPrevFont
+    _DEST pgPrevDest
+END SUB
+
+'-----------------------------------------------------------------------------------------------------------------------
+' Public API
+'-----------------------------------------------------------------------------------------------------------------------
+
+''' @brief Makes a frame a property grid. Adding a row does this too, so it's only needed to call PropertyGrid_SetLayout first.
+SUB PropertyGrid_Attach (frameID AS LONG)
+    DIM pgGrid AS LONG
+    IF frameID <= 0 _ORELSE frameID > UBOUND(Control) THEN EXIT SUB
+    IF __UI_PGFind(frameID) > 0 THEN EXIT SUB
+
+    __UI_TotalPropertyGrids = __UI_TotalPropertyGrids + 1
+    pgGrid = __UI_TotalPropertyGrids
+    IF pgGrid > UBOUND(__UI_PropertyGrids) THEN REDIM _PRESERVE __UI_PropertyGrids(0 TO pgGrid + 3) AS __UI_PropertyGridTYPE
+    __UI_PropertyGrids(pgGrid).FrameID = frameID
+    __UI_PropertyGrids(pgGrid).RowLeft = 10
+    __UI_PropertyGrids(pgGrid).FirstTop = 10
+    __UI_PropertyGrids(pgGrid).RowSpacing = 22
+    __UI_PropertyGrids(pgGrid).LabelWidth = 120
+    __UI_PropertyGrids(pgGrid).FocusRow = 0
+    __UI_PropertyGrids(pgGrid).ChangedRow = 0
+END SUB
+
+''' @brief Where rows go: left edge, top of the first row, distance between rows and width of the label column.
+SUB PropertyGrid_SetLayout (frameID AS LONG, rowLeft AS INTEGER, firstTop AS INTEGER, rowSpacing AS INTEGER, labelWidth AS INTEGER)
+    DIM pgGrid AS LONG
+    PropertyGrid_Attach frameID
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid = 0 THEN EXIT SUB
+    __UI_PropertyGrids(pgGrid).RowLeft = rowLeft
+    __UI_PropertyGrids(pgGrid).FirstTop = firstTop
+    __UI_PropertyGrids(pgGrid).RowSpacing = rowSpacing
+    __UI_PropertyGrids(pgGrid).LabelWidth = labelWidth
+END SUB
+
+''' @brief Adds a row with a text box.
+SUB PropertyGrid_AddText (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING)
+    __UI_PGAddTextBox frameID, rowKey, rowLabel, __UI_PropertyGrid_Text
+END SUB
+
+''' @brief Adds a row with a box that takes whole numbers.
+SUB PropertyGrid_AddInteger (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING)
+    __UI_PGAddTextBox frameID, rowKey, rowLabel, __UI_PropertyGrid_Integer
+END SUB
+
+''' @brief Adds a row with a box that takes numbers.
+SUB PropertyGrid_AddFloat (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING)
+    __UI_PGAddTextBox frameID, rowKey, rowLabel, __UI_PropertyGrid_Float
+END SUB
+
+SUB __UI_PGAddTextBox (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING, pgKind AS _BYTE)
+    DIM pgRow AS LONG, pgID AS LONG
+    pgRow = __UI_PGNewRow(frameID, rowKey)
+    pgID = __UI_NewControl(__UI_Type_TextBox, __UI_PGControlName(frameID, rowKey, "TB"), 120, 23, 10, 10, frameID)
+    IF pgKind <> __UI_PropertyGrid_Text THEN
+        Control(pgID).NumericOnly = __UI_NumericWithoutBounds
+        __UI_PropertyGridValues(pgRow) = "0"
+        Text(pgID) = "0"
+    END IF
+    __UI_PropertyGridRows(pgRow).Kind = pgKind
+    __UI_PropertyGridRows(pgRow).Owned = _TRUE
+    __UI_PropertyGridRows(pgRow).LabelID = __UI_PGNewLabel(frameID, rowKey, rowLabel)
+    __UI_PropertyGridRows(pgRow).ControlID = pgID
+END SUB
+
+''' @brief Adds a row with a dropdown list. Items are separated by "|". The row's value is the chosen item's number (from 1).
+SUB PropertyGrid_AddChoice (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING, itemList AS STRING)
+    DIM pgRow AS LONG, pgID AS LONG, pgPos AS LONG, pgStart AS LONG
+    pgRow = __UI_PGNewRow(frameID, rowKey)
+    pgID = __UI_NewControl(__UI_Type_DropdownList, __UI_PGControlName(frameID, rowKey, "DD"), 120, 23, 10, 10, frameID)
+    pgStart = 1
+    DO
+        pgPos = INSTR(pgStart, itemList, "|")
+        IF pgPos = 0 THEN AddItem pgID, MID$(itemList, pgStart): EXIT DO
+        AddItem pgID, MID$(itemList, pgStart, pgPos - pgStart)
+        pgStart = pgPos + 1
+    LOOP
+    Control(pgID).Value = 1
+    __UI_PropertyGridRows(pgRow).Kind = __UI_PropertyGrid_Choice
+    __UI_PropertyGridRows(pgRow).Owned = _TRUE
+    __UI_PropertyGridRows(pgRow).LabelID = __UI_PGNewLabel(frameID, rowKey, rowLabel)
+    __UI_PropertyGridRows(pgRow).ControlID = pgID
+    __UI_PropertyGridRows(pgRow).LastValue = 1
+    __UI_PropertyGridValues(pgRow) = "1"
+END SUB
+
+''' @brief Adds a row with a check box (no label column). The row's value is "-1" when checked and "0" when not.
+SUB PropertyGrid_AddToggle (frameID AS LONG, rowKey AS STRING, rowCaption AS STRING)
+    DIM pgRow AS LONG, pgID AS LONG
+    pgRow = __UI_PGNewRow(frameID, rowKey)
+    pgID = __UI_NewControl(__UI_Type_CheckBox, __UI_PGControlName(frameID, rowKey, "CB"), 120, 23, 10, 10, frameID)
+    SetCaption pgID, rowCaption
+    __UI_PropertyGridRows(pgRow).Kind = __UI_PropertyGrid_Toggle
+    __UI_PropertyGridRows(pgRow).Owned = _TRUE
+    __UI_PropertyGridRows(pgRow).LabelID = 0
+    __UI_PropertyGridRows(pgRow).ControlID = pgID
+    __UI_PropertyGridRows(pgRow).LastValue = 0
+    __UI_PropertyGridValues(pgRow) = "0"
+END SUB
+
+''' @brief Adds a row with a button. Clicks go to __UI_Click as usual (PropertyGrid_RowOf$ tells which row it was).
+SUB PropertyGrid_AddButton (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING, rowCaption AS STRING)
+    DIM pgRow AS LONG, pgID AS LONG
+    pgRow = __UI_PGNewRow(frameID, rowKey)
+    pgID = __UI_NewControl(__UI_Type_Button, __UI_PGControlName(frameID, rowKey, "BT"), 120, 23, 10, 10, frameID)
+    SetCaption pgID, rowCaption
+    __UI_PropertyGridRows(pgRow).Kind = __UI_PropertyGrid_Button
+    __UI_PropertyGridRows(pgRow).Owned = _TRUE
+    __UI_PropertyGridRows(pgRow).LabelID = __UI_PGNewLabel(frameID, rowKey, rowLabel)
+    __UI_PropertyGridRows(pgRow).ControlID = pgID
+END SUB
+
+''' @brief Makes a row out of controls the form already has (labelID can be 0). Their left and width are kept.
+''' A textbox gets the grid's editing (Enter, Esc, border colors); other controls are only stacked and hidden.
+SUB PropertyGrid_AdoptRow (frameID AS LONG, rowKey AS STRING, labelID AS LONG, controlID AS LONG)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGNewRow(frameID, rowKey)
+    __UI_PropertyGridRows(pgRow).Owned = _FALSE
+    __UI_PropertyGridRows(pgRow).LabelID = labelID
+    __UI_PropertyGridRows(pgRow).ControlID = controlID
+    IF Control(controlID).Type = __UI_Type_TextBox THEN
+        __UI_PropertyGridRows(pgRow).Kind = __UI_PropertyGrid_Text
+        __UI_PropertyGridValues(pgRow) = Text(controlID)
+    ELSE
+        __UI_PropertyGridRows(pgRow).Kind = __UI_PropertyGrid_Other
+    END IF
+END SUB
+
+''' @brief Keeps another control (e.g. a small "..." button) on a row: same top, hidden with the row.
+''' A control can be attached to one row at a time; attaching it again moves it.
+SUB PropertyGrid_AttachControl (frameID AS LONG, rowKey AS STRING, controlID AS LONG)
+    DIM pgRow AS LONG, pgAtt AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 _ORELSE controlID <= 0 THEN EXIT SUB
+    FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+        IF __UI_PropertyGridAttachedID(pgAtt) = controlID THEN
+            IF __UI_PropertyGridAttachedRow(pgAtt) <> pgRow THEN
+                'Moving to another row: put it back where the program had it first
+                Control(controlID).Left = Control(controlID).Left + __UI_PropertyGridAttachedShift(pgAtt)
+                __UI_PropertyGridAttachedShift(pgAtt) = 0
+                __UI_PropertyGridAttachedRow(pgAtt) = pgRow
+            END IF
+            EXIT SUB
+        END IF
+    NEXT
+    __UI_TotalPropertyGridAttached = __UI_TotalPropertyGridAttached + 1
+    pgAtt = __UI_TotalPropertyGridAttached
+    IF pgAtt > UBOUND(__UI_PropertyGridAttachedID) THEN
+        REDIM _PRESERVE __UI_PropertyGridAttachedID(0 TO pgAtt + 7) AS LONG
+        REDIM _PRESERVE __UI_PropertyGridAttachedRow(0 TO pgAtt + 7) AS LONG
+        REDIM _PRESERVE __UI_PropertyGridAttachedShift(0 TO pgAtt + 7) AS INTEGER
+    END IF
+    __UI_PropertyGridAttachedID(pgAtt) = controlID
+    __UI_PropertyGridAttachedRow(pgAtt) = pgRow
+    __UI_PropertyGridAttachedShift(pgAtt) = 0
+END SUB
+
+''' @brief Stops keeping a control on a row. The control stays where and as it is.
+SUB PropertyGrid_DetachControl (controlID AS LONG)
+    DIM pgAtt AS LONG
+    FOR pgAtt = 1 TO __UI_TotalPropertyGridAttached
+        IF __UI_PropertyGridAttachedID(pgAtt) = controlID THEN
+            'Put it back where the program had it, if it was moved to make room for the scrollbar
+            Control(controlID).Left = Control(controlID).Left + __UI_PropertyGridAttachedShift(pgAtt)
+            __UI_PropertyGridAttachedID(pgAtt) = __UI_PropertyGridAttachedID(__UI_TotalPropertyGridAttached)
+            __UI_PropertyGridAttachedRow(pgAtt) = __UI_PropertyGridAttachedRow(__UI_TotalPropertyGridAttached)
+            __UI_PropertyGridAttachedShift(pgAtt) = __UI_PropertyGridAttachedShift(__UI_TotalPropertyGridAttached)
+            __UI_TotalPropertyGridAttached = __UI_TotalPropertyGridAttached - 1
+            EXIT SUB
+        END IF
+    NEXT
+END SUB
+
+''' @brief Sets a row's value. A textbox that has focus keeps what's being typed; its border then shows whether that is the value.
+SUB PropertyGrid_SetValue (frameID AS LONG, rowKey AS STRING, newValue AS STRING)
+    DIM pgRow AS LONG, pgID AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 THEN EXIT SUB
+    __UI_PropertyGridValues(pgRow) = newValue
+    pgID = __UI_PropertyGridRows(pgRow).ControlID
+    SELECT CASE __UI_PropertyGridRows(pgRow).Kind
+        CASE __UI_PropertyGrid_Text, __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
+            'A box that just lost focus keeps its text until the next update commits it
+            IF pgID <> __UI_Focus _ANDALSO __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).FocusRow <> pgRow THEN Text(pgID) = newValue
+        CASE __UI_PropertyGrid_Choice, __UI_PropertyGrid_Toggle
+            IF __UI_PropertyGridRows(pgRow).Owned THEN
+                Control(pgID).Value = VAL(newValue)
+                __UI_PropertyGridRows(pgRow).LastValue = Control(pgID).Value
+            END IF
+    END SELECT
+END SUB
+
+''' @brief Commits a textbox row's text now, as if Enter had been pressed (e.g. after the program filled the box itself).
+SUB PropertyGrid_Commit (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 THEN EXIT SUB
+    IF NOT __UI_PGIsTextRow(pgRow) THEN EXIT SUB
+    __UI_PropertyGridRows(pgRow).Dirty = _TRUE
+    __UI_PGCommit pgRow
+END SUB
+
+''' @brief A row's value: for a textbox, the last committed text (not what's being typed).
+FUNCTION PropertyGrid_Value$ (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow > 0 THEN PropertyGrid_Value = __UI_PropertyGridValues(pgRow)
+END FUNCTION
+
+''' @brief Key of the row that last fired __UI_ValueChanged for this frame.
+FUNCTION PropertyGrid_ChangedRow$ (frameID AS LONG)
+    DIM pgGrid AS LONG
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid = 0 THEN EXIT FUNCTION
+    IF __UI_PropertyGrids(pgGrid).ChangedRow > 0 THEN PropertyGrid_ChangedRow = __UI_PropertyGridKeys(__UI_PropertyGrids(pgGrid).ChangedRow)
+END FUNCTION
+
+''' @brief Shows or hides a row. Shown rows close up so there are no gaps.
+SUB PropertyGrid_ShowRow (frameID AS LONG, rowKey AS STRING, isShown AS _BYTE)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow > 0 THEN __UI_PropertyGridRows(pgRow).Shown = (isShown <> 0)
+END SUB
+
+''' @brief Shows or hides several rows, given as a comma-separated list of keys.
+SUB PropertyGrid_ShowRows (frameID AS LONG, keyList AS STRING, isShown AS _BYTE)
+    DIM pgPos AS LONG, pgStart AS LONG
+    pgStart = 1
+    DO
+        pgPos = INSTR(pgStart, keyList, ",")
+        IF pgPos = 0 THEN PropertyGrid_ShowRow frameID, MID$(keyList, pgStart), isShown: EXIT DO
+        PropertyGrid_ShowRow frameID, MID$(keyList, pgStart, pgPos - pgStart), isShown
+        pgStart = pgPos + 1
+    LOOP
+END SUB
+
+''' @brief Shows or hides every row of a frame.
+SUB PropertyGrid_ShowAll (frameID AS LONG, isShown AS _BYTE)
+    DIM pgRow AS LONG, pgGrid AS LONG
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid = 0 THEN EXIT SUB
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).Grid = pgGrid THEN __UI_PropertyGridRows(pgRow).Shown = (isShown <> 0)
+    NEXT
+END SUB
+
+''' @brief Shows the listed rows (comma-separated keys) and hides all others.
+SUB PropertyGrid_ShowOnly (frameID AS LONG, keyList AS STRING)
+    PropertyGrid_ShowAll frameID, _FALSE
+    PropertyGrid_ShowRows frameID, keyList, _TRUE
+END SUB
+
+FUNCTION PropertyGrid_RowShown%% (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow > 0 THEN PropertyGrid_RowShown = __UI_PropertyGridRows(pgRow).Shown
+END FUNCTION
+
+''' @brief Changes a row's label (a toggle row's caption).
+SUB PropertyGrid_SetLabel (frameID AS LONG, rowKey AS STRING, rowLabel AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 THEN EXIT SUB
+    IF __UI_PropertyGridRows(pgRow).LabelID > 0 THEN
+        IF Caption(__UI_PropertyGridRows(pgRow).LabelID) <> rowLabel THEN SetCaption __UI_PropertyGridRows(pgRow).LabelID, rowLabel
+    ELSEIF __UI_PropertyGridRows(pgRow).ControlID > 0 THEN
+        IF Caption(__UI_PropertyGridRows(pgRow).ControlID) <> rowLabel THEN SetCaption __UI_PropertyGridRows(pgRow).ControlID, rowLabel
+    END IF
+END SUB
+
+''' @brief A floating row is left out of the stacking, so the program can place it anywhere. It's still shown and hidden by the grid.
+SUB PropertyGrid_SetFloating (frameID AS LONG, rowKey AS STRING, isFloating AS _BYTE)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow > 0 THEN __UI_PropertyGridRows(pgRow).Floating = (isFloating <> 0)
+END SUB
+
+''' @brief ID of a row's control (textbox, dropdown list, check box or button).
+FUNCTION PropertyGrid_Control& (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow > 0 THEN PropertyGrid_Control = __UI_PropertyGridRows(pgRow).ControlID
+END FUNCTION
+
+''' @brief ID of a row's label, or 0.
+FUNCTION PropertyGrid_LabelControl& (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow > 0 THEN PropertyGrid_LabelControl = __UI_PropertyGridRows(pgRow).LabelID
+END FUNCTION
+
+''' @brief Key of the row a control (or label) belongs to, in any grid; empty if none.
+FUNCTION PropertyGrid_RowOf$ (controlID AS LONG)
+    DIM pgRow AS LONG
+    IF controlID <= 0 THEN EXIT FUNCTION
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).ControlID = controlID _ORELSE __UI_PropertyGridRows(pgRow).LabelID = controlID THEN
+            PropertyGrid_RowOf = __UI_PropertyGridKeys(pgRow)
+            EXIT FUNCTION
+        END IF
+    NEXT
+END FUNCTION
+
+''' @brief The frame of the grid a control (or label) belongs to, or 0.
+FUNCTION PropertyGrid_GridOf& (controlID AS LONG)
+    DIM pgRow AS LONG
+    IF controlID <= 0 THEN EXIT FUNCTION
+    FOR pgRow = 1 TO __UI_TotalPropertyGridRows
+        IF __UI_PropertyGridRows(pgRow).ControlID = controlID _ORELSE __UI_PropertyGridRows(pgRow).LabelID = controlID THEN
+            PropertyGrid_GridOf = __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).FrameID
+            EXIT FUNCTION
+        END IF
+    NEXT
+END FUNCTION
+
+''' @brief How a textbox row's border shows its text: __UI_PropertyGrid_Normal, _Confirmed or _Rejected.
+FUNCTION PropertyGrid_RowState%% (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG, pgID AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 THEN EXIT FUNCTION
+    pgID = __UI_PropertyGridRows(pgRow).ControlID
+    IF NOT __UI_PGIsTextRow(pgRow) _ORELSE pgID <> __UI_Focus THEN EXIT FUNCTION
+    IF Control(pgID).BorderColor = _RGB32(28, 150, 50) THEN
+        PropertyGrid_RowState = __UI_PropertyGrid_Confirmed
+    ELSEIF Control(pgID).BorderColor = _RGB32(233, 44, 0) THEN
+        PropertyGrid_RowState = __UI_PropertyGrid_Rejected
+    END IF
+END FUNCTION
+
+''' @brief Scrolls the grid so a row is in view.
+SUB PropertyGrid_ScrollTo (frameID AS LONG, rowKey AS STRING)
+    DIM pgRow AS LONG
+    pgRow = __UI_PGRow(frameID, rowKey)
+    IF pgRow = 0 THEN EXIT SUB
+    __UI_PropertyGrids(__UI_PropertyGridRows(pgRow).Grid).EnsureRow = pgRow
+    __UI_PGLayout __UI_PropertyGridRows(pgRow).Grid
+END SUB
+
+''' @brief Stacks the rows now (it also happens on every screen update). Useful to read rows' positions right after showing or hiding some.
+SUB PropertyGrid_Layout (frameID AS LONG)
+    DIM pgGrid AS LONG
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid > 0 THEN __UI_PGLayout pgGrid
+END SUB
+
+''' @brief The top of the space below the last shown row.
+FUNCTION PropertyGrid_NextTop% (frameID AS LONG)
+    DIM pgGrid AS LONG
+    pgGrid = __UI_PGFind(frameID)
+    IF pgGrid > 0 THEN PropertyGrid_NextTop = __UI_PropertyGrids(pgGrid).NextTop
+END FUNCTION

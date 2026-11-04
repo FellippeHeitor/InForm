@@ -15,6 +15,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - Themes: classic XP, flat light and flat dark built in, or your own theme files ([Themes](docs/Themes.md))
 - Tab control for multi-page forms ([TabControl](docs/TabControl.md))
 - Anchors: controls move and stretch with resizable forms ([Anchors](docs/Anchors.md))
+- Property grids: label/value rows with built-in editing, like the designer's properties panel ([PropertyGrid](docs/PropertyGrid.md))
 
 ## DOCUMENTATION
 
@@ -24,6 +25,7 @@ InForm-PE's main goal is to generate *event-driven* QB64-PE applications. This m
 - [Themes](docs/Themes.md)
 - [TabControl](docs/TabControl.md)
 - [Anchors](docs/Anchors.md)
+- [PropertyGrid](docs/PropertyGrid.md)
 
 ## USAGE
 
@@ -78,6 +80,8 @@ InForm/InFormCommon.bi
 InForm/InFormVersion.bi
 InForm/InFormTheme.bm
 InForm/InFormTabControl.bm
+InForm/InFormPropertyGrid.bi
+InForm/InFormPropertyGrid.bm
 InForm/xp.uitheme
 InForm/themes/*.*
 InForm/extensions/*.*
@@ -112,6 +116,7 @@ InForm/extensions/*.*
 | Pelmanism | Richard Notley |
 | PictureGrid | Richard Notley |
 | PlayFX | Samuel Gomes |
+| PropertyGridDemo | Fellippe Heitor |
 | R2P | bobalooie |
 | RockPaperScissorsSpockLizard | TempodiBasic |
 | SearchableDropdownDemo | Fellippe Heitor |
