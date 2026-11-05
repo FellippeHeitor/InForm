@@ -446,6 +446,12 @@ DIM SHARED __UI_PreviousMouseDownOnID AS LONG
 DIM SHARED __UI_KeyIsDown AS _BYTE, __UI_KeyDownOnID AS LONG
 DIM SHARED __UI_ShiftIsDown AS _BYTE, __UI_CtrlIsDown AS _BYTE
 DIM SHARED __UI_AltIsDown AS _BYTE, __UI_ShowHotKeys AS _BYTE, __UI_AltCombo$
+DIM SHARED __UI_CmdIsDown AS _BYTE ' Cmd (macOS), Windows or Super key held
+DIM SHARED __UI_AltKeyUsed AS _BYTE ' A key was used with Alt held, so releasing Alt won't open the menu bar
+' macOS-style shortcuts: Cmd works like Ctrl (Cmd+C, Cmd+S...), Option+Left/Right jumps words,
+' Cmd+Left/Right/Up/Down jumps to the line/text edges, Option/Cmd+Backspace deletes a word/line,
+' and key combos are shown as "Cmd+".
+DIM SHARED __UI_MacShortcuts AS _BYTE
 DIM SHARED __UI_LastMouseClick AS SINGLE, __UI_MouseDownOnScrollbar AS SINGLE
 DIM SHARED __UI_DragX AS INTEGER, __UI_DragY AS INTEGER
 DIM SHARED __UI_DefaultButtonID AS LONG

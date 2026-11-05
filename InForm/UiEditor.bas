@@ -306,6 +306,18 @@ SUB __UI_Click (id AS LONG)
     DIM Answer AS _BYTE, Dummy AS LONG, b$, i AS LONG
     STATIC LastClick#, LastClickedID AS LONG
 
+    'While a dialog covers the editor, menu commands can only come from key combos (Ctrl+A, Ctrl+V...),
+    'and they'd change the form behind the dialog. Undo and redo work in the Rows dialog's table.
+    IF RowsDialogOpen _ANDALSO (id = EditMenuUndo OR id = EditMenuRedo) THEN
+        IF NOT DataGrid_IsEditing(RowsGrid) THEN
+            IF id = EditMenuUndo THEN RowsUndo -1 ELSE RowsUndo 1
+        END IF
+        EXIT SUB
+    END IF
+    IF Control(id).Type = __UI_Type_MenuItem _ANDALSO (RowsDialogOpen OR ZOrderingDialogOpen OR SetBindingDialogOpen) THEN
+        IF id <> EditMenuUndo AND id <> EditMenuRedo THEN EXIT SUB
+    END IF
+
     SendSignal -8
 
     SELECT EVERYCASE id
@@ -1648,7 +1660,7 @@ SUB __UI_BeforeUpdateDisplay
         IF RIGHT$(Caption(__UI_FormID), 1) <> "*" THEN Caption(__UI_FormID) = Caption(__UI_FormID) + "*"
     END IF
 
-    'Ctrl+Z? Ctrl+Y?
+    'Ctrl+Z? Ctrl+Y? Ctrl+Shift+Z? (Cmd on macOS)
     Control(EditMenuUndo).Disabled = True
     Control(EditMenuRedo).Disabled = True
     IF UndoPointer > 0 THEN Control(EditMenuUndo).Disabled = False
@@ -1656,16 +1668,16 @@ SUB __UI_BeforeUpdateDisplay
 
     IF RowsDialogOpen THEN
         'Undo/redo change the table, not the form behind the dialog (a cell being edited keeps the keys)
-        IF __UI_CtrlIsDown AND NOT DataGrid_IsEditing(RowsGrid) THEN
+        IF __UI_CommandKeyDown AND NOT DataGrid_IsEditing(RowsGrid) THEN
             IF __UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z") THEN
-                RowsUndo -1
+                IF __UI_ShiftIsDown THEN RowsUndo 1 ELSE RowsUndo -1
             ELSEIF __UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y") THEN
                 RowsUndo 1
             END IF
         END IF
-    ELSEIF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CtrlIsDown THEN
-        SendSignal 214
-    ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CtrlIsDown THEN
+    ELSEIF (__UI_KeyHit = ASC("z") OR __UI_KeyHit = ASC("Z")) AND __UI_CommandKeyDown THEN
+        IF __UI_ShiftIsDown THEN SendSignal 215 ELSE SendSignal 214
+    ELSEIF (__UI_KeyHit = ASC("y") OR __UI_KeyHit = ASC("Y")) AND __UI_CommandKeyDown THEN
         SendSignal 215
     END IF
 
@@ -2251,6 +2263,9 @@ END SUB
 SUB __UI_BeforeInit
     __UI_KeepScreenHidden = True
     __UI_EditorMode = True
+    $IF MAC THEN
+        __UI_MacShortcuts = True
+    $END IF
 END SUB
 
 SUB __UI_FormResized
@@ -2365,8 +2380,19 @@ SUB __UI_OnLoad
     i = RegisterKeyCombo("ctrl+n", FileMenuNew)
     i = RegisterKeyCombo("ctrl+o", FileMenuOpen)
     i = RegisterKeyCombo("ctrl+s", FileMenuSave)
+    i = RegisterKeyCombo("ctrl+shift+s", FileMenuSaveAs)
+    'Text boxes keep these for their own text (see TextBoxKeepsKey in InForm.ui)
+    i = RegisterKeyCombo("ctrl+x", EditMenuCut)
+    i = RegisterKeyCombo("ctrl+c", EditMenuCopy)
+    i = RegisterKeyCombo("ctrl+v", EditMenuPaste)
+    i = RegisterKeyCombo("ctrl+a", EditMenuSelectAll)
     i = RegisterKeyCombo("ctrl+z", EditMenuUndo)
-    i = RegisterKeyCombo("ctrl+y", EditMenuRedo)
+    IF __UI_MacShortcuts THEN
+        i = RegisterKeyCombo("ctrl+shift+z", EditMenuRedo) 'Shown as Cmd+Shift+Z; Cmd+Y also works
+        ToolTip(OptionsMenuSnapLines) = "Snapping can be temporarily bypassed by holding Cmd."
+    ELSE
+        i = RegisterKeyCombo("ctrl+y", EditMenuRedo)
+    END IF
     i = RegisterKeyCombo("f1", HelpMenuHelp)
 
     DIM FileToOpen$, FreeFileNum AS INTEGER
@@ -2741,7 +2767,7 @@ SUB __UI_KeyPress (id AS LONG)
             END IF
         CASE KeyboardComboBT
             DIM Combo$
-            IF __UI_CtrlIsDown THEN Combo$ = "Ctrl+"
+            IF __UI_CommandKeyDown THEN Combo$ = "Ctrl+" 'Saved as Ctrl+ even when Cmd is used on macOS
             IF __UI_ShiftIsDown THEN Combo$ = Combo$ + "Shift+"
             SELECT CASE __UI_KeyHit
                 CASE 27
@@ -3597,18 +3623,21 @@ SUB OpenRowsDialogFor (Mode AS _BYTE)
     REDIM RowsHistory(1 TO 16) AS STRING
     RowsHistory(1) = RowsSnapshot$
 
+    DIM UndoKeyName$
+    IF __UI_MacShortcuts THEN UndoKeyName$ = "Cmd+Z" ELSE UndoKeyName$ = "Ctrl+Z"
+
     SELECT CASE Mode
         CASE RowsModeProperties
             Caption(EditRowsDialog) = "Property grid rows: " + FrameName$
-            Caption(RowsDescriptionLB) = "Each line becomes a row of the frame's property grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; Ctrl+Z undoes."
+            Caption(RowsDescriptionLB) = "Each line becomes a row of the frame's property grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; " + UndoKeyName$ + " undoes."
             Caption(StatusBar) = "Editing property grid rows"
         CASE RowsModeColumns
             Caption(EditRowsDialog) = "Data grid columns: " + FrameName$
-            Caption(RowsDescriptionLB) = "Each line becomes a column of the frame's data grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects lines; Ctrl+Z undoes."
+            Caption(RowsDescriptionLB) = "Each line becomes a column of the frame's data grid, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects lines; " + UndoKeyName$ + " undoes."
             Caption(StatusBar) = "Editing data grid columns"
         CASE RowsModeGridRows
             Caption(EditRowsDialog) = "Data grid rows: " + FrameName$
-            Caption(RowsDescriptionLB) = "The rows the frame's data grid has when the program starts, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; Ctrl+Z undoes."
+            Caption(RowsDescriptionLB) = "The rows the frame's data grid has when the program starts, shown in the preview as you go. Click a cell twice, or press Enter or F2, to edit it. Shift or dragging selects rows; " + UndoKeyName$ + " undoes."
             Caption(StatusBar) = "Editing data grid rows"
     END SELECT
     Control(DialogBG).Left = 0: Control(DialogBG).Top = 0
@@ -5294,6 +5323,12 @@ FUNCTION PropertyGridRowList$ (i AS LONG)
     PropertyGridRowList$ = r$
 END FUNCTION
 
+''' @brief Text as a QB64 string literal for generated code: "a" + CHR$(34) + "b" when it holds quotes.
+FUNCTION BasString$ (Text$)
+    DIM q$: q$ = CHR$(34)
+    BasString$ = q$ + Replace$(Text$, q$, q$ + " + CHR$(34) + " + q$, _FALSE, 0) + q$
+END FUNCTION
+
 ''' @brief Splits one entry of PropertyGridRowList$.
 SUB PropertyGridRowFields (Entry$, Key$, Kind AS INTEGER, FirstItem$)
     DIM p1 AS LONG, p2 AS LONG
@@ -5327,7 +5362,7 @@ FUNCTION PropertyGridValueChangedCase$ (i AS LONG, Indent AS INTEGER)
         rows$ = MID$(rows$, pos1 + 1)
         PropertyGridRowFields entry$, k$, kind, item$
         IF kind = __UI_PropertyGrid_Button THEN _CONTINUE 'clicks go to __UI_Click
-        r$ = r$ + p$ + "        CASE " + q$ + k$ + q$ + LF$
+        r$ = r$ + p$ + "        CASE " + BasString$(k$) + LF$
         SELECT CASE kind
             CASE __UI_PropertyGrid_Integer, __UI_PropertyGrid_Float
                 r$ = r$ + p$ + "            'The number entered: VAL(PropertyGrid_Value$(" + n$ + ", " + q$ + k$ + q$ + "))" + LF$
@@ -5393,7 +5428,7 @@ FUNCTION PropertyGridClickBlock$
             rows$ = MID$(rows$, pos1 + 1)
             PropertyGridRowFields entry$, k$, kind, item$
             IF kind = __UI_PropertyGrid_Button THEN
-                r$ = r$ + "        CASE " + q$ + k$ + q$ + " '" + RTRIM$(PreviewControls(i).Name) + LF$ + LF$
+                r$ = r$ + "        CASE " + BasString$(k$) + " '" + RTRIM$(PreviewControls(i).Name) + LF$ + LF$
             END IF
         LOOP
     NEXT

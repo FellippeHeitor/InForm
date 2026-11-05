@@ -4,7 +4,7 @@ A **DataGrid** turns a frame into a table: a row of column headers, rows of cell
 
 The grid takes care of the parts that are tedious to write by hand:
 
-- One cell is current. Click a cell, or move with the arrow keys, **Home**/**End** (with **Ctrl** for the first/last row), **Page Up**/**Page Down** and **Tab**/**Shift+Tab**. Past the last cell, **Tab** leaves the grid.
+- One cell is current. Click a cell, or move with the arrow keys, **Home**/**End** (with **Ctrl** for the first/last row), **Page Up**/**Page Down** and **Tab**/**Shift+Tab**. Past the last cell, **Tab** leaves the grid. On macOS, **Cmd** works like **Ctrl**, and **Cmd** with the arrow keys goes to the first/last row or column.
 - To edit a cell, click it again, press **Enter** or **F2**, or just start typing. **Enter** (or leaving the cell) keeps the new value, **Esc** puts back the old one, and **Up**/**Down** keep it and move to the next row.
 - Choice cells open a list (**Space**, **Enter** or a second click), and typing a letter picks the next item that starts with it. Toggle cells flip with a click or **Space**. **Delete** clears a cell.
 - Whole rows can be selected as a range: **Shift** with Up/Down/Page Up/Page Down (or **Ctrl+Shift+Home/End**), **Shift+click**, or dragging over rows (past the top or bottom of the table, the grid scrolls). Cells aren't selected one by one: a range is for removing or moving rows.
@@ -68,7 +68,7 @@ Its properties have two buttons:
 - **Columns** opens a table with one line per column: its caption, kind (text, integer, float, choice or toggle), width in pixels (`0` shares the room left) and, for a choice, its items separated by commas. Moving or deleting a column moves or removes its cells in every row.
 - **Rows** opens a table with the grid's own columns, holding the rows the grid has when the program starts. Double-clicking the frame in the preview opens it too (or Columns, while the grid has none).
 
-Both work like the property grid's rows table (see [PropertyGrid](PropertyGrid.md#in-the-designer)): edit cells in place, add, delete and move lines with the buttons, undo with **Ctrl+Z**/**Ctrl+Y**, and watch the preview change as you go. **OK** keeps the changes as one step you can undo in the designer; **Cancel** (or Esc) puts the grid back as it was. While the table is open, the preview is dimmed and can't be edited.
+Both work like the property grid's rows table (see [PropertyGrid](PropertyGrid.md#in-the-designer)): edit cells in place, add, delete and move lines with the buttons, undo with **Ctrl+Z**/**Ctrl+Y** (**Cmd+Z**/**Cmd+Shift+Z** on macOS), and watch the preview change as you go. **OK** keeps the changes as one step you can undo in the designer; **Cancel** (or Esc) puts the grid back as it was. While the table is open, the preview is dimmed and can't be edited.
 
 The grid is kept in the frame's Text:
 
