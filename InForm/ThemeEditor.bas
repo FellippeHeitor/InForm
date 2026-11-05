@@ -6,6 +6,19 @@
 
 OPTION _EXPLICIT
 
+$VERSIONINFO:CompanyName='QB64 Phoenix Edition Team'
+$VERSIONINFO:FileDescription='InForm-PE Theme Editor executable'
+$VERSIONINFO:InternalName='ThemeEditor'
+$VERSIONINFO:LegalCopyright='Copyright (c) 2026 QB64 Phoenix Edition Team'
+$VERSIONINFO:LegalTrademarks='All trademarks are property of their respective owners'
+$VERSIONINFO:OriginalFilename='ThemeEditor.exe'
+$VERSIONINFO:ProductName='InForm-PE Theme Editor'
+$VERSIONINFO:Web='https://github.com/QB64-Phoenix-Edition/InForm-PE'
+$VERSIONINFO:Comments='https://github.com/QB64-Phoenix-Edition/InForm-PE'
+
+$LET INFORM_VERSION_RESOURCE = TRUE
+'$INCLUDE:'InFormVersion.bi'
+
 $EXEICON:'./resources/InForm.ico'
 
 ': Controls' IDs: ------------------------------------------------------------------
