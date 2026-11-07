@@ -1199,6 +1199,24 @@ SUB __UI_DataGridKey
     dgPage = __UI_DataGrids(dgGrid).VisibleRows - 1
     IF dgPage < 1 THEN dgPage = 1
 
+    'macOS-style: Cmd+Up/Down go to the first/last row (Shift selects on the way), Cmd+Left/Right to the first/last column
+    IF __UI_MacShortcuts _ANDALSO __UI_CmdIsDown THEN
+        SELECT CASE dgK
+            CASE _KEY_UP
+                IF __UI_ShiftIsDown THEN __UI_DGExtendTo dgGrid, 1, dgCol ELSE __UI_DGMoveTo dgGrid, 1, dgCol, _TRUE
+                EXIT SUB
+            CASE _KEY_DOWN
+                IF __UI_ShiftIsDown THEN __UI_DGExtendTo dgGrid, dgCount, dgCol ELSE __UI_DGMoveTo dgGrid, dgCount, dgCol, _TRUE
+                EXIT SUB
+            CASE _KEY_LEFT
+                __UI_DGMoveTo dgGrid, dgRow, 1, _TRUE
+                EXIT SUB
+            CASE _KEY_RIGHT
+                __UI_DGMoveTo dgGrid, dgRow, __UI_DGColCount(dgGrid), _TRUE
+                EXIT SUB
+        END SELECT
+    END IF
+
     'Shift with the keys that move between rows selects the rows on the way
     IF __UI_ShiftIsDown THEN
         SELECT CASE dgK
@@ -1207,9 +1225,9 @@ SUB __UI_DataGridKey
             CASE _KEY_PAGEUP: __UI_DGExtendTo dgGrid, dgRow - dgPage, dgCol: EXIT SUB
             CASE _KEY_PAGEDOWN: __UI_DGExtendTo dgGrid, dgRow + dgPage, dgCol: EXIT SUB
             CASE _KEY_HOME
-                IF __UI_CtrlIsDown THEN __UI_DGExtendTo dgGrid, 1, dgCol: EXIT SUB
+                IF __UI_CommandKeyDown THEN __UI_DGExtendTo dgGrid, 1, dgCol: EXIT SUB
             CASE _KEY_END
-                IF __UI_CtrlIsDown THEN __UI_DGExtendTo dgGrid, dgCount, dgCol: EXIT SUB
+                IF __UI_CommandKeyDown THEN __UI_DGExtendTo dgGrid, dgCount, dgCol: EXIT SUB
         END SELECT
     END IF
 
@@ -1219,9 +1237,9 @@ SUB __UI_DataGridKey
         CASE _KEY_LEFT: __UI_DGMoveTo dgGrid, dgRow, dgCol - 1, _TRUE
         CASE _KEY_RIGHT: __UI_DGMoveTo dgGrid, dgRow, dgCol + 1, _TRUE
         CASE _KEY_HOME
-            IF __UI_CtrlIsDown THEN __UI_DGMoveTo dgGrid, 1, dgCol, _TRUE ELSE __UI_DGMoveTo dgGrid, dgRow, 1, _TRUE
+            IF __UI_CommandKeyDown THEN __UI_DGMoveTo dgGrid, 1, dgCol, _TRUE ELSE __UI_DGMoveTo dgGrid, dgRow, 1, _TRUE
         CASE _KEY_END
-            IF __UI_CtrlIsDown THEN __UI_DGMoveTo dgGrid, dgCount, dgCol, _TRUE ELSE __UI_DGMoveTo dgGrid, dgRow, __UI_DGColCount(dgGrid), _TRUE
+            IF __UI_CommandKeyDown THEN __UI_DGMoveTo dgGrid, dgCount, dgCol, _TRUE ELSE __UI_DGMoveTo dgGrid, dgRow, __UI_DGColCount(dgGrid), _TRUE
         CASE _KEY_PAGEUP: __UI_DGMoveTo dgGrid, dgRow - dgPage, dgCol, _TRUE
         CASE _KEY_PAGEDOWN: __UI_DGMoveTo dgGrid, dgRow + dgPage, dgCol, _TRUE
         CASE 13
@@ -1242,7 +1260,7 @@ SUB __UI_DataGridKey
                 CASE __UI_DataGrid_Integer, __UI_DataGrid_Float, __UI_DataGrid_Toggle: __UI_DGSetByUser dgGrid, dgRow, dgCol, "0"
             END SELECT
         CASE 32 TO 126, 128 TO 254
-            IF __UI_CtrlIsDown _ORELSE __UI_AltIsDown THEN EXIT SUB 'shortcuts aren't typing
+            IF __UI_CtrlIsDown _ORELSE __UI_CmdIsDown _ORELSE __UI_AltIsDown THEN EXIT SUB 'shortcuts aren't typing
             SELECT CASE dgKind
                 CASE __UI_DataGrid_Text
                     __UI_DGBeginEdit dgGrid, CHR$(dgK)

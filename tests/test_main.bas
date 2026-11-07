@@ -54,6 +54,7 @@ SUB __UI_BeforeInit
     Test_DataGridScrolling
     Test_DataGridDefinitions
     Test_DataGridCSV
+    Test_MacShortcuts
 
     TEST_END_ALL
 END SUB
@@ -3215,6 +3216,42 @@ SUB Test_DataGrid
     TEST_CHECK_FALSE __UI_DataGridTab, "Tab on the last cell leaves the grid"
     __UI_KeyHit = 0
 
+    'Ctrl+Home/End go to the first/last row; with macOS-style shortcuts, Cmd works like Ctrl
+    'and Cmd+arrows go to the edges
+    DIM prevMac AS _BYTE: prevMac = __UI_MacShortcuts
+    DataGrid_Select g, 3, 2
+    __UI_CtrlIsDown = _TRUE
+    k = TestDGKey(_KEY_END)
+    TEST_CHECK DataGrid_Row(g) = 6 _ANDALSO DataGrid_Column(g) = 2, "Ctrl+End goes to the last row"
+    __UI_CtrlIsDown = _FALSE
+    __UI_MacShortcuts = _TRUE
+    __UI_CmdIsDown = _TRUE
+    k = TestDGKey(_KEY_HOME)
+    TEST_CHECK DataGrid_Row(g) = 1 _ANDALSO DataGrid_Column(g) = 2, "Cmd+Home goes to the first row"
+    k = TestDGKey(_KEY_DOWN)
+    TEST_CHECK DataGrid_Row(g) = 6, "Cmd+Down goes to the last row"
+    k = TestDGKey(_KEY_UP)
+    TEST_CHECK DataGrid_Row(g) = 1, "Cmd+Up goes to the first row"
+    k = TestDGKey(_KEY_RIGHT)
+    TEST_CHECK DataGrid_Column(g) = 4, "Cmd+Right goes to the last column"
+    k = TestDGKey(_KEY_LEFT)
+    TEST_CHECK DataGrid_Column(g) = 1, "Cmd+Left goes to the first column"
+    k = TestDGKey(ASC("c"))
+    TEST_CHECK_FALSE DataGrid_IsEditing(g), "Cmd+key doesn't start typing in a cell"
+    DataGrid_Select g, 3, 1
+    __UI_ShiftIsDown = _TRUE
+    k = TestDGKey(_KEY_DOWN)
+    __UI_ShiftIsDown = _FALSE
+    TEST_CHECK DataGrid_SelectionFirst(g) = 3 _ANDALSO DataGrid_SelectionLast(g) = 6, "Cmd+Shift+Down selects to the last row"
+    DataGrid_Select g, 1, 1
+    __UI_MacShortcuts = _FALSE
+    k = TestDGKey(_KEY_DOWN)
+    TEST_CHECK DataGrid_Row(g) = 2, "Without macOS-style shortcuts, Cmd+Down moves one row"
+    __UI_CmdIsDown = _FALSE
+    __UI_MacShortcuts = prevMac
+    DataGrid_Select g, 6, 4 'where the next test expects the grid to be
+    __UI_DataGridsUpdate
+
     TEST_CASE_END
 
     TEST_CASE_BEGIN "DataGrid: editing"
@@ -3656,6 +3693,63 @@ END SUB
 SUB __UI_LoadForm: END SUB
 SUB __UI_AssignIDs: END SUB
 SUB __UI_OnLoad: END SUB
+SUB Test_MacShortcuts
+    DIM AS LONG tb, prevMac, prevDesign
+
+    TEST_CASE_BEGIN "InFormUIHelpers: macOS-style shortcuts"
+
+    prevMac = __UI_MacShortcuts
+    prevDesign = __UI_DesignMode
+
+    'Word jumps (Ctrl+Left, Option+Left/Right, Option+Backspace)
+    tb = __UI_NewControl(__UI_Type_TextBox, "TestMacShortcutsTB", 200, 23, 0, 0, 0)
+    Text(tb) = "hello, big world"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 16) = 11, "Previous word start from the end"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 11) = 7, "Skips the space before the cursor"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 7) = 0, "Skips separators, reaches the first word"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 5) = 0, "First word starts at 0"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 0) = 0, "Already at the start"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 99) = 11, "Position past the end"
+    TEST_CHECK __UI_TBNextWordEnd(tb, 0) = 5, "Next word end from the start"
+    TEST_CHECK __UI_TBNextWordEnd(tb, 5) = 10, "Skips separators, then the word"
+    TEST_CHECK __UI_TBNextWordEnd(tb, 13) = 16, "From the middle of a word"
+    TEST_CHECK __UI_TBNextWordEnd(tb, 16) = 16, "Already at the end"
+    Text(tb) = "one" + _CHR_LF + "two"
+    TEST_CHECK __UI_TBPrevWordStart(tb, 7) = 4, "Line break separates words (back)"
+    TEST_CHECK __UI_TBNextWordEnd(tb, 3) = 7, "Line break separates words (forward)"
+    Text(tb) = ""
+    TEST_CHECK __UI_TBPrevWordStart(tb, 0) = 0 _ANDALSO __UI_TBNextWordEnd(tb, 0) = 0, "Empty text"
+
+    'Cmd works like Ctrl only with macOS-style shortcuts on
+    __UI_CtrlIsDown = _FALSE
+    __UI_CmdIsDown = _TRUE
+    __UI_MacShortcuts = _FALSE
+    TEST_CHECK_FALSE __UI_CommandKeyDown, "Cmd alone isn't Ctrl"
+    __UI_MacShortcuts = _TRUE
+    TEST_CHECK __UI_CommandKeyDown, "Cmd is Ctrl with macOS shortcuts"
+    __UI_CmdIsDown = _FALSE
+    TEST_CHECK_FALSE __UI_CommandKeyDown, "Nothing held"
+    __UI_CtrlIsDown = _TRUE
+    TEST_CHECK __UI_CommandKeyDown, "Ctrl still works with macOS shortcuts"
+    __UI_CtrlIsDown = _FALSE
+
+    'Key combos are shown as Cmd+ with macOS shortcuts, but not in design mode
+    __UI_DesignMode = _FALSE
+    __UI_MacShortcuts = _FALSE
+    TEST_CHECK __UI_FriendlyCombo("CTRL+SHIFT+Z") = "Ctrl+Shift+Z", "Ctrl+ combo"
+    __UI_MacShortcuts = _TRUE
+    TEST_CHECK __UI_FriendlyCombo("CTRL+SHIFT+Z") = "Cmd+Shift+Z", "Shown as Cmd+"
+    TEST_CHECK __UI_FriendlyCombo("CTRL+S") = "Cmd+S", "Shown as Cmd+ (short)"
+    TEST_CHECK __UI_FriendlyCombo("SHIFT+F5") = "Shift+F5", "Combos without Ctrl stay the same"
+    __UI_DesignMode = _TRUE
+    TEST_CHECK __UI_FriendlyCombo("CTRL+S") = "Ctrl+S", "Design mode shows the form's own combos"
+
+    __UI_MacShortcuts = prevMac
+    __UI_DesignMode = prevDesign
+
+    TEST_CASE_END
+END SUB
+
 SUB __UI_BeforeUnload: END SUB
 SUB __UI_BeforeUpdateDisplay: END SUB
 SUB __UI_FormResized: END SUB

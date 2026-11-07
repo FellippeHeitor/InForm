@@ -1245,14 +1245,14 @@ SUB __UI_UpdateDisplay
         _PUTIMAGE (__UI_ActiveTipLeft, __UI_ActiveTipTop), ActiveTipPanel
     END IF
 
-    IF ((__UI_IsResizing AND Control(__UI_ResizingID).AutoSize = False) OR (__UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID)) AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF ((__UI_IsResizing AND Control(__UI_ResizingID).AutoSize = False) OR (__UI_IsDragging AND __UI_DraggingID > 0 AND __UI_DraggingID <> __UI_FormID)) AND NOT __UI_CommandKeyHeld AND __UI_SnapLines THEN
         STATIC DragTip AS LONG, TipPanelWidth AS INTEGER
 
         IF DragTip = 0 OR __UI_ForceRedraw THEN 'rebuilt on a forced redraw so it follows theme changes
             IF DragTip <> 0 THEN _FREEIMAGE DragTip
             _FONT Control(__UI_FormID).Font
 
-            TempCaption$ = "Hold Ctrl to bypass snapping"
+            IF __UI_MacShortcuts THEN TempCaption$ = "Hold Cmd to bypass snapping" ELSE TempCaption$ = "Hold Ctrl to bypass snapping"
             TipPanelWidth = __UI_PrintWidth(TempCaption$) + 10
             PanelHeight = uspacing& + 5 + 5
 
@@ -1913,7 +1913,7 @@ SUB __UI_EventDispatcher
                     END IF
                 END IF
 
-                IF _KEYDOWN(100305) OR _KEYDOWN(100306) THEN
+                IF __UI_CommandKeyHeld THEN
                     IF NOT __UI_IsContainer(Control(__UI_HoveringID).Type) AND Control(__UI_HoveringID).Type <> __UI_Type_Form AND Control(__UI_HoveringID).Type <> __UI_Type_Font AND Control(__UI_HoveringID).Type <> __UI_Type_MenuItem AND Control(__UI_HoveringID).Type <> __UI_Type_MenuPanel AND Control(__UI_HoveringID).Type <> __UI_Type_ContextMenu AND Control(__UI_HoveringID).Type <> __UI_Type_MenuBar THEN
                         IF Control(__UI_HoveringID).ControlIsSelected = False AND Control(__UI_HoveringID).ParentID = Control(__UI_FirstSelectedID).ParentID AND NOT __UI_IsContainer(Control(__UI_FirstSelectedID).Type) THEN
                             Control(__UI_HoveringID).ControlIsSelected = True
@@ -2701,7 +2701,7 @@ SUB __UI_EventDispatcher
         PrevXSnapOffset = 10
         PrevYSnapOffset = 10
 
-        IF (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+        IF NOT __UI_CommandKeyHeld AND __UI_SnapLines THEN
             'How far the mouse is from the currently being dragged control:
             DIM MouseXOffset AS INTEGER, MouseYOffset AS INTEGER
             'How distant from the neighboring snapped control's edge we are:
@@ -2900,7 +2900,7 @@ SUB __UI_EventDispatcher
             NEXT
         END IF
 
-        IF (_KEYDOWN(100305) OR _KEYDOWN(100306)) THEN __UI_Snapped = False: __UI_SnappedX = -1: __UI_SnappedY = -1
+        IF __UI_CommandKeyHeld THEN __UI_Snapped = False: __UI_SnappedX = -1: __UI_SnappedY = -1
 
         IF __UI_SnappedX = -1 THEN Control(__UI_DraggingID).Left = __UI_MouseLeft - OriginalDragX
         IF __UI_SnappedY = -1 THEN Control(__UI_DraggingID).Top = __UI_MouseTop - OriginalDragY
@@ -3203,19 +3203,41 @@ SUB __UI_EventDispatcher
     END IF
 
     'Keyboard handler
-    'Modifiers (Ctrl, Alt, Shift):
+    'Modifiers (Ctrl, Alt, Shift, Cmd):
     IF __UI_KeyHit = 100303 OR __UI_KeyHit = 100304 THEN __UI_ShiftIsDown = True
     IF __UI_KeyHit = -100303 OR __UI_KeyHit = -100304 THEN __UI_ShiftIsDown = False
     IF __UI_KeyHit = 100305 OR __UI_KeyHit = 100306 THEN __UI_CtrlIsDown = True
     IF __UI_KeyHit = -100305 OR __UI_KeyHit = -100306 THEN __UI_CtrlIsDown = False
     IF __UI_KeyHit = 100307 OR __UI_KeyHit = 100308 THEN __UI_AltIsDown = True
     IF __UI_KeyHit = -100307 OR __UI_KeyHit = -100308 THEN __UI_AltIsDown = False
+    IF __UI_KeyHit = 100311 OR __UI_KeyHit = 100312 THEN __UI_CmdIsDown = True
+    IF __UI_KeyHit = -100311 OR __UI_KeyHit = -100312 THEN __UI_CmdIsDown = False
 
     'Key combos can be associated with controls using the RegisterKeyCombo method;
     'Key combos take precedence over other keyboard events:
-    DIM DoCombo AS _BYTE
+    DIM DoCombo AS _BYTE, TextBoxKeepsKey AS _BYTE
     DoCombo = False
-    IF __UI_BypassKeyCombos = False AND __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 AND __UI_TotalActiveMenus = 0 THEN
+
+    'A focused text box keeps Ctrl+X/C/V/A (cut, copy, paste, select all) for its own text,
+    'even when a combo uses them (like the Edit menu of a program). A searchable dropdown
+    'list keeps Ctrl+V to paste into its search.
+    TextBoxKeepsKey = False
+    IF __UI_Focus > 0 _ANDALSO NOT Control(__UI_Focus).Disabled _ANDALSO __UI_CommandKeyDown _ANDALSO NOT __UI_ShiftIsDown THEN
+        SELECT CASE __UI_KeyHit
+            CASE __ASC_LOWER_X, __ASC_UPPER_X, __ASC_LOWER_C, __ASC_UPPER_C, __ASC_LOWER_A, __ASC_UPPER_A
+                TextBoxKeepsKey = (Control(__UI_Focus).Type = __UI_Type_TextBox)
+            CASE __ASC_LOWER_V, __ASC_UPPER_V
+                IF Control(__UI_Focus).Type = __UI_Type_TextBox THEN
+                    TextBoxKeepsKey = True
+                ELSEIF __UI_ActiveDropdownList > 0 _ANDALSO __UI_Focus = __UI_ActiveDropdownList THEN
+                    TextBoxKeepsKey = Control(__UI_ParentDropdownList).Searchable
+                ELSEIF Control(__UI_Focus).Type = __UI_Type_DropdownList THEN
+                    TextBoxKeepsKey = Control(__UI_Focus).Searchable
+                END IF
+        END SELECT
+    END IF
+
+    IF __UI_BypassKeyCombos = False AND __UI_DesignMode = False AND __UI_AltIsDown = False AND __UI_KeyHit > 0 AND __UI_TotalActiveMenus = 0 AND TextBoxKeepsKey = False THEN
         DIM ComboKey AS STRING
         DIM tempCombo$
 
@@ -3234,7 +3256,7 @@ SUB __UI_EventDispatcher
             IF LEN(ComboKey) = 0 THEN ComboKey = tempCombo$
 
             IF (INSTR(tempCombo$, "SHIFT+") > 0) <> __UI_ShiftIsDown THEN _CONTINUE
-            IF (INSTR(tempCombo$, "CTRL+") > 0) <> __UI_CtrlIsDown THEN _CONTINUE
+            IF (INSTR(tempCombo$, "CTRL+") > 0) <> __UI_CommandKeyDown THEN _CONTINUE
 
             IF LEFT$(ComboKey, 1) = "F" THEN
                 IF VAL(MID$(ComboKey, 2)) >= 1 AND VAL(MID$(ComboKey, 2)) <= 12 THEN
@@ -3271,6 +3293,7 @@ SUB __UI_EventDispatcher
                     IF Control(__UI_KeyCombo(i).ControlID).BulletStyle = __UI_Bullet THEN SetRadioButtonValue __UI_KeyCombo(i).ControlID
                 END IF
                 __UI_Click __UI_KeyCombo(i).ControlID
+                __UI_KeyHit = 0 'the combo used the key: code that reads __UI_KeyHit later (like __UI_BeforeUpdateDisplay) mustn't act on it again
             END IF
             EXIT SUB
         END IF
@@ -3348,6 +3371,9 @@ SUB __UI_EventDispatcher
                         NEXT
                     END IF
                     __UI_KeyHit = 0
+                CASE 1 TO 100299, 100320 TO 199999
+                    'Any other key (but not a modifier) pressed with Alt, like Option+Left on macOS
+                    __UI_AltKeyUsed = True
             END SELECT
         ELSE
             IF __UI_ShowHotKeys THEN
@@ -3361,6 +3387,8 @@ SUB __UI_EventDispatcher
                         __UI_KeyHit = VAL(__UI_AltCombo$)
                     END IF
                     __UI_AltCombo$ = _STR_EMPTY
+                ELSEIF __UI_AltKeyUsed THEN
+                    'Alt was part of a key combination, like Option+Left on macOS
                 ELSE
                     'Alt was released with no key having been pressed in the meantime,
                     'so the menubar will be activated, if it exists (unless a dropdown
@@ -3370,6 +3398,7 @@ SUB __UI_EventDispatcher
                         __UI_Focus = __UI_FirstMenuBarControl
                     END IF
                 END IF
+                __UI_AltKeyUsed = False
             END IF
         END IF
     END IF
@@ -3468,7 +3497,7 @@ SUB __UI_EventDispatcher
                         CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
                             IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
                             'Search for a matching hot key in menu bar items
-                            IF __UI_CtrlIsDown = False THEN
+                            IF NOT __UI_CommandKeyDown THEN
                                 FOR i = 1 TO UBOUND(Control)
                                     IF Control(i).HotKey = __UI_KeyHit AND NOT Control(i).Disabled AND Control(i).Type = __UI_Type_MenuBar THEN
                                         IF __UI_TotalActiveMenus = 0 THEN
@@ -3496,7 +3525,7 @@ SUB __UI_EventDispatcher
                     HandleDesignMenu:
                     SELECT CASE __UI_KeyHit
                         CASE 48 TO 57, 65 TO 90, 97 TO 122 'Alphanumeric
-                            IF __UI_CtrlIsDown = False THEN
+                            IF NOT __UI_CommandKeyDown THEN
                                 IF __UI_KeyHit >= 97 THEN __UI_KeyHit = __UI_KeyHit - 32 'Turn to capitals
                                 'Search for a matching hot key in menu bar items
                                 FOR i = 1 TO UBOUND(Control)
@@ -3728,7 +3757,7 @@ SUB __UI_EventDispatcher
                             CASE 13, 32 TO 254 'Printable ASCII characters, and Enter for a new line in a multiline textbox
                                 IF __UI_KeyHit = 13 _ANDALSO NOT Control(__UI_Focus).Multiline THEN __UI_KeyHit = 0
                                 IF __UI_KeyHit = __ASC_LOWER_V OR __UI_KeyHit = __ASC_UPPER_V THEN 'Paste from clipboard (Ctrl+V)
-                                    IF __UI_CtrlIsDown THEN
+                                    IF __UI_CommandKeyDown THEN
                                         PasteIntoTextBox:
                                         IF Control(__UI_Focus).Multiline THEN
                                             'Keep line breaks, whatever their style (CR+LF, CR or LF)
@@ -3830,13 +3859,13 @@ SUB __UI_EventDispatcher
                                         END IF
                                     END IF
                                 ELSEIF __UI_KeyHit = __ASC_LOWER_C OR __UI_KeyHit = __ASC_UPPER_C THEN 'Copy selection to clipboard (Ctrl+C)
-                                    IF __UI_CtrlIsDown THEN
+                                    IF __UI_CommandKeyDown THEN
                                         __UI_FillSelectedText 0, 0
                                         IF LEN(__UI_SelectedText) > 0 THEN _CLIPBOARD$ = __UI_SelectedText
                                         __UI_KeyHit = 0
                                     END IF
                                 ELSEIF __UI_KeyHit = __ASC_LOWER_X OR __UI_KeyHit = __ASC_UPPER_X THEN 'Cut selection to clipboard (Ctrl+X)
-                                    IF __UI_CtrlIsDown THEN
+                                    IF __UI_CommandKeyDown THEN
                                         __UI_FillSelectedText 0, 0
                                         IF LEN(__UI_SelectedText) > 0 THEN
                                             _CLIPBOARD$ = __UI_SelectedText
@@ -3851,13 +3880,16 @@ SUB __UI_EventDispatcher
                                         __UI_KeyHit = 0
                                     END IF
                                 ELSEIF __UI_KeyHit = __ASC_LOWER_A OR __UI_KeyHit = __ASC_UPPER_A THEN 'Select all text (Ctrl+A)
-                                    IF __UI_CtrlIsDown THEN
+                                    IF __UI_CommandKeyDown THEN
                                         Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                         Control(__UI_Focus).SelectionStart = 0
                                         Control(__UI_Focus).TextIsSelected = True
                                         __UI_KeyHit = 0
                                     END IF
                                 END IF
+
+                                'Cmd+key is a shortcut, never text (Cmd+key reaches here on macOS)
+                                IF __UI_CmdIsDown THEN __UI_KeyHit = 0
 
                                 IF Control(__UI_Focus).NumericOnly THEN
                                     IF __UI_KeyHit = 45 THEN
@@ -3943,6 +3975,21 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE 8 'Backspace
                                 IF LEN(Mask(__UI_Focus)) = 0 _ORELSE Control(__UI_Focus).Multiline THEN
+                                    IF __UI_MacShortcuts _ANDALSO NOT Control(__UI_Focus).TextIsSelected THEN
+                                        'Cmd+Backspace deletes back to the start of the line, Option+Backspace the word before the cursor:
+                                        'select that and let it be deleted below
+                                        s1 = -1
+                                        IF __UI_CmdIsDown THEN
+                                            s1 = 0
+                                            IF Control(__UI_Focus).Multiline THEN s1 = __UI_TBLineStart(__UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
+                                        ELSEIF __UI_AltIsDown THEN
+                                            s1 = __UI_TBPrevWordStart(__UI_Focus, Control(__UI_Focus).Cursor)
+                                        END IF
+                                        IF s1 >= 0 _ANDALSO s1 < Control(__UI_Focus).Cursor THEN
+                                            Control(__UI_Focus).SelectionStart = s1
+                                            Control(__UI_Focus).TextIsSelected = True
+                                        END IF
+                                    END IF
                                     IF LEN(Text(__UI_Focus)) > 0 THEN
                                         IF NOT Control(__UI_Focus).TextIsSelected THEN
                                             IF Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus)) THEN
@@ -4035,33 +4082,37 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE _KEY_LEFT 'Left arrow key
                                 __UI_CheckSelection __UI_Focus
-                                IF __UI_CtrlIsDown THEN
-                                    IF Control(__UI_Focus).Cursor > 0 THEN
-                                        'Go back until we hit a nonseparator character
-                                        DO
-                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
-                                            IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
-                                        LOOP UNTIL INSTR(SEP$ + _CHR_LF, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
-
-                                        'Find the beginning of a word
-                                        DO
-                                            Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
-                                            IF Control(__UI_Focus).Cursor = 0 THEN EXIT DO
-                                        LOOP WHILE INSTR(SEP$ + _CHR_LF, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
-
-                                        Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
+                                IF __UI_MacShortcuts _ANDALSO __UI_CmdIsDown THEN
+                                    'Cmd+Left: start of the line
+                                    IF Control(__UI_Focus).Multiline THEN
+                                        Control(__UI_Focus).Cursor = __UI_TBLineStart(__UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
+                                    ELSE
+                                        Control(__UI_Focus).Cursor = 0
                                     END IF
+                                ELSEIF __UI_CtrlIsDown _ORELSE (__UI_MacShortcuts _ANDALSO __UI_AltIsDown) THEN
+                                    'Ctrl+Left (Option+Left on macOS): start of the previous word
+                                    Control(__UI_Focus).Cursor = __UI_TBPrevWordStart(__UI_Focus, Control(__UI_Focus).Cursor)
                                 ELSE
                                     IF Control(__UI_Focus).Cursor > 0 THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor - 1
                                 END IF
                             CASE _KEY_RIGHT 'Right arrow key
                                 __UI_CheckSelection __UI_Focus
-                                IF __UI_CtrlIsDown THEN
+                                IF __UI_MacShortcuts _ANDALSO __UI_CmdIsDown THEN
+                                    'Cmd+Right: end of the line
+                                    IF Control(__UI_Focus).Multiline THEN
+                                        Control(__UI_Focus).Cursor = __UI_TBLineEnd(__UI_Focus, __UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
+                                    ELSE
+                                        Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                    END IF
+                                ELSEIF __UI_MacShortcuts _ANDALSO __UI_AltIsDown THEN
+                                    'Option+Right: end of the next word
+                                    Control(__UI_Focus).Cursor = __UI_TBNextWordEnd(__UI_Focus, Control(__UI_Focus).Cursor)
+                                ELSEIF __UI_CtrlIsDown THEN
                                     IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN
                                         DO
                                             Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                             IF Control(__UI_Focus).Cursor > LEN(Text(__UI_Focus)) THEN EXIT DO
-                                        LOOP WHILE INSTR(SEP$ + _CHR_LF, MID$(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1, 1)) = 0
+                                        LOOP UNTIL __UI_IsWordSeparator(Text(__UI_Focus), Control(__UI_Focus).Cursor + 1) 'same separators as Ctrl+Left
                                         Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                         IF Control(__UI_Focus).Cursor > LEN(Text(__UI_Focus)) THEN Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
                                     END IF
@@ -4069,7 +4120,12 @@ SUB __UI_EventDispatcher
                                     IF Control(__UI_Focus).Cursor < LEN(Text(__UI_Focus)) THEN Control(__UI_Focus).Cursor = Control(__UI_Focus).Cursor + 1
                                 END IF
                             CASE _KEY_UP, _KEY_DOWN, _KEY_PAGEUP, _KEY_PAGEDOWN
-                                IF Control(__UI_Focus).Multiline THEN
+                                IF __UI_MacShortcuts _ANDALSO __UI_CmdIsDown _ANDALSO (__UI_KeyHit = _KEY_UP _ORELSE __UI_KeyHit = _KEY_DOWN) THEN
+                                    'Cmd+Up/Down: start/end of the text
+                                    __UI_CheckSelection __UI_Focus
+                                    __UI_TBKeepCaretX = False
+                                    IF __UI_KeyHit = _KEY_UP THEN Control(__UI_Focus).Cursor = 0 ELSE Control(__UI_Focus).Cursor = LEN(Text(__UI_Focus))
+                                ELSEIF Control(__UI_Focus).Multiline THEN
                                     __UI_CheckSelection __UI_Focus
                                     SELECT CASE __UI_KeyHit
                                         CASE _KEY_UP
@@ -4086,7 +4142,7 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE _KEY_HOME 'Home
                                 __UI_CheckSelection __UI_Focus
-                                IF Control(__UI_Focus).Multiline _ANDALSO NOT __UI_CtrlIsDown THEN
+                                IF Control(__UI_Focus).Multiline _ANDALSO NOT __UI_CommandKeyDown THEN
                                     'Start of the line (Ctrl+Home: start of the text)
                                     Control(__UI_Focus).Cursor = __UI_TBLineStart(__UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
                                 ELSE
@@ -4094,7 +4150,7 @@ SUB __UI_EventDispatcher
                                 END IF
                             CASE _KEY_END 'End
                                 __UI_CheckSelection __UI_Focus
-                                IF Control(__UI_Focus).Multiline _ANDALSO NOT __UI_CtrlIsDown THEN
+                                IF Control(__UI_Focus).Multiline _ANDALSO NOT __UI_CommandKeyDown THEN
                                     'End of the line (Ctrl+End: end of the text)
                                     Control(__UI_Focus).Cursor = __UI_TBLineEnd(__UI_Focus, __UI_TBLineFromPos(__UI_Focus, Control(__UI_Focus).Cursor))
                                 ELSE
@@ -4110,31 +4166,35 @@ SUB __UI_EventDispatcher
 
         SELECT CASE __UI_KeyHit
             CASE __ASC_UPPER_Z, __ASC_LOWER_Z
-                IF __UI_CtrlIsDown THEN
-                    __UI_KeyPress 214
+                IF __UI_CommandKeyDown THEN
+                    IF __UI_ShiftIsDown THEN
+                        __UI_KeyPress 215 'Ctrl+Shift+Z (Cmd+Shift+Z on macOS) redoes
+                    ELSE
+                        __UI_KeyPress 214
+                    END IF
                 END IF
             CASE __ASC_UPPER_Y, __ASC_LOWER_Y
-                IF __UI_CtrlIsDown THEN
+                IF __UI_CommandKeyDown THEN
                     __UI_KeyPress 215
                 END IF
             CASE __ASC_UPPER_A, __ASC_LOWER_A
-                IF __UI_CtrlIsDown THEN
+                IF __UI_CommandKeyDown THEN
                     ControlSelect:
                     __UI_KeyPress 221
                 END IF
             CASE __ASC_UPPER_X, __ASC_LOWER_X
-                IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
+                IF __UI_CommandKeyDown AND __UI_TotalSelectedControls > 0 THEN
                     ControlCut:
                     __UI_KeyPress 216
                     __UI_KeyPress 219
                 END IF
             CASE __ASC_UPPER_C, __ASC_LOWER_C
-                IF __UI_CtrlIsDown AND __UI_TotalSelectedControls > 0 THEN
+                IF __UI_CommandKeyDown AND __UI_TotalSelectedControls > 0 THEN
                     ControlCopy:
                     __UI_KeyPress 217
                 END IF
             CASE __ASC_UPPER_V, __ASC_LOWER_V
-                IF __UI_CtrlIsDown THEN
+                IF __UI_CommandKeyDown THEN
                     ControlPaste:
                     Clip$ = _CLIPBOARD$
                     IF LEFT$(Clip$, LEN(__UI_ClipboardCheck$)) = __UI_ClipboardCheck$ THEN
@@ -4213,7 +4273,7 @@ SUB __UI_EventDispatcher
 
     CheckResizeSnapRight:
     'Snap right
-    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF i = __UI_ResizingID AND NOT __UI_CommandKeyHeld AND __UI_SnapLines THEN
         IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
         'Form:
         IF (Control(i).Left + Control(i).Width) > Control(__UI_RelevantID).Width - __UI_SnapDistanceFromForm OR _
@@ -4255,7 +4315,7 @@ SUB __UI_EventDispatcher
 
     CheckResizeSnapLeft:
     'Snap left
-    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF i = __UI_ResizingID AND NOT __UI_CommandKeyHeld AND __UI_SnapLines THEN
         IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
         'Form:
         IF (Control(i).Left) < __UI_SnapDistanceFromForm OR _
@@ -4273,7 +4333,7 @@ SUB __UI_EventDispatcher
 
     CheckResizeSnapTop:
     'Snap top
-    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF i = __UI_ResizingID AND NOT __UI_CommandKeyHeld AND __UI_SnapLines THEN
         IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
         'Form:
         IF (Control(i).Top) < __UI_SnapDistanceFromForm OR _
@@ -4291,7 +4351,7 @@ SUB __UI_EventDispatcher
 
     CheckResizeSnapBottom:
     'Snap bottom
-    IF i = __UI_ResizingID AND (_KEYDOWN(100305) = 0 AND _KEYDOWN(100306) = 0) AND __UI_SnapLines THEN
+    IF i = __UI_ResizingID AND NOT __UI_CommandKeyHeld AND __UI_SnapLines THEN
         IF Control(i).ParentID = 0 THEN __UI_RelevantID = __UI_FormID ELSE __UI_RelevantID = Control(i).ParentID
         'Form:
         IF (Control(i).Top + Control(i).Height) > Control(__UI_RelevantID).Height - __UI_SnapDistanceFromForm OR _
@@ -4494,7 +4554,63 @@ FUNCTION __UI_FriendlyCombo$ (__Combo$)
         END IF
         IF RIGHT$(Combo$, 1) = "+" THEN isCapital = True
     NEXT
+
+    'Ctrl combos are triggered by Cmd with macOS-style shortcuts. Not in design mode, where
+    'the combos belong to the form being designed, which may not use them.
+    IF __UI_MacShortcuts _ANDALSO NOT __UI_DesignMode _ANDALSO LEFT$(Combo$, 5) = "Ctrl+" THEN Combo$ = "Cmd+" + MID$(Combo$, 6)
+
     __UI_FriendlyCombo$ = Combo$
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'True while the modifier for shortcuts like Ctrl+C or Ctrl+S is held: Ctrl, and
+'also Cmd when macOS-style shortcuts are on (__UI_MacShortcuts).
+FUNCTION __UI_CommandKeyDown%%
+    __UI_CommandKeyDown = __UI_CtrlIsDown OR (__UI_MacShortcuts AND __UI_CmdIsDown)
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'Same as __UI_CommandKeyDown, but read right from the keyboard, for use while the mouse
+'is being handled (e.g. to bypass snapping or to add to the selection when clicking).
+FUNCTION __UI_CommandKeyHeld%%
+    IF _KEYDOWN(100305) _ORELSE _KEYDOWN(100306) THEN
+        __UI_CommandKeyHeld = _TRUE
+    ELSEIF __UI_MacShortcuts _ANDALSO (_KEYDOWN(100311) _ORELSE _KEYDOWN(100312)) THEN
+        __UI_CommandKeyHeld = _TRUE
+    END IF
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'Start of the word before a cursor position in a textbox (Ctrl+Left, Option+Left, Option+Backspace)
+FUNCTION __UI_TBPrevWordStart& (id AS LONG, position AS LONG)
+    DIM p AS LONG
+
+    p = position
+    IF p > LEN(Text(id)) THEN p = LEN(Text(id))
+    DO WHILE p > 0 _ANDALSO __UI_IsWordSeparator(Text(id), p)
+        p = p - 1
+    LOOP
+    DO WHILE p > 0 _ANDALSO NOT __UI_IsWordSeparator(Text(id), p)
+        p = p - 1
+    LOOP
+    __UI_TBPrevWordStart = p
+END FUNCTION
+
+'---------------------------------------------------------------------------------
+'End of the word after a cursor position in a textbox (Option+Right)
+FUNCTION __UI_TBNextWordEnd& (id AS LONG, position AS LONG)
+    DIM p AS LONG, textLen AS LONG
+
+    textLen = LEN(Text(id))
+    p = position
+    IF p < 0 THEN p = 0
+    DO WHILE p < textLen _ANDALSO __UI_IsWordSeparator(Text(id), p + 1)
+        p = p + 1
+    LOOP
+    DO WHILE p < textLen _ANDALSO NOT __UI_IsWordSeparator(Text(id), p + 1)
+        p = p + 1
+    LOOP
+    __UI_TBNextWordEnd = p
 END FUNCTION
 
 '---------------------------------------------------------------------------------
@@ -6666,6 +6782,7 @@ FUNCTION __UI_DropdownSearchKey%%
     DIM parentID AS LONG, Typed$, Search$
 
     IF __UI_AltIsDown THEN EXIT FUNCTION
+    IF __UI_CmdIsDown _ANDALSO NOT __UI_MacShortcuts THEN EXIT FUNCTION 'Cmd+key is a shortcut, never text
     IF __UI_ActiveDropdownList > 0 _ANDALSO __UI_Focus = __UI_ActiveDropdownList THEN
         parentID = __UI_ParentDropdownList
     ELSEIF Control(__UI_Focus).Type = __UI_Type_DropdownList THEN
@@ -6678,7 +6795,7 @@ FUNCTION __UI_DropdownSearchKey%%
     Search$ = __UI_DropdownSearch
     IF __UI_ActiveDropdownList = 0 THEN Search$ = _STR_EMPTY
 
-    IF __UI_CtrlIsDown THEN
+    IF __UI_CommandKeyDown THEN
         SELECT CASE __UI_KeyHit
             CASE __ASC_LOWER_V, __ASC_UPPER_V 'Paste the first line of the clipboard
                 Typed$ = _CLIPBOARD$
